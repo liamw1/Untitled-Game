@@ -10,15 +10,26 @@ workspace "Engine"
 
 outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
 
+-- Include system directories relative to root folder (solution directory)
+IncludeDir = {}
+IncludeDir["GLFW"] = "Engine/lib/GLFW/include"
+
+include "Engine/lib/GLFW"
+
 
 
 project "Engine"
 	location "Engine"
 	kind "SharedLib"
 	language "C++"
+	cppdialect "C++17"
+	staticruntime "On"
 
 	targetdir ("bin/" .. outputdir .. "/%{prj.name}")
 	objdir ("obj/" .. outputdir .. "/%{prj.name}")
+
+	pchheader "ENpch.h"
+	pchsource "Engine/src/ENpch.cpp"
 
 	files
 	{
@@ -26,14 +37,25 @@ project "Engine"
 		"%{prj.name}/src/**.cpp"
 	}
 
+	defines
+	{
+		"_CRT_SECURE_NO_WARNINGS"
+	}
+
 	includedirs
 	{
+		"%{prj.name}/src/",
+		"%{IncludeDir.GLFW}",
 		"%{prj.name}/lib/spdlog/include"
 	}
 
+	links
+	{
+		"GLFW",
+		"opengl32.lib"
+	}
+
 	filter "system:windows"
-		cppdialect "C++17"
-		staticruntime "On"
 		systemversion "latest"
 
 		defines
@@ -48,7 +70,7 @@ project "Engine"
 		}
 
 	filter "configurations:Debug"
-		defines "EN_DEBUG"
+		defines { "EN_DEBUG", "EN_ENABLE_ASSERTS" }
 		symbols "On"
 
 	filter "configurations:Release"
@@ -65,6 +87,8 @@ project "Sandbox"
 	location "Sandbox"
 	kind "ConsoleApp"
 	language "C++"
+	cppdialect "C++17"
+	staticruntime "On"
 
 	targetdir ("bin/" .. outputdir .. "/%{prj.name}")
 	objdir ("obj/" .. outputdir .. "/%{prj.name}")
@@ -77,8 +101,8 @@ project "Sandbox"
 
 	includedirs
 	{
-		"Engine/lib/spdlog/include",
-		"Engine/src"
+		"Engine/src",
+		"Engine/lib/spdlog/include"
 	}
 
 	links
@@ -87,8 +111,6 @@ project "Sandbox"
 	}
 
 	filter "system:windows"
-		cppdialect "C++17"
-		staticruntime "On"
 		systemversion "latest"
 
 		defines
