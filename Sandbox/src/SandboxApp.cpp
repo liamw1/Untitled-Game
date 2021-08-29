@@ -8,11 +8,12 @@ public:
 
   void onUpdate() override
   {
+    if (Engine::Input::IsKeyPressed(Key::Tab))
+      EN_TRACE("Tab key is pressed!");
   }
 
   void onEvent(Engine::Event& event) override
   {
-    EN_TRACE("{0}", event);
   }
 };
 

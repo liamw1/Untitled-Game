@@ -7,16 +7,16 @@ namespace Engine
 {
   Input* Input::Instance = new WindowsInput();
 
-  bool WindowsInput::isKeyPressedImpl(int keyCode)
+  bool WindowsInput::isKeyPressedImpl(Key keyCode)
   {
     auto window = static_cast<GLFWwindow*>(Application::Get().getWindow().getNativeWindow());
-    auto state = glfwGetKey(window, keyCode);
+    auto state = glfwGetKey(window, (int)keyCode);
     return state == GLFW_PRESS || state == GLFW_REPEAT;
   }
-  bool WindowsInput::isMouseButtonPressedImpl(int button)
+  bool WindowsInput::isMouseButtonPressedImpl(MouseButton button)
   {
     auto window = static_cast<GLFWwindow*>(Application::Get().getWindow().getNativeWindow());
-    auto state = glfwGetMouseButton(window, button);
+    auto state = glfwGetMouseButton(window, (int)button);
     return state == GLFW_PRESS;
   }
   std::array<float, 2> WindowsInput::getMousePositionImpl()

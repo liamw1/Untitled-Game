@@ -1,6 +1,7 @@
 #pragma once
 #include "ENpch.h"
 #include "Event.h"
+#include "Engine/Core/MouseButtonCodes.h"
 
 namespace Engine
 {
@@ -59,19 +60,19 @@ namespace Engine
   public:
     int getCategoryFlags() const override { return EventCategoryMouse | EventCategoryInput; }
 
-    inline int getMouseButton() const { return m_Button; }
+    inline MouseButton getMouseButton() const { return m_Button; }
 
   protected:
-    MouseButtonEvent(int button)
+    MouseButtonEvent(MouseButton button)
       : m_Button(button) {}
 
-    int m_Button;
+    MouseButton m_Button;
   };
 
   class ENGINE_API MouseButtonPressEvent : public MouseButtonEvent
   {
   public:
-    MouseButtonPressEvent(int button)
+    MouseButtonPressEvent(MouseButton button)
       : MouseButtonEvent(button) {}
 
     static EventType GetStaticType() { return EventType::MouseButtonPress; }
@@ -81,7 +82,7 @@ namespace Engine
     std::string toString() const override
     {
       std::stringstream ss;
-      ss << "MouseButtonPressEvent: " << m_Button;
+      ss << "MouseButtonPressEvent: " << (MouseCode)m_Button;
       return ss.str();
     }
   };
@@ -89,7 +90,7 @@ namespace Engine
   class ENGINE_API MouseButtonReleaseEvent : public MouseButtonEvent
   {
   public:
-    MouseButtonReleaseEvent(int button)
+    MouseButtonReleaseEvent(MouseButton button)
       : MouseButtonEvent(button) {}
 
     static EventType GetStaticType() { return EventType::MouseButtonRelease; }
@@ -99,7 +100,7 @@ namespace Engine
     std::string toString() const override
     {
       std::stringstream ss;
-      ss << "MouseButtonReleaseEvent: " << m_Button;
+      ss << "MouseButtonReleaseEvent: " << (MouseCode)m_Button;
       return ss.str();
     }
   };

@@ -95,7 +95,7 @@ namespace Engine
     };
     glfwSetWindowCloseCallback(m_Window, windowCloseCallback);
 
-    auto keyCallback = [](GLFWwindow* window, int key, int scancode, int action, int mods)
+    auto keyCallback = [](GLFWwindow* window, int keyCode, int scancode, int action, int mods)
     {
       WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
 
@@ -103,19 +103,19 @@ namespace Engine
       {
         case GLFW_PRESS:
         {
-          KeyPressEvent event(key, 0);
+          KeyPressEvent event((Key)keyCode, 0);
           data.eventCallback(event);
           break;
         }
         case GLFW_RELEASE:
         {
-          KeyReleaseEvent event(key);
+          KeyReleaseEvent event((Key)keyCode);
           data.eventCallback(event);
           break;
         }
         case GLFW_REPEAT:
         {
-          KeyPressEvent event(key, 1);
+          KeyPressEvent event((Key)keyCode, 1);
           data.eventCallback(event);
           break;
         }
@@ -126,7 +126,7 @@ namespace Engine
     auto charCallback = [](GLFWwindow* window, unsigned int keycode)
     {
       WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
-      KeyTypeEvent event(keycode);
+      KeyTypeEvent event((Key)keycode);
       data.eventCallback(event);
     };
     glfwSetCharCallback(m_Window, charCallback);
@@ -139,13 +139,13 @@ namespace Engine
       {
         case GLFW_PRESS:
         {
-          MouseButtonPressEvent event(button);
+          MouseButtonPressEvent event((MouseButton)button);
           data.eventCallback(event);
           break;
         }
         case GLFW_RELEASE:
         {
-          MouseButtonReleaseEvent event(button);
+          MouseButtonReleaseEvent event((MouseButton)button);
           data.eventCallback(event);
           break;
         }

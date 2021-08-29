@@ -95,14 +95,14 @@ namespace Engine
   bool ImGuiLayer::onMouseButtonPressEvent(MouseButtonPressEvent& event)
   {
     ImGuiIO& io = ImGui::GetIO();
-    io.MouseDown[event.getMouseButton()] = true;
+    io.MouseDown[(MouseCode)event.getMouseButton()] = true;
     return false;
   }
 
   bool ImGuiLayer::onMouseButtonReleaseEvent(MouseButtonReleaseEvent& event)
   {
     ImGuiIO& io = ImGui::GetIO();
-    io.MouseDown[event.getMouseButton()] = false;
+    io.MouseDown[(MouseCode)event.getMouseButton()] = false;
     return false;
   }
 
@@ -124,7 +124,7 @@ namespace Engine
   bool ImGuiLayer::onKeyPressEvent(KeyPressEvent& event)
   {
     ImGuiIO& io = ImGui::GetIO();
-    io.MouseDown[event.getKeyCode()] = true;
+    io.MouseDown[(KeyCode)event.getKeyCode()] = true;
     io.KeyCtrl = io.KeysDown[GLFW_KEY_LEFT_CONTROL] || io.KeysDown[GLFW_KEY_RIGHT_CONTROL];
     io.KeyShift = io.KeysDown[GLFW_KEY_LEFT_SHIFT] || io.KeysDown[GLFW_KEY_RIGHT_SHIFT];
     io.KeyAlt = io.KeysDown[GLFW_KEY_LEFT_ALT] || io.KeysDown[GLFW_KEY_RIGHT_ALT];
@@ -135,16 +135,14 @@ namespace Engine
   bool ImGuiLayer::onKeyReleaseEvent(KeyReleaseEvent& event)
   {
     ImGuiIO& io = ImGui::GetIO();
-    io.MouseDown[event.getKeyCode()] = false;
+    io.MouseDown[(KeyCode)event.getKeyCode()] = false;
     return false;
   }
 
   bool ImGuiLayer::onKeyTypeEvent(KeyTypeEvent& event)
   {
     ImGuiIO& io = ImGui::GetIO();
-    int keycode = event.getKeyCode();
-    if (keycode > 0 && keycode < 0x10000)
-      io.AddInputCharacter((unsigned short)keycode);
+    io.AddInputCharacter((KeyCode)event.getKeyCode());
     return false;
   }
 

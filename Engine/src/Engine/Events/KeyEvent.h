@@ -1,6 +1,7 @@
 #pragma once
 #include "ENpch.h"
 #include "Event.h"
+#include "Engine/Core/KeyCodes.h"
 
 namespace Engine
 {
@@ -9,19 +10,19 @@ namespace Engine
   public:
     int getCategoryFlags() const override { return EventCategoryKeyboard | EventCategoryInput; }
 
-    inline int getKeyCode() const { return m_KeyCode; }
+    inline Key getKeyCode() const { return m_KeyCode; }
 
   protected:
-    KeyEvent(int keycode)
+    KeyEvent(Key keycode)
       : m_KeyCode(keycode) {}
 
-    int m_KeyCode;
+    Key m_KeyCode;
   };
 
   class ENGINE_API KeyPressEvent : public KeyEvent
   {
   public:
-    KeyPressEvent(int keycode, int repeatCount)
+    KeyPressEvent(Key keycode, int repeatCount)
       : KeyEvent(keycode), m_RepeatCount(repeatCount) {}
 
     static EventType GetStaticType() { return EventType::KeyPress; }
@@ -33,7 +34,7 @@ namespace Engine
     std::string toString() const override
     {
       std::stringstream ss;
-      ss << "KeyPressEvent: " << m_KeyCode << " (" << m_RepeatCount << " repeats)";
+      ss << "KeyPressEvent: " << (KeyCode)m_KeyCode << " (" << m_RepeatCount << " repeats)";
       return ss.str();
     }
 
@@ -44,7 +45,7 @@ namespace Engine
   class ENGINE_API KeyReleaseEvent : public KeyEvent
   {
   public:
-    KeyReleaseEvent(int keyCode)
+    KeyReleaseEvent(Key keyCode)
       : KeyEvent(keyCode) {}
 
     static EventType GetStaticType() { return EventType::KeyRelease; }
@@ -54,7 +55,7 @@ namespace Engine
     std::string toString() const override
     {
       std::stringstream ss;
-      ss << "KeyReleaseEvent: " << m_KeyCode;
+      ss << "KeyReleaseEvent: " << (KeyCode)m_KeyCode;
       return ss.str();
     }
   };
@@ -62,7 +63,7 @@ namespace Engine
   class ENGINE_API KeyTypeEvent : public KeyEvent
   {
   public:
-    KeyTypeEvent(int keycode)
+    KeyTypeEvent(Key keycode)
       : KeyEvent(keycode) {}
 
     static EventType GetStaticType() { return EventType::KeyType; }
@@ -72,7 +73,7 @@ namespace Engine
     std::string toString() const override
     {
       std::stringstream ss;
-      ss << "KeyTypeEvent: " << m_KeyCode;
+      ss << "KeyTypeEvent: " << (KeyCode)m_KeyCode;
       return ss.str();
     }
   };
