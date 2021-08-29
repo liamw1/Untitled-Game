@@ -18,22 +18,22 @@ namespace Engine
     int m_KeyCode;
   };
 
-  class ENGINE_API KeyPressedEvent : public KeyEvent
+  class ENGINE_API KeyPressEvent : public KeyEvent
   {
   public:
-    KeyPressedEvent(int keycode, int repeatCount)
+    KeyPressEvent(int keycode, int repeatCount)
       : KeyEvent(keycode), m_RepeatCount(repeatCount) {}
 
-    static EventType GetStaticType() { return EventType::KeyPressed; }
-    virtual EventType getEventType() const override { return GetStaticType(); }
-    virtual const char* getName() const override { return "KeyPressed"; }
+    static EventType GetStaticType() { return EventType::KeyPress; }
+    EventType getEventType() const override { return GetStaticType(); }
+    const char* getName() const override { return "KeyPress"; }
 
     inline int getRepeatCount() const { return m_RepeatCount; }
 
     std::string toString() const override
     {
       std::stringstream ss;
-      ss << "KeyPressedEvent: " << m_KeyCode << " (" << m_RepeatCount << " repeats)";
+      ss << "KeyPressEvent: " << m_KeyCode << " (" << m_RepeatCount << " repeats)";
       return ss.str();
     }
 
@@ -41,20 +41,38 @@ namespace Engine
     int m_RepeatCount;
   };
 
-  class ENGINE_API KeyReleasedEvent : public KeyEvent
+  class ENGINE_API KeyReleaseEvent : public KeyEvent
   {
   public:
-    KeyReleasedEvent(int keyCode)
+    KeyReleaseEvent(int keyCode)
       : KeyEvent(keyCode) {}
 
-    static EventType GetStaticType() { return EventType::KeyReleased; }
-    virtual EventType getEventType() const override { return GetStaticType(); }
-    virtual const char* getName() const override { return "KeyReleased"; }
+    static EventType GetStaticType() { return EventType::KeyRelease; }
+    EventType getEventType() const override { return GetStaticType(); }
+    const char* getName() const override { return "KeyRelease"; }
 
     std::string toString() const override
     {
       std::stringstream ss;
-      ss << "KeyReleasedEvent: " << m_KeyCode;
+      ss << "KeyReleaseEvent: " << m_KeyCode;
+      return ss.str();
+    }
+  };
+
+  class ENGINE_API KeyTypeEvent : public KeyEvent
+  {
+  public:
+    KeyTypeEvent(int keycode)
+      : KeyEvent(keycode) {}
+
+    static EventType GetStaticType() { return EventType::KeyType; }
+    EventType getEventType() const override { return GetStaticType(); }
+    const char* getName() const override { return "KeyType"; }
+
+    std::string toString() const override
+    {
+      std::stringstream ss;
+      ss << "KeyTypeEvent: " << m_KeyCode;
       return ss.str();
     }
   };

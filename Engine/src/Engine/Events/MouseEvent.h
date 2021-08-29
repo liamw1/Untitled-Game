@@ -4,15 +4,15 @@
 
 namespace Engine
 {
-  class ENGINE_API MouseMovedEvent : public Event
+  class ENGINE_API MouseMoveEvent : public Event
   {
   public:
-    MouseMovedEvent(float x, float y)
+    MouseMoveEvent(float x, float y)
       : m_MouseX(x), m_MouseY(y) {}
 
-    static EventType GetStaticType() { return EventType::MouseMoved; }
-    virtual EventType getEventType() const override { return GetStaticType(); }
-    virtual const char* getName() const override { return "MouseMoved"; }
+    static EventType GetStaticType() { return EventType::MouseMove; }
+    EventType getEventType() const override { return GetStaticType(); }
+    const char* getName() const override { return "MouseMove"; }
     int getCategoryFlags() const override { return EventCategoryMouse | EventCategoryInput; }
 
     inline float getX() const { return m_MouseX; }
@@ -21,7 +21,7 @@ namespace Engine
     std::string toString() const override
     {
       std::stringstream ss;
-      ss << "MouseMovedEvent: " << m_MouseX << ", " << m_MouseY;
+      ss << "MouseMoveEvent: " << m_MouseX << ", " << m_MouseY;
       return ss.str();
     }
 
@@ -29,15 +29,15 @@ namespace Engine
     float m_MouseX, m_MouseY;
   };
 
-  class ENGINE_API MouseScrolledEvent : public Event
+  class ENGINE_API MouseScrollEvent : public Event
   {
   public:
-    MouseScrolledEvent(float xOffset, float yOffset)
+    MouseScrollEvent(float xOffset, float yOffset)
       : m_XOffset(xOffset), m_YOffset(yOffset) {}
 
-    static EventType GetStaticType() { return EventType::MouseMoved; }
-    virtual EventType getEventType() const override { return GetStaticType(); }
-    virtual const char* getName() const override { return "MouseMoved"; }
+    static EventType GetStaticType() { return EventType::MouseScroll; }
+    EventType getEventType() const override { return GetStaticType(); }
+    const char* getName() const override { return "MouseScroll"; }
     int getCategoryFlags() const override { return EventCategoryMouse | EventCategoryInput; }
 
     inline float getXOffset() const { return m_XOffset; }
@@ -46,7 +46,7 @@ namespace Engine
     std::string toString() const override
     {
       std::stringstream ss;
-      ss << "MouseScrolledEvent: " << getXOffset() << ", " << getYOffset();
+      ss << "MouseScrollEvent: " << getXOffset() << ", " << getYOffset();
       return ss.str();
     }
 
@@ -68,38 +68,38 @@ namespace Engine
     int m_Button;
   };
 
-  class ENGINE_API MouseButtonPressedEvent : public MouseButtonEvent
+  class ENGINE_API MouseButtonPressEvent : public MouseButtonEvent
   {
   public:
-    MouseButtonPressedEvent(int button)
+    MouseButtonPressEvent(int button)
       : MouseButtonEvent(button) {}
 
-    static EventType GetStaticType() { return EventType::MouseButtonPressed; }
-    virtual EventType getEventType() const override { return GetStaticType(); }
-    virtual const char* getName() const override { return "MouseButtonPressed"; }
+    static EventType GetStaticType() { return EventType::MouseButtonPress; }
+    EventType getEventType() const override { return GetStaticType(); }
+    const char* getName() const override { return "MouseButtonPress"; }
 
     std::string toString() const override
     {
       std::stringstream ss;
-      ss << "MouseButtonPressedEvent: " << m_Button;
+      ss << "MouseButtonPressEvent: " << m_Button;
       return ss.str();
     }
   };
 
-  class ENGINE_API MouseButtonReleasedEvent : public MouseButtonEvent
+  class ENGINE_API MouseButtonReleaseEvent : public MouseButtonEvent
   {
   public:
-    MouseButtonReleasedEvent(int button)
+    MouseButtonReleaseEvent(int button)
       : MouseButtonEvent(button) {}
 
-    static EventType GetStaticType() { return EventType::MouseButtonReleased; }
-    virtual EventType getEventType() const override { return GetStaticType(); }
-    virtual const char* getName() const override { return "MouseButtonReleased"; }
+    static EventType GetStaticType() { return EventType::MouseButtonRelease; }
+    EventType getEventType() const override { return GetStaticType(); }
+    const char* getName() const override { return "MouseButtonRelease"; }
 
     std::string toString() const override
     {
       std::stringstream ss;
-      ss << "MouseButtonReleasedEvent: " << m_Button;
+      ss << "MouseButtonReleaseEvent: " << m_Button;
       return ss.str();
     }
   };

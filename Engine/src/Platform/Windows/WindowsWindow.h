@@ -9,7 +9,7 @@ namespace Engine
   {
   public:
     WindowsWindow(const WindowProps& properties);
-    virtual ~WindowsWindow();
+    ~WindowsWindow();
 
     void onUpdate() override;
 
@@ -20,6 +20,8 @@ namespace Engine
     inline void setEventCallback(const EventCallbackFn& callback) override { m_Data.eventCallback = callback; }
     void setVSync(bool enabled) override;
     bool isVSync() const override;
+
+    inline void* getNativeWindow() const override { return m_Window; }
 
   private:
     struct WindowData
@@ -34,7 +36,7 @@ namespace Engine
     WindowData m_Data;
     GLFWwindow* m_Window;
 
-    virtual void initialize(const WindowProps& properties);
-    virtual void shutdown();
+    void initialize(const WindowProps& properties);
+    void shutdown();
   };
 }

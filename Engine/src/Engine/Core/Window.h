@@ -2,6 +2,10 @@
 #include "ENpch.h"
 #include "Engine/Events/Event.h"
 
+/*
+  Abstract representation of a window.
+  Implementation is determined by derived class.
+*/
 namespace Engine
 {
   struct WindowProps
@@ -33,6 +37,8 @@ namespace Engine
     virtual void setEventCallback(const EventCallbackFn& callback) = 0;
     virtual void setVSync(bool enabled) = 0;
     virtual bool isVSync() const = 0;
+
+    virtual void* getNativeWindow() const = 0;
 
     static Window* Create(const WindowProps& properties = WindowProps());
   };

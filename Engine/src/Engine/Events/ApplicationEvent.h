@@ -11,8 +11,8 @@ namespace Engine
       : m_Width(width), m_Height(height) {}
 
     static EventType GetStaticType() { return EventType::WindowResize; }
-    virtual EventType getEventType() const override { return GetStaticType(); }
-    virtual const char* getName() const override { return "WindowResize"; }
+    EventType getEventType() const override { return GetStaticType(); }
+    const char* getName() const override { return "WindowResized"; }
     int getCategoryFlags() const override { return EventCategoryApplication; }
 
     inline unsigned int getWidth() const { return m_Width; }
@@ -21,7 +21,7 @@ namespace Engine
     std::string toString() const override
     {
       std::stringstream ss;
-      ss << "WindowResizeEvent: " << m_Width << ", " << m_Height;
+      ss << "WindowResizedEvent: " << m_Width << ", " << m_Height;
       return ss.str();
     }
 
@@ -35,8 +35,8 @@ namespace Engine
     WindowCloseEvent() {}
 
     static EventType GetStaticType() { return EventType::WindowClose; }
-    virtual EventType getEventType() const override { return GetStaticType(); }
-    virtual const char* getName() const override { return "WindowClose"; }
+    EventType getEventType() const override { return GetStaticType(); }
+    const char* getName() const override { return "WindowClose"; }
     int getCategoryFlags() const override { return EventCategoryApplication; }
   };
 
@@ -46,8 +46,8 @@ namespace Engine
     AppTickEvent() {}
 
     static EventType GetStaticType() { return EventType::AppTick; }
-    virtual EventType getEventType() const override { return GetStaticType(); }
-    virtual const char* getName() const override { return "AppTick"; }
+    EventType getEventType() const override { return GetStaticType(); }
+    const char* getName() const override { return "AppTick"; }
     int getCategoryFlags() const override { return EventCategoryApplication; }
   };
 
@@ -57,8 +57,8 @@ namespace Engine
     AppUpdateEvent() {}
 
     static EventType GetStaticType() { return EventType::AppUpdate; }
-    virtual EventType getEventType() const override { return GetStaticType(); }
-    virtual const char* getName() const override { return "AppUpdate"; }
+    EventType getEventType() const override { return GetStaticType(); }
+    const char* getName() const override { return "AppUpdate"; }
     int getCategoryFlags() const override { return EventCategoryApplication; }
   };
 
@@ -68,8 +68,8 @@ namespace Engine
     AppRenderEvent() {}
 
     static EventType GetStaticType() { return EventType::AppRender; }
-    virtual EventType getEventType() const override { return GetStaticType(); }
-    virtual const char* getName() const override { return "AppRender"; }
+    EventType getEventType() const override { return GetStaticType(); }
+    const char* getName() const override { return "AppRender"; }
     int getCategoryFlags() const override { return EventCategoryApplication; }
   };
 }

@@ -1,5 +1,6 @@
 workspace "Engine"
 	architecture "x64"
+	startproject "Sandbox"
 
 	configurations
 	{
@@ -16,18 +17,20 @@ IncludeDir["GLFW"] = "Engine/lib/GLFW/include"
 IncludeDir["GLad"] = "Engine/lib/GLad/include"
 IncludeDir["ImGui"] = "Engine/lib/imgui"
 
-include "Engine/lib/GLFW"
-include "Engine/lib/GLad"
-include "Engine/lib/imgui"
 
 
+group "Dependencies"
+	include "Engine/lib/GLFW"
+	include "Engine/lib/GLad"
+	include "Engine/lib/imgui"
+group ""
 
 project "Engine"
 	location "Engine"
 	kind "SharedLib"
 	language "C++"
 	cppdialect "C++17"
-	staticruntime "On"
+	staticruntime "Off"
 
 	targetdir ("bin/" .. outputdir .. "/%{prj.name}")
 	objdir ("obj/" .. outputdir .. "/%{prj.name}")
@@ -75,22 +78,22 @@ project "Engine"
 
 		postbuildcommands
 		{
-			("{COPY} %{cfg.buildtarget.relpath} ../bin/" .. outputdir .. "/Sandbox")
+			("{COPY} %{cfg.buildtarget.relpath} \"../bin/" .. outputdir .. "/Sandbox/\"")
 		}
 
 	filter "configurations:Debug"
 		defines "EN_DEBUG"
-		buildoptions "/MDd"
+		runtime "Debug"
 		symbols "On"
 
 	filter "configurations:Release"
 		defines "EN_RELEASE"
-		buildoptions "/MD"
+		runtime "Release"
 		optimize "On"
 
 	filter "configurations:Dist"
 		defines "EN_DIST"
-		buildoptions "/MD"
+		runtime "Release"
 		optimize "On"
 
 
@@ -100,7 +103,7 @@ project "Sandbox"
 	kind "ConsoleApp"
 	language "C++"
 	cppdialect "C++17"
-	staticruntime "On"
+	staticruntime "Off"
 
 	targetdir ("bin/" .. outputdir .. "/%{prj.name}")
 	objdir ("obj/" .. outputdir .. "/%{prj.name}")
@@ -132,15 +135,15 @@ project "Sandbox"
 
 	filter "configurations:Debug"
 		defines "EN_DEBUG"
-		buildoptions "/MDd"
+		runtime "Debug"
 		symbols "On"
 
 	filter "configurations:Release"
 		defines "EN_RELEASE"
-		buildoptions "/MD"
+		runtime "Release"
 		optimize "On"
 
 	filter "configurations:Dist"
 		defines "EN_DIST"
-		buildoptions "/MD"
+		runtime "Release"
 		optimize "On"

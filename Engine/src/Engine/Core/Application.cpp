@@ -1,7 +1,10 @@
 #include "ENpch.h"
 #include "Application.h"
+#include "Input.h"
 
-#define BIND_EVENT_FN(x) std::bind(&Application::x, this, std::placeholders::_1)
+// TEMPORARY
+#include <GLFW/glfw3.h>
+#include <glad/glad.h>
 
 namespace Engine
 {
@@ -13,7 +16,7 @@ namespace Engine
     Instance = this;
 
     m_Window = std::unique_ptr<Window>(Window::Create());
-    m_Window->setEventCallback(BIND_EVENT_FN(onEvent));
+    m_Window->setEventCallback(EN_BIND_EVENT_FN(onEvent));
   }
 
   Application::~Application()
@@ -24,6 +27,9 @@ namespace Engine
   {
     while (m_Running)
     {
+      glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+      glClear(GL_COLOR_BUFFER_BIT);
+
       for (Layer* layer : m_LayerStack)
         layer->onUpdate();
 
@@ -34,9 +40,7 @@ namespace Engine
   void Application::onEvent(Event& event)
   {
     EventDispatcher dispatcher(event);
-    dispatcher.dispatch<WindowCloseEvent>(BIND_EVENT_FN(onWindowClose));
-
-    EN_CORE_TRACE("{0}", event);
+    dispatcher.dispatch<WindowCloseEvent>(EN_BIND_EVENT_FN(onWindowClose));
 
     for (auto it = m_LayerStack.end(); it != m_LayerStack.begin();)
     {
