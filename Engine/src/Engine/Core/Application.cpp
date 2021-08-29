@@ -5,9 +5,13 @@
 
 namespace Engine
 {
+  Application* Application::Instance = nullptr;
 
   Application::Application()
   {
+    EN_CORE_ASSERT(Instance == nullptr, "Application already exists!");
+    Instance = this;
+
     m_Window = std::unique_ptr<Window>(Window::Create());
     m_Window->setEventCallback(BIND_EVENT_FN(onEvent));
   }
@@ -45,11 +49,13 @@ namespace Engine
   void Application::pushLayer(Layer* layer)
   {
     m_LayerStack.pushLayer(layer);
+    layer->onAttach();
   }
 
   void Application::pushOverlay(Layer* layer)
   {
     m_LayerStack.pushOverlay(layer);
+    layer->onAttach();
   }
 
   bool Application::onWindowClose(WindowCloseEvent& event)

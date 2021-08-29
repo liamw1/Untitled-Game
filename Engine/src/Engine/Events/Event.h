@@ -10,7 +10,7 @@ namespace Engine
     bus and process them during the "event" part of the update stage.
   */
 
-  static constexpr inline unsigned char bit(unsigned char n) { return 1 << n; }
+  inline static constexpr unsigned char bit(unsigned char n) { return 1 << n; }
 
   enum class EventType
   {
