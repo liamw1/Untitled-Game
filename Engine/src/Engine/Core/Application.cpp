@@ -20,6 +20,9 @@ namespace Engine
   {
     while (m_Running)
     {
+      for (Layer* layer : m_LayerStack)
+        layer->onUpdate();
+
       m_Window->onUpdate();
     }
   }
@@ -30,6 +33,23 @@ namespace Engine
     dispatcher.dispatch<WindowCloseEvent>(BIND_EVENT_FN(onWindowClose));
 
     EN_CORE_TRACE("{0}", event);
+
+    for (auto it = m_LayerStack.end(); it != m_LayerStack.begin();)
+    {
+      (*--it)->onEvent(event);
+      if (event.handled)
+        break;
+    }
+  }
+
+  void Application::pushLayer(Layer* layer)
+  {
+    m_LayerStack.pushLayer(layer);
+  }
+
+  void Application::pushOverlay(Layer* layer)
+  {
+    m_LayerStack.pushOverlay(layer);
   }
 
   bool Application::onWindowClose(WindowCloseEvent& event)

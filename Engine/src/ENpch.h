@@ -17,8 +17,8 @@
 #include <fstream>
 
 // ==================== Common Utilities ==================== //
-#include "Engine/Core.h"
-#include "Engine/Log.h"
+#include "Engine/Core/Core.h"
+#include "Engine/Core/Log.h"
 
 #ifdef EN_PLATFORM_WINDOWS
   #include <Windows.h>

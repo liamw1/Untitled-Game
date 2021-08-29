@@ -1,6 +1,5 @@
 #pragma once
 #include "ENpch.h"
-#include "Engine/Core.h"
 #include "Engine/Events/Event.h"
 
 namespace Engine

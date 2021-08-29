@@ -4,6 +4,9 @@
     <Filter Include="Engine">
       <UniqueIdentifier>{DBC7D3B0-C769-FE86-B024-12DB9C6585D7}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Engine\Core">
+      <UniqueIdentifier>{130D9B61-7FC2-1357-08B7-0D2E746B0A5B}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Engine\Events">
       <UniqueIdentifier>{5FAFB439-CB6F-3070-94AA-79ED002A754C}</UniqueIdentifier>
     </Filter>
@@ -17,14 +20,26 @@
   <ItemGroup>
     <ClInclude Include="src\ENpch.h" />
     <ClInclude Include="src\Engine.h" />
-    <ClInclude Include="src\Engine\Application.h">
-      <Filter>Engine</Filter>
+    <ClInclude Include="src\Engine\Core\Application.h">
+      <Filter>Engine\Core</Filter>
     </ClInclude>
-    <ClInclude Include="src\Engine\Core.h">
-      <Filter>Engine</Filter>
+    <ClInclude Include="src\Engine\Core\Core.h">
+      <Filter>Engine\Core</Filter>
     </ClInclude>
-    <ClInclude Include="src\Engine\EntryPoint.h">
-      <Filter>Engine</Filter>
+    <ClInclude Include="src\Engine\Core\EntryPoint.h">
+      <Filter>Engine\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Engine\Core\Layer.h">
+      <Filter>Engine\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Engine\Core\LayerStack.h">
+      <Filter>Engine\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Engine\Core\Log.h">
+      <Filter>Engine\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Engine\Core\Window.h">
+      <Filter>Engine\Core</Filter>
     </ClInclude>
     <ClInclude Include="src\Engine\Events\ApplicationEvent.h">
       <Filter>Engine\Events</Filter>
@@ -38,23 +53,23 @@
     <ClInclude Include="src\Engine\Events\MouseEvent.h">
       <Filter>Engine\Events</Filter>
     </ClInclude>
-    <ClInclude Include="src\Engine\Log.h">
-      <Filter>Engine</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Engine\Window.h">
-      <Filter>Engine</Filter>
-    </ClInclude>
     <ClInclude Include="src\Platform\Windows\WindowsWindow.h">
       <Filter>Platform\Windows</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\ENpch.cpp" />
-    <ClCompile Include="src\Engine\Application.cpp">
-      <Filter>Engine</Filter>
+    <ClCompile Include="src\Engine\Core\Application.cpp">
+      <Filter>Engine\Core</Filter>
     </ClCompile>
-    <ClCompile Include="src\Engine\Log.cpp">
-      <Filter>Engine</Filter>
+    <ClCompile Include="src\Engine\Core\Layer.cpp">
+      <Filter>Engine\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Engine\Core\LayerStack.cpp">
+      <Filter>Engine\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Engine\Core\Log.cpp">
+      <Filter>Engine\Core</Filter>
     </ClCompile>
     <ClCompile Include="src\Platform\Windows\WindowsWindow.cpp">
       <Filter>Platform\Windows</Filter>

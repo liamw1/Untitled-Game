@@ -1,6 +1,5 @@
 #pragma once
 #include "ENpch.h"
-#include "Engine/Core.h"
 
 namespace Engine
 {
@@ -34,18 +33,15 @@ namespace Engine
 
   class ENGINE_API Event
   {
-    friend class EventDispatcher;
-
   public:
+    bool handled = false;
+
     virtual EventType getEventType() const = 0;
     virtual const char* getName() const = 0;
     virtual int getCategoryFlags() const = 0;
     virtual std::string toString() const { return getName(); }
 
     inline bool isInCategory(EventCategory category) { return getCategoryFlags() & category; }
-
-  protected:
-    bool m_Handled = false;
   };
 
   class EventDispatcher
@@ -62,7 +58,7 @@ namespace Engine
     {
       if (m_Event.getEventType() == T::GetStaticType())
       {
-        m_Event.m_Handled = func(*(T*)&m_Event);
+        m_Event.handled = func(*(T*)&m_Event);
         return true;
       }
       return false;

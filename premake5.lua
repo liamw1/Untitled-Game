@@ -13,8 +13,10 @@ outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
 -- Include system directories relative to root folder (solution directory)
 IncludeDir = {}
 IncludeDir["GLFW"] = "Engine/lib/GLFW/include"
+IncludeDir["GLad"] = "Engine/lib/GLad/include"
 
 include "Engine/lib/GLFW"
+include "Engine/lib/GLad"
 
 
 
@@ -39,19 +41,22 @@ project "Engine"
 
 	defines
 	{
-		"_CRT_SECURE_NO_WARNINGS"
+		"_CRT_SECURE_NO_WARNINGS",
+		"GLFW_INCLUDE_NONE"
 	}
 
 	includedirs
 	{
 		"%{prj.name}/src/",
 		"%{IncludeDir.GLFW}",
+		"%{IncludeDir.GLad}",
 		"%{prj.name}/lib/spdlog/include"
 	}
 
 	links
 	{
 		"GLFW",
+		"GLad",
 		"opengl32.lib"
 	}
 
@@ -70,15 +75,18 @@ project "Engine"
 		}
 
 	filter "configurations:Debug"
-		defines { "EN_DEBUG", "EN_ENABLE_ASSERTS" }
+		defines "EN_DEBUG"
+		buildoptions "/MDd"
 		symbols "On"
 
 	filter "configurations:Release"
 		defines "EN_RELEASE"
+		buildoptions "/MD"
 		optimize "On"
 
 	filter "configurations:Dist"
 		defines "EN_DIST"
+		buildoptions "/MD"
 		optimize "On"
 
 
@@ -120,12 +128,15 @@ project "Sandbox"
 
 	filter "configurations:Debug"
 		defines "EN_DEBUG"
+		buildoptions "/MDd"
 		symbols "On"
 
 	filter "configurations:Release"
 		defines "EN_RELEASE"
+		buildoptions "/MD"
 		optimize "On"
 
 	filter "configurations:Dist"
 		defines "EN_DIST"
+		buildoptions "/MD"
 		optimize "On"

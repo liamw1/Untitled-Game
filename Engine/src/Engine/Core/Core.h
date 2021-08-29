@@ -10,6 +10,20 @@
   #error Engine only supports Windows!
 #endif
 
+#ifdef EN_DEBUG
+  #define EN_ENABLE_ASSERTS
+  #if defined(EN_PLATFORM_WINDOWS)
+    #define EN_DEBUG_BREAK() __debugbreak()
+  #elif defined(EN_PLATFORM_LINUX)
+    #include <signal.h>
+    #define EN_DEBUG_BREAK() raise(SIGTRAP)
+  #else
+    #error "Platform doesn't support debugbreak yet!"
+  #endif
+#else
+  #define EN_DEBUG_BREAK()
+#endif
+
 /*
   For disabling annoyting warnings.  Do this very sparingly.
 */
