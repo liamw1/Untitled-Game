@@ -28,7 +28,7 @@ group ""
 
 project "Engine"
 	location "Engine"
-	kind "SharedLib"
+	kind "StaticLib"
 	language "C++"
 	cppdialect "C++17"
 	staticruntime "Off"
@@ -119,6 +119,7 @@ project "Sandbox"
 	includedirs
 	{
 		"Engine/src",
+		"Engine/lib",
 		"Engine/lib/spdlog/include",
 		"%{IncludeDir.glm}"
 	}
