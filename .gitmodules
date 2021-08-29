@@ -7,3 +7,6 @@
 [submodule "Engine/lib/imgui"]
 	path = Engine/lib/imgui
 	url = https://github.com/TheCherno/imgui
+[submodule "Engine/lib/glm"]
+	path = Engine/lib/glm
+	url = https://github.com/g-truc/glm
