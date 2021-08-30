@@ -31,7 +31,7 @@ project "Engine"
 	kind "StaticLib"
 	language "C++"
 	cppdialect "C++17"
-	staticruntime "Off"
+	staticruntime "off"
 
 	targetdir ("bin/" .. outputdir .. "/%{prj.name}")
 	objdir ("obj/" .. outputdir .. "/%{prj.name}")
@@ -53,7 +53,11 @@ project "Engine"
 
 	includedirs
 	{
-		"%{prj.name}/src/",
+		"%{prj.name}/src/"
+	}
+
+	sysincludedirs
+	{
 		"%{prj.name}/lib/spdlog/include",
 		"%{IncludeDir.GLFW}",
 		"%{IncludeDir.GLad}",
@@ -78,25 +82,20 @@ project "Engine"
 			"EN_BUILD_DLL"
 		}
 
-		postbuildcommands
-		{
-			("{COPY} %{cfg.buildtarget.relpath} \"../bin/" .. outputdir .. "/Sandbox/\"")
-		}
-
 	filter "configurations:Debug"
 		defines "EN_DEBUG"
 		runtime "Debug"
-		symbols "On"
+		symbols "on"
 
 	filter "configurations:Release"
 		defines "EN_RELEASE"
 		runtime "Release"
-		optimize "On"
+		optimize "on"
 
 	filter "configurations:Dist"
 		defines "EN_DIST"
 		runtime "Release"
-		optimize "On"
+		optimize "on"
 
 
 
@@ -105,7 +104,7 @@ project "Sandbox"
 	kind "ConsoleApp"
 	language "C++"
 	cppdialect "C++17"
-	staticruntime "Off"
+	staticruntime "off"
 
 	targetdir ("bin/" .. outputdir .. "/%{prj.name}")
 	objdir ("obj/" .. outputdir .. "/%{prj.name}")
@@ -118,8 +117,11 @@ project "Sandbox"
 
 	includedirs
 	{
-		"Engine/src",
-		"Engine/lib",
+		"Engine/src"
+	}
+
+	sysincludedirs
+	{
 		"Engine/lib/spdlog/include",
 		"%{IncludeDir.glm}"
 	}
@@ -131,23 +133,19 @@ project "Sandbox"
 
 	filter "system:windows"
 		systemversion "latest"
-
-		defines
-		{
-			"EN_PLATFORM_WINDOWS"
-		}
+		defines "EN_PLATFORM_WINDOWS"
 
 	filter "configurations:Debug"
 		defines "EN_DEBUG"
 		runtime "Debug"
-		symbols "On"
+		symbols "on"
 
 	filter "configurations:Release"
 		defines "EN_RELEASE"
 		runtime "Release"
-		optimize "On"
+		optimize "on"
 
 	filter "configurations:Dist"
 		defines "EN_DIST"
 		runtime "Release"
-		optimize "On"
+		optimize "on"

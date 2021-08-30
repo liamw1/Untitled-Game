@@ -1,5 +1,4 @@
 #include <Engine.h>
-#include <imgui/imgui.h>
 
 class ExampleLayer : public Engine::Layer
 {
@@ -9,15 +8,10 @@ public:
 
   void onUpdate() override
   {
-    if (Engine::Input::IsKeyPressed(Key::Tab))
-      EN_TRACE("Tab key is pressed!");
   }
 
   void onImGuiRender() override
   {
-    ImGui::Begin("Test");
-    ImGui::Text("Hellow World!");
-    ImGui::End();
   }
 };
 
