@@ -1,9 +1,13 @@
 #include "ENpch.h"
 #include "ImGuiLayer.h"
 
+#include <codeanalysis\warnings.h> // Disable intellisense warnings
+#pragma warning( push )
+#pragma warning ( disable : ALL_CODE_ANALYSIS_WARNINGS )
 #include <imgui.h>
 #include <examples/imgui_impl_glfw.h>
 #include <examples/imgui_impl_opengl3.h>
+#pragma warning( pop )
 
 #include "Engine/Core/Application.h"
 
