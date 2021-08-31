@@ -9,7 +9,6 @@ int main(int argc, char** argv)
 {
   Engine::Log::Initialize();
   EN_CORE_WARN("Initialized Log!");
-  EN_INFO("Hello!");
 
   Engine::Application* app = Engine::CreateApplication();
   app->run();

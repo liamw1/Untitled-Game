@@ -24,15 +24,16 @@ namespace Engine
     inline static Application& Get() { return *Instance; }
 
   private:
-    bool onWindowClose(WindowCloseEvent& event);
+    static Application* Instance;
 
     std::unique_ptr<Window> m_Window;
     ImGuiLayer* m_ImGuiLayer;
+    LayerStack m_LayerStack;
     bool m_Running = true;
 
-    LayerStack m_LayerStack;
+    unsigned int m_VertexArray, m_VertexBuffer, m_IndexBuffer;
 
-    static Application* Instance;
+    bool onWindowClose(WindowCloseEvent& event);
   };
 
   // To be defined in CLIENT

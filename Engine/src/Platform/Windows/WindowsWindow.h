@@ -1,6 +1,8 @@
 #pragma once
 #include "ENpch.h"
 #include "Engine/Core/Window.h"
+#include "Platform/OpenGL/OpenGLContext.h"
+
 #include <GLFW/glfw3.h>
 
 namespace Engine
@@ -27,14 +29,15 @@ namespace Engine
     struct WindowData
     {
       std::string title;
-      unsigned int width, height;
-      bool VSync;
+      unsigned int width, height = 0;
+      bool VSync = false;
 
       EventCallbackFn eventCallback;
     };
 
     WindowData m_Data;
     GLFWwindow* m_Window;
+    GraphicsContext* m_Context;
 
     void initialize(const WindowProps& properties);
     void shutdown();

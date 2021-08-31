@@ -1,5 +1,4 @@
 #include "ENpch.h"
-#include <glad/glad.h>
 #include "WindowsWindow.h"
 #include "Engine/Events/KeyEvent.h"
 #include "Engine/Events/MouseEvent.h"
@@ -31,7 +30,7 @@ namespace Engine
   void WindowsWindow::onUpdate()
   {
     glfwPollEvents();
-    glfwSwapBuffers(m_Window);
+    m_Context->swapBuffers();
   }
 
   void WindowsWindow::setVSync(bool enabled)
@@ -56,7 +55,7 @@ namespace Engine
     m_Data.height = properties.height;
 
     EN_CORE_INFO("Creating window {0} ({1}, {2})", properties.title, properties.width, properties.height);
-
+    
     if (!GLFWInitialized)
     {
       // TODO: glfwTerminate on system shutdown
@@ -69,9 +68,9 @@ namespace Engine
     }
 
     m_Window = glfwCreateWindow((int)properties.width, (int)properties.height, m_Data.title.c_str(), nullptr, nullptr);
-    glfwMakeContextCurrent(m_Window);
-    int status = gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
-    EN_CORE_ASSERT(status, "Failed to initialize GLad!");
+    m_Context = new OpenGLContext(m_Window);
+    m_Context->initialize();
+
     glfwSetWindowUserPointer(m_Window, &m_Data);
     setVSync(true);
 
