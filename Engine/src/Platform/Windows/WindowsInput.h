@@ -1,5 +1,4 @@
 #pragma once
-#include "ENpch.h"
 #include "Engine/Core/Input.h"
 
 namespace Engine

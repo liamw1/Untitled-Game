@@ -1,7 +1,6 @@
 #pragma once
-#include "ENpch.h"
 #include "Engine/Core/Window.h"
-#include "Platform/OpenGL/OpenGLContext.h"
+#include "Engine/Renderer/GraphicsContext.h"
 
 #include <GLFW/glfw3.h>
 

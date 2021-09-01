@@ -1,5 +1,6 @@
 #include "ENpch.h"
 #include "OpenGLContext.h"
+#include "Engine/Renderer/GraphicsContext.h"
 
 #include <GLFW/glfw3.h>
 #include <glad/glad.h>
