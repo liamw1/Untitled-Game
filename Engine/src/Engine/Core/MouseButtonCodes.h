@@ -1,8 +1,8 @@
 #pragma once
 
-using MouseCode = uint8_t;
+using mouseCode = uint8_t;
 
-enum class MouseButton : MouseCode
+enum class MouseButton : mouseCode
 {
   // From glfw3.h
   Button0 = 0,

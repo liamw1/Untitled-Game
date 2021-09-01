@@ -7,12 +7,12 @@
 
 namespace Engine
 {
-  Application* Application::Instance = nullptr;
+  Application* Application::s_Instance = nullptr;
 
   Application::Application()
   {
-    EN_CORE_ASSERT(Instance == nullptr, "Application already exists!");
-    Instance = this;
+    EN_CORE_ASSERT(s_Instance == nullptr, "Application already exists!");
+    s_Instance = this;
 
     m_Window = std::unique_ptr<Window>(Window::Create());
     m_Window->setEventCallback(EN_BIND_EVENT_FN(onEvent));

@@ -21,10 +21,10 @@ namespace Engine
     void pushOverlay(Layer* layer);
 
     inline Window& getWindow() { return *m_Window; }
-    inline static Application& Get() { return *Instance; }
+    inline static Application& Get() { return *s_Instance; }
 
   private:
-    static Application* Instance;
+    static Application* s_Instance;
 
     std::unique_ptr<Window> m_Window;
     ImGuiLayer* m_ImGuiLayer;

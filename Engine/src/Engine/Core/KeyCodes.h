@@ -1,8 +1,8 @@
 #pragma once
 
-using KeyCode = uint16_t;
+using keyCode = uint16_t;
 
-enum class Key : KeyCode
+enum class Key : keyCode
 {
   // From glfw3.h
   Space = 32,

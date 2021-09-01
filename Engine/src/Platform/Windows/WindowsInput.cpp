@@ -5,7 +5,7 @@
 
 namespace Engine
 {
-  Input* Input::Instance = new WindowsInput();
+  Input* Input::s_Instance = new WindowsInput();
 
   bool WindowsInput::isKeyPressedImpl(Key keyCode)
   {
