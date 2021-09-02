@@ -9,9 +9,7 @@ namespace Engine
     bus and process them during the "event" part of the update stage.
   */
 
-  inline static constexpr unsigned char bit(unsigned char n) { return 1 << n; }
-
-  enum class EventType
+  enum class EventType : uint8_t
   {
     None = 0,
     WindowClose, WindowResize, WindowFocus, WindowLostFocus, WindowMove,
@@ -20,27 +18,28 @@ namespace Engine
     MouseButtonPress, MouseButtonRelease, MouseMove, MouseScroll
   };
 
-  enum EventCategory
+  enum class EventCategory : uint8_t
   {
     None = 0,
-    EventCategoryApplication  = bit(0),
-    EventCategoryInput        = bit(1),
-    EventCategoryKeyboard     = bit(2),
-    EventCategoryMouse        = bit(3),
-    EventCategoryMouseButton  = bit(4)
+    Application  = bit(0),
+    Input        = bit(1),
+    Keyboard     = bit(2),
+    Mouse        = bit(3),
+    MouseButton  = bit(4)
   };
+  ENABLE_BITMASK_OPERATORS(EventCategory);
 
-  class ENGINE_API Event
+  class Event
   {
   public:
     bool handled = false;
 
     virtual EventType getEventType() const = 0;
     virtual const char* getName() const = 0;
-    virtual int getCategoryFlags() const = 0;
+    virtual EventCategory getCategoryFlags() const = 0;
     virtual std::string toString() const { return getName(); }
 
-    inline bool isInCategory(EventCategory category) { return getCategoryFlags() & category; }
+    inline bool isInCategory(EventCategory category) { return (bool)(getCategoryFlags() & category); }
   };
 
   class EventDispatcher

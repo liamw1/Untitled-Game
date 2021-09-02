@@ -1,6 +1,7 @@
 #pragma once
 
 // ==================== Common Utilities ==================== //
+inline static constexpr uint8_t bit(unsigned char n) { return 1 << n; }
 #define EN_BIND_EVENT_FN(fn) [this](auto&&... args) -> decltype(auto) { return this->fn(std::forward<decltype(args)>(args)...); }
 
 // ==================== Debug Macros ==================== //
@@ -19,22 +20,40 @@
 #endif
 
 // ==================== Windows Specific Macros ==================== //
-#ifdef EN_PLATFORM_WINDOWS
-  #if EN_DYNAMIC_LINK
-    #ifdef EN_BUILD_DLL
-      #define ENGINE_API __declspec(dllexport)
-    #else
-      #define ENGINE_API __declspec(dllimport)
-    #endif
-  #else
-    #define ENGINE_API
-  #endif
-#else
-  #error Engine only supports Windows!
-#endif
 
 // ==================== For Disabling Warnings ==================== //
 #ifdef _MSC_VER
   // 4251 - 'class 'type1' needs to have dll-interface to be used by clients of class 'type2'
   #pragma warning( disable : 4251)
 #endif
+
+// ==================== Enabling Bitmasking for Enum Classes ==================== //
+// Code borrowed from: https://wiggling-bits.net/using-enum-classes-as-type-safe-bitmasks/
+#define ENABLE_BITMASK_OPERATORS(x)   \
+template<>                            \
+struct EnableBitMaskOperators<x>      \
+{                                     \
+  static const bool enable = true;    \
+};                                    \
+
+template<typename Enum>
+struct EnableBitMaskOperators
+{
+  static const bool enable = false;
+};
+
+template<typename Enum>
+typename std::enable_if<EnableBitMaskOperators<Enum>::enable, Enum>::type
+operator&(Enum enumA, Enum enumB)
+{
+  return static_cast<Enum>(static_cast<std::underlying_type<Enum>::type>(enumA) &
+                           static_cast<std::underlying_type<Enum>::type>(enumB));
+}
+
+template<typename Enum>
+typename std::enable_if<EnableBitMaskOperators<Enum>::enable, Enum>::type
+operator|(Enum enumA, Enum enumB)
+{
+  return static_cast<Enum>(static_cast<std::underlying_type<Enum>::type>(enumA) |
+                           static_cast<std::underlying_type<Enum>::type>(enumB));
+}

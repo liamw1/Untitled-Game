@@ -4,12 +4,13 @@
 #include "Engine/ImGui/ImGuiLayer.h"
 #include "Engine/Events/ApplicationEvent.h"
 
-// TEMPORARY
+#include "Engine/Renderer/Buffer.h"
+#include "Engine/Renderer/VertexArray.h"
 #include "Engine/Renderer/Shader.h"
 
 namespace Engine
 {
-  class ENGINE_API Application
+  class Application
   {
   public:
     Application();
@@ -33,8 +34,8 @@ namespace Engine
     LayerStack m_LayerStack;
     bool m_Running = true;
 
-    unsigned int m_VertexArray, m_VertexBuffer, m_IndexBuffer;
-    std::unique_ptr<Shader> m_Shader;
+    std::shared_ptr<VertexArray> m_VertexArray;
+    std::shared_ptr<Shader> m_Shader;
 
     bool onWindowClose(WindowCloseEvent& event);
   };

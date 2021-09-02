@@ -4,10 +4,10 @@
 
 namespace Engine
 {
-  class ENGINE_API KeyEvent : public Event
+  class KeyEvent : public Event
   {
   public:
-    int getCategoryFlags() const override { return EventCategoryKeyboard | EventCategoryInput; }
+    EventCategory getCategoryFlags() const override { return EventCategory::Keyboard | EventCategory::Input; }
 
     inline Key getKeyCode() const { return m_KeyCode; }
 
@@ -18,7 +18,7 @@ namespace Engine
     Key m_KeyCode;
   };
 
-  class ENGINE_API KeyPressEvent : public KeyEvent
+  class KeyPressEvent : public KeyEvent
   {
   public:
     KeyPressEvent(Key keycode, int repeatCount)
@@ -41,7 +41,7 @@ namespace Engine
     int m_RepeatCount;
   };
 
-  class ENGINE_API KeyReleaseEvent : public KeyEvent
+  class KeyReleaseEvent : public KeyEvent
   {
   public:
     KeyReleaseEvent(Key keyCode)
@@ -59,7 +59,7 @@ namespace Engine
     }
   };
 
-  class ENGINE_API KeyTypeEvent : public KeyEvent
+  class KeyTypeEvent : public KeyEvent
   {
   public:
     KeyTypeEvent(Key keycode)

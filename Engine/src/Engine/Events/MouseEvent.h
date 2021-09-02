@@ -4,7 +4,7 @@
 
 namespace Engine
 {
-  class ENGINE_API MouseMoveEvent : public Event
+  class MouseMoveEvent : public Event
   {
   public:
     MouseMoveEvent(float x, float y)
@@ -13,7 +13,7 @@ namespace Engine
     static EventType GetStaticType() { return EventType::MouseMove; }
     EventType getEventType() const override { return GetStaticType(); }
     const char* getName() const override { return "MouseMove"; }
-    int getCategoryFlags() const override { return EventCategoryMouse | EventCategoryInput; }
+    EventCategory getCategoryFlags() const override { return EventCategory::Mouse | EventCategory::Input; }
 
     inline float getX() const { return m_MouseX; }
     inline float getY() const { return m_MouseY; }
@@ -29,7 +29,7 @@ namespace Engine
     float m_MouseX, m_MouseY;
   };
 
-  class ENGINE_API MouseScrollEvent : public Event
+  class MouseScrollEvent : public Event
   {
   public:
     MouseScrollEvent(float xOffset, float yOffset)
@@ -38,7 +38,7 @@ namespace Engine
     static EventType GetStaticType() { return EventType::MouseScroll; }
     EventType getEventType() const override { return GetStaticType(); }
     const char* getName() const override { return "MouseScroll"; }
-    int getCategoryFlags() const override { return EventCategoryMouse | EventCategoryInput; }
+    EventCategory getCategoryFlags() const override { return EventCategory::Mouse | EventCategory::Input; }
 
     inline float getXOffset() const { return m_XOffset; }
     inline float getYOffset() const { return m_YOffset; }
@@ -54,10 +54,10 @@ namespace Engine
     float m_XOffset, m_YOffset;
   };
 
-  class ENGINE_API MouseButtonEvent : public Event
+  class MouseButtonEvent : public Event
   {
   public:
-    int getCategoryFlags() const override { return EventCategoryMouse | EventCategoryInput; }
+    EventCategory getCategoryFlags() const override { return EventCategory::Mouse | EventCategory::Input; }
 
     inline MouseButton getMouseButton() const { return m_Button; }
 
@@ -68,7 +68,7 @@ namespace Engine
     MouseButton m_Button;
   };
 
-  class ENGINE_API MouseButtonPressEvent : public MouseButtonEvent
+  class MouseButtonPressEvent : public MouseButtonEvent
   {
   public:
     MouseButtonPressEvent(MouseButton button)
@@ -86,7 +86,7 @@ namespace Engine
     }
   };
 
-  class ENGINE_API MouseButtonReleaseEvent : public MouseButtonEvent
+  class MouseButtonReleaseEvent : public MouseButtonEvent
   {
   public:
     MouseButtonReleaseEvent(MouseButton button)
