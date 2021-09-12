@@ -1,4 +1,5 @@
 #include <Engine.h>
+#include <glm/gtc/matrix_transform.hpp>
 
 class ExampleLayer : public Engine::Layer
 {
@@ -6,7 +7,8 @@ public:
   ExampleLayer()
     : Layer("Example"),
       m_Camera(-1.6f, 1.6f, -0.9f, 0.9f),
-      m_CameraPosition({0.0f, 0.0f, 0.0f})
+      m_CameraPosition({0.0f, 0.0f, 0.0f}),
+      m_TrianglePosition({ 0.0f, 0.0f, 0.0f })
   {
     m_VertexArray = std::shared_ptr<Engine::VertexArray>(Engine::VertexArray::Create());
 
@@ -31,6 +33,7 @@ public:
       layout(location = 1) in vec4 a_Color;
 
       uniform mat4 u_ViewProjection;
+      uniform mat4 u_Transform;
 
       out vec3 v_Position;
       out vec4 v_Color;
@@ -39,7 +42,7 @@ public:
       {
         v_Position = a_Position + 0.5;
         v_Color = a_Color;
-        gl_Position = u_ViewProjection * vec4(a_Position, 1.0);
+        gl_Position = u_ViewProjection * u_Transform * vec4(a_Position, 1.0);
       }
     )";
     std::string fragmentSource = R"(
@@ -63,20 +66,30 @@ public:
   void onUpdate(std::chrono::duration<float> timestep) override
   {
     const float dt = timestep.count();  // Time between frames in seconds
+    EN_TRACE("dt: {0}ms", dt * 1000.0f);
 
     if (Engine::Input::IsKeyPressed(Key::Left))
       m_CameraPosition.x -= m_CameraMoveSpeed * dt;
-    else if (Engine::Input::IsKeyPressed(Key::Right))
+    if (Engine::Input::IsKeyPressed(Key::Right))
       m_CameraPosition.x += m_CameraMoveSpeed * dt;
     if (Engine::Input::IsKeyPressed(Key::Up))
       m_CameraPosition.y += m_CameraMoveSpeed * dt;
-    else if (Engine::Input::IsKeyPressed(Key::Down))
+    if (Engine::Input::IsKeyPressed(Key::Down))
       m_CameraPosition.y -= m_CameraMoveSpeed * dt;
 
     if (Engine::Input::IsKeyPressed(Key::A))
       m_CameraRotation += m_CameraRotateSpeed * dt;
-    else if (Engine::Input::IsKeyPressed(Key::D))
+    if (Engine::Input::IsKeyPressed(Key::D))
       m_CameraRotation -= m_CameraRotateSpeed * dt;
+
+    if (Engine::Input::IsKeyPressed(Key::J))
+      m_TrianglePosition.x -= m_TriangleMoveSpeed * dt;
+    if (Engine::Input::IsKeyPressed(Key::L))
+      m_TrianglePosition.x += m_TriangleMoveSpeed * dt;
+    if (Engine::Input::IsKeyPressed(Key::I))
+      m_TrianglePosition.y += m_TriangleMoveSpeed * dt;
+    if (Engine::Input::IsKeyPressed(Key::K))
+      m_TrianglePosition.y -= m_TriangleMoveSpeed * dt;
 
     Engine::RenderCommand::Clear({ 0.1f, 0.1f, 0.1f, 1.0f });
 
@@ -84,7 +97,18 @@ public:
     m_Camera.setRotation(m_CameraRotation);
 
     Engine::Renderer::BeginScene(m_Camera);
-    Engine::Renderer::Submit(m_Shader, m_VertexArray);
+
+    glm::mat4 scale = glm::scale(glm::mat4(1.0f), glm::vec3(0.1f));
+    for (int i = 0; i < 20; ++i)
+    {
+      for (int j = 0; j < 20; ++j)
+      {
+        glm::vec3 pos(i * 0.11f, j * 0.11f, 0.0f);
+        glm::mat4 transform = glm::translate(glm::mat4(1.0f), pos) * scale;
+        Engine::Renderer::Submit(m_Shader, m_VertexArray, transform);
+      }
+    }
+
     Engine::Renderer::EndScene();
   }
 
@@ -107,6 +131,9 @@ private:
 
   float m_CameraMoveSpeed = 3.0f;
   float m_CameraRotateSpeed = 180.0f;
+
+  glm::vec3 m_TrianglePosition;
+  float m_TriangleMoveSpeed = 1.0f;
 };
 
 class Sandbox : public Engine::Application
