@@ -8,17 +8,17 @@ namespace Engine
   {
     switch (type)
     {
-      case ShaderDataType::Bool:        return GL_BOOL;
-      case ShaderDataType::Int:         return GL_INT;
-      case ShaderDataType::Int2:        return GL_INT;
-      case ShaderDataType::Int3:        return GL_INT;
-      case ShaderDataType::Int4:        return GL_INT;
-      case ShaderDataType::Float:       return GL_FLOAT;
-      case ShaderDataType::Float2:      return GL_FLOAT;
-      case ShaderDataType::Float3:      return GL_FLOAT;
-      case ShaderDataType::Float4:      return GL_FLOAT;
-      case ShaderDataType::Mat3:        return GL_FLOAT;
-      case ShaderDataType::Mat4:        return GL_FLOAT;
+      case ShaderDataType::Bool:        return GL_BOOL;   break;
+      case ShaderDataType::Int:         return GL_INT;    break;
+      case ShaderDataType::Int2:        return GL_INT;    break;
+      case ShaderDataType::Int3:        return GL_INT;    break;
+      case ShaderDataType::Int4:        return GL_INT;    break;
+      case ShaderDataType::Float:       return GL_FLOAT;  break;
+      case ShaderDataType::Float2:      return GL_FLOAT;  break;
+      case ShaderDataType::Float3:      return GL_FLOAT;  break;
+      case ShaderDataType::Float4:      return GL_FLOAT;  break;
+      case ShaderDataType::Mat3:        return GL_FLOAT;  break;
+      case ShaderDataType::Mat4:        return GL_FLOAT;  break;
       default: EN_CORE_ASSERT(false, "Unknown ShaderDataType!"); return 0;
     }
   }

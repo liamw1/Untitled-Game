@@ -1,19 +1,26 @@
 #pragma once
+#include "RendererAPI.h"
+#include "Shader.h"
+#include "OrthographicCamera.h"
 
 namespace Engine
 {
-  enum class RendererAPI
-  {
-    None,
-    OpenGL,
-  };
-
   class Renderer
   {
   public:
-    inline static RendererAPI GetAPI() { return s_RendererAPI; }
+    static void BeginScene(OrthographicCamera& camera);
+    static void EndScene();
+
+    static void Submit(const std::shared_ptr<Shader>& shader, const std::shared_ptr<VertexArray>& vertexArray);
+
+    inline static RendererAPI::API GetAPI() { return RendererAPI::GetAPI(); }
 
   private:
-    static RendererAPI s_RendererAPI;
+    struct SceneData
+    {
+      glm::mat4 viewProjectionMatrix;
+    };
+
+    static SceneData* m_SceneData;
   };
 }

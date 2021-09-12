@@ -12,6 +12,8 @@ namespace Engine
     void bind() const override;
     void unBind() const override;
 
+    void uploadUniformMat4(const glm::mat4& matrix, const std::string& name) override;
+
   private:
     uint32_t m_RendererID;
   };

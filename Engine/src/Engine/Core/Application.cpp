@@ -1,15 +1,15 @@
 #include "ENpch.h"
 #include "Application.h"
 #include "Input.h"
-
-// TEMPORARY
-#include <glad/glad.h>
+#include "Engine/Renderer/Renderer.h"
+#include "Engine/Renderer/RenderCommand.h"
 
 namespace Engine
 {
   Application* Application::s_Instance = nullptr;
 
   Application::Application()
+    : m_Camera(-1.6f, 1.6f, -0.9f, 0.9f)
   {
     EN_CORE_ASSERT(s_Instance == nullptr, "Application already exists!");
     s_Instance = this;
@@ -42,6 +42,8 @@ namespace Engine
       layout(location = 0) in vec3 a_Position;
       layout(location = 1) in vec4 a_Color;
 
+      uniform mat4 u_ViewProjection;
+
       out vec3 v_Position;
       out vec4 v_Color;
 
@@ -49,7 +51,7 @@ namespace Engine
       {
         v_Position = a_Position + 0.5;
         v_Color = a_Color;
-        gl_Position = vec4(a_Position, 1.0);
+        gl_Position = u_ViewProjection * vec4(a_Position, 1.0);
       }
     )";
     std::string fragmentSource = R"(
@@ -78,20 +80,21 @@ namespace Engine
   {
     while (m_Running)
     {
-      glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-      glClear(GL_COLOR_BUFFER_BIT);
+      RenderCommand::Clear({ 0.1f, 0.1f, 0.1f, 1.0f });
 
-      m_Shader->bind();
-      m_VertexArray->bind();
-      glDrawElements(GL_TRIANGLES, m_VertexArray->getIndexBuffer()->getCount(), GL_UNSIGNED_INT, nullptr);
+      Renderer::BeginScene(m_Camera);
+      Renderer::Submit(m_Shader, m_VertexArray);
+      Renderer::EndScene();
 
       for (Layer* layer : m_LayerStack)
         layer->onUpdate();
 
+      /*
       m_ImGuiLayer->begin();
       for (Layer* layer : m_LayerStack)
         layer->onImGuiRender();
       m_ImGuiLayer->end();
+      */
 
       m_Window->onUpdate();
     }
@@ -100,6 +103,7 @@ namespace Engine
   void Application::onEvent(Event& event)
   {
     EventDispatcher dispatcher(event);
+    dispatcher.dispatch<MouseMoveEvent>(EN_BIND_EVENT_FN(onMouseMove));
     dispatcher.dispatch<WindowCloseEvent>(EN_BIND_EVENT_FN(onWindowClose));
 
     for (auto it = m_LayerStack.end(); it != m_LayerStack.begin();)
@@ -120,6 +124,12 @@ namespace Engine
   {
     m_LayerStack.pushOverlay(layer);
     layer->onAttach();
+  }
+
+  bool Application::onMouseMove(MouseMoveEvent& event)
+  {
+    m_Camera.setPosition({ event.getX() / -400.0f + 1.6f, event.getY() / 400.0f - 1.0f, 0.0f });
+    return true;
   }
 
   bool Application::onWindowClose(WindowCloseEvent& event)
