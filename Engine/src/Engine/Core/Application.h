@@ -1,15 +1,8 @@
 #pragma once
 #include "Window.h"
-#include "Engine/Core/LayerStack.h"
+#include "LayerStack.h"
 #include "Engine/ImGui/ImGuiLayer.h"
 #include "Engine/Events/ApplicationEvent.h"
-#include "Engine/Events/KeyEvent.h"
-#include "Engine/Events/MouseEvent.h"
-
-#include "Engine/Renderer/Buffer.h"
-#include "Engine/Renderer/VertexArray.h"
-#include "Engine/Renderer/Shader.h"
-#include "Engine/Renderer/OrthographicCamera.h"
 
 namespace Engine
 {
@@ -31,18 +24,12 @@ namespace Engine
 
   private:
     static Application* s_Instance;
-
     std::unique_ptr<Window> m_Window;
     ImGuiLayer* m_ImGuiLayer;
     LayerStack m_LayerStack;
     bool m_Running = true;
+    std::chrono::system_clock::time_point m_LastFrameTime = std::chrono::system_clock::now();
 
-    std::shared_ptr<VertexArray> m_VertexArray;
-    std::shared_ptr<Shader> m_Shader;
-
-    OrthographicCamera m_Camera;
-
-    bool onMouseMove(MouseMoveEvent& event);
     bool onWindowClose(WindowCloseEvent& event);
   };
 

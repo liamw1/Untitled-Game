@@ -1,16 +1,16 @@
 #pragma once
 
+enum class ShaderDataType : uint8_t
+{
+  None,
+  Bool,
+  Int, Int2, Int3, Int4,
+  Float, Float2, Float3, Float4,
+  Mat3, Mat4
+};
+
 namespace Engine
 {
-  enum class ShaderDataType : uint8_t
-  {
-    None,
-    Bool,
-    Int, Int2, Int3, Int4,
-    Float, Float2, Float3, Float4,
-    Mat3, Mat4
-  };
-
   static uint32_t shaderDataTypeSize(ShaderDataType type)
   {
     switch (type)

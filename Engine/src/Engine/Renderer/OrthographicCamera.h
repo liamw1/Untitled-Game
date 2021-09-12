@@ -18,9 +18,6 @@ namespace Engine
     inline const glm::mat4& getViewMatrix() const { return m_ViewMatrix; }
     inline const glm::mat4& getViewProjectionMatrix() const { return m_ViewProjectionMatrix; }
 
-    inline void moveHorizontally(float distance) { m_Position.x += distance; recalculateViewMatrix(); }
-    inline void moveVertically(float distance) { m_Position.y += distance; recalculateViewMatrix(); }
-
   private:
     glm::mat4 m_ProjectionMatrix;
     glm::mat4 m_ViewMatrix;
