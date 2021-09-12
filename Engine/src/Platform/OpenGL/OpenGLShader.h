@@ -1,5 +1,6 @@
 #pragma once
 #include "Engine/Renderer/Shader.h"
+#include <glm/glm.hpp>
 
 namespace Engine
 {
@@ -12,9 +13,17 @@ namespace Engine
     void bind() const override;
     void unBind() const override;
 
-    void uploadUniformMat4(const glm::mat4& matrix, const std::string& name) override;
+    void uploadUniformInt(const std::string& name, int value);
+
+    void uploadUniformFloat(const std::string& name, const float value);
+    void uploadUniformFloat2(const std::string& name, const glm::vec2& values);
+    void uploadUniformFloat3(const std::string& name, const glm::vec3& values);
+    void uploadUniformFloat4(const std::string& name, const glm::vec4& values);
+
+    void uploadUniformMat3(const std::string& name, const glm::mat3& matrix);
+    void uploadUniformMat4(const std::string& name, const glm::mat4& matrix);
 
   private:
-    uint32_t m_RendererID;
+    uint32_t m_RendererID = 0;
   };
 }

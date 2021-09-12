@@ -1,5 +1,10 @@
 #include <Engine.h>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <imgui.h>
+
+// TEMPORARY
+#include <Platform/OpenGL/OpenGLShader.h>
 
 class ExampleLayer : public Engine::Layer
 {
@@ -60,7 +65,38 @@ public:
       }
     )";
 
-    m_Shader = std::shared_ptr<Engine::Shader>(Engine::Shader::Create(vertexSource, fragmentSource));
+    std::string flatColorVertexSource = R"(
+      #version 330 core
+
+      layout(location = 0) in vec3 a_Position;
+
+      uniform mat4 u_ViewProjection;
+      uniform mat4 u_Transform;
+
+      out vec3 v_Position;
+
+      void main()
+      {
+        v_Position = a_Position;
+        gl_Position = u_ViewProjection * u_Transform * vec4(a_Position, 1.0);
+      }
+    )";
+    std::string flatColorFragmentSource = R"(
+      #version 330 core
+
+      layout(location = 0) out vec4 color;
+
+      in vec3 v_Position;
+
+      uniform vec3 u_Color;
+
+      void main()
+      {
+        color = vec4(u_Color, 1.0);
+      }
+    )";
+
+    m_Shader = std::shared_ptr<Engine::Shader>(Engine::Shader::Create(flatColorVertexSource, flatColorFragmentSource));
   }
 
   void onUpdate(std::chrono::duration<float> timestep) override
@@ -99,6 +135,10 @@ public:
     Engine::Renderer::BeginScene(m_Camera);
 
     glm::mat4 scale = glm::scale(glm::mat4(1.0f), glm::vec3(0.1f));
+
+    std::dynamic_pointer_cast<Engine::OpenGLShader>(m_Shader)->bind();
+    std::dynamic_pointer_cast<Engine::OpenGLShader>(m_Shader)->uploadUniformFloat3("u_Color", m_TriangleColor);
+
     for (int i = 0; i < 20; ++i)
     {
       for (int j = 0; j < 20; ++j)
@@ -114,6 +154,9 @@ public:
 
   void onImGuiRender() override
   {
+    ImGui::Begin("Settings");
+    ImGui::ColorEdit3("Square Color", glm::value_ptr(m_TriangleColor));
+    ImGui::End();
   }
 
   void onEvent(Engine::Event& event) override
@@ -134,6 +177,8 @@ private:
 
   glm::vec3 m_TrianglePosition;
   float m_TriangleMoveSpeed = 1.0f;
+
+  glm::vec3 m_TriangleColor = { 0.2f, 0.3, 0.8f };
 };
 
 class Sandbox : public Engine::Application

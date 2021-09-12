@@ -123,6 +123,7 @@ project "Sandbox"
 	sysincludedirs
 	{
 		"Engine/lib/spdlog/include",
+		"%{IncludeDir.ImGui}",
 		"%{IncludeDir.glm}"
 	}
 
