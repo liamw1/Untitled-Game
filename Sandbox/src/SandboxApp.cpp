@@ -31,40 +31,9 @@ public:
     Engine::Shared<Engine::IndexBuffer> indexBuffer = Engine::IndexBuffer::Create(indices, sizeof(indices) / sizeof(uint32_t));
     m_VertexArray->setIndexBuffer(indexBuffer);
 
-    std::string textureShaderVertexSource = R"(
-      #version 330 core
-
-      layout(location = 0) in vec3 a_Position;
-      layout(location = 1) in vec2 a_TexCoord;
-
-      uniform mat4 u_ViewProjection;
-      uniform mat4 u_Transform;
-
-      out vec2 v_TexCoord;
-
-      void main()
-      {
-        v_TexCoord = a_TexCoord;
-        gl_Position = u_ViewProjection * u_Transform * vec4(a_Position, 1.0);
-      }
-    )";
-    std::string textureShaderFragmentSource = R"(
-      #version 330 core
-
-      layout(location = 0) out vec4 color;
-
-      in vec2 v_TexCoord;
-
-      uniform sampler2D u_Texture;
-
-      void main()
-      {
-        color = texture(u_Texture, v_TexCoord);
-      }
-    )";
-
-    m_Shader = Engine::Shader::Create(textureShaderVertexSource, textureShaderFragmentSource);
+    m_Shader = Engine::Shader::Create("assets/shaders/Texture.glsl");
     m_Texture = Engine::Texture2D::Create("assets/textures/Checkerboard.png");
+    m_LogoTexture = Engine::Texture2D::Create("assets/textures/ChernoLogo.png");
 
     std::dynamic_pointer_cast<Engine::OpenGLShader>(m_Shader)->bind();
     std::dynamic_pointer_cast<Engine::OpenGLShader>(m_Shader)->uploadUniformInt("u_Texture", 0);
@@ -98,6 +67,8 @@ public:
 
     m_Texture->bind();
     Engine::Renderer::Submit(m_Shader, m_VertexArray);
+    m_LogoTexture->bind();
+    Engine::Renderer::Submit(m_Shader, m_VertexArray);
 
     Engine::Renderer::EndScene();
   }
@@ -115,6 +86,7 @@ private:
   Engine::Shared<Engine::VertexArray> m_VertexArray;
   Engine::Shared<Engine::Shader> m_Shader;
   Engine::Shared<Engine::Texture2D> m_Texture;
+  Engine::Shared<Engine::Texture2D> m_LogoTexture;
 
   Engine::OrthographicCamera m_Camera;
   glm::vec3 m_CameraPosition;

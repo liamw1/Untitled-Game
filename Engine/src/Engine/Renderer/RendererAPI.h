@@ -13,6 +13,8 @@ namespace Engine
       OpenGL
     };
 
+    virtual void Init() = 0;
+
     virtual void Clear(const glm::vec4& color = { 0.0f, 0.0f, 0.0f, 1.0f }) const = 0;
 
     virtual void DrawIndexed(const Shared<VertexArray>& vertexArray) = 0;

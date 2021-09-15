@@ -12,3 +12,7 @@ Engine formatting guidelines:
   Curly brackets should always have their own lines, except in the cases of empty constructors or simple inline functions.
 
   Use angular brackets when including libraries, i.e. #include <string>. Quotes for everything else, i.e. #include "MyFile.h".
+
+
+Engine codine guidelines:
+  Interfaces (classes containing only pure virtual functions) should contain no data.
