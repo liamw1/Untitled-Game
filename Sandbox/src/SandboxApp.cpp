@@ -31,12 +31,12 @@ public:
     Engine::Shared<Engine::IndexBuffer> indexBuffer = Engine::IndexBuffer::Create(indices, sizeof(indices) / sizeof(uint32_t));
     m_VertexArray->setIndexBuffer(indexBuffer);
 
-    m_Shader = Engine::Shader::Create("assets/shaders/Texture.glsl");
+    auto textureShader = m_ShaderLibrary.load("assets/shaders/Texture.glsl");
     m_Texture = Engine::Texture2D::Create("assets/textures/Checkerboard.png");
     m_LogoTexture = Engine::Texture2D::Create("assets/textures/ChernoLogo.png");
 
-    std::dynamic_pointer_cast<Engine::OpenGLShader>(m_Shader)->bind();
-    std::dynamic_pointer_cast<Engine::OpenGLShader>(m_Shader)->uploadUniformInt("u_Texture", 0);
+    std::dynamic_pointer_cast<Engine::OpenGLShader>(textureShader)->bind();
+    std::dynamic_pointer_cast<Engine::OpenGLShader>(textureShader)->uploadUniformInt("u_Texture", 0);
   }
 
   void onUpdate(std::chrono::duration<float> timestep) override
@@ -65,10 +65,12 @@ public:
 
     Engine::Renderer::BeginScene(m_Camera);
 
+    auto textureShader = m_ShaderLibrary.get("Texture");
+
     m_Texture->bind();
-    Engine::Renderer::Submit(m_Shader, m_VertexArray);
+    Engine::Renderer::Submit(textureShader, m_VertexArray);
     m_LogoTexture->bind();
-    Engine::Renderer::Submit(m_Shader, m_VertexArray);
+    Engine::Renderer::Submit(textureShader, m_VertexArray);
 
     Engine::Renderer::EndScene();
   }
@@ -83,10 +85,9 @@ public:
   }
 
 private:
+  Engine::ShaderLibrary m_ShaderLibrary;
   Engine::Shared<Engine::VertexArray> m_VertexArray;
-  Engine::Shared<Engine::Shader> m_Shader;
-  Engine::Shared<Engine::Texture2D> m_Texture;
-  Engine::Shared<Engine::Texture2D> m_LogoTexture;
+  Engine::Shared<Engine::Texture2D> m_Texture, m_LogoTexture;
 
   Engine::OrthographicCamera m_Camera;
   glm::vec3 m_CameraPosition;

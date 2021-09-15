@@ -15,6 +15,7 @@
 // I/O
 #include <iostream>
 #include <fstream>
+#include <filesystem>
 
 // ==================== Common Utilities ==================== //
 #include "Engine/Core/Core.h"

@@ -44,8 +44,7 @@ project "Engine"
 	files
 	{
 		"%{prj.name}/src/**.h",
-		"%{prj.name}/src/**.cpp",
-		"%{IncludeDir.stb_image}/stb_image.h"
+		"%{prj.name}/src/**.cpp"
 	}
 
 	defines

@@ -1,7 +1,12 @@
 #include "ENpch.h"
 #include "OpenGLTexture.h"
-#include <stb_image.h>
 #include <glad/glad.h>
+
+#include <codeanalysis\warnings.h> // Disable intellisense warnings
+#pragma warning( push )
+#pragma warning ( disable : ALL_CODE_ANALYSIS_WARNINGS )
+#include <stb_image.h>
+#pragma warning( pop )
 
 namespace Engine
 {

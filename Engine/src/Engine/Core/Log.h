@@ -41,8 +41,8 @@ namespace Engine
 
 // Assert macros.  Will be removed from code in non-debug builds
 #ifdef EN_ENABLE_ASSERTS
-  #define EN_ASSERT(x, ...) { if (!(x)) { EN_ERROR("Assertion Failed: {0}", __VA_ARGS__); EN_DEBUG_BREAK(); } }
-  #define EN_CORE_ASSERT(x, ...) { if (!(x)) { EN_CORE_ERROR("Assertion Failed: {0}", __VA_ARGS__); EN_DEBUG_BREAK(); } }
+  #define EN_ASSERT(x, ...) { if (!(x)) { EN_ERROR(__VA_ARGS__); EN_DEBUG_BREAK(); } }
+  #define EN_CORE_ASSERT(x, ...) { if (!(x)) { EN_CORE_ERROR(__VA_ARGS__); EN_DEBUG_BREAK(); } }
 #else
   #define EN_ASSERT(x, ...)
   #define EN_CORE_ASSERT(x, ...)

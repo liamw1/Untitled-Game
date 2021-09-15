@@ -5,6 +5,8 @@
 
 namespace Engine
 {
+  static constexpr uint8_t MAX_SHADERS = 2;
+
   static GLenum shaderTypeFromString(const std::string& type)
   {
     if (type == "vertex")
@@ -12,16 +14,20 @@ namespace Engine
     if (type == "fragment" || type == "pixel")
       return GL_FRAGMENT_SHADER;
 
-    EN_CORE_ASSERT(false, "Unknown shader type '{0}'!", type);
+    EN_CORE_ASSERT(false, "Unknown shader type {0}!", type);
     return 0;
   }
 
   OpenGLShader::OpenGLShader(const std::string& filepath)
   {
     compile(preProcess(readFile(filepath)));
+
+    std::filesystem::path path = filepath;
+    m_Name = path.stem().string(); // Returns the file's name stripped of the extension.
   }
 
-  OpenGLShader::OpenGLShader(const std::string& vertexSource, const std::string& fragmentSource)
+  OpenGLShader::OpenGLShader(const std::string& name, const std::string& vertexSource, const std::string& fragmentSource)
+    : m_Name(name)
   {
     std::unordered_map<GLenum, std::string> sources;
     sources[GL_VERTEX_SHADER] = vertexSource;
@@ -99,7 +105,7 @@ namespace Engine
       in.close();
     }
     else
-      EN_CORE_ERROR("Could not open file '{0}'", filepath);
+      EN_CORE_ERROR("Could not open file {0}", filepath);
 
     return result;
   }
@@ -130,9 +136,11 @@ namespace Engine
 
   void OpenGLShader::compile(const std::unordered_map<GLenum, std::string>& shaderSources)
   {
+    EN_CORE_ASSERT(shaderSources.size() <= MAX_SHADERS, "A maximum of {0} shaders is supported", MAX_SHADERS);
+
     GLuint program = glCreateProgram();
-    std::vector<GLenum> glShaderIDs;
-    glShaderIDs.reserve(shaderSources.size());
+    std::array<GLenum, MAX_SHADERS> glShaderIDs = { 0, 0 };
+    int glShaderIDIndex = 0;
     for (auto& kv : shaderSources)
     {
       GLenum type = kv.first;
@@ -158,11 +166,11 @@ namespace Engine
         glDeleteShader(shader);
 
         EN_CORE_ERROR("{0}", infoLog.data());
-        EN_CORE_ASSERT(false, "'{0}' shader compilation failure!", type);
+        EN_CORE_ASSERT(false, "{0} shader compilation failure!", type);
         break;
       }
       glAttachShader(program, shader);
-      glShaderIDs.emplace_back(shader);
+      glShaderIDs[glShaderIDIndex++] = shader;
     }
 
     m_RendererID = program;

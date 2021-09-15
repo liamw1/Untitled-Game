@@ -11,8 +11,10 @@ namespace Engine
   {
   public:
     OpenGLShader(const std::string& filepath);
-    OpenGLShader(const std::string& vertexSource, const std::string& fragmentSource);
+    OpenGLShader(const std::string& name, const std::string& vertexSource, const std::string& fragmentSource);
     ~OpenGLShader();
+
+    inline const std::string& getName() const override { return m_Name; }
 
     void bind() const override;
     void unBind() const override;
@@ -29,6 +31,7 @@ namespace Engine
 
   private:
     uint32_t m_RendererID = 0;
+    std::string m_Name;
 
     std::string readFile(const std::string& filepath);
     std::unordered_map<GLenum, std::string> preProcess(const std::string& source);
