@@ -10,6 +10,6 @@ namespace Engine
     virtual void bind() const = 0;
     virtual void unBind() const = 0;
 
-    static Shader* Create(const std::string& vertexSource, const std::string& fragmentSource);
+    static Shared<Shader> Create(const std::string& vertexSource, const std::string& fragmentSource);
   };
 }

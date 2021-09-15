@@ -17,6 +17,8 @@ IncludeDir["GLFW"] = "Engine/lib/GLFW/include"
 IncludeDir["GLad"] = "Engine/lib/GLad/include"
 IncludeDir["ImGui"] = "Engine/lib/imgui"
 IncludeDir["glm"] = "Engine/lib/glm"
+IncludeDir["stb_image"] = "Engine/lib/stb_image"
+IncludeDir["spdlog"] = "Engine/lib/spdlog/include"
 
 
 
@@ -42,7 +44,8 @@ project "Engine"
 	files
 	{
 		"%{prj.name}/src/**.h",
-		"%{prj.name}/src/**.cpp"
+		"%{prj.name}/src/**.cpp",
+		"%{IncludeDir.stb_image}/stb_image.h"
 	}
 
 	defines
@@ -58,11 +61,12 @@ project "Engine"
 
 	sysincludedirs
 	{
-		"%{prj.name}/lib/spdlog/include",
+		"%{IncludeDir.spdlog}",
 		"%{IncludeDir.GLFW}",
 		"%{IncludeDir.GLad}",
 		"%{IncludeDir.ImGui}",
-		"%{IncludeDir.glm}"
+		"%{IncludeDir.glm}",
+		"%{IncludeDir.stb_image}"
 	}
 
 	links
@@ -122,7 +126,7 @@ project "Sandbox"
 
 	sysincludedirs
 	{
-		"Engine/lib/spdlog/include",
+		"%{IncludeDir.spdlog}",
 		"%{IncludeDir.ImGui}",
 		"%{IncludeDir.glm}"
 	}

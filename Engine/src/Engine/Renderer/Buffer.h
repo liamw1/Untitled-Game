@@ -15,17 +15,17 @@ namespace Engine
   {
     switch (type)
     {
-      case ShaderDataType::Bool:        return 1;          break;
-      case ShaderDataType::Int:         return 4;          break;
-      case ShaderDataType::Int2:        return 2 * 4;      break;
-      case ShaderDataType::Int3:        return 3 * 4;      break;
-      case ShaderDataType::Int4:        return 4 * 4;      break;
-      case ShaderDataType::Float:       return 4;          break;
-      case ShaderDataType::Float2:      return 2 * 4;      break;
-      case ShaderDataType::Float3:      return 3 * 4;      break;
-      case ShaderDataType::Float4:      return 4 * 4;      break;
-      case ShaderDataType::Mat3:        return 3 * 3 * 4;  break;
-      case ShaderDataType::Mat4:        return 4 * 4 * 4;  break;
+      case ShaderDataType::Bool:        return 1 * sizeof(bool);        break;
+      case ShaderDataType::Int:         return 1 * sizeof(int);         break;
+      case ShaderDataType::Int2:        return 2 * sizeof(int);         break;
+      case ShaderDataType::Int3:        return 3 * sizeof(int);         break;
+      case ShaderDataType::Int4:        return 4 * sizeof(int);         break;
+      case ShaderDataType::Float:       return 1 * sizeof(float);       break;
+      case ShaderDataType::Float2:      return 2 * sizeof(float);       break;
+      case ShaderDataType::Float3:      return 3 * sizeof(float);       break;
+      case ShaderDataType::Float4:      return 4 * sizeof(float);       break;
+      case ShaderDataType::Mat3:        return 3 * 3 * sizeof(float);   break;
+      case ShaderDataType::Mat4:        return 4 * 4 * sizeof(float);   break;
       default: EN_CORE_ASSERT(false, "Unknown ShaderDataType!"); return 0;
     }
   }
@@ -107,7 +107,7 @@ namespace Engine
     virtual const BufferLayout& getLayout() const = 0;
     virtual void setLayout(const BufferLayout& layout) = 0;
 
-    static VertexBuffer* Create(float* vertices, uint32_t size);
+    static Shared<VertexBuffer> Create(float* vertices, uint32_t size);
   };
 
   class IndexBuffer
@@ -120,6 +120,6 @@ namespace Engine
 
     virtual uint32_t getCount() const = 0;
 
-    static IndexBuffer* Create(uint32_t* indices, uint32_t count);
+    static Shared<IndexBuffer> Create(uint32_t* indices, uint32_t count);
   };
 }

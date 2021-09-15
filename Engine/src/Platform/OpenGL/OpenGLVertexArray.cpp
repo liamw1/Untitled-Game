@@ -43,7 +43,7 @@ namespace Engine
     glBindVertexArray(0);
   }
 
-  void OpenGLVertexArray::addVertexBuffer(const std::shared_ptr<VertexBuffer>& vertexBuffer)
+  void OpenGLVertexArray::addVertexBuffer(const Shared<VertexBuffer>& vertexBuffer)
   {
     EN_CORE_ASSERT(vertexBuffer->getLayout().getElements().size() > 0, "Vertex Buffer has no layout!");
 
@@ -67,18 +67,18 @@ namespace Engine
     m_VertexBuffers.emplace_back(vertexBuffer);
   }
 
-  void OpenGLVertexArray::setIndexBuffer(const std::shared_ptr<IndexBuffer>& indexBuffer)
+  void OpenGLVertexArray::setIndexBuffer(const Shared<IndexBuffer>& indexBuffer)
   {
     glBindVertexArray(m_RendererID);
     indexBuffer->bind();
     m_IndexBuffer = indexBuffer;
   }
-  const std::vector<std::shared_ptr<VertexBuffer>>& OpenGLVertexArray::getBuffers() const
+  const std::vector<Shared<VertexBuffer>>& OpenGLVertexArray::getBuffers() const
   {
     return m_VertexBuffers;
   }
 
-  const std::shared_ptr<IndexBuffer>& OpenGLVertexArray::getIndexBuffer() const
+  const Shared<IndexBuffer>& OpenGLVertexArray::getIndexBuffer() const
   {
     return m_IndexBuffer;
   }

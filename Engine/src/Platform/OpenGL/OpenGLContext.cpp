@@ -7,6 +7,17 @@
 
 namespace Engine
 {
+  static void openGLLogMessage(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam)
+  {
+    switch (severity)
+    {
+      case GL_DEBUG_SEVERITY_HIGH:          EN_CORE_ERROR(message); break;
+      case GL_DEBUG_SEVERITY_MEDIUM:        EN_CORE_WARN(message); break;
+      case GL_DEBUG_SEVERITY_LOW:           EN_CORE_INFO(message); break;
+      case GL_DEBUG_SEVERITY_NOTIFICATION:  EN_CORE_TRACE(message); break;
+    }
+  }
+
   OpenGLContext::OpenGLContext(GLFWwindow* windowHandle)
     : m_WindowHandle(windowHandle)
   {
@@ -23,6 +34,11 @@ namespace Engine
     EN_CORE_INFO("  Vendor:    {0}", glGetString(GL_VENDOR));
     EN_CORE_INFO("  Renderer:  {0}", glGetString(GL_RENDERER));
     EN_CORE_INFO("  Version:   {0}", glGetString(GL_VERSION));
+
+    // Initialize OpenGL debugging
+    glDebugMessageCallback(openGLLogMessage, nullptr);
+    glEnable(GL_DEBUG_OUTPUT);
+    glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
   }
 
   void OpenGLContext::swapBuffers()

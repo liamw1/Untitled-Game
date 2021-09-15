@@ -10,7 +10,7 @@ namespace Engine
     EN_CORE_ASSERT(s_Instance == nullptr, "Application already exists!");
     s_Instance = this;
 
-    m_Window = std::unique_ptr<Window>(Window::Create());
+    m_Window = Unique<Window>(Window::Create());
     m_Window->setEventCallback(EN_BIND_EVENT_FN(onEvent));
     m_Window->setVSync(false);
 
@@ -33,10 +33,12 @@ namespace Engine
       for (Layer* layer : m_LayerStack)
         layer->onUpdate(timestep);
 
+      /*
       m_ImGuiLayer->begin();
       for (Layer* layer : m_LayerStack)
         layer->onImGuiRender();
       m_ImGuiLayer->end();
+      */
 
       m_Window->onUpdate();
     }

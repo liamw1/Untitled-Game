@@ -1,8 +1,18 @@
 #pragma once
+#include <memory>
 
 // ==================== Common Utilities ==================== //
 inline static constexpr uint8_t bit(unsigned char n) { return 1 << n; }
 #define EN_BIND_EVENT_FN(fn) [this](auto&&... args) -> decltype(auto) { return this->fn(std::forward<decltype(args)>(args)...); }
+
+namespace Engine
+{
+  template<typename T>
+  using Unique = std::unique_ptr<T>;
+
+  template<typename T>
+  using Shared = std::shared_ptr<T>;
+}
 
 // ==================== Debug Macros ==================== //
 #ifdef EN_DEBUG
