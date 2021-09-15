@@ -10,3 +10,6 @@
 [submodule "Engine/lib/glm"]
 	path = Engine/lib/glm
 	url = https://github.com/g-truc/glm
+[submodule "Engine/lib/stb_image"]
+	path = Engine/lib/stb_image
+	url = https://github.com/nothings/stb
