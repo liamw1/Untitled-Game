@@ -123,7 +123,7 @@ namespace Engine
     };
     glfwSetKeyCallback(m_Window, keyCallback);
 
-    auto charCallback = [](GLFWwindow* window, unsigned int keycode)
+    auto charCallback = [](GLFWwindow* window, uint32_t keycode)
     {
       WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
       KeyTypeEvent event((Key)keycode);

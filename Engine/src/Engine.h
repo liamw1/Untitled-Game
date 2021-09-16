@@ -23,6 +23,7 @@
 #include "Engine/Renderer/VertexArray.h"
 
 #include "Engine/Renderer/OrthographicCamera.h"
+#include "Engine/Renderer/OrthographicCameraController.h"
 
 
 // ===================== Entry Point ===================== //

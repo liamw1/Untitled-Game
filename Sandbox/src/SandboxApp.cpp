@@ -1,7 +1,6 @@
 #include <Engine.h>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
-#include <imgui.h>
 
 // TEMPORARY
 #include <Platform/OpenGL/OpenGLShader.h>
@@ -11,8 +10,7 @@ class ExampleLayer : public Engine::Layer
 public:
   ExampleLayer()
     : Layer("Example"),
-      m_Camera(-1.6f, 1.6f, -0.9f, 0.9f),
-      m_CameraPosition({0.0f, 0.0f, 0.0f})
+      m_CameraController(1280.0f / 720.0f, true)
   {
     m_VertexArray = Engine::Shared<Engine::VertexArray>(Engine::VertexArray::Create());
 
@@ -44,26 +42,11 @@ public:
     const float dt = timestep.count();  // Time between frames in seconds
     // EN_TRACE("dt: {0}ms", dt * 1000.0f);
 
-    if (Engine::Input::IsKeyPressed(Key::Left))
-      m_CameraPosition.x -= m_CameraMoveSpeed * dt;
-    if (Engine::Input::IsKeyPressed(Key::Right))
-      m_CameraPosition.x += m_CameraMoveSpeed * dt;
-    if (Engine::Input::IsKeyPressed(Key::Up))
-      m_CameraPosition.y += m_CameraMoveSpeed * dt;
-    if (Engine::Input::IsKeyPressed(Key::Down))
-      m_CameraPosition.y -= m_CameraMoveSpeed * dt;
-
-    if (Engine::Input::IsKeyPressed(Key::A))
-      m_CameraRotation += m_CameraRotateSpeed * dt;
-    if (Engine::Input::IsKeyPressed(Key::D))
-      m_CameraRotation -= m_CameraRotateSpeed * dt;
+    m_CameraController.onUpdate(timestep);
 
     Engine::RenderCommand::Clear({ 0.1f, 0.1f, 0.1f, 1.0f });
 
-    m_Camera.setPosition(m_CameraPosition);
-    m_Camera.setRotation(m_CameraRotation);
-
-    Engine::Renderer::BeginScene(m_Camera);
+    Engine::Renderer::BeginScene(m_CameraController.getCamera());
 
     auto textureShader = m_ShaderLibrary.get("Texture");
 
@@ -81,7 +64,7 @@ public:
 
   void onEvent(Engine::Event& event) override
   {
-    Engine::EventDispatcher dispatcher(event);
+    m_CameraController.onEvent(event);
   }
 
 private:
@@ -89,12 +72,7 @@ private:
   Engine::Shared<Engine::VertexArray> m_VertexArray;
   Engine::Shared<Engine::Texture2D> m_Texture, m_LogoTexture;
 
-  Engine::OrthographicCamera m_Camera;
-  glm::vec3 m_CameraPosition;
-  float m_CameraRotation = 0.0f;
-
-  float m_CameraMoveSpeed = 3.0f;
-  float m_CameraRotateSpeed = 180.0f;
+  Engine::OrthographicCameraController m_CameraController;
 };
 
 class Sandbox : public Engine::Application

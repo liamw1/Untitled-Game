@@ -14,8 +14,8 @@ namespace Engine
 
     void onUpdate() override;
 
-    inline unsigned int getWidth() const override { return m_Data.width; }
-    inline unsigned int getHeight() const override { return m_Data.height; }
+    inline uint32_t getWidth() const override { return m_Data.width; }
+    inline uint32_t getHeight() const override { return m_Data.height; }
 
     // Window attributes
     inline void setEventCallback(const EventCallbackFn& callback) override { m_Data.eventCallback = callback; }
@@ -28,7 +28,7 @@ namespace Engine
     struct WindowData
     {
       std::string title;
-      unsigned int width, height = 0;
+      uint32_t width, height = 0;
       bool VSync = false;
 
       EventCallbackFn eventCallback;

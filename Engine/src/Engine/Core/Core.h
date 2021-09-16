@@ -2,7 +2,7 @@
 #include <memory>
 
 // ==================== Common Utilities ==================== //
-inline static constexpr uint8_t bit(unsigned char n) { return 1 << n; }
+inline static constexpr uint8_t bit(uint8_t n) { return 1 << n; }
 #define EN_BIND_EVENT_FN(fn) [this](auto&&... args) -> decltype(auto) { return this->fn(std::forward<decltype(args)>(args)...); }
 
 namespace Engine
