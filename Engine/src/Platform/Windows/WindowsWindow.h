@@ -28,7 +28,7 @@ namespace Engine
     struct WindowData
     {
       std::string title;
-      uint32_t width, height = 0;
+      uint32_t width = 0, height = 0;
       bool VSync = false;
 
       EventCallbackFn eventCallback;
@@ -36,7 +36,7 @@ namespace Engine
 
     WindowData m_Data;
     GLFWwindow* m_Window;
-    GraphicsContext* m_Context;
+    Unique<GraphicsContext> m_Context;
 
     void initialize(const WindowProps& properties);
     void shutdown();

@@ -7,7 +7,7 @@
 
 namespace Engine
 {
-  static void openGLLogMessage(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam)
+  static void openGLLogMessage(GLenum /*source*/, GLenum /*type*/, GLuint /*id*/, GLenum severity, GLsizei /*length*/, const GLchar* message, const void* /*userParam*/)
   {
     switch (severity)
     {
@@ -34,6 +34,16 @@ namespace Engine
     EN_CORE_INFO("  Vendor:    {0}", glGetString(GL_VENDOR));
     EN_CORE_INFO("  Renderer:  {0}", glGetString(GL_RENDERER));
     EN_CORE_INFO("  Version:   {0}", glGetString(GL_VERSION));
+
+    // Version check
+    #ifdef EN_ENABLE_ASSERTS
+      int versionMajor;
+      int versionMinor;
+      glGetIntegerv(GL_MAJOR_VERSION, &versionMajor);
+      glGetIntegerv(GL_MINOR_VERSION, &versionMinor);
+
+      EN_CORE_ASSERT(versionMajor > 4 || (versionMajor == 4 && versionMinor >= 5), "Hazel requires at least OpenGL version 4.5!");
+    #endif
 
     // Initialize OpenGL debugging
     glDebugMessageCallback(openGLLogMessage, nullptr);

@@ -1,15 +1,20 @@
 [submodule "Engine/lib/spdlog"]
 	path = Engine/lib/spdlog
 	url = https://github.com/gabime/spdlog
+	branch = v1.x
 [submodule "Engine/lib/GLFW"]
 	path = Engine/lib/GLFW
 	url = https://github.com/TheCherno/glfw
+	branch = master
 [submodule "Engine/lib/imgui"]
 	path = Engine/lib/imgui
 	url = https://github.com/TheCherno/imgui
+	branch = docking
 [submodule "Engine/lib/glm"]
 	path = Engine/lib/glm
 	url = https://github.com/g-truc/glm
+	branch = master
 [submodule "Engine/lib/stb_image"]
 	path = Engine/lib/stb_image
 	url = https://github.com/nothings/stb
+	branch = master

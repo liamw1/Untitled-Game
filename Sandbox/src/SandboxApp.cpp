@@ -1,6 +1,9 @@
 #include <Engine.h>
+#include <Engine/Core/EntryPoint.h>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+
+#include "Sandbox2D.h"
 
 // TEMPORARY
 #include <Platform/OpenGL/OpenGLShader.h>
@@ -12,7 +15,7 @@ public:
     : Layer("Example"),
       m_CameraController(1280.0f / 720.0f, true)
   {
-    m_VertexArray = Engine::Shared<Engine::VertexArray>(Engine::VertexArray::Create());
+    m_VertexArray = Engine::VertexArray::Create();
 
     float vertices[4 * 5] = { -0.5f, -0.5f, 0.0f, 0.0f, 0.0f,
                                0.5f, -0.5f, 0.0f, 1.0f, 0.0f,
@@ -80,7 +83,8 @@ class Sandbox : public Engine::Application
 public:
   Sandbox()
   {
-    pushLayer(new ExampleLayer());
+    // pushLayer(new ExampleLayer());
+    pushLayer(new Sandbox2D());
   }
 
   ~Sandbox()

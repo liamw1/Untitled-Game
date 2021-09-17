@@ -11,9 +11,9 @@ namespace Engine
 
     virtual void onAttach() {}
     virtual void onDetach() {}
-    virtual void onUpdate(std::chrono::duration<float> timestep) {}
+    virtual void onUpdate(std::chrono::duration<float> /*timestep*/) {}
     virtual void onImGuiRender() {}
-    virtual void onEvent(Event& event) {}
+    virtual void onEvent(Event& /*event*/) {}
 
     inline const std::string& getName() const { return m_DebugName; }
 

@@ -11,6 +11,9 @@ namespace Engine
   class Input
   {
   public:
+    Input(const Input&) = delete;
+    Input& operator=(const Input&) = delete;
+
     inline static bool IsKeyPressed(Key keyCode) { return s_Instance->isKeyPressedImpl(keyCode); }
     inline static bool IsMouseButtonPressed(MouseButton button) { return s_Instance->isMouseButtonPressedImpl(button); }
     inline static std::array<float, 2> GetMousePosition() { return s_Instance->getMousePositionImpl(); }
@@ -18,6 +21,8 @@ namespace Engine
     inline static float GetMouseY() { return s_Instance->getMouseYImpl(); }
 
   protected:
+    Input() = default;
+
     virtual bool isKeyPressedImpl(Key keyCode) = 0;
     virtual bool isMouseButtonPressedImpl(MouseButton button) = 0;
     virtual std::array<float, 2> getMousePositionImpl() = 0;
@@ -25,6 +30,6 @@ namespace Engine
     virtual float getMouseYImpl() = 0;
 
   private:
-    static Input* s_Instance;
+    static Unique<Input> s_Instance;
   };
 }

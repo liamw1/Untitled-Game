@@ -69,7 +69,7 @@ namespace Engine
     }
 
     m_Window = glfwCreateWindow((int)properties.width, (int)properties.height, m_Data.title.c_str(), nullptr, nullptr);
-    m_Context = new OpenGLContext(m_Window);
+    m_Context = createUnique<OpenGLContext>(m_Window);
     m_Context->initialize();
 
     glfwSetWindowUserPointer(m_Window, &m_Data);
@@ -95,7 +95,7 @@ namespace Engine
     };
     glfwSetWindowCloseCallback(m_Window, windowCloseCallback);
 
-    auto keyCallback = [](GLFWwindow* window, int keyCode, int scancode, int action, int mods)
+    auto keyCallback = [](GLFWwindow* window, int keyCode, int /*scanCode*/, int action, int /*mods*/)
     {
       WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
 
@@ -131,7 +131,7 @@ namespace Engine
     };
     glfwSetCharCallback(m_Window, charCallback);
 
-    auto mouseButtonCallback = [](GLFWwindow* window, int button, int action, int mods)
+    auto mouseButtonCallback = [](GLFWwindow* window, int button, int action, int /*mods*/)
     {
       WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
 

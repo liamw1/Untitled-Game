@@ -33,15 +33,16 @@ namespace Engine
       std::chrono::duration<float> timestep = time - m_LastFrameTime;
       m_LastFrameTime = time;
 
-      for (Layer* layer : m_LayerStack)
-        layer->onUpdate(timestep);
+      if (!m_Minimized)
+      {
+        for (Layer* layer : m_LayerStack)
+          layer->onUpdate(timestep);
+      }
 
-      /*
       m_ImGuiLayer->begin();
       for (Layer* layer : m_LayerStack)
         layer->onImGuiRender();
       m_ImGuiLayer->end();
-      */
 
       m_Window->onUpdate();
     }
@@ -51,6 +52,7 @@ namespace Engine
   {
     EventDispatcher dispatcher(event);
     dispatcher.dispatch<WindowCloseEvent>(EN_BIND_EVENT_FN(onWindowClose));
+    dispatcher.dispatch<WindowResizeEvent>(EN_BIND_EVENT_FN(onWindowResize));
 
     for (auto it = m_LayerStack.end(); it != m_LayerStack.begin();)
     {
@@ -72,9 +74,21 @@ namespace Engine
     layer->onAttach();
   }
 
-  bool Application::onWindowClose(WindowCloseEvent& event)
+  bool Application::onWindowClose(WindowCloseEvent& /*event*/)
   {
     m_Running = false;
     return true;
+  }
+  bool Application::onWindowResize(WindowResizeEvent& event)
+  {
+    if (event.getWidth() == 0 || event.getHeight() == 0)
+    {
+      m_Minimized = true;
+      return false;
+    }
+    m_Minimized = false;
+    Renderer::OnWindowResize(event.getWidth(), event.getHeight());
+
+    return false;
   }
 }

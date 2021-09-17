@@ -15,6 +15,7 @@
 #include "Engine/Events/ApplicationEvent.h"
 
 #include "Engine/Renderer/Renderer.h"
+#include "Engine/Renderer/Renderer2D.h"
 #include "Engine/Renderer/RenderCommand.h"
 
 #include "Engine/Renderer/Buffer.h"
@@ -24,8 +25,3 @@
 
 #include "Engine/Renderer/OrthographicCamera.h"
 #include "Engine/Renderer/OrthographicCameraController.h"
-
-
-// ===================== Entry Point ===================== //
-#include "Engine/Core/EntryPoint.h"
-// ======================================================= //

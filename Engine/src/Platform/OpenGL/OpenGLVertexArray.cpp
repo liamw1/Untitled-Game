@@ -50,18 +50,17 @@ namespace Engine
     glBindVertexArray(m_RendererID);
     vertexBuffer->bind();
 
-    uint32_t index = 0;
     const auto& layout = vertexBuffer->getLayout();
     for (const auto& element : layout)
     {
-      glEnableVertexAttribArray(index);
-      glVertexAttribPointer(index,
+      glEnableVertexAttribArray(m_VertexBufferIndex);
+      glVertexAttribPointer(m_VertexBufferIndex,
         element.getComponentCount(),
         convertToOpenGLBaseType(element.type),
         element.normalized ? GL_TRUE : GL_FALSE,
         layout.getStride(),
-        (const void*)element.offset);
-      index++;
+        (const void*)(const size_t)element.offset);
+      m_VertexBufferIndex++;
     }
 
     m_VertexBuffers.emplace_back(vertexBuffer);

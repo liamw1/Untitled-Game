@@ -9,6 +9,11 @@ workspace "Engine"
 		"Dist"
 	}
 
+	flags
+	{
+		"MultiProcessorCompile"
+	}
+
 outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
 
 -- Include system directories relative to root folder (solution directory)
@@ -81,7 +86,6 @@ project "Engine"
 
 		defines
 		{
-			"EN_PLATFORM_WINDOWS",
 			"EN_BUILD_DLL"
 		}
 
@@ -137,7 +141,6 @@ project "Sandbox"
 
 	filter "system:windows"
 		systemversion "latest"
-		defines "EN_PLATFORM_WINDOWS"
 
 	filter "configurations:Debug"
 		defines "EN_DEBUG"
