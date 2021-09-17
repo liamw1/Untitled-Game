@@ -5,25 +5,18 @@
 
 namespace Engine
 {
-  class Renderer
+  namespace Renderer
   {
-  public:
-    static void Init();
-    static void OnWindowResize(uint32_t width, uint32_t height);
+    void Init();
+    void Shutdown();
 
-    static void BeginScene(OrthographicCamera& camera);
-    static void EndScene();
+    void OnWindowResize(uint32_t width, uint32_t height);
 
-    static void Submit(const Shared<Shader>& shader, const Shared<VertexArray>& vertexArray, const glm::mat4& transform = glm::mat4(1.0f));
+    void BeginScene(OrthographicCamera& camera);
+    void EndScene();
 
-    inline static RendererAPI::API GetAPI() { return RendererAPI::GetAPI(); }
+    void Submit(const Shared<Shader>& shader, const Shared<VertexArray>& vertexArray, const glm::mat4& transform = glm::mat4(1.0f));
 
-  private:
-    struct SceneData
-    {
-      glm::mat4 viewProjectionMatrix;
-    };
-
-    static Unique<SceneData> m_SceneData;
+    inline RendererAPI::API GetAPI() { return RendererAPI::GetAPI(); }
   };
 }
