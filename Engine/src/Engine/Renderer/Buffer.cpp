@@ -15,6 +15,8 @@ namespace Engine
     }
   }
 
+
+
   Shared<IndexBuffer> IndexBuffer::Create(uint32_t* indices, uint32_t size)
   {
     switch (Renderer::GetAPI())

@@ -30,7 +30,7 @@ namespace Engine
     while (m_Running)
     {
       auto time = std::chrono::steady_clock::now();
-      std::chrono::duration<uint64_t, std::nano> timestep = time - m_LastFrameTime;
+      std::chrono::duration<int64_t, std::nano> timestep = time - m_LastFrameTime;
       m_LastFrameTime = time;
 
       if (!m_Minimized)

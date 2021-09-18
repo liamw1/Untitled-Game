@@ -1,9 +1,11 @@
 #pragma once
 
 // ==================== Standard Libraries ==================== //
-#include <memory>
 #include <cmath>
+#include <algorithm>
 #include <chrono>
+#include <memory>
+#include <thread>
 
 // Data structures
 #include <array>
@@ -20,6 +22,7 @@
 // ==================== Common Utilities ==================== //
 #include "Engine/Core/Core.h"
 #include "Engine/Core/Log.h"
+#include "Engine/Debug/Instrumentor.h"
 
 #ifdef EN_PLATFORM_WINDOWS
   #include <Windows.h>

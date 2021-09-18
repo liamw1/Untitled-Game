@@ -63,6 +63,8 @@ namespace Engine
     }
   };
 
+
+
   class BufferLayout
   {
   public:
@@ -96,6 +98,8 @@ namespace Engine
     }
   };
 
+
+
   class VertexBuffer
   {
   public:
@@ -109,6 +113,8 @@ namespace Engine
 
     static Shared<VertexBuffer> Create(float* vertices, uint32_t size);
   };
+
+
 
   class IndexBuffer
   {

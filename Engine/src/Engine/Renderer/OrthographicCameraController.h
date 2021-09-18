@@ -10,7 +10,7 @@ namespace Engine
   public:
     OrthographicCameraController(float aspectRatio, bool canRotate = false);
 
-    void onUpdate(std::chrono::duration<uint64_t, std::nano> timestep);
+    void onUpdate(std::chrono::duration<int64_t, std::nano> timestep);
     void onEvent(Event& event);
 
     inline OrthographicCamera& getCamera() { return m_Camera; }

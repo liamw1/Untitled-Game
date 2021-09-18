@@ -11,7 +11,7 @@ namespace Engine
   {
   }
 
-  void OrthographicCameraController::onUpdate(std::chrono::duration<uint64_t, std::nano> timestep)
+  void OrthographicCameraController::onUpdate(std::chrono::duration<int64_t, std::nano> timestep)
   {
     const float dt = (float)timestep.count() / 1e9f;  // Time between frames in seconds
 
