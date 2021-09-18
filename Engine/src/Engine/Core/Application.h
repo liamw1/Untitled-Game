@@ -29,7 +29,7 @@ namespace Engine
     LayerStack m_LayerStack;
     bool m_Running = true;
     bool m_Minimized = false;
-    std::chrono::system_clock::time_point m_LastFrameTime = std::chrono::system_clock::now();
+    std::chrono::steady_clock::time_point m_LastFrameTime = std::chrono::steady_clock::now();
 
     bool onWindowClose(WindowCloseEvent& event);
     bool onWindowResize(WindowResizeEvent& event);

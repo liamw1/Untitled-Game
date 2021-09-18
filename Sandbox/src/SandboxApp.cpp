@@ -40,10 +40,9 @@ public:
     textureShader->setInt("u_Texture", 0);
   }
 
-  void onUpdate(std::chrono::duration<float> timestep) override
+  void onUpdate(std::chrono::duration<uint64_t, std::nano> timestep) override
   {
-    const float dt = timestep.count();  // Time between frames in seconds
-    // EN_TRACE("dt: {0}ms", dt * 1000.0f);
+    const double dt = (float)timestep.count() / 1e9f;  // Time between frames in seconds
 
     m_CameraController.onUpdate(timestep);
 

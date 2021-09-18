@@ -10,11 +10,18 @@ public:
   void onAttach() override;
   void onDetach() override;
 
-  void onUpdate(std::chrono::duration<float> timestep) override;
+  void onUpdate(std::chrono::duration<uint64_t, std::nano> timestep) override;
   void onImGuiRender() override;
   void onEvent(Engine::Event& event) override;
 
 private:
+  struct ProfileResult
+  {
+    const char* name;
+    float time;
+  };
+  std::vector<ProfileResult> m_ProfileResults;
+
   Engine::OrthographicCameraController m_CameraController;
 
   // TEMPORARY
