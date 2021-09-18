@@ -20,6 +20,8 @@ namespace Engine
 
   OpenGLShader::OpenGLShader(const std::string& filepath)
   {
+    EN_PROFILE_FUNCTION();
+
     compile(preProcess(readFile(filepath)));
 
     std::filesystem::path path = filepath;
@@ -29,6 +31,8 @@ namespace Engine
   OpenGLShader::OpenGLShader(const std::string& name, const std::string& vertexSource, const std::string& fragmentSource)
     : m_Name(name)
   {
+    EN_PROFILE_FUNCTION();
+
     std::unordered_map<GLenum, std::string> sources;
     sources[GL_VERTEX_SHADER] = vertexSource;
     sources[GL_FRAGMENT_SHADER] = fragmentSource;
@@ -37,6 +41,8 @@ namespace Engine
 
   OpenGLShader::~OpenGLShader()
   {
+    EN_PROFILE_FUNCTION();
+
     glDeleteProgram(m_RendererID);
   }
 
@@ -94,6 +100,8 @@ namespace Engine
 
   std::string OpenGLShader::readFile(const std::string& filepath)
   {
+    EN_PROFILE_FUNCTION();
+
     std::string result;
     std::ifstream in(filepath, std::ios::in | std::ios::binary);
     if (in)
@@ -118,6 +126,8 @@ namespace Engine
 
   std::unordered_map<GLenum, std::string> OpenGLShader::preProcess(const std::string& source)
   {
+    EN_PROFILE_FUNCTION();
+
     std::unordered_map<GLenum, std::string> shaderSources;
 
     const char* typeToken = "#type";
@@ -141,6 +151,8 @@ namespace Engine
 
   void OpenGLShader::compile(const std::unordered_map<GLenum, std::string>& shaderSources)
   {
+    EN_PROFILE_FUNCTION();
+
     EN_CORE_ASSERT(shaderSources.size() <= MAX_SHADERS, "A maximum of {0} shaders is supported", MAX_SHADERS);
 
     GLuint program = glCreateProgram();

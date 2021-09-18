@@ -15,13 +15,6 @@ public:
   void onEvent(Engine::Event& event) override;
 
 private:
-  struct ProfileResult
-  {
-    const char* name;
-    float time;
-  };
-  std::vector<ProfileResult> m_ProfileResults;
-
   Engine::OrthographicCameraController m_CameraController;
 
   // TEMPORARY

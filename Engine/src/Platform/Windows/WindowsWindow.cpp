@@ -7,7 +7,7 @@
 
 namespace Engine
 {
-  static bool GLFWInitialized = false;
+  static uint8_t GLFWWindowCount = 0;
 
   static inline void GLFWErrorCallback(int errorCode, const char* description)
   {
@@ -26,10 +26,15 @@ namespace Engine
 
   WindowsWindow::~WindowsWindow()
   {
+    EN_PROFILE_FUNCTION();
+
+    shutdown();
   }
 
   void WindowsWindow::onUpdate()
   {
+    EN_PROFILE_FUNCTION();
+
     glfwPollEvents();
     m_Context->swapBuffers();
   }
@@ -51,24 +56,28 @@ namespace Engine
 
   void WindowsWindow::initialize(const WindowProps& properties)
   {
+    EN_PROFILE_FUNCTION();
+
     m_Data.title = properties.title;
     m_Data.width = properties.width;
     m_Data.height = properties.height;
 
     EN_CORE_INFO("Creating window {0} ({1}, {2})", properties.title, properties.width, properties.height);
     
-    if (!GLFWInitialized)
+    if (GLFWWindowCount == 0)
     {
-      // TODO: glfwTerminate on system shutdown
+      EN_PROFILE_SCOPE("glfwInit");
       int success = glfwInit();
       EN_CORE_ASSERT(success, "Could not initialize GLFW!");
-
       glfwSetErrorCallback(GLFWErrorCallback);
-
-      GLFWInitialized = true;
     }
 
-    m_Window = glfwCreateWindow((int)properties.width, (int)properties.height, m_Data.title.c_str(), nullptr, nullptr);
+    {
+      EN_PROFILE_SCOPE("glfwCreateWindow");
+      m_Window = glfwCreateWindow((int)properties.width, (int)properties.height, m_Data.title.c_str(), nullptr, nullptr);
+      ++GLFWWindowCount;
+    }
+
     m_Context = createUnique<OpenGLContext>(m_Window);
     m_Context->initialize();
 
@@ -172,6 +181,12 @@ namespace Engine
 
   void WindowsWindow::shutdown()
   {
+    EN_PROFILE_FUNCTION();
+
     glfwDestroyWindow(m_Window);
+    --GLFWWindowCount;
+
+    if (GLFWWindowCount == 0)
+      glfwTerminate();
   }
 }

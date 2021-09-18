@@ -25,11 +25,15 @@ namespace Engine
 
   OpenGLVertexArray::OpenGLVertexArray()
   {
+    EN_PROFILE_FUNCTION();
+
     glCreateVertexArrays(1, &m_RendererID);
   }
 
   OpenGLVertexArray::~OpenGLVertexArray()
   {
+    EN_PROFILE_FUNCTION();
+
     glDeleteVertexArrays(1, &m_RendererID);
   }
 
@@ -45,6 +49,8 @@ namespace Engine
 
   void OpenGLVertexArray::addVertexBuffer(const Shared<VertexBuffer>& vertexBuffer)
   {
+    EN_PROFILE_FUNCTION();
+
     EN_CORE_ASSERT(vertexBuffer->getLayout().getElements().size() > 0, "Vertex Buffer has no layout!");
 
     glBindVertexArray(m_RendererID);

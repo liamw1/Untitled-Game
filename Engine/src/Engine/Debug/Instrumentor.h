@@ -12,7 +12,7 @@ namespace Engine
   {
     std::string name;
     int64_t start, end;
-    uint32_t threadID;
+    size_t threadID;
   };
 
   struct InstrumentationSession
@@ -114,7 +114,7 @@ namespace Engine
       int64_t start = std::chrono::time_point_cast<std::chrono::microseconds>(m_StartTimepoint).time_since_epoch().count();
       int64_t end = std::chrono::time_point_cast<std::chrono::microseconds>(endTimepoint).time_since_epoch().count();
 
-      uint32_t threadID = std::hash<std::thread::id>{}(std::this_thread::get_id());
+      size_t threadID = std::hash<std::thread::id>{}(std::this_thread::get_id());
       Instrumentor::Get().writeProfile({ m_Name, start, end, threadID });
 
       m_Stopped = true;
@@ -132,7 +132,7 @@ namespace Engine
   #define EN_PROFILE_BEGIN_SESSION(name, filepath)  ::Engine::Instrumentor::Get().beginSession(name, filepath)
   #define EN_PROFILE_END_SESSION()                  ::Engine::Instrumentor::Get().endSession()
   #define EN_PROFILE_SCOPE(name)                    ::Engine::InstrumentationTimer timer##__LINE__(name)
-  #define EN_PROFILE_FUNCTION()                     EN_PROFILE_SCOPE(__FUNCSIG__)
+  #define EN_PROFILE_FUNCTION()                     EN_PROFILE_SCOPE(__FUNCTION__)
 #else
   #define EN_PROFILE_BEGIN_SESSION(name, filepath)
   #define EN_PROFILE_END_SESSION()

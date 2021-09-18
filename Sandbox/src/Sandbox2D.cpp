@@ -11,11 +11,14 @@ Sandbox2D::Sandbox2D()
 
 void Sandbox2D::onAttach()
 {
+  EN_PROFILE_FUNCTION();
+
   m_CheckerboardTexture = Engine::Texture2D::Create("assets/textures/Checkerboard.png");
 }
 
 void Sandbox2D::onDetach()
 {
+  EN_PROFILE_FUNCTION();
 }
 
 void Sandbox2D::onUpdate(std::chrono::duration<int64_t, std::nano> timestep)
@@ -39,16 +42,6 @@ void Sandbox2D::onImGuiRender()
 
   ImGui::Begin("Settings");
   ImGui::ColorEdit4("Square Color", glm::value_ptr(m_SquareColor));
-
-  for (auto& result : m_ProfileResults)
-  {
-    char label[50];
-    strcpy_s(label, "%.3fms  ");
-    strcat_s(label, result.name);
-    ImGui::Text(label, result.time);
-  }
-  m_ProfileResults.clear();
-
   ImGui::End();
 }
 

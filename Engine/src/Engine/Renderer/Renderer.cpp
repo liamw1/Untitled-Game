@@ -12,12 +12,14 @@ namespace Engine
 
   static SceneData* s_SceneData;
 
-  void Renderer::Init()
+  void Renderer::Initialize()
   {
+    EN_PROFILE_FUNCTION();
+
     s_SceneData = new SceneData;
 
-    RenderCommand::Init();
-    Renderer2D::Init();
+    RenderCommand::Initialize();
+    Renderer2D::Initialize();
   }
 
   void Renderer::Shutdown()
@@ -27,6 +29,8 @@ namespace Engine
 
   void Renderer::OnWindowResize(uint32_t width, uint32_t height)
   {
+    EN_PROFILE_FUNCTION();
+
     RenderCommand::SetViewport(0, 0, width, height);
   }
 
@@ -41,6 +45,8 @@ namespace Engine
 
   void Renderer::Submit(const Shared<Shader>& shader, const Shared<VertexArray>& vertexArray, const glm::mat4& transform)
   {
+    EN_PROFILE_FUNCTION();
+
     shader->bind();
     shader->setMat4("u_ViewProjection", s_SceneData->viewProjectionMatrix);
     shader->setMat4("u_Transform", transform);

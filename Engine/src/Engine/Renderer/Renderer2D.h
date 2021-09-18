@@ -6,7 +6,7 @@ namespace Engine
 {
   namespace Renderer2D
   {
-    void Init();
+    void Initialize();
     void Shutdown();
 
     void BeginScene(const OrthographicCamera& camera);

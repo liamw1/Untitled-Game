@@ -17,8 +17,10 @@ namespace Engine
 
   static Renderer2DData* s_Data;
 
-  void Renderer2D::Init()
+  void Renderer2D::Initialize()
   {
+    EN_PROFILE_FUNCTION();
+
     s_Data = new Renderer2DData();
 
     s_Data->quadVertexArray = VertexArray::Create();
@@ -53,6 +55,8 @@ namespace Engine
 
   void Renderer2D::BeginScene(const OrthographicCamera& camera)
   {
+    EN_PROFILE_FUNCTION();
+
     s_Data->textureShader->bind();
     s_Data->textureShader->setMat4("u_ViewProjection", camera.getViewProjectionMatrix());
   }
@@ -68,6 +72,8 @@ namespace Engine
 
   void Renderer2D::DrawQuad(const glm::vec3& position, const glm::vec2& size, const glm::vec4& color)
   {
+    EN_PROFILE_FUNCTION();
+
     s_Data->textureShader->setFloat4("u_Color", color);
     s_Data->whiteTexture->bind();
 
@@ -85,6 +91,8 @@ namespace Engine
 
   void Renderer2D::DrawQuad(const glm::vec3& position, const glm::vec2& size, const Shared<Texture2D>& texture)
   {
+    EN_PROFILE_FUNCTION();
+
     s_Data->textureShader->setFloat4("u_Color", glm::vec4(1.0f));
     texture->bind();
 
