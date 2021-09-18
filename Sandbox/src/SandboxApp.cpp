@@ -36,8 +36,8 @@ public:
     m_Texture = Engine::Texture2D::Create("assets/textures/Checkerboard.png");
     m_LogoTexture = Engine::Texture2D::Create("assets/textures/ChernoLogo.png");
 
-    std::dynamic_pointer_cast<Engine::OpenGLShader>(textureShader)->bind();
-    std::dynamic_pointer_cast<Engine::OpenGLShader>(textureShader)->uploadUniformInt("u_Texture", 0);
+    textureShader->bind();
+    textureShader->setInt("u_Texture", 0);
   }
 
   void onUpdate(std::chrono::duration<float> timestep) override

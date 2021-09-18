@@ -3,9 +3,6 @@
 #include "Renderer2D.h"
 #include "RenderCommand.h"
 
-// TEMPORARY
-#include "Platform/OpenGL/OpenGLShader.h"
-
 namespace Engine
 {
   struct SceneData
@@ -45,8 +42,8 @@ namespace Engine
   void Renderer::Submit(const Shared<Shader>& shader, const Shared<VertexArray>& vertexArray, const glm::mat4& transform)
   {
     shader->bind();
-    std::dynamic_pointer_cast<OpenGLShader>(shader)->uploadUniformMat4("u_ViewProjection", s_SceneData->viewProjectionMatrix);
-    std::dynamic_pointer_cast<OpenGLShader>(shader)->uploadUniformMat4("u_Transform", transform);
+    shader->setMat4("u_ViewProjection", s_SceneData->viewProjectionMatrix);
+    shader->setMat4("u_Transform", transform);
 
     vertexArray->bind();
     RenderCommand::DrawIndexed(vertexArray);

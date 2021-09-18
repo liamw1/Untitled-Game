@@ -50,43 +50,43 @@ namespace Engine
     glUseProgram(0);
   }
 
-  void OpenGLShader::uploadUniformInt(const std::string& name, int value)
+  void OpenGLShader::setInt(const std::string& name, int value)
   {
     GLint location = glGetUniformLocation(m_RendererID, name.c_str());
     glUniform1i(location, value);
   }
 
-  void OpenGLShader::uploadUniformFloat(const std::string& name, const float value)
+  void OpenGLShader::setFloat(const std::string& name, float value)
   {
     GLint location = glGetUniformLocation(m_RendererID, name.c_str());
     glUniform1f(location, value);
   }
 
-  void OpenGLShader::uploadUniformFloat2(const std::string& name, const glm::vec2& values)
+  void OpenGLShader::setFloat2(const std::string& name, const glm::vec2& values)
   {
     GLint location = glGetUniformLocation(m_RendererID, name.c_str());
     glUniform2f(location, values.x, values.y);
   }
 
-  void OpenGLShader::uploadUniformFloat3(const std::string& name, const glm::vec3& values)
+  void OpenGLShader::setFloat3(const std::string& name, const glm::vec3& values)
   {
     GLint location = glGetUniformLocation(m_RendererID, name.c_str());
     glUniform3f(location, values.x, values.y, values.z);
   }
 
-  void OpenGLShader::uploadUniformFloat4(const std::string& name, const glm::vec4& values)
+  void OpenGLShader::setFloat4(const std::string& name, const glm::vec4& values)
   {
     GLint location = glGetUniformLocation(m_RendererID, name.c_str());
     glUniform4f(location, values.x, values.y, values.z, values.w);
   }
 
-  void OpenGLShader::uploadUniformMat3(const std::string& name, const glm::mat3& matrix)
+  void OpenGLShader::setMat3(const std::string& name, const glm::mat3& matrix)
   {
     GLint location = glGetUniformLocation(m_RendererID, name.c_str());
     glUniformMatrix3fv(location, 1, GL_FALSE, glm::value_ptr(matrix));
   }
 
-  void OpenGLShader::uploadUniformMat4(const std::string& name, const glm::mat4& matrix)
+  void OpenGLShader::setMat4(const std::string& name, const glm::mat4& matrix)
   {
     GLint location = glGetUniformLocation(m_RendererID, name.c_str());
     glUniformMatrix4fv(location, 1, GL_FALSE, glm::value_ptr(matrix));
@@ -98,11 +98,17 @@ namespace Engine
     std::ifstream in(filepath, std::ios::in | std::ios::binary);
     if (in)
     {
-      in.seekg(0, std::ios::end);
-      result.resize(in.tellg());
-      in.seekg(0, std::ios::beg);
-      in.read(&result[0], result.size());
-      in.close();
+      const size_t& size = in.tellg();
+      if (size != -1)
+      {
+        in.seekg(0, std::ios::end);
+        result.resize(in.tellg());
+        in.seekg(0, std::ios::beg);
+        in.read(&result[0], result.size());
+        in.close();
+      }
+      else
+        EN_CORE_ERROR("Could not read from file {0}", filepath);
     }
     else
       EN_CORE_ERROR("Could not open file {0}", filepath);

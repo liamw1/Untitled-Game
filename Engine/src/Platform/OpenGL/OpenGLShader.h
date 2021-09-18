@@ -19,15 +19,13 @@ namespace Engine
     void bind() const override;
     void unBind() const override;
 
-    void uploadUniformInt(const std::string& name, int value);
-
-    void uploadUniformFloat(const std::string& name, const float value);
-    void uploadUniformFloat2(const std::string& name, const glm::vec2& values);
-    void uploadUniformFloat3(const std::string& name, const glm::vec3& values);
-    void uploadUniformFloat4(const std::string& name, const glm::vec4& values);
-
-    void uploadUniformMat3(const std::string& name, const glm::mat3& matrix);
-    void uploadUniformMat4(const std::string& name, const glm::mat4& matrix);
+    void setInt(const std::string& name, int value) override;
+    void setFloat(const std::string& name, float value) override;
+    void setFloat2(const std::string& name, const glm::vec2& values) override;
+    void setFloat3(const std::string& name, const glm::vec3& values) override;
+    void setFloat4(const std::string& name, const glm::vec4& values) override;
+    void setMat3(const std::string& name, const glm::mat3& matrix) override;
+    void setMat4(const std::string& name, const glm::mat4& matrix) override;
 
   private:
     uint32_t m_RendererID = 0;
