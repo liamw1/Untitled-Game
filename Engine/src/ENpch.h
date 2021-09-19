@@ -2,10 +2,8 @@
 
 // ==================== Standard Libraries ==================== //
 #include <cmath>
-#include <algorithm>
 #include <chrono>
 #include <memory>
-#include <thread>
 
 // Data structures
 #include <array>

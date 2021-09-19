@@ -4,6 +4,8 @@
 #include "Engine/ImGui/ImGuiLayer.h"
 #include "Engine/Events/ApplicationEvent.h"
 
+int main(int argc, char** argv);
+
 namespace Engine
 {
   class Application
@@ -11,8 +13,6 @@ namespace Engine
   public:
     Application();
     virtual ~Application();
-
-    void run();
 
     void onEvent(Event& event);
 
@@ -31,8 +31,12 @@ namespace Engine
     bool m_Minimized = false;
     std::chrono::steady_clock::time_point m_LastFrameTime = std::chrono::steady_clock::now();
 
+    void run();
+
     bool onWindowClose(WindowCloseEvent& event);
     bool onWindowResize(WindowResizeEvent& event);
+
+    friend int ::main(int argc, char** argv);
   };
 
   // To be defined in CLIENT

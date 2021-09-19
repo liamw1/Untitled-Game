@@ -11,10 +11,11 @@ namespace Engine
   {
     switch (severity)
     {
-      case GL_DEBUG_SEVERITY_HIGH:          EN_CORE_ERROR(message); break;
-      case GL_DEBUG_SEVERITY_MEDIUM:        EN_CORE_WARN(message); break;
-      case GL_DEBUG_SEVERITY_LOW:           EN_CORE_INFO(message); break;
-      case GL_DEBUG_SEVERITY_NOTIFICATION:  EN_CORE_TRACE(message); break;
+      case GL_DEBUG_SEVERITY_HIGH:          EN_CORE_ERROR(message); return;
+      case GL_DEBUG_SEVERITY_MEDIUM:        EN_CORE_WARN(message); return;
+      case GL_DEBUG_SEVERITY_LOW:           EN_CORE_INFO(message); return;
+      case GL_DEBUG_SEVERITY_NOTIFICATION:  EN_CORE_TRACE(message); return;
+      default:                              EN_CORE_ASSERT(false, "OpenGL message \"{0}\" has unknown severity level", message); return;
     }
   }
 
@@ -47,10 +48,12 @@ namespace Engine
       EN_CORE_ASSERT(versionMajor > 4 || (versionMajor == 4 && versionMinor >= 5), "Hazel requires at least OpenGL version 4.5!");
     #endif
 
-    // Initialize OpenGL debugging
-    glDebugMessageCallback(openGLLogMessage, nullptr);
-    glEnable(GL_DEBUG_OUTPUT);
-    glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+    #ifdef EN_DEBUG
+      // Initialize OpenGL debugging
+      glEnable(GL_DEBUG_OUTPUT);
+      glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+      glDebugMessageCallback(openGLLogMessage, nullptr);
+    #endif
   }
 
   void OpenGLContext::swapBuffers()
