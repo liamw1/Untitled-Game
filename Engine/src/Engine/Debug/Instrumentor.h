@@ -3,14 +3,6 @@
 
 namespace Engine
 {
-  struct ProfileResult
-  {
-    std::string name;
-    std::chrono::steady_clock::time_point start;
-    std::chrono::duration<double, std::nano> elapsedTime;
-    std::thread::id threadID;
-  };
-
   struct InstrumentationSession
   {
     std::string name;
@@ -57,16 +49,19 @@ namespace Engine
       internalEndSession();
     }
 
-    void writeProfile(const ProfileResult& result)
+    void writeProfile(const std::string& name, const std::chrono::steady_clock::time_point start, const std::chrono::duration<double, std::micro> elapsedTime, const std::thread::id threadID)
     {
+      int64_t startTimeInNanoseconds = std::chrono::time_point_cast<std::chrono::nanoseconds>(start).time_since_epoch().count();
+
+      m_OutputStream << std::setprecision(3) << std::fixed;
       m_OutputStream << ",{";
       m_OutputStream << "\"cat\":\"function\",";
-      m_OutputStream << "\"dur\":" << result.elapsedTime.count() << ',';
-      m_OutputStream << "\"name\":\"" << result.name << "\",";
+      m_OutputStream << "\"dur\":" << elapsedTime.count() << ',';
+      m_OutputStream << "\"name\":\"" << name << "\",";
       m_OutputStream << "\"ph\":\"X\",";
       m_OutputStream << "\"pid\":0,";
-      m_OutputStream << "\"tid\":" << result.threadID << ",";
-      m_OutputStream << "\"ts\":" << std::chrono::time_point_cast<std::chrono::nanoseconds>(result.start).time_since_epoch().count();
+      m_OutputStream << "\"tid\":" << threadID << ",";
+      m_OutputStream << "\"ts\":" << startTimeInNanoseconds / 1e3;
       m_OutputStream << "}";
 
       std::lock_guard lock(m_Mutex);
@@ -134,8 +129,8 @@ namespace Engine
     void stop()
     {
       auto endTimepoint = std::chrono::steady_clock::now();
-      std::chrono::duration<double, std::nano> elapsedTime = endTimepoint - m_StartTimepoint;
-      Instrumentor::Get().writeProfile({ m_Name, m_StartTimepoint, elapsedTime, std::this_thread::get_id() });
+      std::chrono::duration<double, std::micro> elapsedTime = endTimepoint - m_StartTimepoint;
+      Instrumentor::Get().writeProfile(m_Name, m_StartTimepoint, elapsedTime, std::this_thread::get_id());
 
       m_Stopped = true;
     }
