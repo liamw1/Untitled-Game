@@ -14,8 +14,9 @@ namespace Engine
     Shared<Shader> textureShader;
     Shared<Texture2D> whiteTexture;
   };
-
   static Renderer2DData* s_Data;
+
+
 
   void Renderer2D::Initialize()
   {
@@ -65,38 +66,33 @@ namespace Engine
   {
   }
 
-  void Renderer2D::DrawQuad(const glm::vec2& position, const glm::vec2& size, const glm::vec4& color)
-  {
-    DrawQuad({ position.x, position.y, 0.0f }, size, color);
-  }
-
-  void Renderer2D::DrawQuad(const glm::vec3& position, const glm::vec2& size, const glm::vec4& color)
+  void Renderer2D::DrawQuad(const QuadParams& params)
   {
     EN_PROFILE_FUNCTION();
 
-    s_Data->textureShader->setFloat4("u_Color", color);
-    s_Data->whiteTexture->bind();
+    s_Data->textureShader->setFloat4("u_Color", params.color);
+    s_Data->textureShader->setFloat("u_ScalingFactor", params.textureScalingFactor);
+    params.texture == nullptr ? s_Data->whiteTexture->bind() : params.texture->bind();
 
-    glm::mat4 transform = glm::translate(glm::mat4(1.0f), position) * glm::scale(glm::mat4(1.0f), { size.x, size.y, 1.0f });
+    glm::mat4 transform = glm::translate(glm::mat4(1.0f), params.position) 
+      * glm::scale(glm::mat4(1.0f), { params.size.x, params.size.y, 1.0f });
     s_Data->textureShader->setMat4("u_Transform", transform);
 
     s_Data->quadVertexArray->bind();
     RenderCommand::DrawIndexed(s_Data->quadVertexArray);
   }
 
-  void Renderer2D::DrawQuad(const glm::vec2& position, const glm::vec2& size, const Shared<Texture2D>& texture)
-  {
-    DrawQuad({ position.x, position.y, 0.0f }, size, texture);
-  }
-
-  void Renderer2D::DrawQuad(const glm::vec3& position, const glm::vec2& size, const Shared<Texture2D>& texture)
+  void Renderer2D::DrawRotatedQuad(const QuadParams& params, radians rotation)
   {
     EN_PROFILE_FUNCTION();
 
-    s_Data->textureShader->setFloat4("u_Color", glm::vec4(1.0f));
-    texture->bind();
+    s_Data->textureShader->setFloat4("u_Color", params.color);
+    s_Data->textureShader->setFloat("u_ScalingFactor", params.textureScalingFactor);
+    params.texture == nullptr ? s_Data->whiteTexture->bind() : params.texture->bind();
 
-    glm::mat4 transform = glm::translate(glm::mat4(1.0f), position) * glm::scale(glm::mat4(1.0f), { size.x, size.y, 1.0f });
+    glm::mat4 transform = glm::translate(glm::mat4(1.0f), params.position)
+      * glm::rotate(glm::mat4(1.0f), rotation, { 0.0f, 0.0f, 1.0f })
+      * glm::scale(glm::mat4(1.0f), { params.size.x, params.size.y, 1.0f });
     s_Data->textureShader->setMat4("u_Transform", transform);
 
     s_Data->quadVertexArray->bind();

@@ -39,7 +39,7 @@ namespace Engine
       EN_PROFILE_SCOPE("Run Loop");
 
       auto time = std::chrono::steady_clock::now();
-      std::chrono::duration<int64_t, std::nano> timestep = time - m_LastFrameTime;
+      std::chrono::duration<float> timestep = time - m_LastFrameTime;
       m_LastFrameTime = time;
 
       if (!m_Minimized)

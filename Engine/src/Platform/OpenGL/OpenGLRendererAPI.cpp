@@ -30,8 +30,6 @@ namespace Engine
 
   void OpenGLRendererAPI::drawIndexed(const Shared<VertexArray>& vertexArray)
   {
-    EN_PROFILE_FUNCTION();
-
     glDrawElements(GL_TRIANGLES, vertexArray->getIndexBuffer()->getCount(), GL_UNSIGNED_INT, nullptr);
   }
 }
