@@ -21,6 +21,7 @@ namespace Engine
 
     void BeginScene(const OrthographicCamera& camera);
     void EndScene();
+    void Flush();
 
     // Primitives
     void DrawQuad(const QuadParams& params);

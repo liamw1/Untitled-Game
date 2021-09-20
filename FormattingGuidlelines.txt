@@ -1,9 +1,10 @@
 Engine formatting guidelines:
   Classes should be PascalCase.
   Static members should also be PascalCase.
-  - Private/protected static variables should be preceeded with an "s_", i.e. s_StaticVariable.
+  Private/protected static variables should be preceeded with an "s_", i.e. s_StaticVariable.
+    - This also applies to globally inaccessible static variables in .cpp files
   Public non-static members should be camelCase.
-  - Private/protected non-static variables should be preceeded with an "m_", i.e m_Variable.
+  Private/protected non-static variables should be preceeded with an "m_", i.e m_Variable.
   All public members should appear first, followed by protected members, followed by private members.
   Enums should be written in PascalCase.
   Macros should be written in UPPER_CASE.
@@ -12,7 +13,6 @@ Engine formatting guidelines:
   Curly brackets should always have their own lines, except in the cases of empty constructors or simple inline functions.
 
   Use angular brackets when including libraries, i.e. #include <string>. Quotes for everything else, i.e. #include "MyFile.h".
-
 
 Engine codine guidelines:
   Interfaces (classes containing only pure virtual functions) should contain no data.

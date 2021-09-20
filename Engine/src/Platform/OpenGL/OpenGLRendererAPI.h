@@ -11,6 +11,6 @@ namespace Engine
 
     void clear(const glm::vec4& color = { 0.0f, 0.0f, 0.0f, 1.0f }) const override;
 
-    void drawIndexed(const Shared<VertexArray>& vertexArray) override;
+    void drawIndexed(const Shared<VertexArray>& vertexArray, uint32_t indexCount = 0) override;
   };
 }

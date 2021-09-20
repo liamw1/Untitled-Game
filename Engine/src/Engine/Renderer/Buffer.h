@@ -111,11 +111,15 @@ namespace Engine
     virtual const BufferLayout& getLayout() const = 0;
     virtual void setLayout(const BufferLayout& layout) = 0;
 
+    virtual void setData(const void* data, uintptr_t size) = 0;
+
+    static Shared<VertexBuffer> Create(uint32_t size);
     static Shared<VertexBuffer> Create(float* vertices, uint32_t size);
   };
 
 
 
+  // NOTE: Currently Engine only supports 32-bit index buffers
   class IndexBuffer
   {
   public:

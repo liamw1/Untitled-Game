@@ -1,7 +1,7 @@
 #pragma once
 #include "PlatformDetection.h"
 
-// ==================== Debug Macros ==================== //
+// ======================== Debug Macros ======================== //
 #ifdef EN_DEBUG
   #define EN_ENABLE_ASSERTS
   #if defined(EN_PLATFORM_WINDOWS)
@@ -18,15 +18,15 @@
 
 
 
-// ====================== Constants/Units ====================== //
-constexpr float PI = 3.1415926535897932384626f;
-
+// ================== Physical Units and Constants ================== //
 using radians = float;
 using radiansPerSec = float;
 
+constexpr radians PI = static_cast<radians>(3.14159265358979323846264338327950288419716939937510L);
 
 
-// ==================== Common Utilities ==================== //
+
+// ======================== Common Utilities ======================== //
 inline constexpr uint8_t bit(uint8_t n) { return 1 << n; }
 #define EN_BIND_EVENT_FN(fn) [this](auto&&... args) -> decltype(auto) { return this->fn(std::forward<decltype(args)>(args)...); }
 
