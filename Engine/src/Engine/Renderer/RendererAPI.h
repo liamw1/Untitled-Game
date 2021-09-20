@@ -2,6 +2,10 @@
 #include <glm/glm.hpp>
 #include "VertexArray.h"
 
+/*
+  API for basic renderer commands.
+  Platform-specific implementation is determined by derived class.
+*/
 namespace Engine
 {
   class RendererAPI

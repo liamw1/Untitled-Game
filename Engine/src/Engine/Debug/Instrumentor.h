@@ -1,6 +1,12 @@
 #pragma once
 #include "Engine/Core/Log.h"
 
+/*
+  Tool for easily profiling functions and scopes.
+  Outputs formatted .json files for visualization by chrome://tracing.
+  To format a function, add EN_PROFILE_FUNCTION() to top line of desired function.
+  To format a scope, use EN_PROFILE_SCOPE within that scope.
+*/
 namespace Engine
 {
   struct InstrumentationSession

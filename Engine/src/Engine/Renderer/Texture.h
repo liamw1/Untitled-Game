@@ -1,5 +1,9 @@
 #pragma once
 
+/*
+  Abstract representation of a texture.
+  Platform-specific implementation is determined by derived class.
+*/
 namespace Engine
 {
   class Texture
@@ -10,8 +14,17 @@ namespace Engine
     virtual uint32_t getWidth() const = 0;
     virtual uint32_t getHeight() const = 0;
 
+    /*
+      Method for setting texture data directly.
+      \param data Buffer of texture data
+      \param size Size of buffer in bytes
+    */
     virtual void setData(void* data, uint32_t size) = 0;
 
+    /*
+      Binds texture to texture slot (0 by default).
+      Number of slot varies between GPUs, usually around 16-32 total.
+    */
     virtual void bind(uint32_t slot = 0) const = 0;
   };
 

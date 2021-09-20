@@ -4,6 +4,7 @@
 #include "Engine/ImGui/ImGuiLayer.h"
 #include "Engine/Events/ApplicationEvent.h"
 
+// Entry point
 int main(int argc, char** argv);
 
 namespace Engine
@@ -14,6 +15,7 @@ namespace Engine
     Application();
     virtual ~Application();
 
+    // Handler for all player input
     void onEvent(Event& event);
 
     void pushLayer(Layer* layer);

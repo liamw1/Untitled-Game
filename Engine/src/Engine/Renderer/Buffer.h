@@ -100,6 +100,10 @@ namespace Engine
 
 
 
+  /*
+    Abstract representation of a vertex buffer.
+    Platform-specific implementation is determined by derived class.
+  */
   class VertexBuffer
   {
   public:
@@ -111,6 +115,10 @@ namespace Engine
     virtual const BufferLayout& getLayout() const = 0;
     virtual void setLayout(const BufferLayout& layout) = 0;
 
+    /*
+      \param data Buffer of vertex data
+      \param size Size of buffer in bytes
+    */
     virtual void setData(const void* data, uintptr_t size) = 0;
 
     static Shared<VertexBuffer> Create(uint32_t size);
@@ -119,7 +127,12 @@ namespace Engine
 
 
 
-  // NOTE: Currently Engine only supports 32-bit index buffers
+  /*
+    Abstract representation of an index buffer.
+    Platform-specific implementation is determined by derived class.
+
+    NOTE: Currently Engine only supports 32-bit index buffers
+  */
   class IndexBuffer
   {
   public:
@@ -130,6 +143,10 @@ namespace Engine
 
     virtual uint32_t getCount() const = 0;
 
+    /*
+      \param indices Buffer of vertex indices
+      \param count   Number of indices
+    */
     static Shared<IndexBuffer> Create(uint32_t* indices, uint32_t count);
   };
 }

@@ -3,6 +3,10 @@
 
 namespace Engine
 {
+  /*
+    Abstract representation of a shader.
+    Platform-specific implementation is determined by derived class.
+  */
   class Shader
   {
   public:
@@ -27,6 +31,9 @@ namespace Engine
 
 
 
+  /*
+    Helper class for managing and organizing multiple shaders.
+  */
   class ShaderLibrary
   {
   public:

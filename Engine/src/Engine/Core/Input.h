@@ -3,8 +3,8 @@
 #include "MouseButtonCodes.h"
 
 /*
-  Abstract representation of user input.
-  Implementation is determined by derived class.
+  Abstract representation of player input.
+  Platform-specific implementation is determined by derived class.
 */
 namespace Engine
 {

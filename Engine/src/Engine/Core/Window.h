@@ -4,7 +4,7 @@
 
 /*
   Abstract representation of a window.
-  Implementation is determined by derived class.
+  Platform-specific implementation is determined by derived class.
 */
 namespace Engine
 {
