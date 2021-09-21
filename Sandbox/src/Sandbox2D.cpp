@@ -1,7 +1,5 @@
 #include "Sandbox2D.h"
 #include <imgui.h>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
 
 Sandbox2D::Sandbox2D()
   : Layer("Sandbox2D"),
@@ -40,7 +38,7 @@ void Sandbox2D::onImGuiRender()
   EN_PROFILE_FUNCTION();
 
   ImGui::Begin("Settings");
-  ImGui::ColorEdit4("Square Color", glm::value_ptr(m_SquareColor));
+  // ImGui::ColorEdit4("Square Color", glm::value_ptr(m_SquareColor));
   ImGui::End();
 }
 

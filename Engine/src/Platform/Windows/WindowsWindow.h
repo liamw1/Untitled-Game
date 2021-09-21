@@ -22,6 +22,9 @@ namespace Engine
     void setVSync(bool enabled) override;
     bool isVSync() const override;
 
+    void enableCursor() override;
+    void disableCursor() override;
+
     inline void* getNativeWindow() const override { return m_Window; }
 
   private:

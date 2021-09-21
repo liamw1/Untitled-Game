@@ -131,6 +131,8 @@
     <ClInclude Include="src\Engine\Renderer\Renderer2D.h" />
     <ClInclude Include="src\Engine\Debug\Instrumentor.h" />
     <ClInclude Include="src\Engine\Core\PlatformDetection.h" />
+    <ClInclude Include="src\Engine\Renderer\Camera.h" />
+    <ClInclude Include="src\Engine\Renderer\CameraController.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\ENpch.cpp" />
@@ -207,5 +209,7 @@
       <Filter>Platform\Windows</Filter>
     </ClCompile>
     <ClCompile Include="src\Engine\Renderer\Renderer2D.cpp" />
+    <ClCompile Include="src\Engine\Renderer\Camera.cpp" />
+    <ClCompile Include="src\Engine\Renderer\CameraController.cpp" />
   </ItemGroup>
 </Project>

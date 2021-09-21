@@ -1,7 +1,8 @@
 #pragma once
 #include "RendererAPI.h"
 #include "Shader.h"
-#include "OrthographicCamera.h"
+#include "Camera.h"
+#include "Texture.h"
 
 namespace Engine
 {
@@ -10,13 +11,13 @@ namespace Engine
     void Initialize();
     void Shutdown();
 
-    void OnWindowResize(uint32_t width, uint32_t height);
+    inline RendererAPI::API GetAPI() { return RendererAPI::GetAPI(); }
 
-    void BeginScene(OrthographicCamera& camera);
+    void BeginScene(Camera& camera);
     void EndScene();
 
-    void Submit(const Shared<Shader>& shader, const Shared<VertexArray>& vertexArray, const glm::mat4& transform = glm::mat4(1.0f));
+    void DrawCube(const glm::vec3& position, const glm::vec3& size, Shared<Texture2D> texture = nullptr);
 
-    inline RendererAPI::API GetAPI() { return RendererAPI::GetAPI(); }
+    void OnWindowResize(uint32_t width, uint32_t height);
   };
 }

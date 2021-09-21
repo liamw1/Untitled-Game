@@ -15,17 +15,17 @@ namespace Engine
   {
     switch (type)
     {
-      case ShaderDataType::Bool:        return 1 * sizeof(bool);        break;
-      case ShaderDataType::Int:         return 1 * sizeof(int);         break;
-      case ShaderDataType::Int2:        return 2 * sizeof(int);         break;
-      case ShaderDataType::Int3:        return 3 * sizeof(int);         break;
-      case ShaderDataType::Int4:        return 4 * sizeof(int);         break;
-      case ShaderDataType::Float:       return 1 * sizeof(float);       break;
-      case ShaderDataType::Float2:      return 2 * sizeof(float);       break;
-      case ShaderDataType::Float3:      return 3 * sizeof(float);       break;
-      case ShaderDataType::Float4:      return 4 * sizeof(float);       break;
-      case ShaderDataType::Mat3:        return 3 * 3 * sizeof(float);   break;
-      case ShaderDataType::Mat4:        return 4 * 4 * sizeof(float);   break;
+      case ShaderDataType::Bool:        return 1 * sizeof(bool);
+      case ShaderDataType::Int:         return 1 * sizeof(int);
+      case ShaderDataType::Int2:        return 2 * sizeof(int);
+      case ShaderDataType::Int3:        return 3 * sizeof(int);
+      case ShaderDataType::Int4:        return 4 * sizeof(int);
+      case ShaderDataType::Float:       return 1 * sizeof(float);
+      case ShaderDataType::Float2:      return 2 * sizeof(float);
+      case ShaderDataType::Float3:      return 3 * sizeof(float);
+      case ShaderDataType::Float4:      return 4 * sizeof(float);
+      case ShaderDataType::Mat3:        return 3 * 3 * sizeof(float);
+      case ShaderDataType::Mat4:        return 4 * 4 * sizeof(float);
       default: EN_CORE_ASSERT(false, "Unknown ShaderDataType!"); return 0;
     }
   }
@@ -47,17 +47,17 @@ namespace Engine
     {
       switch (type)
       {
-        case ShaderDataType::Bool:        return 1;      break;
-        case ShaderDataType::Int:         return 1;      break;
-        case ShaderDataType::Int2:        return 2;      break;
-        case ShaderDataType::Int3:        return 3;      break;
-        case ShaderDataType::Int4:        return 4;      break;
-        case ShaderDataType::Float:       return 1;      break;
-        case ShaderDataType::Float2:      return 2;      break;
-        case ShaderDataType::Float3:      return 3;      break;
-        case ShaderDataType::Float4:      return 4;      break;
-        case ShaderDataType::Mat3:        return 3 * 3;  break;
-        case ShaderDataType::Mat4:        return 4 * 4;  break;
+        case ShaderDataType::Bool:        return 1;
+        case ShaderDataType::Int:         return 1;
+        case ShaderDataType::Int2:        return 2;
+        case ShaderDataType::Int3:        return 3;
+        case ShaderDataType::Int4:        return 4;
+        case ShaderDataType::Float:       return 1;
+        case ShaderDataType::Float2:      return 2;
+        case ShaderDataType::Float3:      return 3;
+        case ShaderDataType::Float4:      return 4;
+        case ShaderDataType::Mat3:        return 3;   // 3* float3
+        case ShaderDataType::Mat4:        return 4;   // 4* float4
         default: EN_CORE_ASSERT(false, "Unknown ShaderDataType!"); return 0;
       }
     }

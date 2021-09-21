@@ -1,12 +1,8 @@
 #include <Engine.h>
 #include <Engine/Core/EntryPoint.h>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
 
 #include "Sandbox2D.h"
-
-// TEMPORARY
-#include <Platform/OpenGL/OpenGLShader.h>
+#include "Sandbox3D.h"
 
 class ExampleLayer : public Engine::Layer
 {
@@ -47,17 +43,6 @@ public:
     m_CameraController.onUpdate(timestep);
 
     Engine::RenderCommand::Clear({ 0.1f, 0.1f, 0.1f, 1.0f });
-
-    Engine::Renderer::BeginScene(m_CameraController.getCamera());
-
-    auto textureShader = m_ShaderLibrary.get("Texture");
-
-    m_Texture->bind();
-    Engine::Renderer::Submit(textureShader, m_VertexArray);
-    m_LogoTexture->bind();
-    Engine::Renderer::Submit(textureShader, m_VertexArray);
-
-    Engine::Renderer::EndScene();
   }
 
   void onImGuiRender() override
@@ -77,13 +62,16 @@ private:
   Engine::OrthographicCameraController m_CameraController;
 };
 
+
+
 class Sandbox : public Engine::Application
 {
 public:
   Sandbox()
   {
     // pushLayer(new ExampleLayer());
-    pushLayer(new Sandbox2D());
+    // pushLayer(new Sandbox2D());
+    pushLayer(new Sandbox3D());
   }
 
   ~Sandbox()

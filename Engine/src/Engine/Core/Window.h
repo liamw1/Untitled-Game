@@ -38,6 +38,9 @@ namespace Engine
     virtual void setVSync(bool enabled) = 0;
     virtual bool isVSync() const = 0;
 
+    virtual void enableCursor() = 0;
+    virtual void disableCursor() = 0;
+
     virtual void* getNativeWindow() const = 0;
 
     static Window* Create(const WindowProps& properties = WindowProps());

@@ -1,11 +1,11 @@
 #pragma once
 #include "Engine.h"
 
-class Sandbox2D : public Engine::Layer
+class Sandbox3D : public Engine::Layer
 {
 public:
-  Sandbox2D();
-  ~Sandbox2D() = default;
+  Sandbox3D();
+  ~Sandbox3D() = default;
 
   void onAttach() override;
   void onDetach() override;
@@ -15,6 +15,6 @@ public:
   void onEvent(Engine::Event& event) override;
 
 private:
-  Engine::OrthographicCameraController m_CameraController;
+  Engine::CameraController m_CameraController;
   Engine::Shared<Engine::Texture2D> m_CheckerboardTexture;
 };

@@ -55,6 +55,18 @@ namespace Engine
     return m_Data.VSync;
   }
 
+  void WindowsWindow::enableCursor()
+  {
+    glfwSetInputMode(m_Window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+  }
+
+  void WindowsWindow::disableCursor()
+  {
+    glfwSetInputMode(m_Window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    if (glfwRawMouseMotionSupported())
+      glfwSetInputMode(m_Window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
+  }
+
   void WindowsWindow::initialize(const WindowProps& properties)
   {
     EN_PROFILE_FUNCTION();

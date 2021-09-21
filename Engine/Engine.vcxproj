@@ -149,6 +149,8 @@
   <ItemGroup>
     <ClInclude Include="src\Engine\Core\PlatformDetection.h" />
     <ClInclude Include="src\Engine\Debug\Instrumentor.h" />
+    <ClInclude Include="src\Engine\Renderer\Camera.h" />
+    <ClInclude Include="src\Engine\Renderer\CameraController.h" />
     <ClInclude Include="src\Engine\Renderer\Renderer2D.h" />
     <ClInclude Include="src\ENpch.h" />
     <ClInclude Include="src\Engine.h" />
@@ -187,6 +189,8 @@
     <ClInclude Include="src\Platform\Windows\WindowsWindow.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\Engine\Renderer\Camera.cpp" />
+    <ClCompile Include="src\Engine\Renderer\CameraController.cpp" />
     <ClCompile Include="src\Engine\Renderer\Renderer2D.cpp" />
     <ClCompile Include="src\ENpch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
