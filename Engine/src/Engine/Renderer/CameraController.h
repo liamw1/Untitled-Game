@@ -26,11 +26,13 @@ namespace Engine
     float m_ZoomLevel = 1.0f;
     Camera m_Camera;
 
-    radians m_CameraRotation = 0.0f;
+    uint32_t m_WindowWidth;
+    uint32_t m_WindowHeight;
+
     glm::vec3 m_CameraPosition = { 0.0f, 0.0f, 0.0f };
 
-    radiansPerSec m_CameraRotationSpeed = PI;
     float m_CameraTranslationSpeed = 3.0f;
+    float m_CameraSensitivity = 1.0f;
 
     bool onMouseScroll(MouseScrollEvent& event);
     bool onWindowResize(WindowResizeEvent& event);

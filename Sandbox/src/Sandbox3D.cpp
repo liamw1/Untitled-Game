@@ -23,6 +23,8 @@ void Sandbox3D::onUpdate(std::chrono::duration<float> timestep)
 {
   EN_PROFILE_FUNCTION();
 
+  // EN_TRACE("dt: {0}", timestep.count());
+
   m_CameraController.onUpdate(timestep);
 
   Engine::RenderCommand::Clear({ 0.1f, 0.1f, 0.1f, 1.0f });
@@ -30,7 +32,7 @@ void Sandbox3D::onUpdate(std::chrono::duration<float> timestep)
   Engine::Renderer::BeginScene(m_CameraController.getCamera());
   for (int i = 0; i < 3; ++i)
     for (int j = 0; j < 3; ++j)
-      Engine::Renderer::DrawCube({ (i - 1) * 1.25f , (j - 1) * 1.25f, 0.0f }, glm::vec3(1.0f), m_CheckerboardTexture);
+      Engine::Renderer::DrawCube({ (i - 1) * 1.25f , (j - 1) * 1.25f, -2.0f }, glm::vec3(1.0f), m_CheckerboardTexture);
   Engine::Renderer::EndScene();
 }
 

@@ -22,18 +22,17 @@ namespace Engine
       m_CameraPosition.x -= cos(m_CameraRotation) * m_CameraTranslationSpeed * dt;
       m_CameraPosition.y -= sin(m_CameraRotation) * m_CameraTranslationSpeed * dt;
     }
-    else if (Input::IsKeyPressed(Key::D))
+    if (Input::IsKeyPressed(Key::D))
     {
       m_CameraPosition.x += cos(m_CameraRotation) * m_CameraTranslationSpeed * dt;
       m_CameraPosition.y += sin(m_CameraRotation) * m_CameraTranslationSpeed * dt;
     }
-
     if (Input::IsKeyPressed(Key::W))
     {
       m_CameraPosition.x += -sin(m_CameraRotation) * m_CameraTranslationSpeed * dt;
       m_CameraPosition.y +=  cos(m_CameraRotation) * m_CameraTranslationSpeed * dt;
     }
-    else if (Input::IsKeyPressed(Key::S))
+    if (Input::IsKeyPressed(Key::S))
     {
       m_CameraPosition.x -= -sin(m_CameraRotation) * m_CameraTranslationSpeed * dt;
       m_CameraPosition.y -=  cos(m_CameraRotation) * m_CameraTranslationSpeed * dt;
