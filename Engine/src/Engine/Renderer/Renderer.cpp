@@ -97,7 +97,7 @@ namespace Engine
     EN_PROFILE_FUNCTION();
 
     textureShader->bind();
-    textureShader->setMat4("u_ViewProjection", camera.getViewPerspectiveMatrix());
+    textureShader->setMat4("u_ViewProjection", camera.getViewProjectionMatrix());
   }
 
   void Renderer::EndScene()

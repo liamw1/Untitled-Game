@@ -9,7 +9,7 @@ namespace Engine
   class CameraController
   {
   public:
-    CameraController(float fov, float aspectRatio, float nearPlane, float farPlane);
+    CameraController(radians fov, float aspectRatio, float nearPlane, float farPlane);
 
     void onUpdate(std::chrono::duration<float> timestep);
     void onEvent(Event& event);
@@ -18,22 +18,28 @@ namespace Engine
     inline const Camera& getCamera() const { return m_Camera; }
 
   private:
+    // Camera state
     bool isMouseEnabled = true;
     float m_Fov;
     float m_AspectRatio;
     float m_NearPlane;
     float m_FarPlane;
-    float m_ZoomLevel = 1.0f;
     Camera m_Camera;
 
-    uint32_t m_WindowWidth;
-    uint32_t m_WindowHeight;
-
+    radians pitch = 0.0f;   // Rotation around x-axis
+    radians roll = 0.0f;    // Rotation around y-axis
+    radians yaw = -PI / 2;  // Rotation around z-axis
     glm::vec3 m_CameraPosition = { 0.0f, 0.0f, 0.0f };
+    glm::vec3 m_CameraViewDirection = { 0.0f, 0.0f, -1.0f };
 
     float m_CameraTranslationSpeed = 3.0f;
-    float m_CameraSensitivity = 1.0f;
+    float m_CameraSensitivity = 0.0015f;
+    float m_CameraZoomSensitivity = 2.0f;
 
+    // Mouse state
+    glm::vec2 m_LastMousePosition = { 0.0f, 0.0f };
+
+    bool onMouseMove(MouseMoveEvent& event);
     bool onMouseScroll(MouseScrollEvent& event);
     bool onWindowResize(WindowResizeEvent& event);
     bool onKeyPress(KeyPressEvent& event);

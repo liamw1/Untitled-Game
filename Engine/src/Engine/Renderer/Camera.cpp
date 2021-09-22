@@ -5,25 +5,35 @@
 
 namespace Engine
 {
-  Camera::Camera(float fov, float aspectRatio, float nearPlane, float farPlane)
-    : m_PerspectiveMatrix(glm::perspective(fov, aspectRatio, nearPlane, farPlane)),
+  Camera::Camera(radians fov, float aspectRatio, float nearPlane, float farPlane)
+    : m_ProjectionMatrix(glm::perspective(fov, aspectRatio, nearPlane, farPlane)),
       m_ViewMatrix(1.0f),
-      m_ViewPerspectiveMatrix(m_PerspectiveMatrix * m_ViewMatrix)
+      m_ViewProjectionMatrix(m_ProjectionMatrix * m_ViewMatrix)
   {
   }
 
-  void Camera::setProjection(float fov, float aspectRatio, float nearPlane, float farPlane)
+  void Camera::setPosition(const glm::vec3& position)
   {
-    m_PerspectiveMatrix = glm::perspective(fov, aspectRatio, nearPlane, farPlane);
-    m_ViewPerspectiveMatrix = m_PerspectiveMatrix * m_ViewMatrix;
+    m_Position = position;
+    recalculateViewMatrix();
+  }
+
+  void Camera::setView(const glm::vec3& position, const glm::vec3& viewDirection)
+  {
+    m_Position = position;
+    m_ViewDirection = viewDirection;
+    recalculateViewMatrix();
+  }
+
+  void Camera::setProjection(radians fov, float aspectRatio, float nearPlane, float farPlane)
+  {
+    m_ProjectionMatrix = glm::perspective(fov, aspectRatio, nearPlane, farPlane);
+    m_ViewProjectionMatrix = m_ProjectionMatrix * m_ViewMatrix;
   }
 
   void Camera::recalculateViewMatrix()
   {
-    glm::mat4 transform = glm::translate(glm::mat4(1.0f), m_Position) *
-      glm::rotate(glm::mat4(1.0f), m_Rotation, glm::vec3(0, 0, 1));
-
-    m_ViewMatrix = glm::inverse(transform);
-    m_ViewPerspectiveMatrix = m_PerspectiveMatrix * m_ViewMatrix;
+    m_ViewMatrix = glm::lookAt(m_Position, m_Position + m_ViewDirection, s_UpDirection);
+    m_ViewProjectionMatrix = m_ProjectionMatrix * m_ViewMatrix;
   }
 }
