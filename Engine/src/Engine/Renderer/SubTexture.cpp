@@ -21,6 +21,6 @@ namespace Engine
 
     EN_CORE_ASSERT(x >= 0.0f && x + dx <= 1.0f && y >= 0.0f && y + dy <= 1.0f, "SubTexture coordinates are out of bounds!");
 
-    return createShared<SubTexture2D>(spriteSheet, glm::vec2(x, y), glm::vec2(x + dx, y + dy));
+    return CreateShared<SubTexture2D>(spriteSheet, glm::vec2(x, y), glm::vec2(x + dx, y + dy));
   }
 }

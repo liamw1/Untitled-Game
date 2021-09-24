@@ -96,7 +96,7 @@ namespace Engine
       ++GLFWWindowCount;
     }
 
-    m_Context = createUnique<OpenGLContext>(m_Window);
+    m_Context = CreateUnique<OpenGLContext>(m_Window);
     m_Context->initialize();
 
     glfwSetWindowUserPointer(m_Window, &m_Data);

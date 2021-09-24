@@ -125,6 +125,7 @@ project "Game"
 
 	includedirs
 	{
+		"%{prj.name}/src/",
 		"Engine/src"
 	}
 
@@ -178,6 +179,7 @@ project "Sandbox"
 
 	includedirs
 	{
+		"%{prj.name}/src/",
 		"Engine/src",
 		"Game/src"
 	}

@@ -13,8 +13,10 @@ namespace Engine
       m_AspectRatio(aspectRatio),
       m_NearPlane(nearPlane),
       m_FarPlane(farPlane),
-      m_Camera(m_Fov, m_AspectRatio, m_NearPlane, m_FarPlane)
+      m_Camera(m_Fov, m_AspectRatio, m_NearPlane, m_FarPlane),
+      m_LastMousePosition(Application::Get().getWindow().getWidth() / 2, Application::Get().getWindow().getHeight() / 2)
   {
+    setMouseState(isMouseEnabled);
   }
 
   void CameraController::onUpdate(std::chrono::duration<float> timestep)
@@ -108,7 +110,12 @@ namespace Engine
     if (event.getKeyCode() == Key::Escape)
       isMouseEnabled = !isMouseEnabled;
 
-    isMouseEnabled ? Application::Get().getWindow().enableCursor() : Application::Get().getWindow().disableCursor();
+    setMouseState(isMouseEnabled);
     return true;
+  }
+
+  void CameraController::setMouseState(bool enableMouse)
+  {
+    enableMouse ? Application::Get().getWindow().enableCursor() : Application::Get().getWindow().disableCursor();
   }
 }

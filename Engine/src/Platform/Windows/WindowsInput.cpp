@@ -5,7 +5,7 @@
 
 namespace Engine
 {
-  Unique<Input> Input::s_Instance = createUnique<WindowsInput>();
+  Unique<Input> Input::s_Instance = CreateUnique<WindowsInput>();
 
   bool WindowsInput::isKeyPressedImpl(Key keyCode)
   {

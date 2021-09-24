@@ -17,7 +17,6 @@ void Sandbox2D::onAttach()
   m_SpriteSheet = Engine::Texture2D::Create("assets/textures/voxel-pack/Spritesheets/spritesheet_tiles.png");
 
   m_RockTexture = Engine::SubTexture2D::CreateFromIndices(m_SpriteSheet, 128, 3, 1);
-  m_MossyRockTexture = Engine::SubTexture2D::CreateFromIndices(m_SpriteSheet, 128, 3, 2);
 }
 
 void Sandbox2D::onDetach()
@@ -38,7 +37,6 @@ void Sandbox2D::onUpdate(std::chrono::duration<float> timestep)
   static radians rotation = 0.0f;
   rotation += timestep.count();
 
-#if 0
   Engine::Renderer2D::BeginScene(m_CameraController.getCamera());
   Engine::Renderer2D::DrawQuad({ {0.0f, 0.0f, -0.1f}, glm::vec2(50.f), glm::vec4(1.0f), 10.0f}, m_CheckerboardTexture);
   for (int i = 0; i < 5; ++i)
@@ -52,12 +50,12 @@ void Sandbox2D::onUpdate(std::chrono::duration<float> timestep)
       Engine::Renderer2D::DrawQuad({ { x, y, 0.0f }, glm::vec2(0.45f), color, 1.0f });
     }
   Engine::Renderer2D::EndScene();
-#endif
 
+#if 0
   Engine::Renderer2D::BeginScene(m_CameraController.getCamera());
   Engine::Renderer2D::DrawQuad({ {0.0f, 0.0f, 0.0f}, glm::vec2(1.0f), glm::vec4(1.0f), 1.0f }, m_RockTexture);
-  Engine::Renderer2D::DrawQuad({ {1.0f, 1.0f, 0.0f}, glm::vec2(1.0f), glm::vec4(1.0f), 1.0f }, m_MossyRockTexture);
   Engine::Renderer2D::EndScene();
+#endif
 }
 
 void Sandbox2D::onImGuiRender()

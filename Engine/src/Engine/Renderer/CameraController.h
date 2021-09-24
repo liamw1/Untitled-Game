@@ -19,7 +19,7 @@ namespace Engine
 
   private:
     // Camera state
-    bool isMouseEnabled = true;
+    bool isMouseEnabled = false;
     float m_Fov;
     float m_AspectRatio;
     float m_NearPlane;
@@ -37,11 +37,13 @@ namespace Engine
     float m_CameraZoomSensitivity = 2.0f;
 
     // Mouse state
-    glm::vec2 m_LastMousePosition = { 0.0f, 0.0f };
+    glm::vec2 m_LastMousePosition;
 
     bool onMouseMove(MouseMoveEvent& event);
     bool onMouseScroll(MouseScrollEvent& event);
     bool onWindowResize(WindowResizeEvent& event);
     bool onKeyPress(KeyPressEvent& event);
+
+    void setMouseState(bool enableMouse);
   };
 }

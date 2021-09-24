@@ -10,7 +10,7 @@ namespace Engine
     switch (Renderer::GetAPI())
     {
       case RendererAPI::API::None:    EN_CORE_ASSERT(false, "RendererAPI::None is currently not supported!"); return nullptr;
-      case RendererAPI::API::OpenGL:  return createShared<OpenGLShader>(filepath);
+      case RendererAPI::API::OpenGL:  return CreateShared<OpenGLShader>(filepath);
       default:                        EN_CORE_ASSERT(false, "Unknown RendererAPI!"); return nullptr;
     }
   }
@@ -19,7 +19,7 @@ namespace Engine
     switch (Renderer::GetAPI())
     {
       case RendererAPI::API::None:    EN_CORE_ASSERT(false, "RendererAPI::None is currently not supported!"); return nullptr;
-      case RendererAPI::API::OpenGL:  return createShared<OpenGLShader>(name, vertexSource, fragmentSource);
+      case RendererAPI::API::OpenGL:  return CreateShared<OpenGLShader>(name, vertexSource, fragmentSource);
       default:                        EN_CORE_ASSERT(false, "Unknown RendererAPI!"); return nullptr;
     }
   }

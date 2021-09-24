@@ -4,5 +4,5 @@
 
 namespace Engine
 {
-  Unique<RendererAPI> RenderCommand::s_RendererAPI = createUnique<OpenGLRendererAPI>();
+  Unique<RendererAPI> RenderCommand::s_RendererAPI = CreateUnique<OpenGLRendererAPI>();
 }
