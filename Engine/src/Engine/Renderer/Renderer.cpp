@@ -19,9 +19,6 @@ namespace Engine
   {
     EN_PROFILE_FUNCTION();
 
-    RenderCommand::Initialize();
-    Renderer2D::Initialize();
-
     cubeVertexArray = VertexArray::Create();
 
     float vertices[24 * 5] = {  // Front face

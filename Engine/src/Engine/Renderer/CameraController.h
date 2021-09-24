@@ -14,8 +14,8 @@ namespace Engine
     void onUpdate(std::chrono::duration<float> timestep);
     void onEvent(Event& event);
 
-    inline Camera& getCamera() { return m_Camera; }
-    inline const Camera& getCamera() const { return m_Camera; }
+    Camera& getCamera() { return m_Camera; }
+    const Camera& getCamera() const { return m_Camera; }
 
   private:
     // Camera state

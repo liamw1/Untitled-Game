@@ -40,7 +40,7 @@ namespace Engine
     virtual EventCategory getCategoryFlags() const = 0;
     virtual std::string toString() const { return getName(); }
 
-    inline bool isInCategory(EventCategory category) { return (bool)(getCategoryFlags() & category); }
+    bool isInCategory(EventCategory category) { return (bool)(getCategoryFlags() & category); }
   };
 
   class EventDispatcher
@@ -65,8 +65,5 @@ namespace Engine
     Event& m_Event;
   };
 
-  inline std::ostream& operator<<(std::ostream& os, const Event& e)
-  {
-    return os << e.toString();
-  }
+  inline std::ostream& operator<<(std::ostream& os, const Event& e) { return os << e.toString(); }
 }

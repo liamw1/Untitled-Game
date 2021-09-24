@@ -26,6 +26,8 @@ namespace Engine
       Number of slot varies between GPUs, usually around 16-32 total.
     */
     virtual void bind(uint32_t slot = 0) const = 0;
+
+    virtual bool operator==(const Texture& other) const = 0;
   };
 
   class Texture2D : public Texture

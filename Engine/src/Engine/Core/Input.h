@@ -14,11 +14,11 @@ namespace Engine
     Input(const Input&) = delete;
     Input& operator=(const Input&) = delete;
 
-    inline static bool IsKeyPressed(Key keyCode) { return s_Instance->isKeyPressedImpl(keyCode); }
-    inline static bool IsMouseButtonPressed(MouseButton button) { return s_Instance->isMouseButtonPressedImpl(button); }
-    inline static std::array<float, 2> GetMousePosition() { return s_Instance->getMousePositionImpl(); }
-    inline static float GetMouseX() { return s_Instance->getMouseXImpl(); }
-    inline static float GetMouseY() { return s_Instance->getMouseYImpl(); }
+    static bool IsKeyPressed(Key keyCode) { return s_Instance->isKeyPressedImpl(keyCode); }
+    static bool IsMouseButtonPressed(MouseButton button) { return s_Instance->isMouseButtonPressedImpl(button); }
+    static std::array<float, 2> GetMousePosition() { return s_Instance->getMousePositionImpl(); }
+    static float GetMouseX() { return s_Instance->getMouseXImpl(); }
+    static float GetMouseY() { return s_Instance->getMouseYImpl(); }
 
   protected:
     Input() = default;

@@ -9,7 +9,7 @@ namespace Engine
   public:
     EventCategory getCategoryFlags() const override { return EventCategory::Keyboard | EventCategory::Input; }
 
-    inline Key getKeyCode() const { return m_KeyCode; }
+    Key getKeyCode() const { return m_KeyCode; }
 
   protected:
     KeyEvent(Key keycode)
@@ -28,7 +28,7 @@ namespace Engine
     EventType getEventType() const override { return GetStaticType(); }
     const char* getName() const override { return "KeyPress"; }
 
-    inline int getRepeatCount() const { return m_RepeatCount; }
+    int getRepeatCount() const { return m_RepeatCount; }
 
     std::string toString() const override
     {

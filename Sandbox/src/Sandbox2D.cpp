@@ -5,6 +5,8 @@ Sandbox2D::Sandbox2D()
   : Layer("Sandbox2D"),
     m_CameraController(1280.0f / 720.0f, true)
 {
+  Engine::RenderCommand::Initialize();
+  Engine::Renderer2D::Initialize();
 }
 
 void Sandbox2D::onAttach()
@@ -22,14 +24,30 @@ void Sandbox2D::onDetach()
 void Sandbox2D::onUpdate(std::chrono::duration<float> timestep)
 {
   EN_PROFILE_FUNCTION();
+
+  Engine::Renderer2D::ResetStats();
   
   m_CameraController.onUpdate(timestep);
 
   Engine::RenderCommand::Clear({ 0.1f, 0.1f, 0.1f, 1.0f });
 
+  static radians rotation = 0.0f;
+  rotation += timestep.count();
+
   Engine::Renderer2D::BeginScene(m_CameraController.getCamera());
-  Engine::Renderer2D::DrawQuad({ { -1.0f, 1.0f, 0.0f }, { 0.8f, 0.8f }, { 0.8f, 0.2f, 0.3f, 1.0f }, 1.0f });
-  Engine::Renderer2D::DrawQuad({ { 0.5, -0.5f, -0.0f }, { 0.5f, 0.75f }, { 0.2f, 0.3f, 0.8f, 1.0f }, 1.0f});
+  Engine::Renderer2D::DrawQuad({ {0.0f, 0.0f, -0.1f}, glm::vec2(50.f), glm::vec4(1.0f), 10.0f, m_CheckerboardTexture });
+  for (int i = 0; i < 5; ++i)
+    for (int j = 0; j < 5; ++j)
+      Engine::Renderer2D::DrawRotatedQuad({ { (float)i - 2.0f, (float)j - 2.0f, 0.0f }, { 0.66f, 0.66f }, {0.8f, 0.2f, 0.3f, 1.0f}, 1.0f, m_CheckerboardTexture}, rotation);
+  Engine::Renderer2D::EndScene();
+
+  Engine::Renderer2D::BeginScene(m_CameraController.getCamera());
+  for (float y = -5.0f; y < 5.0f; y += 0.5f)
+    for (float x = -5.0f; x < 5.0f; x += 0.5f)
+    {
+      glm::vec4 color = { (x + 5.0f) / 10.0f, 0.4f, (y + 5.0f) / 10.0f, 0.5f };
+      Engine::Renderer2D::DrawQuad({ { x, y, 0.0f }, glm::vec2(0.45f), color, 1.0f });
+    }
   Engine::Renderer2D::EndScene();
 }
 
@@ -38,7 +56,14 @@ void Sandbox2D::onImGuiRender()
   EN_PROFILE_FUNCTION();
 
   ImGui::Begin("Settings");
-  // ImGui::ColorEdit4("Square Color", glm::value_ptr(m_SquareColor));
+
+  auto stats = Engine::Renderer2D::GetStats();
+  ImGui::Text("Renderer2D Stats:");
+  ImGui::Text("Draw Calls: %d", stats.drawCalls);
+  ImGui::Text("Quads: %d", stats.quadCount);
+  ImGui::Text("Vertices: %d", stats.getTotalVertexCount());
+  ImGui::Text("Indices: %d", stats.getTotatlIndexCount());
+
   ImGui::End();
 }
 

@@ -10,7 +10,7 @@ namespace Engine
 {
   static uint8_t GLFWWindowCount = 0;
 
-  static inline void GLFWErrorCallback(int errorCode, const char* description)
+  static void GLFWErrorCallback(int errorCode, const char* description)
   {
     EN_CORE_ERROR("GLFW Error ({0}): {1}", errorCode, description);
   }

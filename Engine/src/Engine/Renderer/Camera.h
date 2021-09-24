@@ -15,10 +15,10 @@ namespace Engine
     void setView(const glm::vec3& position, const glm::vec3& viewDirection);
     void setProjection(radians fov, float aspectRatio, float nearPlane, float farPlane);
 
-    inline const glm::vec3& getPosition() const { return m_Position; }
-    inline const glm::mat4& getProjectionMatrix() const { return m_ProjectionMatrix; }
-    inline const glm::mat4& getViewMatrix() const { return m_ViewMatrix; }
-    inline const glm::mat4& getViewProjectionMatrix() const { return m_ViewProjectionMatrix; }
+    const glm::vec3& getPosition() const { return m_Position; }
+    const glm::mat4& getProjectionMatrix() const { return m_ProjectionMatrix; }
+    const glm::mat4& getViewMatrix() const { return m_ViewMatrix; }
+    const glm::mat4& getViewProjectionMatrix() const { return m_ViewProjectionMatrix; }
 
   private:
     glm::mat4 m_ProjectionMatrix;

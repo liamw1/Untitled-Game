@@ -14,8 +14,8 @@ namespace Engine
     const char* getName() const override { return "WindowResized"; }
     EventCategory getCategoryFlags() const override { return EventCategory::Application; }
 
-    inline uint32_t getWidth() const { return m_Width; }
-    inline uint32_t getHeight() const { return m_Height; }
+    uint32_t getWidth() const { return m_Width; }
+    uint32_t getHeight() const { return m_Height; }
 
     std::string toString() const override
     {

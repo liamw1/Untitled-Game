@@ -13,8 +13,8 @@ namespace Engine
     void onUpdate(std::chrono::duration<float> timestep);
     void onEvent(Event& event);
 
-    inline OrthographicCamera& getCamera() { return m_Camera; }
-    inline const OrthographicCamera& getCamera() const { return m_Camera; }
+    OrthographicCamera& getCamera() { return m_Camera; }
+    const OrthographicCamera& getCamera() const { return m_Camera; }
 
   private:
     bool m_CanRotate;

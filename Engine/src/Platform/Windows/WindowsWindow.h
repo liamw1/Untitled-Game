@@ -14,18 +14,18 @@ namespace Engine
 
     void onUpdate() override;
 
-    inline uint32_t getWidth() const override { return m_Data.width; }
-    inline uint32_t getHeight() const override { return m_Data.height; }
+    uint32_t getWidth() const override { return m_Data.width; }
+    uint32_t getHeight() const override { return m_Data.height; }
 
     // Window attributes
-    inline void setEventCallback(const EventCallbackFn& callback) override { m_Data.eventCallback = callback; }
+    void setEventCallback(const EventCallbackFn& callback) override { m_Data.eventCallback = callback; }
     void setVSync(bool enabled) override;
     bool isVSync() const override;
 
     void enableCursor() override;
     void disableCursor() override;
 
-    inline void* getNativeWindow() const override { return m_Window; }
+    void* getNativeWindow() const override { return m_Window; }
 
   private:
     struct WindowData

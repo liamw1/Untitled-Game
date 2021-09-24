@@ -24,7 +24,7 @@ namespace Engine
     
     virtual void drawIndexed(const Shared<VertexArray>& vertexArray, uint32_t indexCount = 0) = 0;
 
-    inline static API GetAPI() { return s_API; }
+    static API GetAPI() { return s_API; }
 
   private:
     static API s_API;

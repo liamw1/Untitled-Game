@@ -14,12 +14,13 @@ namespace Engine
     OpenGLShader(const std::string& name, const std::string& vertexSource, const std::string& fragmentSource);
     ~OpenGLShader();
 
-    inline const std::string& getName() const override { return m_Name; }
+    const std::string& getName() const override { return m_Name; }
 
     void bind() const override;
     void unBind() const override;
 
     void setInt(const std::string& name, int value) override;
+    void setIntArray(const std::string& name, int* values, uint32_t count) override;
     void setFloat(const std::string& name, float value) override;
     void setFloat2(const std::string& name, const glm::vec2& values) override;
     void setFloat3(const std::string& name, const glm::vec3& values) override;

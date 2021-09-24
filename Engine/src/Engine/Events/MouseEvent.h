@@ -15,8 +15,8 @@ namespace Engine
     const char* getName() const override { return "MouseMove"; }
     EventCategory getCategoryFlags() const override { return EventCategory::Mouse | EventCategory::Input; }
 
-    inline float getX() const { return m_MouseX; }
-    inline float getY() const { return m_MouseY; }
+    float getX() const { return m_MouseX; }
+    float getY() const { return m_MouseY; }
 
     std::string toString() const override
     {
@@ -40,8 +40,8 @@ namespace Engine
     const char* getName() const override { return "MouseScroll"; }
     EventCategory getCategoryFlags() const override { return EventCategory::Mouse | EventCategory::Input; }
 
-    inline float getXOffset() const { return m_XOffset; }
-    inline float getYOffset() const { return m_YOffset; }
+    float getXOffset() const { return m_XOffset; }
+    float getYOffset() const { return m_YOffset; }
 
     std::string toString() const override
     {
@@ -59,7 +59,7 @@ namespace Engine
   public:
     EventCategory getCategoryFlags() const override { return EventCategory::Mouse | EventCategory::Input; }
 
-    inline MouseButton getMouseButton() const { return m_Button; }
+    MouseButton getMouseButton() const { return m_Button; }
 
   protected:
     MouseButtonEvent(MouseButton button)

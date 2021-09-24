@@ -13,8 +13,8 @@ namespace Engine
     void bind() const override;
     void unBind() const override;
 
-    inline const BufferLayout& getLayout() const override { return m_Layout; }
-    inline void setLayout(const BufferLayout& layout) override { m_Layout = layout; }
+    const BufferLayout& getLayout() const override { return m_Layout; }
+    void setLayout(const BufferLayout& layout) override { m_Layout = layout; }
 
     void setData(const void* data, uintptr_t size) override;
 
@@ -34,7 +34,7 @@ namespace Engine
     void bind() const override;
     void unBind() const override;
 
-    inline uint32_t getCount() const override { return m_Count; }
+    uint32_t getCount() const override { return m_Count; }
 
   private:
     uint32_t m_RendererID;

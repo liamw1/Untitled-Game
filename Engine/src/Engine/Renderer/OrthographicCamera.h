@@ -13,15 +13,15 @@ namespace Engine
 
     void setProjection(float left, float right, float bottom, float top);
 
-    inline const glm::vec3& getPosition() const { return m_Position; }
-    inline void setPosition(const glm::vec3& position) { m_Position = position; recalculateViewMatrix(); }
+    const glm::vec3& getPosition() const { return m_Position; }
+    void setPosition(const glm::vec3& position) { m_Position = position; recalculateViewMatrix(); }
 
-    inline radians getRotation() const { return m_Rotation; }
-    inline void setRotation(radians rotation) { m_Rotation = rotation; recalculateViewMatrix(); }
+    radians getRotation() const { return m_Rotation; }
+    void setRotation(radians rotation) { m_Rotation = rotation; recalculateViewMatrix(); }
 
-    inline const glm::mat4& getProjectionMatrix() const { return m_ProjectionMatrix; }
-    inline const glm::mat4& getViewMatrix() const { return m_ViewMatrix; }
-    inline const glm::mat4& getViewProjectionMatrix() const { return m_ViewProjectionMatrix; }
+    const glm::mat4& getProjectionMatrix() const { return m_ProjectionMatrix; }
+    const glm::mat4& getViewMatrix() const { return m_ViewMatrix; }
+    const glm::mat4& getViewProjectionMatrix() const { return m_ViewProjectionMatrix; }
 
   private:
     glm::mat4 m_ProjectionMatrix;
