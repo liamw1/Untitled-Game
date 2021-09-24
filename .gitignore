@@ -10,9 +10,7 @@ EngineProfile-*
 *.rsuser
 *.suo
 *.user
-*.vcxproj
 *.vcxproj.user
-*.vcxproj.filters
 *.userosscache
 *.sln.docstates
 imgui.ini
