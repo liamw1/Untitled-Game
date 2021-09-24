@@ -1,6 +1,7 @@
 #pragma once
 #include "OrthographicCamera.h"
 #include "Texture.h"
+#include "SubTexture.h"
 
 namespace Engine
 {
@@ -12,8 +13,6 @@ namespace Engine
       glm::vec2 size = glm::vec2(1.0f);
       glm::vec4 tintColor = glm::vec4(1.0f);
       float textureScalingFactor = 1.0f;
-
-      Shared<Texture2D> texture = nullptr;  // Texture is all-white by default
     };
 
     void Initialize();
@@ -24,8 +23,10 @@ namespace Engine
     void Flush();
 
     // Primitives
-    void DrawQuad(const QuadParams& params);
-    void DrawRotatedQuad(const QuadParams& params, radians rotation);
+    void DrawQuad(const QuadParams& params, const Shared<Texture2D>& texture = nullptr);
+    void DrawQuad(const QuadParams& params, const Shared<SubTexture2D>& subTexture);
+    void DrawRotatedQuad(const QuadParams& params, radians rotation, const Shared<Texture2D>& texture = nullptr);
+    void DrawRotatedQuad(const QuadParams& params, radians rotation, const Shared<SubTexture2D>& subTexture);
 
     // Stats
     struct Statistics

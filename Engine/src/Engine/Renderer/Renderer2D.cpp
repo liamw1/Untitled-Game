@@ -25,11 +25,6 @@ namespace Engine
                                                           {  0.5f,  0.5f, 0.0f, 1.0f },
                                                           { -0.5f,  0.5f, 0.0f, 1.0f } };
 
-  static constexpr glm::vec2 s_QuadTextureCoordinates[4] = { {0.0f, 0.0f},
-                                                             {1.0f, 0.0f},
-                                                             {1.0f, 1.0f},
-                                                             {0.0f, 1.0f} };
-
   // Maximum values per draw call
   static constexpr uint32_t s_MaxQuads = 10000;
   static constexpr uint32_t s_MaxVertices = 4 * s_MaxQuads;
@@ -98,7 +93,7 @@ namespace Engine
 
     s_QuadVertexBuffer = VertexBuffer::Create(s_MaxVertices * sizeof(QuadVertex));
     s_QuadVertexBuffer->setLayout({ { ShaderDataType::Float3, "a_Position" },
-                                    { ShaderDataType::Float4, "a_Color" },
+                                    { ShaderDataType::Float4, "a_TintColor" },
                                     { ShaderDataType::Float2, "a_TexCoord" },
                                     { ShaderDataType::Float,  "a_TextureIndex" },
                                     { ShaderDataType::Float,  "a_ScalingFactor" } });
@@ -185,21 +180,26 @@ namespace Engine
     s_Stats.drawCalls++;
   }
 
-  void Renderer2D::DrawQuad(const QuadParams& params)
+  void Renderer2D::DrawQuad(const QuadParams& params, const Shared<Texture2D>& texture)
   {
+    constexpr glm::vec2 textureCoordinates[4] = { {0.0f, 0.0f},
+                                                  {1.0f, 0.0f},
+                                                  {1.0f, 1.0f},
+                                                  {0.0f, 1.0f} };
+
     if (s_QuadIndexCount >= s_MaxIndices)
       flushAndReset();
 
     glm::mat4 transform = glm::translate(glm::mat4(1.0f), params.position)
       * glm::scale(glm::mat4(1.0f), { params.size.x, params.size.y, 1.0f });
 
-    float textureIndex = getTextureIndex(params.texture);
+    float textureIndex = getTextureIndex(texture);
 
     for (int i = 0; i < 4; ++i)
     {
       s_QuadVertexBufferPtr->position = transform * s_QuadVertexPositions[i];
       s_QuadVertexBufferPtr->color = params.tintColor;
-      s_QuadVertexBufferPtr->texCoord = s_QuadTextureCoordinates[i];
+      s_QuadVertexBufferPtr->texCoord = textureCoordinates[i];
       s_QuadVertexBufferPtr->textureIndex = textureIndex;
       s_QuadVertexBufferPtr->scalingFactor = params.textureScalingFactor;
       s_QuadVertexBufferPtr++;
@@ -209,8 +209,39 @@ namespace Engine
     s_Stats.quadCount++;
   }
 
-  void Renderer2D::DrawRotatedQuad(const QuadParams& params, radians rotation)
+  void Renderer2D::DrawQuad(const QuadParams& params, const Shared<SubTexture2D>& subTexture)
   {
+    const glm::vec2* textureCoordinates = subTexture->getTextureCoordinates();
+
+    if (s_QuadIndexCount >= s_MaxIndices)
+      flushAndReset();
+
+    glm::mat4 transform = glm::translate(glm::mat4(1.0f), params.position)
+      * glm::scale(glm::mat4(1.0f), { params.size.x, params.size.y, 1.0f });
+
+    float textureIndex = getTextureIndex(subTexture->getSpriteSheet());
+
+    for (int i = 0; i < 4; ++i)
+    {
+      s_QuadVertexBufferPtr->position = transform * s_QuadVertexPositions[i];
+      s_QuadVertexBufferPtr->color = params.tintColor;
+      s_QuadVertexBufferPtr->texCoord = textureCoordinates[i];
+      s_QuadVertexBufferPtr->textureIndex = textureIndex;
+      s_QuadVertexBufferPtr->scalingFactor = params.textureScalingFactor;
+      s_QuadVertexBufferPtr++;
+    }
+
+    s_QuadIndexCount += 6;
+    s_Stats.quadCount++;
+  }
+
+  void Renderer2D::DrawRotatedQuad(const QuadParams& params, radians rotation, const Shared<Texture2D>& texture)
+  {
+    constexpr glm::vec2 textureCoordinates[4] = { {0.0f, 0.0f},
+                                                  {1.0f, 0.0f},
+                                                  {1.0f, 1.0f},
+                                                  {0.0f, 1.0f} };
+
     if (s_QuadIndexCount >= s_MaxIndices)
       flushAndReset();
 
@@ -218,13 +249,40 @@ namespace Engine
       * glm::rotate(glm::mat4(1.0f), rotation, { 0.0f, 0.0f, 1.0f })
       * glm::scale(glm::mat4(1.0f), { params.size.x, params.size.y, 1.0f });
 
-    float textureIndex = getTextureIndex(params.texture);
+    float textureIndex = getTextureIndex(texture);
 
     for (int i = 0; i < 4; ++i)
     {
       s_QuadVertexBufferPtr->position = transform * s_QuadVertexPositions[i];
       s_QuadVertexBufferPtr->color = params.tintColor;
-      s_QuadVertexBufferPtr->texCoord = s_QuadTextureCoordinates[i];
+      s_QuadVertexBufferPtr->texCoord = textureCoordinates[i];
+      s_QuadVertexBufferPtr->textureIndex = textureIndex;
+      s_QuadVertexBufferPtr->scalingFactor = params.textureScalingFactor;
+      s_QuadVertexBufferPtr++;
+    }
+
+    s_QuadIndexCount += 6;
+    s_Stats.quadCount++;
+  }
+
+  void Renderer2D::DrawRotatedQuad(const QuadParams& params, radians rotation, const Shared<SubTexture2D>& subTexture)
+  {
+    const glm::vec2* textureCoordinates = subTexture->getTextureCoordinates();
+
+    if (s_QuadIndexCount >= s_MaxIndices)
+      flushAndReset();
+
+    glm::mat4 transform = glm::translate(glm::mat4(1.0f), params.position)
+      * glm::rotate(glm::mat4(1.0f), rotation, { 0.0f, 0.0f, 1.0f })
+      * glm::scale(glm::mat4(1.0f), { params.size.x, params.size.y, 1.0f });
+
+    float textureIndex = getTextureIndex(subTexture->getSpriteSheet());
+
+    for (int i = 0; i < 4; ++i)
+    {
+      s_QuadVertexBufferPtr->position = transform * s_QuadVertexPositions[i];
+      s_QuadVertexBufferPtr->color = params.tintColor;
+      s_QuadVertexBufferPtr->texCoord = textureCoordinates[i];
       s_QuadVertexBufferPtr->textureIndex = textureIndex;
       s_QuadVertexBufferPtr->scalingFactor = params.textureScalingFactor;
       s_QuadVertexBufferPtr++;

@@ -14,6 +14,10 @@ void Sandbox2D::onAttach()
   EN_PROFILE_FUNCTION();
 
   m_CheckerboardTexture = Engine::Texture2D::Create("assets/textures/Checkerboard.png");
+  m_SpriteSheet = Engine::Texture2D::Create("assets/textures/voxel-pack/Spritesheets/spritesheet_tiles.png");
+
+  m_RockTexture = Engine::SubTexture2D::CreateFromIndices(m_SpriteSheet, 128, 3, 1);
+  m_MossyRockTexture = Engine::SubTexture2D::CreateFromIndices(m_SpriteSheet, 128, 3, 2);
 }
 
 void Sandbox2D::onDetach()
@@ -34,20 +38,25 @@ void Sandbox2D::onUpdate(std::chrono::duration<float> timestep)
   static radians rotation = 0.0f;
   rotation += timestep.count();
 
+#if 0
   Engine::Renderer2D::BeginScene(m_CameraController.getCamera());
-  Engine::Renderer2D::DrawQuad({ {0.0f, 0.0f, -0.1f}, glm::vec2(50.f), glm::vec4(1.0f), 10.0f, m_CheckerboardTexture });
+  Engine::Renderer2D::DrawQuad({ {0.0f, 0.0f, -0.1f}, glm::vec2(50.f), glm::vec4(1.0f), 10.0f}, m_CheckerboardTexture);
   for (int i = 0; i < 5; ++i)
     for (int j = 0; j < 5; ++j)
-      Engine::Renderer2D::DrawRotatedQuad({ { (float)i - 2.0f, (float)j - 2.0f, 0.0f }, { 0.66f, 0.66f }, {0.8f, 0.2f, 0.3f, 1.0f}, 1.0f, m_CheckerboardTexture}, rotation);
-  Engine::Renderer2D::EndScene();
+      Engine::Renderer2D::DrawRotatedQuad({ { (float)i - 2.0f, (float)j - 2.0f, 0.0f }, { 0.66f, 0.66f }, {0.8f, 0.2f, 0.3f, 1.0f}}, rotation, m_CheckerboardTexture);
 
-  Engine::Renderer2D::BeginScene(m_CameraController.getCamera());
   for (float y = -5.0f; y < 5.0f; y += 0.5f)
     for (float x = -5.0f; x < 5.0f; x += 0.5f)
     {
       glm::vec4 color = { (x + 5.0f) / 10.0f, 0.4f, (y + 5.0f) / 10.0f, 0.5f };
       Engine::Renderer2D::DrawQuad({ { x, y, 0.0f }, glm::vec2(0.45f), color, 1.0f });
     }
+  Engine::Renderer2D::EndScene();
+#endif
+
+  Engine::Renderer2D::BeginScene(m_CameraController.getCamera());
+  Engine::Renderer2D::DrawQuad({ {0.0f, 0.0f, 0.0f}, glm::vec2(1.0f), glm::vec4(1.0f), 1.0f }, m_RockTexture);
+  Engine::Renderer2D::DrawQuad({ {1.0f, 1.0f, 0.0f}, glm::vec2(1.0f), glm::vec4(1.0f), 1.0f }, m_MossyRockTexture);
   Engine::Renderer2D::EndScene();
 }
 

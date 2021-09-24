@@ -17,4 +17,7 @@ public:
 private:
   Engine::OrthographicCameraController m_CameraController;
   Engine::Shared<Engine::Texture2D> m_CheckerboardTexture;
+  Engine::Shared<Engine::Texture2D> m_SpriteSheet;
+  Engine::Shared<Engine::SubTexture2D> m_RockTexture;
+  Engine::Shared<Engine::SubTexture2D> m_MossyRockTexture;
 };
