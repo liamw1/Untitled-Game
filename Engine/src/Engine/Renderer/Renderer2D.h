@@ -10,7 +10,7 @@ namespace Engine
     {
       glm::vec3 position = glm::vec3(0.0f);
       glm::vec2 size = glm::vec2(1.0f);
-      glm::vec4 color = glm::vec4(1.0f);
+      glm::vec4 tintColor = glm::vec4(1.0f);
       float textureScalingFactor = 1.0f;
 
       Shared<Texture2D> texture = nullptr;  // Texture is all-white by default

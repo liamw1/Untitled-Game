@@ -11,6 +11,7 @@ namespace Engine
 
     void onAttach() override;
     void onDetach() override;
+    void onEvent(Event& event) override;
 
     void begin();
     void end();

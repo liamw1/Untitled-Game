@@ -75,9 +75,9 @@ namespace Engine
 
     for (auto it = m_LayerStack.rbegin(); it != m_LayerStack.rend(); ++it)
     {
-      (*it)->onEvent(event);
       if (event.handled)
         break;
+      (*it)->onEvent(event);
     }
   }
 

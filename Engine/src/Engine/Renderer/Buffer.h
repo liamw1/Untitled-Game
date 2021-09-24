@@ -56,8 +56,8 @@ namespace Engine
         case ShaderDataType::Float2:      return 2;
         case ShaderDataType::Float3:      return 3;
         case ShaderDataType::Float4:      return 4;
-        case ShaderDataType::Mat3:        return 3;   // 3* float3
-        case ShaderDataType::Mat4:        return 4;   // 4* float4
+        case ShaderDataType::Mat3:        return 3;   // 3x float3
+        case ShaderDataType::Mat4:        return 4;   // 4x float4
         default: EN_CORE_ASSERT(false, "Unknown ShaderDataType!"); return 0;
       }
     }

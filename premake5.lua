@@ -86,7 +86,8 @@ project "Engine"
 
 		defines
 		{
-			"EN_BUILD_DLL"
+			"_CRT_SECURE_NO_WARNINGS",
+			"GLFW_INCLUDE_NONE"
 		}
 
 	filter "configurations:Debug"

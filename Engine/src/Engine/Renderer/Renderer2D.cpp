@@ -52,6 +52,16 @@ namespace Engine
 
 
 
+  static void flushAndReset()
+  {
+    Renderer2D::EndScene();
+
+    s_QuadIndexCount = 0;
+    s_QuadVertexBufferPtr = s_QuadVertexBufferBase;
+
+    s_TextureSlotIndex = 1;
+  }
+
   static float getTextureIndex(const Shared<Texture2D>& texture)
   {
     float textureIndex = 0.0f;  // White texture index by default
@@ -66,6 +76,9 @@ namespace Engine
 
       if (textureIndex == 0.0f)
       {
+        if (s_TextureSlotIndex >= s_MaxTextureSlots)
+          flushAndReset();
+
         textureIndex = (float)s_TextureSlotIndex;
         s_TextureSlots[s_TextureSlotIndex] = texture;
         s_TextureSlotIndex++;
@@ -73,16 +86,6 @@ namespace Engine
     }
 
     return textureIndex;
-  }
-
-  static void flushAndReset()
-  {
-    Renderer2D::EndScene();
-
-    s_QuadIndexCount = 0;
-    s_QuadVertexBufferPtr = s_QuadVertexBufferBase;
-
-    s_TextureSlotIndex = 1;
   }
 
 
@@ -171,6 +174,9 @@ namespace Engine
 
   void Renderer2D::Flush()
   {
+    if (s_QuadIndexCount == 0)
+      return; // Nothing to draw
+
     // Bind textures
     for (uint32_t i = 0; i < s_TextureSlotIndex; ++i)
       s_TextureSlots[i]->bind(i);
@@ -192,7 +198,7 @@ namespace Engine
     for (int i = 0; i < 4; ++i)
     {
       s_QuadVertexBufferPtr->position = transform * s_QuadVertexPositions[i];
-      s_QuadVertexBufferPtr->color = params.color;
+      s_QuadVertexBufferPtr->color = params.tintColor;
       s_QuadVertexBufferPtr->texCoord = s_QuadTextureCoordinates[i];
       s_QuadVertexBufferPtr->textureIndex = textureIndex;
       s_QuadVertexBufferPtr->scalingFactor = params.textureScalingFactor;
@@ -217,7 +223,7 @@ namespace Engine
     for (int i = 0; i < 4; ++i)
     {
       s_QuadVertexBufferPtr->position = transform * s_QuadVertexPositions[i];
-      s_QuadVertexBufferPtr->color = params.color;
+      s_QuadVertexBufferPtr->color = params.tintColor;
       s_QuadVertexBufferPtr->texCoord = s_QuadTextureCoordinates[i];
       s_QuadVertexBufferPtr->textureIndex = textureIndex;
       s_QuadVertexBufferPtr->scalingFactor = params.textureScalingFactor;

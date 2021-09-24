@@ -68,6 +68,13 @@ namespace Engine
     ImGui::DestroyContext();
   }
 
+  void ImGuiLayer::onEvent(Event& event)
+  {
+    ImGuiIO& io = ImGui::GetIO();
+    event.handled |= event.isInCategory(EventCategory::Mouse) & io.WantCaptureMouse;
+    event.handled |= event.isInCategory(EventCategory::Keyboard) & io.WantCaptureKeyboard;
+  }
+
   void ImGuiLayer::begin()
   {
     EN_PROFILE_FUNCTION();

@@ -59,20 +59,25 @@ namespace Engine
     {
       int64_t startTimeInNanoseconds = std::chrono::time_point_cast<std::chrono::nanoseconds>(start).time_since_epoch().count();
 
-      m_OutputStream << std::setprecision(3) << std::fixed;
-      m_OutputStream << ",{";
-      m_OutputStream << "\"cat\":\"function\",";
-      m_OutputStream << "\"dur\":" << elapsedTime.count() << ',';
-      m_OutputStream << "\"name\":\"" << name << "\",";
-      m_OutputStream << "\"ph\":\"X\",";
-      m_OutputStream << "\"pid\":0,";
-      m_OutputStream << "\"tid\":" << threadID << ",";
-      m_OutputStream << "\"ts\":" << startTimeInNanoseconds / 1e3;
-      m_OutputStream << "}";
+      std::stringstream json;
+
+      json << std::setprecision(3) << std::fixed;
+      json << ",{";
+      json << "\"cat\":\"function\",";
+      json << "\"dur\":" << elapsedTime.count() << ',';
+      json << "\"name\":\"" << name << "\",";
+      json << "\"ph\":\"X\",";
+      json << "\"pid\":0,";
+      json << "\"tid\":" << threadID << ",";
+      json << "\"ts\":" << startTimeInNanoseconds / 1e3;
+      json << "}";
 
       std::lock_guard lock(m_Mutex);
       if (m_CurrentSession)
+      {
+        m_OutputStream << json.str();
         m_OutputStream.flush();
+      }
     }
 
     static Instrumentor& Get()
