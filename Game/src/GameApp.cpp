@@ -1,11 +1,13 @@
 #include <Engine.h>
 #include <Engine/Core/EntryPoint.h>
+#include "GameSandbox.h"
 
 class GameApp : public Engine::Application
 {
 public:
   GameApp()
   {
+    pushLayer(new GameSandbox());
   }
 
   ~GameApp()

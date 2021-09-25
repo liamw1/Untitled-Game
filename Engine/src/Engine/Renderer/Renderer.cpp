@@ -1,6 +1,5 @@
 #include "ENpch.h"
 #include "Renderer.h"
-#include "Renderer2D.h"
 #include "RenderCommand.h"
 #include <glm/gtc/matrix_transform.hpp>
 

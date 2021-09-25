@@ -21,6 +21,7 @@
 // ================== Physical Units and Constants ================== //
 using radians = float;
 using radiansPerSec = float;
+using length = float;
 
 constexpr radians PI = static_cast<radians>(3.14159265358979323846264338327950288419716939937510L);
 

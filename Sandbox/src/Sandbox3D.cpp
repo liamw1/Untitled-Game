@@ -3,7 +3,7 @@
 
 Sandbox3D::Sandbox3D()
   : Layer("Sandbox3D"),
-    m_CameraController(glm::radians(45.0f), 1280.0f / 720.0f, 0.1f, 100.0f)
+  m_CameraController(glm::radians(45.0f), 1280.0f / 720.0f, 0.1f, 100.0f)
 {
   Engine::RenderCommand::Initialize();
   Engine::Renderer::Initialize();

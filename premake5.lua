@@ -180,8 +180,7 @@ project "Sandbox"
 	includedirs
 	{
 		"%{prj.name}/src/",
-		"Engine/src",
-		"Game/src"
+		"Engine/src"
 	}
 
 	sysincludedirs
@@ -193,8 +192,7 @@ project "Sandbox"
 
 	links
 	{
-		"Engine",
-		"Game"
+		"Engine"
 	}
 
 	filter "system:windows"

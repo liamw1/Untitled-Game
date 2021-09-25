@@ -11,7 +11,7 @@ namespace Engine
   struct QuadVertex
   {
     glm::vec3 position;
-    glm::vec4 color;
+    glm::vec4 tintColor;
     glm::vec2 texCoord;
     float textureIndex;
     float scalingFactor;
@@ -198,7 +198,7 @@ namespace Engine
     for (int i = 0; i < 4; ++i)
     {
       s_QuadVertexBufferPtr->position = transform * s_QuadVertexPositions[i];
-      s_QuadVertexBufferPtr->color = params.tintColor;
+      s_QuadVertexBufferPtr->tintColor = params.tintColor;
       s_QuadVertexBufferPtr->texCoord = textureCoordinates[i];
       s_QuadVertexBufferPtr->textureIndex = textureIndex;
       s_QuadVertexBufferPtr->scalingFactor = params.textureScalingFactor;
@@ -224,7 +224,7 @@ namespace Engine
     for (int i = 0; i < 4; ++i)
     {
       s_QuadVertexBufferPtr->position = transform * s_QuadVertexPositions[i];
-      s_QuadVertexBufferPtr->color = params.tintColor;
+      s_QuadVertexBufferPtr->tintColor = params.tintColor;
       s_QuadVertexBufferPtr->texCoord = textureCoordinates[i];
       s_QuadVertexBufferPtr->textureIndex = textureIndex;
       s_QuadVertexBufferPtr->scalingFactor = params.textureScalingFactor;
@@ -254,7 +254,7 @@ namespace Engine
     for (int i = 0; i < 4; ++i)
     {
       s_QuadVertexBufferPtr->position = transform * s_QuadVertexPositions[i];
-      s_QuadVertexBufferPtr->color = params.tintColor;
+      s_QuadVertexBufferPtr->tintColor = params.tintColor;
       s_QuadVertexBufferPtr->texCoord = textureCoordinates[i];
       s_QuadVertexBufferPtr->textureIndex = textureIndex;
       s_QuadVertexBufferPtr->scalingFactor = params.textureScalingFactor;
@@ -281,7 +281,7 @@ namespace Engine
     for (int i = 0; i < 4; ++i)
     {
       s_QuadVertexBufferPtr->position = transform * s_QuadVertexPositions[i];
-      s_QuadVertexBufferPtr->color = params.tintColor;
+      s_QuadVertexBufferPtr->tintColor = params.tintColor;
       s_QuadVertexBufferPtr->texCoord = textureCoordinates[i];
       s_QuadVertexBufferPtr->textureIndex = textureIndex;
       s_QuadVertexBufferPtr->scalingFactor = params.textureScalingFactor;
