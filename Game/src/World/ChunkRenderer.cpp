@@ -72,7 +72,7 @@ void ChunkRenderer::Initialize()
   EN_PROFILE_FUNCTION();
 
   s_MeshVertexArray = Engine::VertexArray::Create();
-  s_MeshVertexBuffer = Engine::VertexBuffer::Create(s_MaxVertices * sizeof(BlockVertex));
+  s_MeshVertexBuffer = Engine::VertexBuffer::Create((uint64_t)s_MaxVertices * sizeof(BlockVertex));
 
   s_MeshVertexBuffer->setLayout({ { ShaderDataType::Float3, "a_Position" },
                                   { ShaderDataType::Float2, "a_TexCoord" } });

@@ -11,9 +11,6 @@ namespace Engine
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glEnable(GL_DEPTH_TEST);
-
-    // NOTE: Should be enabled in distribution builds
-    // glEnable(GL_CULL_FACE);
   }
 
   void OpenGLRendererAPI::setViewport(uint32_t x, uint32_t y, uint32_t width, uint32_t height)
@@ -27,12 +24,14 @@ namespace Engine
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   }
 
-  void OpenGLRendererAPI::wireFrameToggle(bool wireFrameMode) const
+  void OpenGLRendererAPI::wireFrameToggle(bool enableWireFrame) const
   {
-    if (wireFrameMode)
-      glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-    else
-      glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    enableWireFrame ? glPolygonMode(GL_FRONT_AND_BACK, GL_LINE) : glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+  }
+
+  void OpenGLRendererAPI::faceCullToggle(bool enableFaceCulling) const
+  {
+    enableFaceCulling ? glEnable(GL_CULL_FACE) : glDisable(GL_CULL_FACE);
   }
 
   void OpenGLRendererAPI::drawIndexed(const Shared<VertexArray>& vertexArray, uint32_t indexCount)

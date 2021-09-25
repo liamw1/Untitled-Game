@@ -7,9 +7,10 @@
 class Chunk
 {
 public:
+  Chunk();
   Chunk(const glm::vec3& chunkPosition, Block blockType);
 
-  Block getBlockAt(int64_t i, int64_t j, int64_t k);
+  Block getBlockAt(uint8_t i, uint8_t j, uint8_t k);
 
   void render();
 
@@ -21,6 +22,7 @@ private:
   {
     NotGenerated = 0,
     Simple,
+    AllNeighborsAccountedFor,
     Optimized
   };
 
@@ -33,5 +35,6 @@ private:
   MeshState m_MeshState = MeshState::NotGenerated;
   std::vector<ChunkRenderer::BlockFaceParams> m_Mesh;
 
-  bool isNeighborTransparent(int64_t i, int64_t j, int64_t k, BlockFace face);
+  bool isOnBoundary(uint8_t i, uint8_t j, uint8_t k, uint8_t face);
+  bool isNeighborTransparent(uint8_t i, uint8_t j, uint8_t k, uint8_t face);
 };

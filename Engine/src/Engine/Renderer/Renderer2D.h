@@ -3,6 +3,9 @@
 #include "Texture.h"
 #include "SubTexture.h"
 
+/*
+  A general-purpose 2D renderer.
+*/
 namespace Engine
 {
   namespace Renderer2D

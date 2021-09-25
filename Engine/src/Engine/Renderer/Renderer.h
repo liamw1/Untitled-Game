@@ -4,6 +4,9 @@
 #include "Camera.h"
 #include "Texture.h"
 
+/*
+  A general-purpose renderer for 3D objects/effects.
+*/
 namespace Engine
 {
   namespace Renderer

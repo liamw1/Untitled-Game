@@ -2,6 +2,9 @@
 #include <Engine.h>
 #include "Block/Block.h"
 
+/*
+  A specialized renderer optimized for chunk rendering.
+*/
 namespace ChunkRenderer
 {
   struct BlockFaceParams

@@ -47,12 +47,18 @@ void GameSandbox::onEvent(Engine::Event& event)
 
 bool GameSandbox::onKeyPressEvent(Engine::KeyPressEvent& event)
 {
-  static bool wireFrameMode = false;
+  static bool wireFrameEnabled = false;
+  static bool faceCullingEnabled = false;
 
   if (event.getKeyCode() == Key::F1)
   {
-    wireFrameMode = !wireFrameMode;
-    Engine::RenderCommand::WireFrameToggle(wireFrameMode);
+    wireFrameEnabled = !wireFrameEnabled;
+    Engine::RenderCommand::WireFrameToggle(wireFrameEnabled);
+  }
+  if (event.getKeyCode() == Key::F2)
+  {
+    faceCullingEnabled = !faceCullingEnabled;
+    Engine::RenderCommand::FaceCullToggle(faceCullingEnabled);
   }
 
   return false;
