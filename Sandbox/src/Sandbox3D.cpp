@@ -18,7 +18,6 @@ void Sandbox3D::onAttach()
 
 void Sandbox3D::onDetach()
 {
-  EN_PROFILE_FUNCTION();
 }
 
 void Sandbox3D::onUpdate(std::chrono::duration<float> timestep)

@@ -13,8 +13,6 @@ namespace Engine
 
   void OrthographicCameraController::onUpdate(std::chrono::duration<float> timestep)
   {
-    EN_PROFILE_FUNCTION();
-
     const float dt = timestep.count();  // Time between frames in seconds
 
     if (Input::IsKeyPressed(Key::A))
@@ -67,8 +65,6 @@ namespace Engine
 
   bool OrthographicCameraController::onMouseScroll(MouseScrollEvent& event)
   {
-    EN_PROFILE_FUNCTION();
-
     m_ZoomLevel -= event.getYOffset() * 0.1f * m_ZoomLevel;
     m_ZoomLevel = std::max(m_ZoomLevel, 0.1f);
     m_Camera.setProjection(-m_AspectRatio * m_ZoomLevel, m_AspectRatio * m_ZoomLevel, -m_ZoomLevel, m_ZoomLevel);
@@ -77,8 +73,6 @@ namespace Engine
 
   bool OrthographicCameraController::onWindowResize(WindowResizeEvent& event)
   {
-    EN_PROFILE_FUNCTION();
-
     m_AspectRatio = (float)event.getWidth() / (float)event.getHeight();
     m_Camera.setProjection(-m_AspectRatio * m_ZoomLevel, m_AspectRatio * m_ZoomLevel, -m_ZoomLevel, m_ZoomLevel);
     return false;

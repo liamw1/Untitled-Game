@@ -21,7 +21,6 @@ void Sandbox2D::onAttach()
 
 void Sandbox2D::onDetach()
 {
-  EN_PROFILE_FUNCTION();
 }
 
 void Sandbox2D::onUpdate(std::chrono::duration<float> timestep)

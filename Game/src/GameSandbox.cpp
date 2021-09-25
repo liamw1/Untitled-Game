@@ -12,12 +12,10 @@ GameSandbox::GameSandbox()
 
 void GameSandbox::onAttach()
 {
-  EN_PROFILE_FUNCTION();
 }
 
 void GameSandbox::onDetach()
 {
-  EN_PROFILE_FUNCTION();
 }
 
 void GameSandbox::onUpdate(std::chrono::duration<float> timestep)

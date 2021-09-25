@@ -59,28 +59,28 @@ namespace Engine
 
   static float getTextureIndex(const Shared<Texture2D>& texture)
   {
-    float textureIndex = 0.0f;  // White texture index by default
+    uint32_t textureIndex = 0;  // White texture index by default
     if (texture != nullptr)
     {
       for (uint32_t i = 1; i < s_TextureSlotIndex; ++i)
         if (*s_TextureSlots[i].get() == *texture.get())
         {
-          textureIndex = (float)i;
+          textureIndex = i;
           break;
         }
 
-      if (textureIndex == 0.0f)
+      if (textureIndex == 0)
       {
         if (s_TextureSlotIndex >= s_MaxTextureSlots)
           flushAndReset();
 
-        textureIndex = (float)s_TextureSlotIndex;
+        textureIndex = s_TextureSlotIndex;
         s_TextureSlots[s_TextureSlotIndex] = texture;
         s_TextureSlotIndex++;
       }
     }
 
-    return textureIndex;
+    return (float)textureIndex;
   }
 
 
@@ -145,8 +145,6 @@ namespace Engine
 
   void Renderer2D::BeginScene(const OrthographicCamera& camera)
   {
-    EN_PROFILE_FUNCTION();
-
     s_TextureShader->bind();
     s_TextureShader->setMat4("u_ViewProjection", camera.getViewProjectionMatrix());
 
@@ -158,8 +156,6 @@ namespace Engine
 
   void Renderer2D::EndScene()
   {
-    EN_PROFILE_FUNCTION();
-
     // Cast to 1-byte value to determine number of bytes in vertexBufferPtr
     uintptr_t dataSize = (uint8_t*)s_QuadVertexBufferPtr - (uint8_t*)s_QuadVertexBufferBase;
     s_QuadVertexBuffer->setData(s_QuadVertexBufferBase, dataSize);

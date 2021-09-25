@@ -115,8 +115,6 @@ void ChunkRenderer::Shutdown()
 
 void ChunkRenderer::BeginScene(Engine::Camera& camera)
 {
-  EN_PROFILE_FUNCTION();
-
   s_TextureShader->bind();
   s_TextureShader->setMat4("u_ViewProjection", camera.getViewProjectionMatrix());
 
@@ -126,8 +124,6 @@ void ChunkRenderer::BeginScene(Engine::Camera& camera)
 
 void ChunkRenderer::EndScene()
 {
-  EN_PROFILE_FUNCTION();
-
   // Cast to 1-byte value to determine number of bytes in vertexBufferPtr
   uintptr_t dataSize = (uint8_t*)s_MeshVertexBufferPtr - (uint8_t*)s_MeshVertexBufferBase;
   s_MeshVertexBuffer->setData(s_MeshVertexBufferBase, dataSize);

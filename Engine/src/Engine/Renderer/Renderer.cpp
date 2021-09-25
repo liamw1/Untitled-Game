@@ -61,7 +61,7 @@ namespace Engine
                         { ShaderDataType::Float2, "a_TexCoord" } });
     cubeVertexArray->addVertexBuffer(cubeVB);
 
-    uint32_t indices[36];
+    uint32_t indices[36]{};
     for (int face = 0; face < 6; ++face)
     {
       indices[6 * face + 0] = 0 + 4 * face;
@@ -90,8 +90,6 @@ namespace Engine
 
   void Renderer::BeginScene(Camera& camera)
   {
-    EN_PROFILE_FUNCTION();
-
     textureShader->bind();
     textureShader->setMat4("u_ViewProjection", camera.getViewProjectionMatrix());
   }
@@ -102,8 +100,6 @@ namespace Engine
 
   void Renderer::DrawCube(const glm::vec3& position, const glm::vec3& size, Shared<Texture2D> texture)
   {
-    EN_PROFILE_FUNCTION();
-
     texture == nullptr ? whiteTexture->bind() : texture->bind();
 
     glm::mat4 transform = glm::translate(glm::mat4(1.0f), position)
@@ -116,8 +112,6 @@ namespace Engine
 
   void Renderer::OnWindowResize(uint32_t width, uint32_t height)
   {
-    EN_PROFILE_FUNCTION();
-
     RenderCommand::SetViewport(0, 0, width, height);
   }
 }

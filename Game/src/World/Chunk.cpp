@@ -3,6 +3,8 @@
 Chunk::Chunk(const glm::vec3& chunkPosition, Block blockType)
   : m_ChunkPosition(chunkPosition)
 {
+  EN_PROFILE_FUNCTION();
+
   for (int i = 0; i < s_ChunkVolume; ++i)
     chunkComposition[i] = blockType;
 
@@ -20,6 +22,8 @@ Chunk::Chunk(const glm::vec3& chunkPosition, Block blockType)
             }
           }
   m_MeshState = MeshState::Simple;
+
+  // NOTE: Potential optimization by using reserve() for mesh vector
 }
 
 Block Chunk::getBlockAt(int64_t i, int64_t j, int64_t k)
@@ -30,6 +34,8 @@ Block Chunk::getBlockAt(int64_t i, int64_t j, int64_t k)
 
 void Chunk::render()
 {
+  EN_PROFILE_FUNCTION();
+
   for (uint32_t i = 0; i < m_Mesh.size(); ++i)
     ChunkRenderer::DrawBlockFace(m_Mesh[i], m_ChunkPosition);
 }
@@ -44,5 +50,6 @@ bool Chunk::isNeighborTransparent(int64_t i, int64_t j, int64_t k, BlockFace fac
   case BlockFace::South:    return k == 0               ? true : getBlockAt(i, j, k - 1) == Block::Air;
   case BlockFace::East:     return i == 0               ? true : getBlockAt(i - 1, j, k) == Block::Air;
   case BlockFace::West:     return i == s_ChunkSize - 1 ? true : getBlockAt(i + 1, j, k) == Block::Air;
+  default:                  EN_ERROR("Unknown block face type!"); return false;
   }
 }

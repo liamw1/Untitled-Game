@@ -12,7 +12,8 @@ namespace Engine
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glEnable(GL_DEPTH_TEST);
 
-    // NOTE: Should enable face culling with glEnable(GL_FACE_CULL)
+    // NOTE: Should be enabled in distribution builds
+    // glEnable(GL_CULL_FACE);
   }
 
   void OpenGLRendererAPI::setViewport(uint32_t x, uint32_t y, uint32_t width, uint32_t height)

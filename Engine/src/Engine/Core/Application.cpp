@@ -50,12 +50,8 @@ namespace Engine
         }
 
         m_ImGuiLayer->begin();
-        {
-          EN_PROFILE_SCOPE("LayerStack onOnImGuiRender");
-
-          for (Layer* layer : m_LayerStack)
-            layer->onImGuiRender();
-        }
+        for (Layer* layer : m_LayerStack)
+          layer->onImGuiRender();
         m_ImGuiLayer->end();
       }
       
@@ -65,8 +61,6 @@ namespace Engine
 
   void Application::onEvent(Event& event)
   {
-    EN_PROFILE_FUNCTION();
-
     EventDispatcher dispatcher(event);
     dispatcher.dispatch<WindowCloseEvent>(EN_BIND_EVENT_FN(onWindowClose));
     dispatcher.dispatch<WindowResizeEvent>(EN_BIND_EVENT_FN(onWindowResize));
@@ -81,16 +75,12 @@ namespace Engine
 
   void Application::pushLayer(Layer* layer)
   {
-    EN_PROFILE_FUNCTION();
-
     m_LayerStack.pushLayer(layer);
     layer->onAttach();
   }
 
   void Application::pushOverlay(Layer* layer)
   {
-    EN_PROFILE_FUNCTION();
-
     m_LayerStack.pushOverlay(layer);
     layer->onAttach();
   }
@@ -103,8 +93,6 @@ namespace Engine
 
   bool Application::onWindowResize(WindowResizeEvent& event)
   {
-    EN_PROFILE_FUNCTION();
-
     if (event.getWidth() == 0 || event.getHeight() == 0)
     {
       m_Minimized = true;

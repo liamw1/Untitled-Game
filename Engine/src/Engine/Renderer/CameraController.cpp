@@ -21,8 +21,6 @@ namespace Engine
 
   void CameraController::onUpdate(std::chrono::duration<float> timestep)
   {
-    EN_PROFILE_FUNCTION();
-
     const float dt = timestep.count();  // Time between frames in seconds
 
     if (Input::IsKeyPressed(Key::A))
@@ -86,8 +84,6 @@ namespace Engine
 
   bool CameraController::onMouseScroll(MouseScrollEvent& event)
   {
-    EN_PROFILE_FUNCTION();
-
     m_Fov -= m_CameraZoomSensitivity * glm::radians(event.getYOffset());
     m_Fov = std::max(m_Fov, glm::radians(5.0f));
     m_Fov = std::min(m_Fov, glm::radians(60.0f));
@@ -98,8 +94,6 @@ namespace Engine
 
   bool CameraController::onWindowResize(WindowResizeEvent& event)
   {
-    EN_PROFILE_FUNCTION();
-
     m_AspectRatio = event.getHeight() == 0 ? 0.0f : (float)event.getWidth() / (float)event.getHeight();
     m_Camera.setProjection(m_Fov, m_AspectRatio, m_NearPlane, m_FarPlane);
     return false;
