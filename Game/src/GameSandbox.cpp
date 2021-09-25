@@ -28,7 +28,7 @@ void GameSandbox::onUpdate(std::chrono::duration<float> timestep)
 
   m_CameraController.onUpdate(timestep);
 
-  Engine::RenderCommand::Clear({ 0.1f, 0.1f, 0.1f, 1.0f });
+  Engine::RenderCommand::Clear({ 0.788f, 0.949f, 0.949f, 1.0f });
 
   ChunkRenderer::BeginScene(m_CameraController.getCamera());
   m_Chunk.render();
