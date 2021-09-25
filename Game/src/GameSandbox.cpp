@@ -39,5 +39,21 @@ void GameSandbox::onImGuiRender()
 
 void GameSandbox::onEvent(Engine::Event& event)
 {
+  Engine::EventDispatcher dispatcher(event);
+  dispatcher.dispatch<Engine::KeyPressEvent>(EN_BIND_EVENT_FN(onKeyPressEvent));
+
   m_CameraController.onEvent(event);
+}
+
+bool GameSandbox::onKeyPressEvent(Engine::KeyPressEvent& event)
+{
+  static bool wireFrameMode = false;
+
+  if (event.getKeyCode() == Key::F1)
+  {
+    wireFrameMode = !wireFrameMode;
+    Engine::RenderCommand::WireFrameToggle(wireFrameMode);
+  }
+
+  return false;
 }

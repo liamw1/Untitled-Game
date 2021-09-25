@@ -20,4 +20,6 @@ private:
   Engine::Shared<Engine::Texture2D> m_CheckerboardTexture;
 
   Chunk m_Chunk;
+
+  bool onKeyPressEvent(Engine::KeyPressEvent& event);
 };
