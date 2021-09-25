@@ -1,12 +1,13 @@
+#pragma once
 #include <Engine.h>
-#include "Block/BlockIDs.h"
+#include "Block/Block.h"
 
 namespace ChunkRenderer
 {
   struct BlockFaceParams
   {
-    uint8_t normal;
-    glm::vec3 centerPosition;
+    BlockFace normal;
+    glm::vec3 relativePosition;
   };
 
   void Initialize();

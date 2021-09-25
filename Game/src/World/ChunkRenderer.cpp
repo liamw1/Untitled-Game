@@ -26,10 +26,10 @@ static constexpr glm::vec4 s_BlockFacePositions[6][4]
         { -s_BlockSize / 2, -s_BlockSize / 2,  s_BlockSize / 2,  1.0f  } },
                                 
         // North Face
-      { { -s_BlockSize / 2, -s_BlockSize / 2, s_BlockSize / 2,  1.0f, },
-        {  s_BlockSize / 2, -s_BlockSize / 2, s_BlockSize / 2,  1.0f, },
-        {  s_BlockSize / 2,  s_BlockSize / 2, s_BlockSize / 2,  1.0f, },
-        { -s_BlockSize / 2,  s_BlockSize / 2, s_BlockSize / 2,  1.0f  } },
+      { { -s_BlockSize / 2, -s_BlockSize / 2,  s_BlockSize / 2,  1.0f, },
+        {  s_BlockSize / 2, -s_BlockSize / 2,  s_BlockSize / 2,  1.0f, },
+        {  s_BlockSize / 2,  s_BlockSize / 2,  s_BlockSize / 2,  1.0f, },
+        { -s_BlockSize / 2,  s_BlockSize / 2,  s_BlockSize / 2,  1.0f  } },
                                 
         // South Face
       { {  s_BlockSize / 2, -s_BlockSize / 2, -s_BlockSize / 2,  1.0f, },
@@ -147,11 +147,11 @@ void ChunkRenderer::DrawBlockFace(const BlockFaceParams& params, const glm::vec3
 
   EN_ASSERT(s_MeshIndexCount < s_MaxIndices, "Index count has exceeded limit!");
 
-  glm::mat4 transform = glm::translate(glm::mat4(1.0f), chunkPosition + params.centerPosition);
+  glm::mat4 transform = glm::translate(glm::mat4(1.0f), chunkPosition + params.relativePosition);
 
   for (int i = 0; i < 4; ++i)
   {
-    s_MeshVertexBufferPtr->position = transform * s_BlockFacePositions[params.normal][i];
+    s_MeshVertexBufferPtr->position = transform * s_BlockFacePositions[(uint8_t)params.normal][i];
     s_MeshVertexBufferPtr->texCoord = textureCoordinates[i];
     s_MeshVertexBufferPtr++;
   }

@@ -9,10 +9,3 @@ enum class Block : uint8_t
   Grass,
   Sand
 };
-
-
-
-enum BlockFace : uint8_t
-{
-  Top, Bottom, North, South, East, West, End
-};
