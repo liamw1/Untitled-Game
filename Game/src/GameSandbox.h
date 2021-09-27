@@ -1,6 +1,5 @@
 #pragma once
 #include "Engine.h"
-#include "World/Chunk.h"
 
 class GameSandbox : public Engine::Layer
 {
@@ -18,8 +17,6 @@ public:
 private:
   Engine::CameraController m_CameraController;
   Engine::Shared<Engine::Texture2D> m_CheckerboardTexture;
-
-  Chunk m_Chunk;
 
   bool onKeyPressEvent(Engine::KeyPressEvent& event);
 };

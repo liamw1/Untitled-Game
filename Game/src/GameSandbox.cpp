@@ -1,13 +1,14 @@
 #include "GameSandbox.h"
-#include <World/ChunkRenderer.h>
+#include "World/ChunkRenderer.h"
+#include "World/World.h"
 
 GameSandbox::GameSandbox()
   : Layer("GameSandbox"),
-    m_CameraController(glm::radians(45.0f), 1280.0f / 720.0f, 0.1f, 100.0f),
-  m_Chunk({ 0.0f, 0.0f, -10.0f }, Block::Sand)
+    m_CameraController(glm::radians(45.0f), 1280.0f / 720.0f, 0.1f, 100.0f)
 {
   Engine::RenderCommand::Initialize();
   ChunkRenderer::Initialize();
+  World::Initialize();
 }
 
 void GameSandbox::onAttach()
@@ -29,7 +30,7 @@ void GameSandbox::onUpdate(std::chrono::duration<float> timestep)
   Engine::RenderCommand::Clear({ 0.788f, 0.949f, 0.949f, 1.0f });
 
   ChunkRenderer::BeginScene(m_CameraController.getCamera());
-  m_Chunk.render();
+  World::OnUpdate({ 0.0f, 0.0f, 0.0f });
   ChunkRenderer::EndScene();
 }
 

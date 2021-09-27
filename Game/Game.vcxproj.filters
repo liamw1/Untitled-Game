@@ -20,6 +20,7 @@
     </ClInclude>
     <ClInclude Include="src\GameSandbox.h" />
     <ClInclude Include="src\Block\Block.h" />
+    <ClInclude Include="src\World\World.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\GameApp.cpp" />
@@ -30,5 +31,6 @@
       <Filter>World</Filter>
     </ClCompile>
     <ClCompile Include="src\GameSandbox.cpp" />
+    <ClCompile Include="src\World\World.cpp" />
   </ItemGroup>
 </Project>

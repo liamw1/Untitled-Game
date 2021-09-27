@@ -4,6 +4,7 @@
 
 // TEMPORARY
 typedef unsigned int GLenum;
+typedef int GLint;
 
 namespace Engine
 {
@@ -31,9 +32,17 @@ namespace Engine
   private:
     uint32_t m_RendererID = 0;
     std::string m_Name;
+    mutable std::unordered_map<std::string, GLint> m_UniformLocationCache;
 
     std::string readFile(const std::string& filepath);
     std::unordered_map<GLenum, std::string> preProcess(const std::string& source);
     void compile(const std::unordered_map<GLenum, std::string>& shaderSources);
+
+    /*
+      NOTE: Temporary function for retrieving uniform locations more
+      quickly than querying openGL.  The proper fix would be to parse
+      shaders to find and store all uniform locations at compilation.
+    */
+    GLint getUniformLocation(const std::string& name) const;
   };
 }

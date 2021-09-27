@@ -1,6 +1,7 @@
 #pragma once
+#include <cstdint>
 
-static inline constexpr length s_BlockSize = 0.2f;
+static inline constexpr float s_BlockSize = 0.2f;
 
 enum class BlockFace : uint8_t
 {

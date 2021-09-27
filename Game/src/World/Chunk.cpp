@@ -1,52 +1,64 @@
 #include "Chunk.h"
+#include <Engine.h>
 
-Chunk::Chunk()
-  : Chunk(glm::vec3(0.0f), Block::Sand) {}
-
-Chunk::Chunk(const glm::vec3& chunkPosition, Block blockType)
-  : m_ChunkPosition(chunkPosition)
+Chunk::Chunk(const std::array<int64_t, 3>& chunkIndices)
+  : m_ChunkIndices(chunkIndices),
+    m_ChunkPosition(m_ChunkIndices[0] * Length(), m_ChunkIndices[1] * Length(), m_ChunkIndices[2] * Length())
 {
-  {
-    EN_PROFILE_SCOPE("Chunk loading");
+  m_ChunkComposition = new Block[s_ChunkTotalBlocks];
+}
 
-    for (int i = 0; i < s_ChunkVolume; ++i)
-      chunkComposition[i] = blockType;
-  }
+Chunk::~Chunk()
+{
+  delete[] m_ChunkComposition;
+}
 
-  {
-    EN_PROFILE_SCOPE("Mesh generation");
+Chunk::Chunk(Chunk&& other) noexcept
+  : m_ChunkIndices(other.m_ChunkIndices),
+    m_ChunkPosition(other.m_ChunkPosition)
+{
+  m_ChunkComposition = other.m_ChunkComposition;
+  m_Mesh = std::move(other.m_Mesh);
 
-    for (uint8_t i = 0; i < s_ChunkSize; ++i)
-      for (uint8_t j = 0; j < s_ChunkSize; ++j)
-        for (uint8_t k = 0; k < s_ChunkSize; ++k)
-          if (getBlockAt(i, j, k) != Block::Air)
-            for (uint8_t face = (uint8_t)BlockFace::Top; face <= (uint8_t)BlockFace::West; ++face)
+  other.m_ChunkComposition = nullptr;
+}
+
+void Chunk::load(Block blockType)
+{
+  EN_PROFILE_FUNCTION();
+
+  for (int i = 0; i < s_ChunkTotalBlocks; ++i)
+    m_ChunkComposition[i] = blockType;
+
+  generateMesh();
+}
+
+void Chunk::generateMesh()
+{
+  EN_PROFILE_FUNCTION();
+
+  for (uint8_t i = 0; i < s_ChunkSize; ++i)
+    for (uint8_t j = 0; j < s_ChunkSize; ++j)
+      for (uint8_t k = 0; k < s_ChunkSize; ++k)
+        if (getBlockAt(i, j, k) != Block::Air)
+          for (uint8_t face = (uint8_t)BlockFace::Top; face <= (uint8_t)BlockFace::West; ++face)
+          {
+            // Check all faces for air blocks
+            if (isNeighborTransparent(i, j, k, face))
             {
-              // Check all faces for air blocks
-              if (isNeighborTransparent(i, j, k, face))
-              {
-                glm::vec3 relativePosition = { i * s_BlockSize, j * s_BlockSize, k * s_BlockSize };
-                m_Mesh.push_back({ (BlockFace)face, relativePosition });
-              }
+              glm::vec3 relativePosition = { i * s_BlockSize, j * s_BlockSize, k * s_BlockSize };
+              m_Mesh.push_back({ (BlockFace)face, relativePosition });
             }
-    m_MeshState = MeshState::Simple;
-  }
+          }
+  m_MeshState = MeshState::Simple;
 
   // NOTE: Potential optimization by using reserve() for mesh vector
 }
 
-Block Chunk::getBlockAt(uint8_t i, uint8_t j, uint8_t k)
+Block Chunk::getBlockAt(uint8_t i, uint8_t j, uint8_t k) const
 {
   constexpr uint64_t chunkSize = (uint64_t)s_ChunkSize;
-  return chunkComposition[i * chunkSize * chunkSize + j * chunkSize + k];
-}
-
-void Chunk::render()
-{
-  EN_PROFILE_FUNCTION();
-
-  for (uint32_t i = 0; i < m_Mesh.size(); ++i)
-    ChunkRenderer::DrawBlockFace(m_Mesh[i], m_ChunkPosition);
+  return m_ChunkComposition[i * chunkSize * chunkSize + j * chunkSize + k];
 }
 
 bool Chunk::isOnBoundary(uint8_t i, uint8_t j, uint8_t k, uint8_t face)

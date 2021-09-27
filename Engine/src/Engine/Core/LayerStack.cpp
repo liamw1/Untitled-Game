@@ -22,7 +22,7 @@ namespace Engine
 
   void LayerStack::pushOverlay(Layer* overlay)
   {
-    m_Layers.emplace_back(overlay);
+    m_Layers.push_back(overlay);
   }
 
   void LayerStack::popLayer(Layer* layer)

@@ -51,13 +51,13 @@ static constexpr glm::vec4 s_BlockFacePositions[6][4]
 
 // Maximum values per chunk mesh
 // NOTE: Can maybe make this from template argument to save memory
-static constexpr uint32_t s_MaxQuads = 6 * Chunk::Volume();
+static constexpr uint32_t s_MaxQuads = 6 * Chunk::TotalBlocks();
 static constexpr uint32_t s_MaxVertices = 4 * s_MaxQuads;
 static constexpr uint32_t s_MaxIndices = 6 * s_MaxQuads;
 
 static Engine::Shared<Engine::VertexArray> s_MeshVertexArray;
 static Engine::Shared<Engine::VertexBuffer> s_MeshVertexBuffer;
-static Engine::Shared<Engine::Shader> s_TextureShader;
+static Engine::Shared<Engine::Shader> s_BlockFaceShader;
 static Engine::Shared<Engine::Texture2D> s_TextureAtlas;
 constexpr static uint8_t s_TextureSlot = 1;
 
@@ -65,15 +65,22 @@ static uint32_t s_MeshIndexCount = 0;
 static BlockVertex* s_MeshVertexBufferBase = nullptr;
 static BlockVertex* s_MeshVertexBufferPtr = nullptr;
 
+static ChunkRenderer::Statistics s_Stats;
 
+
+static void StartBatch()
+{
+  s_MeshIndexCount = 0;
+  s_MeshVertexBufferPtr = s_MeshVertexBufferBase;
+}
 
 void ChunkRenderer::Initialize()
 {
   EN_PROFILE_FUNCTION();
 
   s_MeshVertexArray = Engine::VertexArray::Create();
-  s_MeshVertexBuffer = Engine::VertexBuffer::Create((uint64_t)s_MaxVertices * sizeof(BlockVertex));
 
+  s_MeshVertexBuffer = Engine::VertexBuffer::Create((uint64_t)s_MaxVertices * sizeof(BlockVertex));
   s_MeshVertexBuffer->setLayout({ { ShaderDataType::Float3, "a_Position" },
                                   { ShaderDataType::Float2, "a_TexCoord" } });
   s_MeshVertexArray->addVertexBuffer(s_MeshVertexBuffer);
@@ -101,9 +108,9 @@ void ChunkRenderer::Initialize()
   s_MeshVertexArray->setIndexBuffer(meshIndexBuffer);
   delete[] meshIndices;
 
-  s_TextureShader = Engine::Shader::Create("assets/shaders/BlockFaceTexture.glsl");
-  s_TextureShader->bind();
-  s_TextureShader->setInt("u_Texture", s_TextureSlot);
+  s_BlockFaceShader = Engine::Shader::Create("assets/shaders/BlockFaceTexture.glsl");
+  s_BlockFaceShader->bind();
+  s_BlockFaceShader->setInt("u_TextureAtlas", s_TextureSlot);
 
   s_TextureAtlas = Engine::Texture2D::Create("assets/textures/C-tetra_1.7/blocks/sand.png");
 }
@@ -115,23 +122,30 @@ void ChunkRenderer::Shutdown()
 
 void ChunkRenderer::BeginScene(Engine::Camera& camera)
 {
-  s_TextureShader->bind();
-  s_TextureShader->setMat4("u_ViewProjection", camera.getViewProjectionMatrix());
-
-  s_MeshIndexCount = 0;
-  s_MeshVertexBufferPtr = s_MeshVertexBufferBase;
+  s_BlockFaceShader->setMat4("u_ViewProjection", camera.getViewProjectionMatrix());
 }
 
 void ChunkRenderer::EndScene()
 {
+  Flush();
+}
+
+void ChunkRenderer::Flush()
+{
+  EN_PROFILE_FUNCTION();
+
+  if (s_MeshIndexCount == 0)
+    return; // Nothing to draw
+
   // Cast to 1-byte value to determine number of bytes in vertexBufferPtr
   uintptr_t dataSize = (uint8_t*)s_MeshVertexBufferPtr - (uint8_t*)s_MeshVertexBufferBase;
   s_MeshVertexBuffer->setData(s_MeshVertexBufferBase, dataSize);
 
-  // Bind textures
   s_TextureAtlas->bind(s_TextureSlot);
+  s_BlockFaceShader->bind();
 
   Engine::RenderCommand::DrawIndexed(s_MeshVertexArray, s_MeshIndexCount);
+  s_Stats.drawCalls++;
 }
 
 void ChunkRenderer::DrawBlockFace(const BlockFaceParams& params, const glm::vec3& chunkPosition)
@@ -153,4 +167,27 @@ void ChunkRenderer::DrawBlockFace(const BlockFaceParams& params, const glm::vec3
   }
 
   s_MeshIndexCount += 6;
+  s_Stats.quadCount++;
+}
+
+void ChunkRenderer::DrawChunk(const Chunk& chunk)
+{
+  EN_PROFILE_FUNCTION();
+
+  const auto& mesh = chunk.getMesh();
+
+  StartBatch();
+  for (auto it = mesh.begin(); it != mesh.end(); ++it)
+    DrawBlockFace(*it, chunk.getPosition());
+  Flush();
+}
+
+ChunkRenderer::Statistics ChunkRenderer::GetStats()
+{
+  return s_Stats;
+}
+
+void ChunkRenderer::ResetStats()
+{
+  s_Stats = Statistics();
 }

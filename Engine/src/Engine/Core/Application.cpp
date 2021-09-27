@@ -42,17 +42,15 @@ namespace Engine
 
       if (!m_Minimized)
       {
-        {
-          EN_PROFILE_SCOPE("LayerStack onUpdate");
+        for (Layer* layer : m_LayerStack)
+          layer->onUpdate(timestep);
 
-          for (Layer* layer : m_LayerStack)
-            layer->onUpdate(timestep);
-        }
-
+        /*
         m_ImGuiLayer->begin();
         for (Layer* layer : m_LayerStack)
           layer->onImGuiRender();
         m_ImGuiLayer->end();
+        */
       }
       
       m_Window->onUpdate();

@@ -116,7 +116,7 @@ namespace Engine
       }
     }
 
-    m_VertexBuffers.emplace_back(vertexBuffer);
+    m_VertexBuffers.push_back(vertexBuffer);
   }
 
   void OpenGLVertexArray::setIndexBuffer(const Shared<IndexBuffer>& indexBuffer)
