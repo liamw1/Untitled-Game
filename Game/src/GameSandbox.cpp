@@ -23,14 +23,14 @@ void GameSandbox::onUpdate(std::chrono::duration<float> timestep)
 {
   EN_PROFILE_FUNCTION();
 
-  EN_TRACE("dt: {0}", timestep.count());
+  // EN_TRACE("dt: {0}", timestep.count());
 
   m_CameraController.onUpdate(timestep);
 
   Engine::RenderCommand::Clear({ 0.788f, 0.949f, 0.949f, 1.0f });
 
   ChunkRenderer::BeginScene(m_CameraController.getCamera());
-  World::OnUpdate({ 0.0f, 0.0f, 0.0f });
+  World::OnUpdate(m_CameraController.getCamera().getPosition());
   ChunkRenderer::EndScene();
 }
 

@@ -123,6 +123,7 @@ void ChunkRenderer::Shutdown()
 void ChunkRenderer::BeginScene(Engine::Camera& camera)
 {
   s_BlockFaceShader->setMat4("u_ViewProjection", camera.getViewProjectionMatrix());
+  StartBatch();
 }
 
 void ChunkRenderer::EndScene()

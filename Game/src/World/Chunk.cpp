@@ -14,13 +14,28 @@ Chunk::~Chunk()
 }
 
 Chunk::Chunk(Chunk&& other) noexcept
-  : m_ChunkIndices(other.m_ChunkIndices),
-    m_ChunkPosition(other.m_ChunkPosition)
+  : m_ChunkIndices(std::move(other.m_ChunkIndices)),
+    m_ChunkPosition(std::move(other.m_ChunkPosition))
 {
   m_ChunkComposition = other.m_ChunkComposition;
   m_Mesh = std::move(other.m_Mesh);
 
   other.m_ChunkComposition = nullptr;
+}
+
+Chunk& Chunk::operator=(Chunk&& other) noexcept
+{
+  if (&other != this)
+  {
+    m_ChunkIndices = std::move(other.m_ChunkIndices);
+    m_ChunkPosition = std::move(other.m_ChunkPosition);
+
+    m_ChunkComposition = other.m_ChunkComposition;
+    m_Mesh = std::move(other.m_Mesh);
+
+    other.m_ChunkComposition = nullptr;
+  }
+  return *this;
 }
 
 void Chunk::load(Block blockType)

@@ -11,6 +11,7 @@ public:
   ~Chunk();
 
   Chunk(Chunk&& other) noexcept;
+  Chunk& operator=(Chunk&& other) noexcept;
 
   void load(Block blockType);
   void generateMesh();
@@ -23,6 +24,8 @@ public:
   static constexpr uint8_t Size() { return s_ChunkSize; }
   static constexpr float Length() { return s_ChunkLength; }
   static constexpr uint32_t TotalBlocks() { return s_ChunkTotalBlocks; }
+
+  glm::vec3 chunkCenter() const { return m_ChunkPosition + Length() / 2; }
 
 private:
   enum class MeshState : uint8_t
@@ -37,8 +40,8 @@ private:
   static constexpr float s_ChunkLength = s_ChunkSize * s_BlockSize;
   static constexpr uint32_t s_ChunkTotalBlocks = s_ChunkSize * s_ChunkSize * s_ChunkSize;
 
-  const std::array<int64_t, 3> m_ChunkIndices;
-  const glm::vec3 m_ChunkPosition;
+  std::array<int64_t, 3> m_ChunkIndices;
+  glm::vec3 m_ChunkPosition;
   Block* m_ChunkComposition;
 
   MeshState m_MeshState = MeshState::NotGenerated;
