@@ -25,9 +25,8 @@ using radiansPerSec = float;
 constexpr radians PI = static_cast<radians>(3.14159265358979323846264338327950288419716939937510L);
 
 
-
 // ======================== Common Utilities ======================== //
-inline constexpr uint8_t bit(uint8_t n) { return 1 << n; }
+inline constexpr uint64_t bit(uint8_t n) { return 1Ui64 << n; }
 #define EN_BIND_EVENT_FN(fn) [this](auto&&... args) -> decltype(auto) { return this->fn(std::forward<decltype(args)>(args)...); }
 
 namespace Engine

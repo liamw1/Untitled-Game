@@ -1,6 +1,13 @@
 #include "Chunk.h"
 #include <Engine.h>
 
+Chunk::Chunk()
+  : m_ChunkIndices({0, 0, 0}),
+    m_ChunkPosition({0.0f, 0.0f, 0.0f}),
+    m_ChunkComposition(nullptr)
+{
+}
+
 Chunk::Chunk(const std::array<int64_t, 3>& chunkIndices)
   : m_ChunkIndices(chunkIndices),
     m_ChunkPosition(m_ChunkIndices[0] * Length(), m_ChunkIndices[1] * Length(), m_ChunkIndices[2] * Length())

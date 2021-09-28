@@ -3,33 +3,35 @@
 /*
   World data
 */
-static int s_RenderDistance = 4;
-static int s_LoadDistance = s_RenderDistance + 2;
-static int s_PreLoadDistance = s_LoadDistance + 2;
+static constexpr int s_RenderDistance = 4;
+static constexpr int s_LoadDistance = s_RenderDistance + 4;
+static constexpr int s_PreLoadDistance = s_LoadDistance + 8;
 
-static std::vector<Chunk> s_LoadedChunks{};
 static std::array<int64_t, 3> s_LastPlayerChunk{};
+static std::unordered_map<int64_t, Chunk> s_Chunks{};
 
 
+/*
+  Creates a (nearly) unique integer value for a given set of chunk indices.
+  Guaranteed to be unique as long as the preload distance < 1024.
+  This can be changed to be up to 1024^2 by doubling the bit numbers.
+*/
+static int64_t createKey(const std::array<int64_t, 3>& chunkIndices)
+{
+  return chunkIndices[0] % bit(10) + bit(10) * (chunkIndices[1] % bit(10)) + bit(20) * (chunkIndices[2] % bit(10));
+}
 
 static void preLoad(const std::array<int64_t, 3>& playerChunk)
 {
   EN_PROFILE_FUNCTION();
 
-  for (int i = playerChunk[0] - s_PreLoadDistance; i <= playerChunk[0] + s_PreLoadDistance; ++i)
-    for (int k = playerChunk[2] - s_PreLoadDistance; k <= playerChunk[2] + s_PreLoadDistance; ++k)
+  for (int64_t i = playerChunk[0] - s_PreLoadDistance; i <= playerChunk[0] + s_PreLoadDistance; ++i)
+    for (int64_t k = playerChunk[2] - s_PreLoadDistance; k <= playerChunk[2] + s_PreLoadDistance; ++k)
     {
       std::array<int64_t, 3> chunkIndices = { i, -1, k };
-      bool preLoaded = false;
-      for (auto it = s_LoadedChunks.begin(); it != s_LoadedChunks.end(); ++it)
-        if (it->getIndices() == chunkIndices)
-          preLoaded = true;
-
-      if (!preLoaded)
-      {
-        Chunk newChunk = Chunk(chunkIndices);
-        s_LoadedChunks.push_back(std::move(newChunk));
-      }
+      int64_t key = createKey(chunkIndices);
+      if (s_Chunks.find(key) == s_Chunks.end())
+        s_Chunks[key] = std::move(Chunk(chunkIndices));
     }
 }
 
@@ -54,21 +56,22 @@ void World::OnUpdate(const glm::vec3& playerPosition)
     s_LastPlayerChunk = playerChunk;
   }
 
-  for (auto it = s_LoadedChunks.begin(); it != s_LoadedChunks.end();)
+  for (auto it = s_Chunks.begin(); it != s_Chunks.end();)
   {
-    std::array<int64_t, 3> distance = { abs(playerChunk[0] - it->getIndices()[0]), abs(playerChunk[1] - it->getIndices()[1]) , abs(playerChunk[2] - it->getIndices()[2]) };
+    auto& chunk = it->second;
+    std::array<int64_t, 3> distance = { abs(playerChunk[0] - chunk.getIndices()[0]), abs(playerChunk[1] - chunk.getIndices()[1]) , abs(playerChunk[2] - chunk.getIndices()[2]) };
     if (distance[0] > s_PreLoadDistance || distance[2] > s_PreLoadDistance)
     {
-      it = s_LoadedChunks.erase(it);
+      it = s_Chunks.erase(it);
     }
-    else if (!it->isLoaded() && distance[0] < s_LoadDistance && distance[2] < s_LoadDistance)
+    else if (!chunk.isLoaded() && distance[0] < s_LoadDistance && distance[2] < s_LoadDistance)
     {
-      it->load(Block::Sand);
+      chunk.load(Block::Sand);
       it++;
     }
-    else if (distance[0] < s_RenderDistance && distance[2] < s_RenderDistance && it->isLoaded())
+    else if (distance[0] < s_RenderDistance && distance[2] < s_RenderDistance && chunk.isLoaded())
     {
-      ChunkRenderer::DrawChunk(*it);
+      ChunkRenderer::DrawChunk(chunk);
       it++;
     }
     else

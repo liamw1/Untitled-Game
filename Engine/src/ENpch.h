@@ -11,6 +11,7 @@
 #include <string>
 #include <sstream>
 #include <functional>
+#include <map>
 #include <unordered_map>
 
 // I/O

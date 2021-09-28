@@ -6,7 +6,7 @@
 class Chunk
 {
 public:
-  Chunk() = delete;
+  Chunk();
   Chunk(const std::array<int64_t, 3>& chunkIndices);
 
   void load(Block blockType);
