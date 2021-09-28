@@ -68,7 +68,7 @@ static BlockVertex* s_MeshVertexBufferPtr = nullptr;
 static ChunkRenderer::Statistics s_Stats;
 
 
-static void StartBatch()
+static void startBatch()
 {
   s_MeshIndexCount = 0;
   s_MeshVertexBufferPtr = s_MeshVertexBufferBase;
@@ -123,7 +123,7 @@ void ChunkRenderer::Shutdown()
 void ChunkRenderer::BeginScene(Engine::Camera& camera)
 {
   s_BlockFaceShader->setMat4("u_ViewProjection", camera.getViewProjectionMatrix());
-  StartBatch();
+  startBatch();
 }
 
 void ChunkRenderer::EndScene()
@@ -177,7 +177,7 @@ void ChunkRenderer::DrawChunk(const Chunk& chunk)
 
   const auto& mesh = chunk.getMesh();
 
-  StartBatch();
+  startBatch();
   for (auto it = mesh.begin(); it != mesh.end(); ++it)
     DrawBlockFace(*it, chunk.getPosition());
   Flush();

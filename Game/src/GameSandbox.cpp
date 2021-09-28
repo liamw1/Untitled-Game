@@ -4,11 +4,11 @@
 
 GameSandbox::GameSandbox()
   : Layer("GameSandbox"),
-    m_CameraController(glm::radians(45.0f), 1280.0f / 720.0f, 0.1f, 100.0f)
+    m_CameraController(glm::radians(45.0f), 1280.0f / 720.0f, 0.1f, 1000.0f)
 {
   Engine::RenderCommand::Initialize();
   ChunkRenderer::Initialize();
-  World::Initialize();
+  World::Initialize(m_CameraController.getCamera().getPosition());
 }
 
 void GameSandbox::onAttach()
@@ -23,7 +23,7 @@ void GameSandbox::onUpdate(std::chrono::duration<float> timestep)
 {
   EN_PROFILE_FUNCTION();
 
-  // EN_TRACE("dt: {0}", timestep.count());
+  EN_TRACE("dt: {0}", timestep.count());
 
   m_CameraController.onUpdate(timestep);
 

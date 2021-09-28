@@ -5,37 +5,7 @@ Chunk::Chunk(const std::array<int64_t, 3>& chunkIndices)
   : m_ChunkIndices(chunkIndices),
     m_ChunkPosition(m_ChunkIndices[0] * Length(), m_ChunkIndices[1] * Length(), m_ChunkIndices[2] * Length())
 {
-  m_ChunkComposition = new Block[s_ChunkTotalBlocks];
-}
-
-Chunk::~Chunk()
-{
-  delete[] m_ChunkComposition;
-}
-
-Chunk::Chunk(Chunk&& other) noexcept
-  : m_ChunkIndices(std::move(other.m_ChunkIndices)),
-    m_ChunkPosition(std::move(other.m_ChunkPosition))
-{
-  m_ChunkComposition = other.m_ChunkComposition;
-  m_Mesh = std::move(other.m_Mesh);
-
-  other.m_ChunkComposition = nullptr;
-}
-
-Chunk& Chunk::operator=(Chunk&& other) noexcept
-{
-  if (&other != this)
-  {
-    m_ChunkIndices = std::move(other.m_ChunkIndices);
-    m_ChunkPosition = std::move(other.m_ChunkPosition);
-
-    m_ChunkComposition = other.m_ChunkComposition;
-    m_Mesh = std::move(other.m_Mesh);
-
-    other.m_ChunkComposition = nullptr;
-  }
-  return *this;
+  m_ChunkComposition = std::make_unique<Block[]>(s_ChunkTotalBlocks);
 }
 
 void Chunk::load(Block blockType)

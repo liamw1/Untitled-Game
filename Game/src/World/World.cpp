@@ -3,22 +3,40 @@
 /*
   World data
 */
-static int32_t s_RenderDistance = 4;
-static float s_RenderRadius = s_RenderDistance * Chunk::Length();
-static std::vector<Chunk> s_LoadedChunks{};
+static int s_RenderDistance = 4;
+static int s_LoadDistance = s_RenderDistance + 2;
+static int s_PreLoadDistance = s_LoadDistance + 2;
 
-void World::Initialize()
+static std::vector<Chunk> s_LoadedChunks{};
+static std::array<int64_t, 3> s_LastPlayerChunk{};
+
+
+
+static void preLoad(const std::array<int64_t, 3>& playerChunk)
 {
   EN_PROFILE_FUNCTION();
 
-  s_LoadedChunks.reserve(4 * (int64_t)s_RenderDistance * s_RenderDistance);
-  for (int32_t i = 0; i < 2 * s_RenderDistance; ++i)
-    for (int32_t j = 0; j < 2 * s_RenderDistance; ++j)
+  for (int i = playerChunk[0] - s_PreLoadDistance; i <= playerChunk[0] + s_PreLoadDistance; ++i)
+    for (int k = playerChunk[2] - s_PreLoadDistance; k <= playerChunk[2] + s_PreLoadDistance; ++k)
     {
-      Chunk newChunk = Chunk({ i - (int64_t)s_RenderDistance, -1, j - (int64_t)s_RenderDistance });
-      newChunk.load(Block::Sand);
-      s_LoadedChunks.push_back(std::move(newChunk));
+      std::array<int64_t, 3> chunkIndices = { i, -1, k };
+      bool preLoaded = false;
+      for (auto it = s_LoadedChunks.begin(); it != s_LoadedChunks.end(); ++it)
+        if (it->getIndices() == chunkIndices)
+          preLoaded = true;
+
+      if (!preLoaded)
+      {
+        Chunk newChunk = Chunk(chunkIndices);
+        s_LoadedChunks.push_back(std::move(newChunk));
+      }
     }
+}
+
+void World::Initialize(const glm::vec3& initialPosition)
+{
+  std::array<int64_t, 3> playerChunk = Chunk::GetPlayerChunk(initialPosition);
+  preLoad(playerChunk);
 }
 
 void World::ShutDown()
@@ -29,17 +47,31 @@ void World::OnUpdate(const glm::vec3& playerPosition)
 {
   EN_PROFILE_FUNCTION();
   
+  std::array<int64_t, 3> playerChunk = Chunk::GetPlayerChunk(playerPosition);
+  if (playerChunk != s_LastPlayerChunk)
+  {
+    preLoad(playerChunk);
+    s_LastPlayerChunk = playerChunk;
+  }
+
   for (auto it = s_LoadedChunks.begin(); it != s_LoadedChunks.end();)
   {
-    float xzDistance = sqrt((playerPosition.x - it->chunkCenter().x) * (playerPosition.x - it->chunkCenter().x) + (playerPosition.z - it->chunkCenter().z) * (playerPosition.z - it->chunkCenter().z));
-    if (xzDistance > s_RenderRadius)
+    std::array<int64_t, 3> distance = { abs(playerChunk[0] - it->getIndices()[0]), abs(playerChunk[1] - it->getIndices()[1]) , abs(playerChunk[2] - it->getIndices()[2]) };
+    if (distance[0] > s_PreLoadDistance || distance[2] > s_PreLoadDistance)
     {
       it = s_LoadedChunks.erase(it);
     }
-    else
+    else if (!it->isLoaded() && distance[0] < s_LoadDistance && distance[2] < s_LoadDistance)
+    {
+      it->load(Block::Sand);
+      it++;
+    }
+    else if (distance[0] < s_RenderDistance && distance[2] < s_RenderDistance && it->isLoaded())
     {
       ChunkRenderer::DrawChunk(*it);
-      ++it;
+      it++;
     }
+    else
+      it++;
   }
 }
