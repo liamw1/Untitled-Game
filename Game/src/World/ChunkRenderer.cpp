@@ -12,46 +12,46 @@ struct BlockVertex
 /*
   Renderer 2D data
 */
-static constexpr glm::vec4 s_BlockFacePositions[6][4] 
+static constexpr glm::vec3 s_BlockFacePositions[6][4] 
   = {   // Top Face
-      { { -s_BlockSize / 2,  s_BlockSize / 2,  s_BlockSize / 2,  1.0f, },
-        {  s_BlockSize / 2,  s_BlockSize / 2,  s_BlockSize / 2,  1.0f, },
-        {  s_BlockSize / 2,  s_BlockSize / 2, -s_BlockSize / 2,  1.0f, },
-        { -s_BlockSize / 2,  s_BlockSize / 2, -s_BlockSize / 2,  1.0f  } },
+      { { -s_BlockSize / 2,  s_BlockSize / 2,  s_BlockSize / 2, },
+        {  s_BlockSize / 2,  s_BlockSize / 2,  s_BlockSize / 2, },
+        {  s_BlockSize / 2,  s_BlockSize / 2, -s_BlockSize / 2, },
+        { -s_BlockSize / 2,  s_BlockSize / 2, -s_BlockSize / 2  } },
                                 
         // Bottom Face
-      { { -s_BlockSize / 2, -s_BlockSize / 2, -s_BlockSize / 2,  1.0f, },
-        {  s_BlockSize / 2, -s_BlockSize / 2, -s_BlockSize / 2,  1.0f, },
-        {  s_BlockSize / 2, -s_BlockSize / 2,  s_BlockSize / 2,  1.0f, },
-        { -s_BlockSize / 2, -s_BlockSize / 2,  s_BlockSize / 2,  1.0f  } },
+      { { -s_BlockSize / 2, -s_BlockSize / 2, -s_BlockSize / 2, },
+        {  s_BlockSize / 2, -s_BlockSize / 2, -s_BlockSize / 2, },
+        {  s_BlockSize / 2, -s_BlockSize / 2,  s_BlockSize / 2, },
+        { -s_BlockSize / 2, -s_BlockSize / 2,  s_BlockSize / 2  } },
                                 
         // North Face
-      { { -s_BlockSize / 2, -s_BlockSize / 2,  s_BlockSize / 2,  1.0f, },
-        {  s_BlockSize / 2, -s_BlockSize / 2,  s_BlockSize / 2,  1.0f, },
-        {  s_BlockSize / 2,  s_BlockSize / 2,  s_BlockSize / 2,  1.0f, },
-        { -s_BlockSize / 2,  s_BlockSize / 2,  s_BlockSize / 2,  1.0f  } },
+      { { -s_BlockSize / 2, -s_BlockSize / 2,  s_BlockSize / 2, },
+        {  s_BlockSize / 2, -s_BlockSize / 2,  s_BlockSize / 2, },
+        {  s_BlockSize / 2,  s_BlockSize / 2,  s_BlockSize / 2, },
+        { -s_BlockSize / 2,  s_BlockSize / 2,  s_BlockSize / 2  } },
                                 
         // South Face
-      { {  s_BlockSize / 2, -s_BlockSize / 2, -s_BlockSize / 2,  1.0f, },
-        { -s_BlockSize / 2, -s_BlockSize / 2, -s_BlockSize / 2,  1.0f, },
-        { -s_BlockSize / 2,  s_BlockSize / 2, -s_BlockSize / 2,  1.0f, },
-        {  s_BlockSize / 2,  s_BlockSize / 2, -s_BlockSize / 2,  1.0f  } },
+      { {  s_BlockSize / 2, -s_BlockSize / 2, -s_BlockSize / 2, },
+        { -s_BlockSize / 2, -s_BlockSize / 2, -s_BlockSize / 2, },
+        { -s_BlockSize / 2,  s_BlockSize / 2, -s_BlockSize / 2, },
+        {  s_BlockSize / 2,  s_BlockSize / 2, -s_BlockSize / 2  } },
                                 
         // East Face
-      { { -s_BlockSize / 2, -s_BlockSize / 2, -s_BlockSize / 2,  1.0f, },
-        { -s_BlockSize / 2, -s_BlockSize / 2,  s_BlockSize / 2,  1.0f, },
-        { -s_BlockSize / 2,  s_BlockSize / 2,  s_BlockSize / 2,  1.0f, },
-        { -s_BlockSize / 2,  s_BlockSize / 2, -s_BlockSize / 2,  1.0f  } },
+      { { -s_BlockSize / 2, -s_BlockSize / 2, -s_BlockSize / 2, },
+        { -s_BlockSize / 2, -s_BlockSize / 2,  s_BlockSize / 2, },
+        { -s_BlockSize / 2,  s_BlockSize / 2,  s_BlockSize / 2, },
+        { -s_BlockSize / 2,  s_BlockSize / 2, -s_BlockSize / 2  } },
                                 
         // West Face
-      { {  s_BlockSize / 2, -s_BlockSize / 2,  s_BlockSize / 2,  1.0f, },
-        {  s_BlockSize / 2, -s_BlockSize / 2, -s_BlockSize / 2,  1.0f, },
-        {  s_BlockSize / 2,  s_BlockSize / 2, -s_BlockSize / 2,  1.0f, },
-        {  s_BlockSize / 2,  s_BlockSize / 2,  s_BlockSize / 2,  1.0f  } } };
+      { {  s_BlockSize / 2, -s_BlockSize / 2,  s_BlockSize / 2, },
+        {  s_BlockSize / 2, -s_BlockSize / 2, -s_BlockSize / 2, },
+        {  s_BlockSize / 2,  s_BlockSize / 2, -s_BlockSize / 2, },
+        {  s_BlockSize / 2,  s_BlockSize / 2,  s_BlockSize / 2  } } };
 
 // Maximum values per chunk mesh
 // NOTE: Can maybe make this from template argument to save memory
-static constexpr uint32_t s_MaxQuads = 6 * Chunk::TotalBlocks();
+static constexpr uint32_t s_MaxQuads = 1000000;
 static constexpr uint32_t s_MaxVertices = 4 * s_MaxQuads;
 static constexpr uint32_t s_MaxIndices = 6 * s_MaxQuads;
 
@@ -68,11 +68,6 @@ static BlockVertex* s_MeshVertexBufferPtr = nullptr;
 static ChunkRenderer::Statistics s_Stats;
 
 
-static void startBatch()
-{
-  s_MeshIndexCount = 0;
-  s_MeshVertexBufferPtr = s_MeshVertexBufferBase;
-}
 
 void ChunkRenderer::Initialize()
 {
@@ -123,12 +118,18 @@ void ChunkRenderer::Shutdown()
 void ChunkRenderer::BeginScene(Engine::Camera& camera)
 {
   s_BlockFaceShader->setMat4("u_ViewProjection", camera.getViewProjectionMatrix());
-  startBatch();
+  StartBatch();
 }
 
 void ChunkRenderer::EndScene()
 {
   Flush();
+}
+
+void ChunkRenderer::StartBatch()
+{
+  s_MeshIndexCount = 0;
+  s_MeshVertexBufferPtr = s_MeshVertexBufferBase;
 }
 
 void ChunkRenderer::Flush()
@@ -158,11 +159,9 @@ void ChunkRenderer::DrawBlockFace(const BlockFaceParams& params, const glm::vec3
 
   EN_ASSERT(s_MeshIndexCount < s_MaxIndices, "Index count has exceeded limit!");
 
-  glm::mat4 transform = glm::translate(glm::mat4(1.0f), chunkPosition + params.relativePosition);
-
   for (int i = 0; i < 4; ++i)
   {
-    s_MeshVertexBufferPtr->position = transform * s_BlockFacePositions[(uint8_t)params.normal][i];
+    s_MeshVertexBufferPtr->position = chunkPosition + params.relativePosition + s_BlockFacePositions[(uint8_t)params.normal][i];
     s_MeshVertexBufferPtr->texCoord = textureCoordinates[i];
     s_MeshVertexBufferPtr++;
   }
@@ -177,7 +176,7 @@ void ChunkRenderer::DrawChunk(const Chunk& chunk)
 
   const auto& mesh = chunk.getMesh();
 
-  startBatch();
+  StartBatch();
   for (auto it = mesh.begin(); it != mesh.end(); ++it)
     DrawBlockFace(*it, chunk.getPosition());
   Flush();

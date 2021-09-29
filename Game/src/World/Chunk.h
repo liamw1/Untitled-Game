@@ -23,7 +23,7 @@ public:
   static constexpr uint8_t Size() { return s_ChunkSize; }
   static constexpr float Length() { return s_ChunkLength; }
   static constexpr uint32_t TotalBlocks() { return s_ChunkTotalBlocks; }
-  static constexpr std::array<int64_t, 3> GetPlayerChunk(const glm::vec3& playerPosition) { return { (int64_t)(playerPosition.x / Chunk::Length()), (int64_t)(playerPosition.y / Chunk::Length()) , (int64_t)(playerPosition.z / Chunk::Length()) }; }
+  static const std::array<int64_t, 3> GetPlayerChunk(const glm::vec3& playerPosition);
 
 private:
   enum class MeshState : uint8_t

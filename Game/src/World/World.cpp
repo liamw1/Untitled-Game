@@ -4,8 +4,8 @@
   World data
 */
 static constexpr int s_RenderDistance = 4;
-static constexpr int s_LoadDistance = s_RenderDistance + 4;
-static constexpr int s_PreLoadDistance = s_LoadDistance + 8;
+static constexpr int s_LoadDistance = s_RenderDistance + 1;
+static constexpr int s_PreLoadDistance = s_LoadDistance + 1;
 
 static std::array<int64_t, 3> s_LastPlayerChunk{};
 static std::unordered_map<int64_t, Chunk> s_Chunks{};

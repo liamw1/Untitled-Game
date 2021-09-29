@@ -20,6 +20,8 @@ namespace ChunkRenderer
 
   void BeginScene(Engine::Camera& camera);
   void EndScene();
+
+  void StartBatch();
   void Flush();
 
   void DrawBlockFace(const BlockFaceParams& params, const glm::vec3& chunkPosition);

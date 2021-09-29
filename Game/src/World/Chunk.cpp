@@ -19,8 +19,16 @@ void Chunk::load(Block blockType)
 {
   EN_PROFILE_FUNCTION();
 
-  for (int i = 0; i < s_ChunkTotalBlocks; ++i)
-    m_ChunkComposition[i] = blockType;
+  constexpr uint64_t chunkSize = (uint64_t)s_ChunkSize;
+  for (uint8_t i = 0; i < s_ChunkSize; ++i)
+    for (uint8_t j = 0; j < s_ChunkSize; ++j)
+      for (uint8_t k = 0; k < s_ChunkSize; ++k)
+      {
+        if (j < 16)
+          m_ChunkComposition[i * chunkSize * chunkSize + j * chunkSize + k] = blockType;
+        else
+          m_ChunkComposition[i * chunkSize * chunkSize + j * chunkSize + k] = Block::Air;
+      }
 
   generateMesh();
 }
@@ -51,6 +59,16 @@ Block Chunk::getBlockAt(uint8_t i, uint8_t j, uint8_t k) const
 {
   constexpr uint64_t chunkSize = (uint64_t)s_ChunkSize;
   return m_ChunkComposition[i * chunkSize * chunkSize + j * chunkSize + k];
+}
+
+const std::array<int64_t, 3> Chunk::GetPlayerChunk(const glm::vec3& playerPosition)
+{
+  std::array<int64_t, 3> playerChunkIndices = { (int64_t)(playerPosition.x / Chunk::Length()), (int64_t)(playerPosition.y / Chunk::Length()) , (int64_t)(playerPosition.z / Chunk::Length()) };
+  for (int i = 0; i < 3; ++i)
+    if (playerPosition[i] < 0.0f)
+      playerChunkIndices[i]--;
+
+  return playerChunkIndices;
 }
 
 bool Chunk::isOnBoundary(uint8_t i, uint8_t j, uint8_t k, uint8_t face)
