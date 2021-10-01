@@ -1,7 +1,13 @@
 #pragma once
+#include <Engine.h>
 #include "Block/Block.h"
 #include "Block/BlockIDs.h"
-#include "ChunkRenderer.h"
+
+struct BlockVertex
+{
+  glm::vec3 position;
+  glm::vec2 texCoord;
+};
 
 class Chunk
 {
@@ -10,13 +16,12 @@ public:
   Chunk(const std::array<int64_t, 3>& chunkIndices);
 
   void load(Block blockType);
-  void generateMesh();
 
   Block getBlockAt(uint8_t i, uint8_t j, uint8_t k) const;
   const std::array<int64_t, 3>& getIndices() const { return m_ChunkIndices; }
   const glm::vec3& getPosition() const { return m_ChunkPosition; }
   glm::vec3 center() const { return m_ChunkPosition + Length() / 2; }
-  const std::vector<ChunkRenderer::BlockFaceParams>& getMesh() const { return m_Mesh; }
+  const std::vector<BlockVertex>& getMesh() const { return m_Mesh; }
 
   bool isLoaded() const { return m_MeshState != MeshState::NotGenerated; }
 
@@ -43,7 +48,9 @@ private:
   std::unique_ptr<Block[]> m_ChunkComposition;
 
   MeshState m_MeshState = MeshState::NotGenerated;
-  std::vector<ChunkRenderer::BlockFaceParams> m_Mesh;
+  std::vector<BlockVertex> m_Mesh;
+
+  void generateMesh();
 
   bool isOnBoundary(uint8_t i, uint8_t j, uint8_t k, uint8_t face);
   bool isNeighborTransparent(uint8_t i, uint8_t j, uint8_t k, uint8_t face);

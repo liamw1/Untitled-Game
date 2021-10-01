@@ -3,55 +3,12 @@
 #include "Block/Block.h"
 #include <glm/gtc/matrix_transform.hpp>
 
-struct BlockVertex
-{
-  glm::vec3 position;
-  glm::vec2 texCoord;
-};
-
 /*
   Renderer 2D data
 */
-static constexpr glm::vec3 s_BlockFacePositions[6][4] 
-  = {   // Top Face
-      { { -s_BlockSize / 2,  s_BlockSize / 2,  s_BlockSize / 2, },
-        {  s_BlockSize / 2,  s_BlockSize / 2,  s_BlockSize / 2, },
-        {  s_BlockSize / 2,  s_BlockSize / 2, -s_BlockSize / 2, },
-        { -s_BlockSize / 2,  s_BlockSize / 2, -s_BlockSize / 2  } },
-                                
-        // Bottom Face
-      { { -s_BlockSize / 2, -s_BlockSize / 2, -s_BlockSize / 2, },
-        {  s_BlockSize / 2, -s_BlockSize / 2, -s_BlockSize / 2, },
-        {  s_BlockSize / 2, -s_BlockSize / 2,  s_BlockSize / 2, },
-        { -s_BlockSize / 2, -s_BlockSize / 2,  s_BlockSize / 2  } },
-                                
-        // North Face
-      { { -s_BlockSize / 2, -s_BlockSize / 2,  s_BlockSize / 2, },
-        {  s_BlockSize / 2, -s_BlockSize / 2,  s_BlockSize / 2, },
-        {  s_BlockSize / 2,  s_BlockSize / 2,  s_BlockSize / 2, },
-        { -s_BlockSize / 2,  s_BlockSize / 2,  s_BlockSize / 2  } },
-                                
-        // South Face
-      { {  s_BlockSize / 2, -s_BlockSize / 2, -s_BlockSize / 2, },
-        { -s_BlockSize / 2, -s_BlockSize / 2, -s_BlockSize / 2, },
-        { -s_BlockSize / 2,  s_BlockSize / 2, -s_BlockSize / 2, },
-        {  s_BlockSize / 2,  s_BlockSize / 2, -s_BlockSize / 2  } },
-                                
-        // East Face
-      { { -s_BlockSize / 2, -s_BlockSize / 2, -s_BlockSize / 2, },
-        { -s_BlockSize / 2, -s_BlockSize / 2,  s_BlockSize / 2, },
-        { -s_BlockSize / 2,  s_BlockSize / 2,  s_BlockSize / 2, },
-        { -s_BlockSize / 2,  s_BlockSize / 2, -s_BlockSize / 2  } },
-                                
-        // West Face
-      { {  s_BlockSize / 2, -s_BlockSize / 2,  s_BlockSize / 2, },
-        {  s_BlockSize / 2, -s_BlockSize / 2, -s_BlockSize / 2, },
-        {  s_BlockSize / 2,  s_BlockSize / 2, -s_BlockSize / 2, },
-        {  s_BlockSize / 2,  s_BlockSize / 2,  s_BlockSize / 2  } } };
-
 // Maximum values per chunk mesh
 // NOTE: Can maybe make this from template argument to save memory
-static constexpr uint32_t s_MaxQuads = 1000000;
+static constexpr uint32_t s_MaxQuads = 3 * Chunk::TotalBlocks();
 static constexpr uint32_t s_MaxVertices = 4 * s_MaxQuads;
 static constexpr uint32_t s_MaxIndices = 6 * s_MaxQuads;
 
@@ -60,12 +17,6 @@ static Engine::Shared<Engine::VertexBuffer> s_MeshVertexBuffer;
 static Engine::Shared<Engine::Shader> s_BlockFaceShader;
 static Engine::Shared<Engine::Texture2D> s_TextureAtlas;
 constexpr static uint8_t s_TextureSlot = 1;
-
-static uint32_t s_MeshIndexCount = 0;
-static BlockVertex* s_MeshVertexBufferBase = nullptr;
-static BlockVertex* s_MeshVertexBufferPtr = nullptr;
-
-static ChunkRenderer::Statistics s_Stats;
 
 
 
@@ -80,7 +31,6 @@ void ChunkRenderer::Initialize()
                                   { ShaderDataType::Float2, "a_TexCoord" } });
   s_MeshVertexArray->addVertexBuffer(s_MeshVertexBuffer);
 
-  s_MeshVertexBufferBase = new BlockVertex[s_MaxVertices];
   uint32_t* meshIndices = new uint32_t[s_MaxIndices];
 
   uint32_t offset = 0;
@@ -110,64 +60,13 @@ void ChunkRenderer::Initialize()
   s_TextureAtlas = Engine::Texture2D::Create("assets/textures/C-tetra_1.7/blocks/sand.png");
 }
 
-void ChunkRenderer::Shutdown()
-{
-  delete[] s_MeshVertexBufferBase;
-}
-
 void ChunkRenderer::BeginScene(Engine::Camera& camera)
 {
   s_BlockFaceShader->setMat4("u_ViewProjection", camera.getViewProjectionMatrix());
-  StartBatch();
 }
 
 void ChunkRenderer::EndScene()
 {
-  Flush();
-}
-
-void ChunkRenderer::StartBatch()
-{
-  s_MeshIndexCount = 0;
-  s_MeshVertexBufferPtr = s_MeshVertexBufferBase;
-}
-
-void ChunkRenderer::Flush()
-{
-  EN_PROFILE_FUNCTION();
-
-  if (s_MeshIndexCount == 0)
-    return; // Nothing to draw
-
-  // Cast to 1-byte value to determine number of bytes in vertexBufferPtr
-  uintptr_t dataSize = (uint8_t*)s_MeshVertexBufferPtr - (uint8_t*)s_MeshVertexBufferBase;
-  s_MeshVertexBuffer->setData(s_MeshVertexBufferBase, dataSize);
-
-  s_TextureAtlas->bind(s_TextureSlot);
-  s_BlockFaceShader->bind();
-
-  Engine::RenderCommand::DrawIndexed(s_MeshVertexArray, s_MeshIndexCount);
-  s_Stats.drawCalls++;
-}
-
-void ChunkRenderer::DrawBlockFace(const BlockFaceParams& params, const glm::vec3& chunkPosition)
-{
-  constexpr glm::vec2 textureCoordinates[4] = { {0.0f, 0.0f},
-                                                {1.0f, 0.0f},
-                                                {1.0f, 1.0f},
-                                                {0.0f, 1.0f} };
-
-  EN_ASSERT(s_MeshIndexCount < s_MaxIndices, "Index count has exceeded limit!");
-
-  for (int i = 0; i < 4; ++i)
-  {
-    s_MeshVertexBufferPtr->position = chunkPosition + params.relativePosition + s_BlockFacePositions[(uint8_t)params.normal][i];
-    s_MeshVertexBufferPtr->texCoord = textureCoordinates[i];
-    s_MeshVertexBufferPtr++;
-  }
-
-  s_MeshIndexCount += 6;
-  s_Stats.quadCount++;
 }
 
 void ChunkRenderer::DrawChunk(const Chunk& chunk)
@@ -176,18 +75,17 @@ void ChunkRenderer::DrawChunk(const Chunk& chunk)
 
   const auto& mesh = chunk.getMesh();
 
-  StartBatch();
-  for (auto it = mesh.begin(); it != mesh.end(); ++it)
-    DrawBlockFace(*it, chunk.getPosition());
-  Flush();
-}
+  uint32_t meshIndexCount = 6 * (uint32_t)mesh.size();
 
-ChunkRenderer::Statistics ChunkRenderer::GetStats()
-{
-  return s_Stats;
-}
+  if (meshIndexCount == 0)
+    return; // Nothing to draw
 
-void ChunkRenderer::ResetStats()
-{
-  s_Stats = Statistics();
+  // Cast to 1-byte value to determine number of bytes in vertexBufferPtr
+  uintptr_t dataSize = sizeof(BlockVertex) * mesh.size();
+  s_MeshVertexBuffer->setData(mesh.data(), dataSize);
+
+  s_TextureAtlas->bind(s_TextureSlot);
+  s_BlockFaceShader->bind();
+
+  Engine::RenderCommand::DrawIndexed(s_MeshVertexArray, meshIndexCount);
 }

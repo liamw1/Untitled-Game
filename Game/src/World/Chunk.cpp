@@ -1,6 +1,45 @@
 #include "Chunk.h"
 #include <Engine.h>
 
+static constexpr glm::vec3 s_BlockFacePositions[6][4]
+= {   // Top Face
+    { { -s_BlockSize / 2,  s_BlockSize / 2,  s_BlockSize / 2, },
+      {  s_BlockSize / 2,  s_BlockSize / 2,  s_BlockSize / 2, },
+      {  s_BlockSize / 2,  s_BlockSize / 2, -s_BlockSize / 2, },
+      { -s_BlockSize / 2,  s_BlockSize / 2, -s_BlockSize / 2  } },
+
+      // Bottom Face
+    { { -s_BlockSize / 2, -s_BlockSize / 2, -s_BlockSize / 2, },
+      {  s_BlockSize / 2, -s_BlockSize / 2, -s_BlockSize / 2, },
+      {  s_BlockSize / 2, -s_BlockSize / 2,  s_BlockSize / 2, },
+      { -s_BlockSize / 2, -s_BlockSize / 2,  s_BlockSize / 2  } },
+
+      // North Face
+    { { -s_BlockSize / 2, -s_BlockSize / 2,  s_BlockSize / 2, },
+      {  s_BlockSize / 2, -s_BlockSize / 2,  s_BlockSize / 2, },
+      {  s_BlockSize / 2,  s_BlockSize / 2,  s_BlockSize / 2, },
+      { -s_BlockSize / 2,  s_BlockSize / 2,  s_BlockSize / 2  } },
+
+      // South Face
+    { {  s_BlockSize / 2, -s_BlockSize / 2, -s_BlockSize / 2, },
+      { -s_BlockSize / 2, -s_BlockSize / 2, -s_BlockSize / 2, },
+      { -s_BlockSize / 2,  s_BlockSize / 2, -s_BlockSize / 2, },
+      {  s_BlockSize / 2,  s_BlockSize / 2, -s_BlockSize / 2  } },
+
+      // East Face
+    { { -s_BlockSize / 2, -s_BlockSize / 2, -s_BlockSize / 2, },
+      { -s_BlockSize / 2, -s_BlockSize / 2,  s_BlockSize / 2, },
+      { -s_BlockSize / 2,  s_BlockSize / 2,  s_BlockSize / 2, },
+      { -s_BlockSize / 2,  s_BlockSize / 2, -s_BlockSize / 2  } },
+
+      // West Face
+    { {  s_BlockSize / 2, -s_BlockSize / 2,  s_BlockSize / 2, },
+      {  s_BlockSize / 2, -s_BlockSize / 2, -s_BlockSize / 2, },
+      {  s_BlockSize / 2,  s_BlockSize / 2, -s_BlockSize / 2, },
+      {  s_BlockSize / 2,  s_BlockSize / 2,  s_BlockSize / 2  } } };
+
+
+
 Chunk::Chunk()
   : m_ChunkIndices({0, 0, 0}),
     m_ChunkPosition({0.0f, 0.0f, 0.0f}),
@@ -33,28 +72,6 @@ void Chunk::load(Block blockType)
   generateMesh();
 }
 
-void Chunk::generateMesh()
-{
-  EN_PROFILE_FUNCTION();
-
-  for (uint8_t i = 0; i < s_ChunkSize; ++i)
-    for (uint8_t j = 0; j < s_ChunkSize; ++j)
-      for (uint8_t k = 0; k < s_ChunkSize; ++k)
-        if (getBlockAt(i, j, k) != Block::Air)
-          for (uint8_t face = (uint8_t)BlockFace::Top; face <= (uint8_t)BlockFace::West; ++face)
-          {
-            // Check all faces for air blocks
-            if (isNeighborTransparent(i, j, k, face))
-            {
-              glm::vec3 relativePosition = { i * s_BlockSize, j * s_BlockSize, k * s_BlockSize };
-              m_Mesh.push_back({ (BlockFace)face, relativePosition });
-            }
-          }
-  m_MeshState = MeshState::Simple;
-
-  // NOTE: Potential optimization by using reserve() for mesh vector
-}
-
 Block Chunk::getBlockAt(uint8_t i, uint8_t j, uint8_t k) const
 {
   constexpr uint64_t chunkSize = (uint64_t)s_ChunkSize;
@@ -69,6 +86,35 @@ const std::array<int64_t, 3> Chunk::GetPlayerChunk(const glm::vec3& playerPositi
       playerChunkIndices[i]--;
 
   return playerChunkIndices;
+}
+
+void Chunk::generateMesh()
+{
+  EN_PROFILE_FUNCTION();
+
+  static constexpr glm::vec2 textureCoordinates[4] = { {0.0f, 0.0f},
+                                                       {1.0f, 0.0f},
+                                                       {1.0f, 1.0f},
+                                                       {0.0f, 1.0f} };
+
+  for (uint8_t i = 0; i < s_ChunkSize; ++i)
+    for (uint8_t j = 0; j < s_ChunkSize; ++j)
+      for (uint8_t k = 0; k < s_ChunkSize; ++k)
+        if (getBlockAt(i, j, k) != Block::Air)
+          for (uint8_t face = (uint8_t)BlockFace::Top; face <= (uint8_t)BlockFace::West; ++face)
+          {
+            // Check all faces for air blocks
+            if (isNeighborTransparent(i, j, k, face))
+            {
+              glm::vec3 relativePosition = { i * s_BlockSize, j * s_BlockSize, k * s_BlockSize };
+
+              for (int i = 0; i < 4; ++i)
+                m_Mesh.push_back({ m_ChunkPosition + relativePosition + s_BlockFacePositions[face][i], textureCoordinates[i] });
+            }
+          }
+  m_MeshState = MeshState::Simple;
+
+  // NOTE: Potential optimization by using reserve() for mesh vector
 }
 
 bool Chunk::isOnBoundary(uint8_t i, uint8_t j, uint8_t k, uint8_t face)

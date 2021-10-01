@@ -1,4 +1,5 @@
 #include "World.h"
+#include "ChunkRenderer.h"
 
 /*
   World data
