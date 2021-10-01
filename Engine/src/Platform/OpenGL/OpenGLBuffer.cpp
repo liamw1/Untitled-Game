@@ -41,6 +41,8 @@ namespace Engine
 
   void OpenGLVertexBuffer::setData(const void* data, uintptr_t size)
   {
+    EN_PROFILE_FUNCTION();
+
     glBindBuffer(GL_ARRAY_BUFFER, m_RendererID);
     glBufferSubData(GL_ARRAY_BUFFER, 0, size, data);
   }

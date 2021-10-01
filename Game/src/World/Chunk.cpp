@@ -1,5 +1,4 @@
 #include "Chunk.h"
-#include <Engine.h>
 
 static constexpr glm::vec3 s_BlockFacePositions[6][4]
 = {   // Top Face
@@ -38,6 +37,8 @@ static constexpr glm::vec3 s_BlockFacePositions[6][4]
       {  s_BlockSize / 2,  s_BlockSize / 2, -s_BlockSize / 2, },
       {  s_BlockSize / 2,  s_BlockSize / 2,  s_BlockSize / 2  } } };
 
+Engine::Shared<Engine::IndexBuffer> Chunk::s_MeshIndexBuffer = nullptr;
+
 
 
 Chunk::Chunk()
@@ -72,6 +73,14 @@ void Chunk::load(Block blockType)
   generateMesh();
 }
 
+void Chunk::bindBuffers() const
+{
+  EN_PROFILE_FUNCTION();
+
+  m_MeshVertexBuffer->bind();
+  m_MeshVertexArray->bind();
+}
+
 Block Chunk::getBlockAt(uint8_t i, uint8_t j, uint8_t k) const
 {
   constexpr uint64_t chunkSize = (uint64_t)s_ChunkSize;
@@ -86,6 +95,32 @@ const std::array<int64_t, 3> Chunk::GetPlayerChunk(const glm::vec3& playerPositi
       playerChunkIndices[i]--;
 
   return playerChunkIndices;
+}
+
+void Chunk::InitializeIndexBuffer()
+{
+  constexpr uint32_t maxIndices = 6 * 3 * TotalBlocks();
+
+  uint32_t* meshIndices = new uint32_t[maxIndices];
+
+  uint32_t offset = 0;
+  for (uint32_t i = 0; i < maxIndices; i += 6)
+  {
+    // Triangle 1
+    meshIndices[i + 0] = offset + 0;
+    meshIndices[i + 1] = offset + 1;
+    meshIndices[i + 2] = offset + 2;
+
+    // Triangle 2
+    meshIndices[i + 3] = offset + 2;
+    meshIndices[i + 4] = offset + 3;
+    meshIndices[i + 5] = offset + 0;
+
+    offset += 4;
+  }
+  s_MeshIndexBuffer = Engine::IndexBuffer::Create(meshIndices, maxIndices);
+
+  delete[] meshIndices;
 }
 
 void Chunk::generateMesh()
@@ -115,6 +150,22 @@ void Chunk::generateMesh()
   m_MeshState = MeshState::Simple;
 
   // NOTE: Potential optimization by using reserve() for mesh vector
+
+  generateVertexArray();
+}
+
+void Chunk::generateVertexArray()
+{
+  m_MeshVertexArray = Engine::VertexArray::Create();
+  m_MeshVertexBuffer = Engine::VertexBuffer::Create(m_Mesh.size() * sizeof(BlockVertex));
+  m_MeshVertexBuffer->setLayout({ { ShaderDataType::Float3, "a_Position" },
+                                  { ShaderDataType::Float2, "a_TexCoord" } });
+  m_MeshVertexArray->addVertexBuffer(m_MeshVertexBuffer);
+
+  m_MeshVertexArray->setIndexBuffer(s_MeshIndexBuffer);
+
+  uintptr_t dataSize = sizeof(BlockVertex) * m_Mesh.size();
+  m_MeshVertexBuffer->setData(m_Mesh.data(), dataSize);
 }
 
 bool Chunk::isOnBoundary(uint8_t i, uint8_t j, uint8_t k, uint8_t face)

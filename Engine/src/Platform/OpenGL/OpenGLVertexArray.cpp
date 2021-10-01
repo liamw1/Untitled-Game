@@ -49,8 +49,6 @@ namespace Engine
 
   void OpenGLVertexArray::addVertexBuffer(const Shared<VertexBuffer>& vertexBuffer)
   {
-    EN_PROFILE_FUNCTION();
-
     EN_CORE_ASSERT(vertexBuffer->getLayout().getElements().size() > 0, "Vertex Buffer has no layout!");
 
     glBindVertexArray(m_RendererID);
@@ -121,8 +119,6 @@ namespace Engine
 
   void OpenGLVertexArray::setIndexBuffer(const Shared<IndexBuffer>& indexBuffer)
   {
-    EN_PROFILE_FUNCTION();
-
     EN_CORE_ASSERT(indexBuffer->getCount() % 3 == 0, "Index buffer count is not a multiple of three!");
 
     glBindVertexArray(m_RendererID);

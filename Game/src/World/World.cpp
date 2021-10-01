@@ -12,6 +12,7 @@ static std::array<int64_t, 3> s_LastPlayerChunk{};
 static std::unordered_map<int64_t, Chunk> s_Chunks{};
 
 
+
 /*
   Creates a (nearly) unique integer value for a given set of chunk indices.
   Guaranteed to be unique as long as the preload distance < 1024.
@@ -38,6 +39,8 @@ static void preLoad(const std::array<int64_t, 3>& playerChunk)
 
 void World::Initialize(const glm::vec3& initialPosition)
 {
+  Chunk::InitializeIndexBuffer();
+
   std::array<int64_t, 3> playerChunk = Chunk::GetPlayerChunk(initialPosition);
   preLoad(playerChunk);
 }
