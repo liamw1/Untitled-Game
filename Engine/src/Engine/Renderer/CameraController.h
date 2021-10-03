@@ -14,6 +14,8 @@ namespace Engine
     void onUpdate(std::chrono::duration<float> timestep);
     void onEvent(Event& event);
 
+    void setPosition(const glm::vec3& position) { m_CameraPosition = position; }
+
     Camera& getCamera() { return m_Camera; }
     const Camera& getCamera() const { return m_Camera; }
 

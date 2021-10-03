@@ -43,14 +43,12 @@ Engine::Shared<Engine::IndexBuffer> Chunk::s_MeshIndexBuffer = nullptr;
 
 Chunk::Chunk()
   : m_ChunkIndices({0, 0, 0}),
-    m_ChunkPosition({0.0f, 0.0f, 0.0f}),
     m_ChunkComposition(nullptr)
 {
 }
 
 Chunk::Chunk(const std::array<int64_t, 3>& chunkIndices)
-  : m_ChunkIndices(chunkIndices),
-    m_ChunkPosition(m_ChunkIndices[0] * Length(), m_ChunkIndices[1] * Length(), m_ChunkIndices[2] * Length())
+  : m_ChunkIndices(chunkIndices)
 {
   m_ChunkComposition = std::make_unique<Block[]>(s_ChunkTotalBlocks);
 }
@@ -59,18 +57,72 @@ void Chunk::load(Block blockType)
 {
   EN_PROFILE_FUNCTION();
 
+  if (m_ChunkIndices[1] != -1)
+  {
+    m_ChunkComposition.reset();
+    return;
+  }
+
   constexpr uint64_t chunkSize = (uint64_t)s_ChunkSize;
   for (uint8_t i = 0; i < s_ChunkSize; ++i)
     for (uint8_t j = 0; j < s_ChunkSize; ++j)
       for (uint8_t k = 0; k < s_ChunkSize; ++k)
       {
-        if (j < 16)
+        if (j < 16 && m_ChunkIndices[1] == -1)
           m_ChunkComposition[i * chunkSize * chunkSize + j * chunkSize + k] = blockType;
         else
           m_ChunkComposition[i * chunkSize * chunkSize + j * chunkSize + k] = Block::Air;
       }
 
-  generateMesh();
+  m_Empty = false;
+}
+
+void Chunk::unload()
+{
+  for (uint8_t face = (uint8_t)BlockFace::Top; face <= (uint8_t)BlockFace::West; ++face)
+    if (m_Neighbors[face] != nullptr)
+    {
+      uint8_t oppFace = face % 2 == 0 ? face + 1 : face - 1;
+      EN_ASSERT(m_Neighbors[face]->getNeighbor(oppFace) == this, "Incorrect neighbor!");
+      m_Neighbors[face]->setNeighbor(oppFace, nullptr);
+    }
+}
+
+void Chunk::generateMesh()
+{
+  EN_PROFILE_FUNCTION();
+
+  for (uint8_t i = 0; i < 6; ++i)
+  {
+    EN_ASSERT(m_Neighbors[i] != nullptr, "Chunk neighbor does not exist!");
+    EN_ASSERT(m_Neighbors[i]->isLoaded(), "Chunk neighbor has not been loaded yet!");
+  }
+
+  static constexpr glm::vec2 textureCoordinates[4] = { {0.0f, 0.0f},
+                                                       {1.0f, 0.0f},
+                                                       {1.0f, 1.0f},
+                                                       {0.0f, 1.0f} };
+
+  for (uint8_t i = 0; i < s_ChunkSize; ++i)
+    for (uint8_t j = 0; j < s_ChunkSize; ++j)
+      for (uint8_t k = 0; k < s_ChunkSize; ++k)
+        if (getBlockAt(i, j, k) != Block::Air)
+          for (uint8_t face = (uint8_t)BlockFace::Top; face <= (uint8_t)BlockFace::West; ++face)
+          {
+            // Check all faces for air blocks
+            if (isNeighborTransparent(i, j, k, face))
+            {
+              glm::vec3 relativePosition = { i * s_BlockSize, j * s_BlockSize, k * s_BlockSize };
+
+              for (int i = 0; i < 4; ++i)
+                m_Mesh.push_back({ position() + relativePosition + s_BlockFacePositions[face][i], textureCoordinates[i] });
+            }
+          }
+  m_MeshState = MeshState::Simple;
+
+  // NOTE: Potential optimization by using reserve() for mesh vector
+
+  generateVertexArray();
 }
 
 void Chunk::bindBuffers() const
@@ -83,8 +135,16 @@ void Chunk::bindBuffers() const
 
 Block Chunk::getBlockAt(uint8_t i, uint8_t j, uint8_t k) const
 {
-  constexpr uint64_t chunkSize = (uint64_t)s_ChunkSize;
-  return m_ChunkComposition[i * chunkSize * chunkSize + j * chunkSize + k];
+  static constexpr uint64_t chunkSize = (uint64_t)s_ChunkSize;
+  return m_Empty ? Block::Air : m_ChunkComposition[i * chunkSize * chunkSize + j * chunkSize + k];
+}
+
+bool Chunk::allNeighborsLoaded() const
+{
+  for (uint8_t face = (uint8_t)BlockFace::Top; face <= (uint8_t)BlockFace::West; ++face)
+    if (m_Neighbors[face] == nullptr)
+      return false;
+  return true;
 }
 
 const std::array<int64_t, 3> Chunk::GetPlayerChunk(const glm::vec3& playerPosition)
@@ -123,41 +183,10 @@ void Chunk::InitializeIndexBuffer()
   delete[] meshIndices;
 }
 
-void Chunk::generateMesh()
-{
-  EN_PROFILE_FUNCTION();
-
-  static constexpr glm::vec2 textureCoordinates[4] = { {0.0f, 0.0f},
-                                                       {1.0f, 0.0f},
-                                                       {1.0f, 1.0f},
-                                                       {0.0f, 1.0f} };
-
-  for (uint8_t i = 0; i < s_ChunkSize; ++i)
-    for (uint8_t j = 0; j < s_ChunkSize; ++j)
-      for (uint8_t k = 0; k < s_ChunkSize; ++k)
-        if (getBlockAt(i, j, k) != Block::Air)
-          for (uint8_t face = (uint8_t)BlockFace::Top; face <= (uint8_t)BlockFace::West; ++face)
-          {
-            // Check all faces for air blocks
-            if (isNeighborTransparent(i, j, k, face))
-            {
-              glm::vec3 relativePosition = { i * s_BlockSize, j * s_BlockSize, k * s_BlockSize };
-
-              for (int i = 0; i < 4; ++i)
-                m_Mesh.push_back({ m_ChunkPosition + relativePosition + s_BlockFacePositions[face][i], textureCoordinates[i] });
-            }
-          }
-  m_MeshState = MeshState::Simple;
-
-  // NOTE: Potential optimization by using reserve() for mesh vector
-
-  generateVertexArray();
-}
-
 void Chunk::generateVertexArray()
 {
   m_MeshVertexArray = Engine::VertexArray::Create();
-  m_MeshVertexBuffer = Engine::VertexBuffer::Create(m_Mesh.size() * sizeof(BlockVertex));
+  m_MeshVertexBuffer = Engine::VertexBuffer::Create((uint32_t)m_Mesh.size() * sizeof(BlockVertex));
   m_MeshVertexBuffer->setLayout({ { ShaderDataType::Float3, "a_Position" },
                                   { ShaderDataType::Float2, "a_TexCoord" } });
   m_MeshVertexArray->addVertexBuffer(m_MeshVertexBuffer);
@@ -187,7 +216,7 @@ bool Chunk::isNeighborTransparent(uint8_t i, uint8_t j, uint8_t k, uint8_t face)
                                        //       Top        Bottom       North       South         East         West
 
   if (isOnBoundary(i, j, k, face))
-    return true;
+    return m_Neighbors[face]->getBlockAt(i - (s_ChunkSize - 1) * normals[face][0], j - (s_ChunkSize - 1) * normals[face][1], k - (s_ChunkSize - 1) * normals[face][2]) == Block::Air;
   else
     return getBlockAt(i + normals[face][0], j + normals[face][1], k + normals[face][2]) == Block::Air;
 }

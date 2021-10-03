@@ -8,6 +8,8 @@ GameSandbox::GameSandbox()
 {
   Engine::RenderCommand::Initialize();
   ChunkRenderer::Initialize();
+
+  m_CameraController.setPosition({ Chunk::Length() / 2, 0.0f, Chunk::Length() / 2 });
   World::Initialize(m_CameraController.getCamera().getPosition());
 }
 
