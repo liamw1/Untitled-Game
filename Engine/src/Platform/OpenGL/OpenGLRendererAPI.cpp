@@ -36,8 +36,6 @@ namespace Engine
 
   void OpenGLRendererAPI::drawIndexed(const Shared<VertexArray>& vertexArray, uint32_t indexCount)
   {
-    EN_PROFILE_FUNCTION();
-
     uint32_t count = indexCount == 0 ? vertexArray->getIndexBuffer()->getCount() : indexCount;
     glDrawElements(GL_TRIANGLES, count, GL_UNSIGNED_INT, nullptr);
     glBindTexture(GL_TEXTURE_2D, 0);

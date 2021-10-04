@@ -9,6 +9,7 @@ namespace Engine
     switch (type)
     {
       case ShaderDataType::Bool:        return GL_BOOL;
+      case ShaderDataType::Uint32:      return GL_UNSIGNED_INT;
       case ShaderDataType::Int:         return GL_INT;
       case ShaderDataType::Int2:        return GL_INT;
       case ShaderDataType::Int3:        return GL_INT;
@@ -25,15 +26,11 @@ namespace Engine
 
   OpenGLVertexArray::OpenGLVertexArray()
   {
-    EN_PROFILE_FUNCTION();
-
     glCreateVertexArrays(1, &m_RendererID);
   }
 
   OpenGLVertexArray::~OpenGLVertexArray()
   {
-    EN_PROFILE_FUNCTION();
-
     glDeleteVertexArrays(1, &m_RendererID);
   }
 
@@ -75,11 +72,12 @@ namespace Engine
           break;
         }
 
+        case ShaderDataType::Bool:
+        case ShaderDataType::Uint32:
         case ShaderDataType::Int:
         case ShaderDataType::Int2:
         case ShaderDataType::Int3:
         case ShaderDataType::Int4:
-        case ShaderDataType::Bool:
         {
           glEnableVertexAttribArray(m_VertexBufferIndex);
           glVertexAttribIPointer(m_VertexBufferIndex,

@@ -4,6 +4,7 @@ enum class ShaderDataType : uint8_t
 {
   None,
   Bool,
+  Uint32,
   Int, Int2, Int3, Int4,
   Float, Float2, Float3, Float4,
   Mat3, Mat4
@@ -17,6 +18,7 @@ namespace Engine
     {
       case ShaderDataType::Bool:        return 1 * sizeof(bool);
       case ShaderDataType::Int:         return 1 * sizeof(int);
+      case ShaderDataType::Uint32:      return 1 * sizeof(uint32_t);
       case ShaderDataType::Int2:        return 2 * sizeof(int);
       case ShaderDataType::Int3:        return 3 * sizeof(int);
       case ShaderDataType::Int4:        return 4 * sizeof(int);
@@ -48,6 +50,7 @@ namespace Engine
       switch (type)
       {
         case ShaderDataType::Bool:        return 1;
+        case ShaderDataType::Uint32:      return 1;
         case ShaderDataType::Int:         return 1;
         case ShaderDataType::Int2:        return 2;
         case ShaderDataType::Int3:        return 3;

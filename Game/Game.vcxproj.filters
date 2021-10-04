@@ -41,5 +41,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="assets\shaders\BlockFace.glsl" />
+    <None Include="assets\shaders\oldBlockFace.glsl" />
   </ItemGroup>
 </Project>

@@ -6,8 +6,6 @@ namespace Engine
 {
   OpenGLVertexBuffer::OpenGLVertexBuffer(uint32_t size)
   {
-    EN_PROFILE_FUNCTION();
-
     glCreateBuffers(1, &m_RendererID);
     glBindBuffer(GL_ARRAY_BUFFER, m_RendererID);
     glBufferData(GL_ARRAY_BUFFER, size, nullptr, GL_DYNAMIC_DRAW);
@@ -15,8 +13,6 @@ namespace Engine
 
   OpenGLVertexBuffer::OpenGLVertexBuffer(float* vertices, uint32_t size)
   {
-    EN_PROFILE_FUNCTION();
-
     glCreateBuffers(1, &m_RendererID);
     glBindBuffer(GL_ARRAY_BUFFER, m_RendererID);
     glBufferData(GL_ARRAY_BUFFER, size, vertices, GL_STATIC_DRAW);
@@ -24,8 +20,6 @@ namespace Engine
 
   OpenGLVertexBuffer::~OpenGLVertexBuffer()
   {
-    EN_PROFILE_FUNCTION();
-
     glDeleteBuffers(1, &m_RendererID);
   }
 
@@ -41,8 +35,6 @@ namespace Engine
 
   void OpenGLVertexBuffer::setData(const void* data, uintptr_t size)
   {
-    EN_PROFILE_FUNCTION();
-
     glBindBuffer(GL_ARRAY_BUFFER, m_RendererID);
     glBufferSubData(GL_ARRAY_BUFFER, 0, size, data);
   }
@@ -52,8 +44,6 @@ namespace Engine
   OpenGLIndexBuffer::OpenGLIndexBuffer(uint32_t* indices, uint32_t count)
     : m_Count(count)
   {
-    EN_PROFILE_FUNCTION();
-
     glCreateBuffers(1, &m_RendererID);
 
     /*
@@ -66,8 +56,6 @@ namespace Engine
 
   OpenGLIndexBuffer::~OpenGLIndexBuffer()
   {
-    EN_PROFILE_FUNCTION();
-
     glDeleteBuffers(1, &m_RendererID);
   }
 

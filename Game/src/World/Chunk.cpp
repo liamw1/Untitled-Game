@@ -1,63 +1,30 @@
 #include "Chunk.h"
 
-static constexpr glm::vec3 s_BlockFacePositions[6][4]
-= {   // Top Face
-    { { -s_BlockSize / 2,  s_BlockSize / 2,  s_BlockSize / 2, },
-      {  s_BlockSize / 2,  s_BlockSize / 2,  s_BlockSize / 2, },
-      {  s_BlockSize / 2,  s_BlockSize / 2, -s_BlockSize / 2, },
-      { -s_BlockSize / 2,  s_BlockSize / 2, -s_BlockSize / 2  } },
-
-      // Bottom Face
-    { { -s_BlockSize / 2, -s_BlockSize / 2, -s_BlockSize / 2, },
-      {  s_BlockSize / 2, -s_BlockSize / 2, -s_BlockSize / 2, },
-      {  s_BlockSize / 2, -s_BlockSize / 2,  s_BlockSize / 2, },
-      { -s_BlockSize / 2, -s_BlockSize / 2,  s_BlockSize / 2  } },
-
-      // North Face
-    { { -s_BlockSize / 2, -s_BlockSize / 2,  s_BlockSize / 2, },
-      {  s_BlockSize / 2, -s_BlockSize / 2,  s_BlockSize / 2, },
-      {  s_BlockSize / 2,  s_BlockSize / 2,  s_BlockSize / 2, },
-      { -s_BlockSize / 2,  s_BlockSize / 2,  s_BlockSize / 2  } },
-
-      // South Face
-    { {  s_BlockSize / 2, -s_BlockSize / 2, -s_BlockSize / 2, },
-      { -s_BlockSize / 2, -s_BlockSize / 2, -s_BlockSize / 2, },
-      { -s_BlockSize / 2,  s_BlockSize / 2, -s_BlockSize / 2, },
-      {  s_BlockSize / 2,  s_BlockSize / 2, -s_BlockSize / 2  } },
-
-      // East Face
-    { { -s_BlockSize / 2, -s_BlockSize / 2, -s_BlockSize / 2, },
-      { -s_BlockSize / 2, -s_BlockSize / 2,  s_BlockSize / 2, },
-      { -s_BlockSize / 2,  s_BlockSize / 2,  s_BlockSize / 2, },
-      { -s_BlockSize / 2,  s_BlockSize / 2, -s_BlockSize / 2  } },
-
-      // West Face
-    { {  s_BlockSize / 2, -s_BlockSize / 2,  s_BlockSize / 2, },
-      {  s_BlockSize / 2, -s_BlockSize / 2, -s_BlockSize / 2, },
-      {  s_BlockSize / 2,  s_BlockSize / 2, -s_BlockSize / 2, },
-      {  s_BlockSize / 2,  s_BlockSize / 2,  s_BlockSize / 2  } } };
+static constexpr int8_t s_Offsets[6][4][3]
+= { { {0, 1, 1}, {1, 1, 1}, {1, 1, 0}, {0, 1, 0} },    /* Top Face    */
+    { {0, 0, 0}, {1, 0, 0}, {1, 0, 1}, {0, 0, 1} },    /* Bottom Face */
+    { {0, 0, 1}, {1, 0, 1}, {1, 1, 1}, {0, 1, 1} },    /* North Face  */
+    { {1, 0, 0}, {0, 0, 0}, {0, 1, 0}, {1, 1, 0} },    /* South Face  */
+    { {0, 0, 0}, {0, 0, 1}, {0, 1, 1}, {0, 1, 0} },    /* East Face   */
+    { {1, 0, 1}, {1, 0, 0}, {1, 1, 0}, {1, 1, 1} } };  /* West Face   */
 
 Engine::Shared<Engine::IndexBuffer> Chunk::s_MeshIndexBuffer = nullptr;
 
-
-
 Chunk::Chunk()
-  : m_ChunkIndices({0, 0, 0}),
+  : m_ChunkIndex({0, 0, 0}),
     m_ChunkComposition(nullptr)
 {
 }
 
-Chunk::Chunk(const std::array<int64_t, 3>& chunkIndices)
-  : m_ChunkIndices(chunkIndices)
+Chunk::Chunk(const std::array<int64_t, 3>& chunkIndex)
+  : m_ChunkIndex(chunkIndex)
 {
   m_ChunkComposition = std::make_unique<Block[]>(s_ChunkTotalBlocks);
 }
 
 void Chunk::load(Block blockType)
 {
-  EN_PROFILE_FUNCTION();
-
-  if (m_ChunkIndices[1] != -1)
+  if (m_ChunkIndex[1] != -1)
   {
     m_ChunkComposition.reset();
     return;
@@ -68,11 +35,13 @@ void Chunk::load(Block blockType)
     for (uint8_t j = 0; j < s_ChunkSize; ++j)
       for (uint8_t k = 0; k < s_ChunkSize; ++k)
       {
-        if (j < 16 && m_ChunkIndices[1] == -1)
+        if (j < i / 2 + 8 && j < (s_ChunkSize - i) / 2 + 8 && j < k / 2 + 8 && j < (s_ChunkSize - k) / 2 + 8 && m_ChunkIndex[1] == -1)
           m_ChunkComposition[i * chunkSize * chunkSize + j * chunkSize + k] = blockType;
         else
           m_ChunkComposition[i * chunkSize * chunkSize + j * chunkSize + k] = Block::Air;
       }
+
+  // (i - 16) * (i - 16) + (j - 16) * (j - 16) + (k - 16) * (k - 16) < 20 * 20
 
   m_Empty = false;
 }
@@ -90,13 +59,8 @@ void Chunk::unload()
 
 void Chunk::generateMesh()
 {
-  EN_PROFILE_FUNCTION();
-
   for (uint8_t i = 0; i < 6; ++i)
-  {
     EN_ASSERT(m_Neighbors[i] != nullptr, "Chunk neighbor does not exist!");
-    EN_ASSERT(m_Neighbors[i]->isLoaded(), "Chunk neighbor has not been loaded yet!");
-  }
 
   static constexpr glm::vec2 textureCoordinates[4] = { {0.0f, 0.0f},
                                                        {1.0f, 0.0f},
@@ -108,16 +72,21 @@ void Chunk::generateMesh()
       for (uint8_t k = 0; k < s_ChunkSize; ++k)
         if (getBlockAt(i, j, k) != Block::Air)
           for (uint8_t face = (uint8_t)BlockFace::Top; face <= (uint8_t)BlockFace::West; ++face)
-          {
-            // Check all faces for air blocks
             if (isNeighborTransparent(i, j, k, face))
-            {
-              glm::vec3 relativePosition = { i * s_BlockSize, j * s_BlockSize, k * s_BlockSize };
+              for (uint8_t v = 0; v < 4; ++v)
+              {
+                // Add offsets to convert from block index to vertex index
+                const uint8_t vI = i + s_Offsets[face][v][0];
+                const uint8_t vJ = j + s_Offsets[face][v][1];
+                const uint8_t vK = k + s_Offsets[face][v][2];
 
-              for (int i = 0; i < 4; ++i)
-                m_Mesh.push_back({ position() + relativePosition + s_BlockFacePositions[face][i], textureCoordinates[i] });
-            }
-          }
+                uint32_t vertexData = vI + (vJ << 5) + (vK << 10);
+                vertexData += face << 15;
+                vertexData += v << 18;
+                vertexData += (uint8_t)getBlockAt(i, j, k) << 20;
+
+                m_Mesh.push_back(vertexData);
+              }
   m_MeshState = MeshState::Simple;
 
   // NOTE: Potential optimization by using reserve() for mesh vector
@@ -127,8 +96,6 @@ void Chunk::generateMesh()
 
 void Chunk::bindBuffers() const
 {
-  EN_PROFILE_FUNCTION();
-
   m_MeshVertexBuffer->bind();
   m_MeshVertexArray->bind();
 }
@@ -147,14 +114,14 @@ bool Chunk::allNeighborsLoaded() const
   return true;
 }
 
-const std::array<int64_t, 3> Chunk::GetPlayerChunk(const glm::vec3& playerPosition)
+const std::array<int64_t, 3> Chunk::GetPlayerChunkIndex(const glm::vec3& playerPosition)
 {
-  std::array<int64_t, 3> playerChunkIndices = { (int64_t)(playerPosition.x / Chunk::Length()), (int64_t)(playerPosition.y / Chunk::Length()) , (int64_t)(playerPosition.z / Chunk::Length()) };
+  std::array<int64_t, 3> playerChunkIndex = { (int64_t)(playerPosition.x / Chunk::Length()), (int64_t)(playerPosition.y / Chunk::Length()) , (int64_t)(playerPosition.z / Chunk::Length()) };
   for (int i = 0; i < 3; ++i)
     if (playerPosition[i] < 0.0f)
-      playerChunkIndices[i]--;
+      playerChunkIndex[i]--;
 
-  return playerChunkIndices;
+  return playerChunkIndex;
 }
 
 void Chunk::InitializeIndexBuffer()
@@ -186,14 +153,13 @@ void Chunk::InitializeIndexBuffer()
 void Chunk::generateVertexArray()
 {
   m_MeshVertexArray = Engine::VertexArray::Create();
-  m_MeshVertexBuffer = Engine::VertexBuffer::Create((uint32_t)m_Mesh.size() * sizeof(BlockVertex));
-  m_MeshVertexBuffer->setLayout({ { ShaderDataType::Float3, "a_Position" },
-                                  { ShaderDataType::Float2, "a_TexCoord" } });
+  m_MeshVertexBuffer = Engine::VertexBuffer::Create((uint32_t)m_Mesh.size() * sizeof(uint32_t));
+  m_MeshVertexBuffer->setLayout({ { ShaderDataType::Uint32, "a_VertexData" } });
   m_MeshVertexArray->addVertexBuffer(m_MeshVertexBuffer);
 
   m_MeshVertexArray->setIndexBuffer(s_MeshIndexBuffer);
 
-  uintptr_t dataSize = sizeof(BlockVertex) * m_Mesh.size();
+  uintptr_t dataSize = sizeof(uint32_t) * m_Mesh.size();
   m_MeshVertexBuffer->setData(m_Mesh.data(), dataSize);
 }
 

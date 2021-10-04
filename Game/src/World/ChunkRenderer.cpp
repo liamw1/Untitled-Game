@@ -16,7 +16,7 @@ void ChunkRenderer::Initialize()
 {
   EN_PROFILE_FUNCTION();
 
-  s_BlockFaceShader = Engine::Shader::Create("assets/shaders/BlockFaceTexture.glsl");
+  s_BlockFaceShader = Engine::Shader::Create("assets/shaders/BlockFace.glsl");
   s_BlockFaceShader->bind();
   s_BlockFaceShader->setInt("u_TextureAtlas", s_TextureSlot);
 
@@ -36,13 +36,12 @@ void ChunkRenderer::EndScene()
 
 void ChunkRenderer::DrawChunk(const Chunk* chunk)
 {
-  EN_PROFILE_FUNCTION();
-
   uint32_t meshIndexCount = 6 * (uint32_t)chunk->getMesh().size() / 4;
 
   if (meshIndexCount == 0)
     return; // Nothing to draw
 
   chunk->bindBuffers();
+  s_BlockFaceShader->setFloat3("u_ChunkPosition", chunk->position());
   Engine::RenderCommand::DrawIndexed(chunk->getVertexArray(), meshIndexCount);
 }
