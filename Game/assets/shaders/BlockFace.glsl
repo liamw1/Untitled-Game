@@ -21,15 +21,15 @@ out vec4 v_BasicLight;
 void main()
 {
   // Relative position of block center
-  vec3 relPos = vec3(s_BlockSize * float(a_VertexData & 0x1Fu),
-                     s_BlockSize * float((a_VertexData & 0x3E0u) >> 5u),
-                     s_BlockSize * float((a_VertexData & 0x7C00u) >> 10u));
+  vec3 relPos = vec3(s_BlockSize * float(a_VertexData & 0x3Fu),
+                     s_BlockSize * float((a_VertexData & 0xFC0u) >> 6u),
+                     s_BlockSize * float((a_VertexData & 0x3F000u) >> 12u));
 
-  uint face = (a_VertexData & 0x38000u) >> 15u;
+  uint face = (a_VertexData & 0x1C0000u) >> 18u;
   v_BasicLight = vec4(vec3(s_LightValues[face]), 1.0f);
 
-  uint quadIndex = (a_VertexData & 0xC0000u) >> 18u;
-  uint texID = (a_VertexData & 0xFFF00000u) >> 20u;
+  uint quadIndex = (a_VertexData & 0x600000u) >> 21u;
+  uint texID = (a_VertexData & 0xFF800000u) >> 23u;
   v_TexCoord = s_TexCoords[quadIndex];
 
   gl_Position = u_ViewProjection * vec4(relPos + u_ChunkPosition, 1.0f);

@@ -80,10 +80,10 @@ void Chunk::generateMesh()
                 const uint8_t vJ = j + s_Offsets[face][v][1];
                 const uint8_t vK = k + s_Offsets[face][v][2];
 
-                uint32_t vertexData = vI + (vJ << 5) + (vK << 10);
-                vertexData += face << 15;
-                vertexData += v << 18;
-                vertexData += (uint8_t)getBlockAt(i, j, k) << 20;
+                uint32_t vertexData = vI + (vJ << 6) + (vK << 12);
+                vertexData += face << 18;
+                vertexData += v << 21;
+                vertexData += (uint8_t)getBlockAt(i, j, k) << 23;
 
                 m_Mesh.push_back(vertexData);
               }

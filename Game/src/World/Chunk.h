@@ -48,7 +48,7 @@ private:
   };
 
   // Size and dimension
-  static constexpr uint8_t s_ChunkSize = 31;
+  static constexpr uint8_t s_ChunkSize = 32;
   static constexpr float s_ChunkLength = s_ChunkSize * s_BlockSize;
   static constexpr uint32_t s_ChunkTotalBlocks = s_ChunkSize * s_ChunkSize * s_ChunkSize;
 
