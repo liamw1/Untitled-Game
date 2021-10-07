@@ -1,10 +1,11 @@
+#include "GMpch.h"
 #include "World.h"
 #include "ChunkRenderer.h"
 
 /*
   World data
 */
-static constexpr int s_RenderDistance = 8;
+static constexpr int s_RenderDistance = 4;
 static constexpr int s_LoadDistance = s_RenderDistance;
 static constexpr int s_UnloadDistance = s_LoadDistance;
 
@@ -110,10 +111,7 @@ static void clean(const std::array<int64_t, 3>& playerChunkIndex)
     auto& chunk = it->second;
 
     if (isOutOfRange(chunk.getIndex(), playerChunkIndex))
-    {
-      chunk.unload();
       it = s_Chunks.erase(it);
-    }
     else
       it++;
   }

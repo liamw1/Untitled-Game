@@ -117,6 +117,9 @@ project "Game"
 	targetdir ("bin/" .. outputdir .. "/%{prj.name}")
 	objdir ("obj/" .. outputdir .. "/%{prj.name}")
 
+	pchheader "GMpch.h"
+	pchsource "Game/src/GMpch.cpp"
+
 	files
 	{
 		"%{prj.name}/src/**.h",

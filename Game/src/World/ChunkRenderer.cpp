@@ -1,7 +1,7 @@
+#include "GMpch.h"
 #include "ChunkRenderer.h"
 #include "Chunk.h"
 #include "Block/Block.h"
-#include <glm/gtc/matrix_transform.hpp>
 
 /*
   Renderer 2D data
@@ -20,11 +20,12 @@ void ChunkRenderer::Initialize()
   s_BlockFaceShader->bind();
   s_BlockFaceShader->setInt("u_TextureAtlas", s_TextureSlot);
 
-  s_TextureAtlas = Engine::Texture2D::Create("assets/textures/C-tetra_1.7/blocks/sand.png");
+  s_TextureAtlas = Engine::Texture2D::Create("assets/textures/voxel-pack/Spritesheets/spritesheet_tiles.png");
 }
 
 void ChunkRenderer::BeginScene(Engine::Camera& camera)
 {
+  s_BlockFaceShader->setFloat("u_BlockSize", s_BlockSize);
   s_BlockFaceShader->setMat4("u_ViewProjection", camera.getViewProjectionMatrix());
   s_TextureAtlas->bind(s_TextureSlot);
   s_BlockFaceShader->bind();

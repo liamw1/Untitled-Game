@@ -15,6 +15,7 @@
     <ClInclude Include="src\Block\BlockIDs.h">
       <Filter>Block</Filter>
     </ClInclude>
+    <ClInclude Include="src\GMpch.h" />
     <ClInclude Include="src\GameSandbox.h" />
     <ClInclude Include="src\World\Chunk.h">
       <Filter>World</Filter>
@@ -27,6 +28,7 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\GMpch.cpp" />
     <ClCompile Include="src\GameApp.cpp" />
     <ClCompile Include="src\GameSandbox.cpp" />
     <ClCompile Include="src\World\Chunk.cpp">
@@ -38,9 +40,5 @@
     <ClCompile Include="src\World\World.cpp">
       <Filter>World</Filter>
     </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="assets\shaders\BlockFace.glsl" />
-    <None Include="assets\shaders\oldBlockFace.glsl" />
   </ItemGroup>
 </Project>

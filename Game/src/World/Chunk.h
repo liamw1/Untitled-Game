@@ -1,5 +1,4 @@
 #pragma once
-#include <Engine.h>
 #include "Block/Block.h"
 #include "Block/BlockIDs.h"
 
@@ -8,10 +7,15 @@ class Chunk
 public:
   Chunk();
   Chunk(const std::array<int64_t, 3>& chunkIndex);
+  ~Chunk();
+
+  Chunk(const Chunk& other) = delete;
+  Chunk& operator=(const Chunk& other) = delete;
+
+  Chunk(Chunk&& other) = default;
+  Chunk& operator=(Chunk&& other) = default;
 
   void load(Block blockType);
-  void unload();
-
   void generateMesh();
   void bindBuffers() const;
 
@@ -43,7 +47,6 @@ private:
   {
     NotGenerated = 0,
     Simple,
-    AllNeighborsAccountedFor,
     Optimized
   };
 

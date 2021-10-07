@@ -1,12 +1,5 @@
+#include "GMpch.h"
 #include "Chunk.h"
-
-static constexpr int8_t s_Offsets[6][4][3]
-= { { {0, 1, 1}, {1, 1, 1}, {1, 1, 0}, {0, 1, 0} },    /* Top Face    */
-    { {0, 0, 0}, {1, 0, 0}, {1, 0, 1}, {0, 0, 1} },    /* Bottom Face */
-    { {0, 0, 1}, {1, 0, 1}, {1, 1, 1}, {0, 1, 1} },    /* North Face  */
-    { {1, 0, 0}, {0, 0, 0}, {0, 1, 0}, {1, 1, 0} },    /* South Face  */
-    { {0, 0, 0}, {0, 0, 1}, {0, 1, 1}, {0, 1, 0} },    /* East Face   */
-    { {1, 0, 1}, {1, 0, 0}, {1, 1, 0}, {1, 1, 1} } };  /* West Face   */
 
 Engine::Shared<Engine::IndexBuffer> Chunk::s_MeshIndexBuffer = nullptr;
 
@@ -17,36 +10,12 @@ Chunk::Chunk()
 }
 
 Chunk::Chunk(const std::array<int64_t, 3>& chunkIndex)
-  : m_ChunkIndex(chunkIndex)
+  : m_ChunkIndex(chunkIndex),
+    m_ChunkComposition(nullptr)
 {
-  m_ChunkComposition = std::make_unique<Block[]>(s_ChunkTotalBlocks);
 }
 
-void Chunk::load(Block blockType)
-{
-  if (m_ChunkIndex[1] != -1)
-  {
-    m_ChunkComposition.reset();
-    return;
-  }
-
-  constexpr uint64_t chunkSize = (uint64_t)s_ChunkSize;
-  for (uint8_t i = 0; i < s_ChunkSize; ++i)
-    for (uint8_t j = 0; j < s_ChunkSize; ++j)
-      for (uint8_t k = 0; k < s_ChunkSize; ++k)
-      {
-        if (j < i / 2 + 8 && j < (s_ChunkSize - i) / 2 + 8 && j < k / 2 + 8 && j < (s_ChunkSize - k) / 2 + 8 && m_ChunkIndex[1] == -1)
-          m_ChunkComposition[i * chunkSize * chunkSize + j * chunkSize + k] = blockType;
-        else
-          m_ChunkComposition[i * chunkSize * chunkSize + j * chunkSize + k] = Block::Air;
-      }
-
-  // (i - 16) * (i - 16) + (j - 16) * (j - 16) + (k - 16) * (k - 16) < 20 * 20
-
-  m_Empty = false;
-}
-
-void Chunk::unload()
+Chunk::~Chunk()
 {
   for (uint8_t face = (uint8_t)BlockFace::Top; face <= (uint8_t)BlockFace::West; ++face)
     if (m_Neighbors[face] != nullptr)
@@ -57,10 +26,39 @@ void Chunk::unload()
     }
 }
 
+void Chunk::load(Block blockType)
+{
+  if (m_ChunkIndex[1] != -1)
+    return;
+
+  m_ChunkComposition = std::make_unique<Block[]>(s_ChunkTotalBlocks);
+
+  constexpr uint64_t chunkSize = (uint64_t)s_ChunkSize;
+  for (uint8_t i = 0; i < s_ChunkSize; ++i)
+    for (uint8_t j = 0; j < s_ChunkSize; ++j)
+      for (uint8_t k = 0; k < s_ChunkSize; ++k)
+      {
+        if (j < i / 2 + 8 && j < (s_ChunkSize - 1 - i) / 2 + 8 && j < k / 2 + 8 && j < (s_ChunkSize - 1 - k) / 2 + 8 && m_ChunkIndex[1] == -1)
+          m_ChunkComposition[i * chunkSize * chunkSize + j * chunkSize + k] = blockType;
+        else
+          m_ChunkComposition[i * chunkSize * chunkSize + j * chunkSize + k] = Block::Air;
+      }
+
+  m_Empty = false;
+}
+
 void Chunk::generateMesh()
 {
   for (uint8_t i = 0; i < 6; ++i)
     EN_ASSERT(m_Neighbors[i] != nullptr, "Chunk neighbor does not exist!");
+
+  static constexpr int8_t offsets[6][4][3]
+    = { { {0, 1, 1}, {1, 1, 1}, {1, 1, 0}, {0, 1, 0} },    /* Top Face    */
+        { {0, 0, 0}, {1, 0, 0}, {1, 0, 1}, {0, 0, 1} },    /* Bottom Face */
+        { {0, 0, 1}, {1, 0, 1}, {1, 1, 1}, {0, 1, 1} },    /* North Face  */
+        { {1, 0, 0}, {0, 0, 0}, {0, 1, 0}, {1, 1, 0} },    /* South Face  */
+        { {0, 0, 0}, {0, 0, 1}, {0, 1, 1}, {0, 1, 0} },    /* East Face   */
+        { {1, 0, 1}, {1, 0, 0}, {1, 1, 0}, {1, 1, 1} } };  /* West Face   */
 
   static constexpr glm::vec2 textureCoordinates[4] = { {0.0f, 0.0f},
                                                        {1.0f, 0.0f},
@@ -76,14 +74,29 @@ void Chunk::generateMesh()
               for (uint8_t v = 0; v < 4; ++v)
               {
                 // Add offsets to convert from block index to vertex index
-                const uint8_t vI = i + s_Offsets[face][v][0];
-                const uint8_t vJ = j + s_Offsets[face][v][1];
-                const uint8_t vK = k + s_Offsets[face][v][2];
+                const uint8_t vI = i + offsets[face][v][0];
+                const uint8_t vJ = j + offsets[face][v][1];
+                const uint8_t vK = k + offsets[face][v][2];
 
                 uint32_t vertexData = vI + (vJ << 6) + (vK << 12);
                 vertexData += face << 18;
                 vertexData += v << 21;
-                vertexData += (uint8_t)getBlockAt(i, j, k) << 23;
+
+                if (face == (uint8_t)BlockFace::Top)
+                {
+                  vertexData += 6Ui8 << 23;
+                  vertexData += 8Ui8 << 27;
+                }
+                else if (face == (uint8_t)BlockFace::Bottom)
+                {
+                  vertexData += 7Ui8 << 23;
+                  vertexData += 4Ui8 << 27;
+                }
+                else
+                {
+                  vertexData += 7Ui8 << 23;
+                  vertexData += 5Ui8 << 27;
+                }
 
                 m_Mesh.push_back(vertexData);
               }
