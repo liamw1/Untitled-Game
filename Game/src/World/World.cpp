@@ -5,9 +5,9 @@
 /*
   World data
 */
-static constexpr int s_RenderDistance = 4;
+static constexpr int s_RenderDistance = 8;
 static constexpr int s_LoadDistance = s_RenderDistance;
-static constexpr int s_UnloadDistance = s_LoadDistance;
+static constexpr int s_UnloadDistance = s_LoadDistance + 4;
 
 static std::map<int64_t, Chunk> s_Chunks{};
 
@@ -47,25 +47,26 @@ static bool isInRenderRange(const std::array<int64_t, 3>& chunkIndex, const std:
   return true;
 }
 
-static void loadNewChunks(const std::array<int64_t, 3>& playerChunkIndex)
+static void loadNewChunks(const std::array<int64_t, 3>& playerChunkIndex, uint32_t maxNewChunks)
 {
   EN_PROFILE_FUNCTION();
 
   static constexpr int8_t normals[6][3] = { { 0, 1, 0}, { 0, -1, 0}, { 0, 0, 1}, { 0, 0, -1}, { -1, 0, 0}, { 1, 0, 0} };
                                        //       Top        Bottom       North       South         East         West
 
+  uint32_t newChunks = 0;
   for (auto it = s_Chunks.begin(); it != s_Chunks.end(); ++it)
   {
     auto& chunk = it->second;
 
     // Check if additional chunks can be loaded
     if (!chunk.allNeighborsLoaded())
-      for (uint8_t face = (uint8_t)BlockFace::Top; face <= (uint8_t)BlockFace::West; ++face)
+      for (BlockFace face : BlockFaceIterator())
         if (chunk.getNeighbor(face) == nullptr)
         {
           std::array<int64_t, 3> neighborIndex = chunk.getIndex();
           for (int i = 0; i < 3; ++i)
-            neighborIndex[i] += normals[face][i];
+            neighborIndex[i] += normals[static_cast<uint8_t>(face)][i];
 
           // If potential chunk is out of load range, do nothing
           if (isInLoadRange(neighborIndex, playerChunkIndex))
@@ -80,25 +81,29 @@ static void loadNewChunks(const std::array<int64_t, 3>& playerChunkIndex)
             newChunk.load(Block::Sand);
 
             // Set neighbors in all directions
-            for (uint8_t dir = (uint8_t)BlockFace::Top; dir <= (uint8_t)BlockFace::West; ++dir)
+            for (BlockFace dir : BlockFaceIterator())
             {
               // Index of chunk adjacent to neighboring chunk in direction "dir"
               std::array<int64_t, 3> adjIndex = neighborIndex;
               for (int i = 0; i < 3; ++i)
-                adjIndex[i] += normals[dir][i];
+                adjIndex[i] += normals[static_cast<uint8_t>(dir)][i];
 
               int64_t adjKey = createKey(adjIndex);
               if (s_Chunks.find(adjKey) != s_Chunks.end())
               {
-                uint8_t oppDir = dir % 2 == 0 ? dir + 1 : dir - 1;
-
                 Chunk& adjChunk = s_Chunks[adjKey];
                 newChunk.setNeighbor(dir, &adjChunk);
-                adjChunk.setNeighbor(oppDir, &newChunk);
+                adjChunk.setNeighbor(!dir, &newChunk);
               }
             }
+
+            if (!newChunk.isEmpty())
+              newChunks++;
           }
         }
+
+    if (newChunks >= maxNewChunks)
+      break;
   }
 }
 
@@ -139,9 +144,11 @@ void World::Initialize(const glm::vec3& initialPosition)
 {
   Chunk::InitializeIndexBuffer();
 
-  Chunk newChunk = Chunk({ 0, -1, 0 });
+  std::array<int64_t, 3> playerChunkIndex = Chunk::GetPlayerChunkIndex(initialPosition);
+
+  Chunk newChunk = Chunk(playerChunkIndex);
   newChunk.load(Block::Sand);
-  s_Chunks[createKey({ 0, -1, 0 })] = std::move(newChunk);
+  s_Chunks[createKey(playerChunkIndex)] = std::move(newChunk);
 }
 
 void World::ShutDown()
@@ -156,5 +163,5 @@ void World::OnUpdate(const glm::vec3& playerPosition)
 
   clean(playerChunkIndex);
   render(playerChunkIndex);
-  loadNewChunks(playerChunkIndex);
+  loadNewChunks(playerChunkIndex, 1);
 }

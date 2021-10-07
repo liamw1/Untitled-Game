@@ -81,7 +81,7 @@ namespace Engine
     std::string toString() const override
     {
       std::stringstream ss;
-      ss << "MouseButtonPressEvent: " << (mouseCode)m_Button;
+      ss << "MouseButtonPressEvent: " << static_cast<mouseCode>(m_Button);
       return ss.str();
     }
   };
@@ -99,7 +99,7 @@ namespace Engine
     std::string toString() const override
     {
       std::stringstream ss;
-      ss << "MouseButtonReleaseEvent: " << (mouseCode)m_Button;
+      ss << "MouseButtonReleaseEvent: " << static_cast<mouseCode>(m_Button);
       return ss.str();
     }
   };

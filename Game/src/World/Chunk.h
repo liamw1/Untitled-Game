@@ -24,9 +24,10 @@ public:
   glm::vec3 center() const { return glm::vec3(m_ChunkIndex[0] * 1.5f * Length(), m_ChunkIndex[1] * 1.5f * Length(), m_ChunkIndex[2] * 1.5f * Length()); }
 
   Block getBlockAt(uint8_t i, uint8_t j, uint8_t k) const;
+  glm::vec3 blockPosition(uint8_t i, uint8_t j, uint8_t k) const;
 
-  const Chunk* getNeighbor(uint8_t face) const { return m_Neighbors[face]; }
-  void setNeighbor(uint8_t face, Chunk* chunk) { m_Neighbors[face] = chunk; }
+  const Chunk* getNeighbor(BlockFace face) const { return m_Neighbors[static_cast<uint8_t>(face)]; }
+  void setNeighbor(BlockFace face, Chunk* chunk) { m_Neighbors[static_cast<uint8_t>(face)] = chunk; }
 
   const std::vector<uint32_t>& getMesh() const { return m_Mesh; }
   const Engine::Shared<Engine::VertexArray>& getVertexArray() const { return m_MeshVertexArray; }
@@ -72,6 +73,6 @@ private:
 
   void generateVertexArray();
 
-  bool isOnBoundary(uint8_t i, uint8_t j, uint8_t k, uint8_t face);
-  bool isNeighborTransparent(uint8_t i, uint8_t j, uint8_t k, uint8_t face);
+  bool isBlockOnBoundary(uint8_t i, uint8_t j, uint8_t k, BlockFace face);
+  bool isBlockNeighborTransparent(uint8_t i, uint8_t j, uint8_t k, BlockFace face);
 };

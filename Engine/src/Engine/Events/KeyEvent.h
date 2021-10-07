@@ -33,7 +33,7 @@ namespace Engine
     std::string toString() const override
     {
       std::stringstream ss;
-      ss << "KeyPressEvent: " << (keyCode)m_KeyCode << " (" << m_RepeatCount << " repeats)";
+      ss << "KeyPressEvent: " << static_cast<keyCode>(m_KeyCode) << " (" << m_RepeatCount << " repeats)";
       return ss.str();
     }
 
@@ -54,7 +54,7 @@ namespace Engine
     std::string toString() const override
     {
       std::stringstream ss;
-      ss << "KeyReleaseEvent: " << (keyCode)m_KeyCode;
+      ss << "KeyReleaseEvent: " << static_cast<keyCode>(m_KeyCode);
       return ss.str();
     }
   };
@@ -72,7 +72,7 @@ namespace Engine
     std::string toString() const override
     {
       std::stringstream ss;
-      ss << "KeyTypeEvent: " << (keyCode)m_KeyCode;
+      ss << "KeyTypeEvent: " << static_cast<keyCode>(m_KeyCode);
       return ss.str();
     }
   };
