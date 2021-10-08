@@ -15,7 +15,7 @@ const vec2 s_TexOffsets[4] = vec2[4]( vec2(0.0f,		  0.0f         ),
 
 const float s_LightValues[6] = float[6]( 1.0f, 0.5f, 0.7f, 0.8f, 0.9f, 0.6f);
 
-uniform float u_BlockSize;
+uniform float u_BlockLength;
 uniform vec3 u_ChunkPosition;
 uniform mat4 u_ViewProjection;
 
@@ -25,9 +25,9 @@ out vec4 v_BasicLight;
 void main()
 {
   // Relative position of block center
-  const vec3 relPos = vec3(u_BlockSize * float(a_VertexData & 0x3Fu),
-						   u_BlockSize * float((a_VertexData & 0xFC0u) >> 6u),
-						   u_BlockSize * float((a_VertexData & 0x3F000u) >> 12u));
+  const vec3 relPos = vec3(u_BlockLength * float(a_VertexData & 0x3Fu),
+						   u_BlockLength * float((a_VertexData & 0xFC0u) >> 6u),
+						   u_BlockLength * float((a_VertexData & 0x3F000u) >> 12u));
 
   const uint face = (a_VertexData & 0x1C0000u) >> 18u;
   v_BasicLight = vec4(vec3(s_LightValues[face]), 1.0f);

@@ -3,7 +3,7 @@
 
 using blockID = uint8_t;
 
-enum class Block : uint8_t
+enum class BlockType : blockID
 {
   Air = 0,
   Grass,

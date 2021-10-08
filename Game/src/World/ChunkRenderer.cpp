@@ -25,7 +25,7 @@ void ChunkRenderer::Initialize()
 
 void ChunkRenderer::BeginScene(Engine::Camera& camera)
 {
-  s_BlockFaceShader->setFloat("u_BlockSize", s_BlockSize);
+  s_BlockFaceShader->setFloat("u_BlockLength", Block::Length());
   s_BlockFaceShader->setMat4("u_ViewProjection", camera.getViewProjectionMatrix());
   s_TextureAtlas->bind(s_TextureSlot);
   s_BlockFaceShader->bind();

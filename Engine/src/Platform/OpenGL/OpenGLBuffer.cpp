@@ -15,7 +15,7 @@ namespace Engine
   {
     glCreateBuffers(1, &m_RendererID);
     glBindBuffer(GL_ARRAY_BUFFER, m_RendererID);
-    glBufferData(GL_ARRAY_BUFFER, size, vertices, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, size, vertices, GL_DYNAMIC_DRAW);
   }
 
   OpenGLVertexBuffer::~OpenGLVertexBuffer()
@@ -51,7 +51,7 @@ namespace Engine
       Binding with GL_ARRAY_BUFFER allows the data to be loaded regardless of VAO state.
     */
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_RendererID);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, count * sizeof(uint32_t), indices, GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, count * sizeof(uint32_t), indices, GL_DYNAMIC_DRAW);
   }
 
   OpenGLIndexBuffer::~OpenGLIndexBuffer()

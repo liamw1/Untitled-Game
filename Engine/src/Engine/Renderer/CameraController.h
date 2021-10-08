@@ -34,7 +34,7 @@ namespace Engine
     glm::vec3 m_CameraPosition = { 0.0f, 0.0f, 0.0f };
     glm::vec3 m_CameraViewDirection = { 0.0f, 0.0f, -1.0f };
 
-    float m_CameraTranslationSpeed = 10.0f;
+    float m_CameraTranslationSpeed = 30.0f;
     float m_CameraSensitivity = 0.0015f;
     float m_CameraZoomSensitivity = 2.0f;
 

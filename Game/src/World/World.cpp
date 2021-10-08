@@ -5,11 +5,12 @@
 /*
   World data
 */
-static constexpr int s_RenderDistance = 8;
+static constexpr int s_RenderDistance = 16;
 static constexpr int s_LoadDistance = s_RenderDistance;
-static constexpr int s_UnloadDistance = s_LoadDistance + 4;
+static constexpr int s_UnloadDistance = s_LoadDistance;
 
 static std::map<int64_t, Chunk> s_Chunks{};
+static std::map<int64_t, HeightMap> s_HeightMaps{};
 
 
 
@@ -21,6 +22,10 @@ static std::map<int64_t, Chunk> s_Chunks{};
 static int64_t createKey(const std::array<int64_t, 3>& chunkIndex)
 {
   return chunkIndex[0] % bit(10) + bit(10) * (chunkIndex[1] % bit(10)) + bit(20) * (chunkIndex[2] % bit(10));
+}
+static int64_t createKey(int64_t chunkX, int64_t chunkZ)
+{
+  return chunkX % bit(10) + bit(20) * (chunkZ % bit(10));
 }
 
 static bool isOutOfRange(const std::array<int64_t, 3>& chunkIndex, const std::array<int64_t, 3>& playerChunkIndex)
@@ -45,6 +50,22 @@ static bool isInRenderRange(const std::array<int64_t, 3>& chunkIndex, const std:
     if (abs(playerChunkIndex[i] - chunkIndex[i]) > s_RenderDistance)
       return false;
   return true;
+}
+
+static HeightMap generateHeightMap(int64_t chunkX, int64_t chunkZ)
+{
+  HeightMap heightMap{};
+  heightMap.chunkX = chunkX;
+  heightMap.chunkZ = chunkZ;
+
+  for (uint8_t i = 0; i < Chunk::Size(); ++i)
+    for (uint8_t k = 0; k < Chunk::Size(); ++k)
+    {
+      glm::vec2 blockXZ = glm::vec2(chunkX * Chunk::Length() + i * Block::Length(), chunkZ * Chunk::Length() + k * Block::Length());
+      float terrainHeight = 10.0f * glm::simplex(blockXZ / 64.0f) + 2.0f * glm::simplex(blockXZ / 32.0f) + glm::simplex(blockXZ / 8.0f);
+      heightMap.terrainHeights[i][k] = terrainHeight;
+    }
+  return heightMap;
 }
 
 static void loadNewChunks(const std::array<int64_t, 3>& playerChunkIndex, uint32_t maxNewChunks)
@@ -75,10 +96,17 @@ static void loadNewChunks(const std::array<int64_t, 3>& playerChunkIndex, uint32
             int64_t key = createKey(neighborIndex);
             EN_ASSERT(s_Chunks.find(key) == s_Chunks.end(), "Chunk is already in map");
 
+            // Create key for height map
+            int64_t heightMapKey = createKey(neighborIndex[0], neighborIndex[2]);
+
+            // Generate heightmap is none exists
+            if (s_HeightMaps.find(heightMapKey) == s_HeightMaps.end())
+              s_HeightMaps[heightMapKey] = generateHeightMap(neighborIndex[0], neighborIndex[2]);
+
             // Generate chunk
             s_Chunks[key] = std::move(Chunk(neighborIndex));
             Chunk& newChunk = s_Chunks[key];
-            newChunk.load(Block::Sand);
+            newChunk.load(s_HeightMaps[heightMapKey]);
 
             // Set neighbors in all directions
             for (BlockFace dir : BlockFaceIterator())
@@ -97,8 +125,7 @@ static void loadNewChunks(const std::array<int64_t, 3>& playerChunkIndex, uint32
               }
             }
 
-            if (!newChunk.isEmpty())
-              newChunks++;
+            newChunks++;
           }
         }
 
@@ -117,6 +144,17 @@ static void clean(const std::array<int64_t, 3>& playerChunkIndex)
 
     if (isOutOfRange(chunk.getIndex(), playerChunkIndex))
       it = s_Chunks.erase(it);
+    else
+      it++;
+  }
+
+  for (auto it = s_HeightMaps.begin(); it != s_HeightMaps.end();)
+  {
+    int64_t key = it->first;
+    auto& heightMap = it->second;
+
+    if (isOutOfRange({ heightMap.chunkX, playerChunkIndex[1], heightMap.chunkZ }, playerChunkIndex))
+      it = s_HeightMaps.erase(it);
     else
       it++;
   }
@@ -146,8 +184,11 @@ void World::Initialize(const glm::vec3& initialPosition)
 
   std::array<int64_t, 3> playerChunkIndex = Chunk::GetPlayerChunkIndex(initialPosition);
 
+  int64_t heightMapKey = createKey(playerChunkIndex[0], playerChunkIndex[2]);
+  s_HeightMaps[heightMapKey] = generateHeightMap(playerChunkIndex[0], playerChunkIndex[2]);
+
   Chunk newChunk = Chunk(playerChunkIndex);
-  newChunk.load(Block::Sand);
+  newChunk.load(s_HeightMaps[heightMapKey]);
   s_Chunks[createKey(playerChunkIndex)] = std::move(newChunk);
 }
 
@@ -163,5 +204,7 @@ void World::OnUpdate(const glm::vec3& playerPosition)
 
   clean(playerChunkIndex);
   render(playerChunkIndex);
-  loadNewChunks(playerChunkIndex, 1);
+  loadNewChunks(playerChunkIndex, 100);
+
+  // EN_INFO("Chunks loaded: {0}", s_Chunks.size());
 }

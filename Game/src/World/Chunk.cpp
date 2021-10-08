@@ -4,14 +4,12 @@
 Engine::Shared<Engine::IndexBuffer> Chunk::s_MeshIndexBuffer = nullptr;
 
 Chunk::Chunk()
-  : m_ChunkIndex({0, 0, 0}),
-    m_ChunkComposition(nullptr)
+  : m_ChunkIndex({0, 0, 0})
 {
 }
 
 Chunk::Chunk(const std::array<int64_t, 3>& chunkIndex)
-  : m_ChunkIndex(chunkIndex),
-    m_ChunkComposition(nullptr)
+  : m_ChunkIndex(chunkIndex)
 {
 }
 
@@ -25,37 +23,89 @@ Chunk::~Chunk()
     }
 }
 
-void Chunk::load(Block blockType)
+void Chunk::load(HeightMap heightMap)
 {
-  m_ChunkComposition = std::make_unique<Block[]>(s_ChunkTotalBlocks);
+  m_ChunkComposition = std::make_unique<BlockType[]>(s_ChunkTotalBlocks);
 
-  constexpr uint64_t chunkSize = (uint64_t)s_ChunkSize;
+  const float chunkHeight = position()[1];
   for (uint8_t i = 0; i < s_ChunkSize; ++i)
     for (uint8_t k = 0; k < s_ChunkSize; ++k)
     {
-      glm::vec2 blockXZ = glm::vec2(m_ChunkIndex[0] * s_ChunkLength + i * s_BlockSize, m_ChunkIndex[2] * s_ChunkLength + k * s_BlockSize);
-      float terrainHeight = 20.0f * glm::simplex(blockXZ / 32.0f);
+      const float& terrainHeight = heightMap.terrainHeights[i][k];
 
-      if (terrainHeight < position()[1])
+      if (terrainHeight <= chunkHeight)
+      {
         for (uint8_t j = 0; j < s_ChunkSize; ++j)
-          m_ChunkComposition[i * chunkSize * chunkSize + j * chunkSize + k] = Block::Air;
-      else if (terrainHeight > position()[1] + s_ChunkLength)
+          setBlockType(i, j, k, BlockType::Air);
+        m_Solid = false;
+      }
+      else if (terrainHeight >= chunkHeight + s_ChunkLength)
+      {
         for (uint8_t j = 0; j < s_ChunkSize; ++j)
-          m_ChunkComposition[i * chunkSize * chunkSize + j * chunkSize + k] = blockType;
+          setBlockType(i, j, k, BlockType::Grass);
+        m_Empty = false;
+      }
       else
       {
-        for (int j = (int)(terrainHeight - position()[1]); j >= 0; --j)
-          m_ChunkComposition[i * chunkSize * chunkSize + j * chunkSize + k] = blockType;
+        const int terrainHeightIndex = (int)((terrainHeight - chunkHeight) / Block::Length());
+        for (uint8_t j = 0; j < s_ChunkSize; ++j)
+        {
+          if (j < terrainHeightIndex)
+          {
+            setBlockType(i, j, k, BlockType::Grass);
+            m_Empty = false;
+          }
+          else
+          {
+            setBlockType(i, j, k, BlockType::Air);
+            m_Solid = false;
+          }
+        }
       }
     }
+  EN_ASSERT(!(m_Empty && m_Solid), "Chunk cannot be both empty and opaque!");
 
-  m_Empty = false;
+  if (m_Empty)
+    m_ChunkComposition.reset();
+  else
+    for (uint8_t i = 0; i < s_ChunkSize; ++i)
+      for (uint8_t j = 0; j < s_ChunkSize; ++j)
+      {
+        if (getBlockType(i, s_ChunkSize - 1, j) == BlockType::Air)
+          m_FaceIsOpaque[static_cast<uint8_t>(BlockFace::Top)] = false;
+        if (getBlockType(i, 0, j) == BlockType::Air)
+          m_FaceIsOpaque[static_cast<uint8_t>(BlockFace::Bottom)] = false;
+        if (getBlockType(i, j, s_ChunkSize - 1) == BlockType::Air)
+          m_FaceIsOpaque[static_cast<uint8_t>(BlockFace::North)] = false;
+        if (getBlockType(i, j, 0) == BlockType::Air)
+          m_FaceIsOpaque[static_cast<uint8_t>(BlockFace::South)] = false;
+        if (getBlockType(0, i, j) == BlockType::Air)
+          m_FaceIsOpaque[static_cast<uint8_t>(BlockFace::East)] = false;
+        if (getBlockType(s_ChunkSize - 1, i, j) == BlockType::Air)
+          m_FaceIsOpaque[static_cast<uint8_t>(BlockFace::West)] = false;
+      }
 }
 
 void Chunk::generateMesh()
 {
   for (uint8_t i = 0; i < 6; ++i)
     EN_ASSERT(m_Neighbors[i] != nullptr, "Chunk neighbor does not exist!");
+
+  // If chunk is empty, no need to generate mesh
+  if (m_Empty)
+    return;
+
+  // If chunk is opaque and surrounded by opaque chunk faces, no need to generate mesh
+  if (m_Solid)
+  {
+    bool allNeighborsOpaque = true;
+    for (BlockFace face : BlockFaceIterator())
+      if (!getNeighbor(face)->isFaceOpaque(!face))
+        allNeighborsOpaque = false;
+
+    if (allNeighborsOpaque)
+      return;
+  }
 
   static constexpr int8_t offsets[6][4][3]
     = { { {0, 1, 1}, {1, 1, 1}, {1, 1, 0}, {0, 1, 0} },    /* Top Face    */
@@ -65,23 +115,20 @@ void Chunk::generateMesh()
         { {0, 0, 0}, {0, 0, 1}, {0, 1, 1}, {0, 1, 0} },    /* East Face   */
         { {1, 0, 1}, {1, 0, 0}, {1, 1, 0}, {1, 1, 1} } };  /* West Face   */
 
-  static constexpr glm::vec2 textureCoordinates[4] = { {0.0f, 0.0f},
-                                                       {1.0f, 0.0f},
-                                                       {1.0f, 1.0f},
-                                                       {0.0f, 1.0f} };
-
   for (uint8_t i = 0; i < s_ChunkSize; ++i)
     for (uint8_t j = 0; j < s_ChunkSize; ++j)
       for (uint8_t k = 0; k < s_ChunkSize; ++k)
-        if (getBlockAt(i, j, k) != Block::Air)
+        if (getBlockType(i, j, k) != BlockType::Air)
           for (BlockFace face : BlockFaceIterator())
             if (isBlockNeighborTransparent(i, j, k, face))
               for (uint8_t v = 0; v < 4; ++v)
               {
+                const uint8_t faceID = static_cast<uint8_t>(face);
+
                 // Add offsets to convert from block index to vertex index
-                const uint8_t vI = i + offsets[static_cast<uint8_t>(face)][v][0];
-                const uint8_t vJ = j + offsets[static_cast<uint8_t>(face)][v][1];
-                const uint8_t vK = k + offsets[static_cast<uint8_t>(face)][v][2];
+                const uint8_t vI = i + offsets[faceID][v][0];
+                const uint8_t vJ = j + offsets[faceID][v][1];
+                const uint8_t vK = k + offsets[faceID][v][2];
 
                 uint32_t vertexData = vI + (vJ << 6) + (vK << 12);
                 vertexData += static_cast<uint8_t>(face) << 18;
@@ -118,17 +165,27 @@ void Chunk::bindBuffers() const
   m_MeshVertexArray->bind();
 }
 
-Block Chunk::getBlockAt(uint8_t i, uint8_t j, uint8_t k) const
+void Chunk::setBlockType(uint8_t i, uint8_t j, uint8_t k, BlockType blockType)
 {
   static constexpr uint64_t chunkSize = (uint64_t)s_ChunkSize;
-  return m_Empty ? Block::Air : m_ChunkComposition[i * chunkSize * chunkSize + j * chunkSize + k];
+
+  EN_ASSERT(i < chunkSize && j < chunkSize && k < chunkSize, "Index is out of bounds!");
+  m_ChunkComposition[i * chunkSize * chunkSize + j * chunkSize + k] = blockType;
+}
+
+BlockType Chunk::getBlockType(uint8_t i, uint8_t j, uint8_t k) const
+{
+  static constexpr uint64_t chunkSize = (uint64_t)s_ChunkSize;
+
+  EN_ASSERT(i < chunkSize&& j < chunkSize&& k < chunkSize, "Index is out of bounds!");
+  return m_Empty ? BlockType::Air : m_ChunkComposition[i * chunkSize * chunkSize + j * chunkSize + k];
 }
 
 glm::vec3 Chunk::blockPosition(uint8_t i, uint8_t j, uint8_t k) const
 {
-  return glm::vec3(m_ChunkIndex[0] * s_ChunkLength + i * s_BlockSize,
-                   m_ChunkIndex[1] * s_ChunkLength + j * s_BlockSize,
-                   m_ChunkIndex[2] * s_ChunkLength + k * s_BlockSize);
+  return glm::vec3(m_ChunkIndex[0] * s_ChunkLength + i * Block::Length(),
+                   m_ChunkIndex[1] * s_ChunkLength + j * Block::Length(),
+                   m_ChunkIndex[2] * s_ChunkLength + k * Block::Length());
 }
 
 bool Chunk::allNeighborsLoaded() const
@@ -188,17 +245,17 @@ void Chunk::generateVertexArray()
   m_MeshVertexBuffer->setData(m_Mesh.data(), dataSize);
 }
 
-bool Chunk::isBlockOnBoundary(uint8_t i, uint8_t j, uint8_t k, BlockFace face)
+bool Chunk::isBlockNeighborInAnotherChunk(uint8_t i, uint8_t j, uint8_t k, BlockFace face)
 {
-  using func = bool(*)(uint8_t, uint8_t, uint8_t, BlockFace);
-  static const func isOnChunkSide[6] = { [](uint8_t i, uint8_t j, uint8_t k, BlockFace face) { return j == s_ChunkSize - 1; },
-                                         [](uint8_t i, uint8_t j, uint8_t k, BlockFace face) { return j == 0; },
-                                         [](uint8_t i, uint8_t j, uint8_t k, BlockFace face) { return k == s_ChunkSize - 1; },
-                                         [](uint8_t i, uint8_t j, uint8_t k, BlockFace face) { return k == 0; },
-                                         [](uint8_t i, uint8_t j, uint8_t k, BlockFace face) { return i == 0; },
-                                         [](uint8_t i, uint8_t j, uint8_t k, BlockFace face) { return i == s_ChunkSize - 1; } };
+  using func = bool(*)(uint8_t, uint8_t, uint8_t);
+  static const func isOnChunkSide[6] = { [](uint8_t i, uint8_t j, uint8_t k) { return j == s_ChunkSize - 1; },
+                                         [](uint8_t i, uint8_t j, uint8_t k) { return j == 0; },
+                                         [](uint8_t i, uint8_t j, uint8_t k) { return k == s_ChunkSize - 1; },
+                                         [](uint8_t i, uint8_t j, uint8_t k) { return k == 0; },
+                                         [](uint8_t i, uint8_t j, uint8_t k) { return i == 0; },
+                                         [](uint8_t i, uint8_t j, uint8_t k) { return i == s_ChunkSize - 1; } };
 
-  return isOnChunkSide[static_cast<uint8_t>(face)](i, j, k, face);
+  return isOnChunkSide[static_cast<uint8_t>(face)](i, j, k);
 }
 
 bool Chunk::isBlockNeighborTransparent(uint8_t i, uint8_t j, uint8_t k, BlockFace face)
@@ -206,12 +263,17 @@ bool Chunk::isBlockNeighborTransparent(uint8_t i, uint8_t j, uint8_t k, BlockFac
   static constexpr int8_t normals[6][3] = { { 0, 1, 0}, { 0, -1, 0}, { 0, 0, 1}, { 0, 0, -1}, { -1, 0, 0}, { 1, 0, 0} };
                                        //       Top        Bottom       North       South         East         West
 
-  if (isBlockOnBoundary(i, j, k, face))
-    return m_Neighbors[(uint8_t)face]->getBlockAt(i - (s_ChunkSize - 1) * normals[static_cast<uint8_t>(face)][0],
-                                                  j - (s_ChunkSize - 1) * normals[static_cast<uint8_t>(face)][1],
-                                                  k - (s_ChunkSize - 1) * normals[static_cast<uint8_t>(face)][2]) == Block::Air;
+  const uint8_t faceID = static_cast<uint8_t>(face);
+  if (isBlockNeighborInAnotherChunk(i, j, k, face))
+  {
+    return m_Neighbors[faceID]->getBlockType(i - (s_ChunkSize - 1) * normals[faceID][0],
+                                             j - (s_ChunkSize - 1) * normals[faceID][1],
+                                             k - (s_ChunkSize - 1) * normals[faceID][2]) == BlockType::Air;
+  }
   else
-    return getBlockAt(i + normals[static_cast<uint8_t>(face)][0],
-                      j + normals[static_cast<uint8_t>(face)][1],
-                      k + normals[static_cast<uint8_t>(face)][2]) == Block::Air;
+  {
+    return getBlockType(i + normals[faceID][0],
+                        j + normals[faceID][1],
+                        k + normals[faceID][2]) == BlockType::Air;
+  }
 }
