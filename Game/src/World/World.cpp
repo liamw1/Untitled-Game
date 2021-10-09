@@ -80,54 +80,54 @@ static void loadNewChunks(const std::array<int64_t, 3>& playerChunkIndex, uint32
   {
     auto& chunk = it->second;
 
-    // Check if additional chunks can be loaded
-    if (!chunk.allNeighborsLoaded())
-      for (BlockFace face : BlockFaceIterator())
-        if (chunk.getNeighbor(face) == nullptr)
+    for (BlockFace face : BlockFaceIterator())
+      if (chunk.getNeighbor(face) == nullptr)
+      {
+        // Store index of new chunk
+        std::array<int64_t, 3> neighborIndex = chunk.getIndex();
+        for (int i = 0; i < 3; ++i)
+          neighborIndex[i] += normals[static_cast<uint8_t>(face)][i];
+
+        // If potential chunk is out of load range, do nothing
+        if (!isInLoadRange(neighborIndex, playerChunkIndex))
+          continue;
+
+        // Create key for hash map
+        int64_t key = createKey(neighborIndex);
+        EN_ASSERT(s_Chunks.find(key) == s_Chunks.end(), "Chunk is already in map");
+
+        // Create key for height map
+        int64_t heightMapKey = createKey(neighborIndex[0], neighborIndex[2]);
+
+        // Generate heightmap is none exists
+        if (s_HeightMaps.find(heightMapKey) == s_HeightMaps.end())
+          s_HeightMaps[heightMapKey] = generateHeightMap(neighborIndex[0], neighborIndex[2]);
+
+        // Generate chunk
+        s_Chunks[key] = std::move(Chunk(neighborIndex));
+        Chunk& newChunk = s_Chunks[key];
+        newChunk.load(s_HeightMaps[heightMapKey]);
+
+        // Set neighbors in all directions
+        for (BlockFace dir : BlockFaceIterator())
         {
-          std::array<int64_t, 3> neighborIndex = chunk.getIndex();
+          // Store index of chunk adjacent to new chunk in direction "dir"
+          std::array<int64_t, 3> adjIndex = neighborIndex;
           for (int i = 0; i < 3; ++i)
-            neighborIndex[i] += normals[static_cast<uint8_t>(face)][i];
+            adjIndex[i] += normals[static_cast<uint8_t>(dir)][i];
 
-          // If potential chunk is out of load range, do nothing
-          if (isInLoadRange(neighborIndex, playerChunkIndex))
+          // Find and add already existing neighbors to new chunk
+          int64_t adjKey = createKey(adjIndex);
+          if (s_Chunks.find(adjKey) != s_Chunks.end())
           {
-            // Create key for hash map
-            int64_t key = createKey(neighborIndex);
-            EN_ASSERT(s_Chunks.find(key) == s_Chunks.end(), "Chunk is already in map");
-
-            // Create key for height map
-            int64_t heightMapKey = createKey(neighborIndex[0], neighborIndex[2]);
-
-            // Generate heightmap is none exists
-            if (s_HeightMaps.find(heightMapKey) == s_HeightMaps.end())
-              s_HeightMaps[heightMapKey] = generateHeightMap(neighborIndex[0], neighborIndex[2]);
-
-            // Generate chunk
-            s_Chunks[key] = std::move(Chunk(neighborIndex));
-            Chunk& newChunk = s_Chunks[key];
-            newChunk.load(s_HeightMaps[heightMapKey]);
-
-            // Set neighbors in all directions
-            for (BlockFace dir : BlockFaceIterator())
-            {
-              // Index of chunk adjacent to neighboring chunk in direction "dir"
-              std::array<int64_t, 3> adjIndex = neighborIndex;
-              for (int i = 0; i < 3; ++i)
-                adjIndex[i] += normals[static_cast<uint8_t>(dir)][i];
-
-              int64_t adjKey = createKey(adjIndex);
-              if (s_Chunks.find(adjKey) != s_Chunks.end())
-              {
-                Chunk& adjChunk = s_Chunks[adjKey];
-                newChunk.setNeighbor(dir, &adjChunk);
-                adjChunk.setNeighbor(!dir, &newChunk);
-              }
-            }
-
-            newChunks++;
+            Chunk& adjChunk = s_Chunks[adjKey];
+            newChunk.setNeighbor(dir, &adjChunk);
+            adjChunk.setNeighbor(!dir, &newChunk);
           }
         }
+
+        newChunks++;
+      }
 
     if (newChunks >= maxNewChunks)
       break;
@@ -204,7 +204,7 @@ void World::OnUpdate(const glm::vec3& playerPosition)
 
   clean(playerChunkIndex);
   render(playerChunkIndex);
-  loadNewChunks(playerChunkIndex, 100);
+  loadNewChunks(playerChunkIndex, 200);
 
   // EN_INFO("Chunks loaded: {0}", s_Chunks.size());
 }

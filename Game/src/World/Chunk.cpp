@@ -66,7 +66,11 @@ void Chunk::load(HeightMap heightMap)
   EN_ASSERT(!(m_Empty && m_Solid), "Chunk cannot be both empty and opaque!");
 
   if (m_Empty)
+  {
     m_ChunkComposition.reset();
+    for (BlockFace face : BlockFaceIterator())
+      m_FaceIsOpaque[static_cast<uint8_t>(face)] = false;
+  }
   else
     for (uint8_t i = 0; i < s_ChunkSize; ++i)
       for (uint8_t j = 0; j < s_ChunkSize; ++j)
