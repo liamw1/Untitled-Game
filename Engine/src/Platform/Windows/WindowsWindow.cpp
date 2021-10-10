@@ -92,7 +92,7 @@ namespace Engine
         if (Renderer::GetAPI() == RendererAPI::API::OpenGL)
           glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
       #endif
-      m_Window = glfwCreateWindow((int)properties.width, (int)properties.height, m_Data.title.c_str(), nullptr, nullptr);
+      m_Window = glfwCreateWindow(static_cast<int>(properties.width), static_cast<int>(properties.height), m_Data.title.c_str(), nullptr, nullptr);
       ++GLFWWindowCount;
     }
 
@@ -183,7 +183,7 @@ namespace Engine
     auto mouseScrollCallback = [](GLFWwindow* window, double xOffset, double yOffset)
     {
       WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
-      MouseScrollEvent event((float)xOffset, (float)yOffset);
+      MouseScrollEvent event(static_cast<float>(xOffset), static_cast<float>(yOffset));
       data.eventCallback(event);
     };
     glfwSetScrollCallback(m_Window, mouseScrollCallback);
@@ -191,7 +191,7 @@ namespace Engine
     auto cursorPosCallback = [](GLFWwindow* window, double xPos, double yPos)
     {
       WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
-      MouseMoveEvent event((float)xPos, (float)yPos);
+      MouseMoveEvent event(static_cast<float>(xPos), static_cast<float>(yPos));
       data.eventCallback(event);
     };
     glfwSetCursorPosCallback(m_Window, cursorPosCallback);

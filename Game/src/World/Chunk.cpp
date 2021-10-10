@@ -47,7 +47,7 @@ void Chunk::load(HeightMap heightMap)
       }
       else
       {
-        const int terrainHeightIndex = (int)((terrainHeight - chunkHeight) / Block::Length());
+        const int terrainHeightIndex = static_cast<int>((terrainHeight - chunkHeight) / Block::Length());
         for (uint8_t j = 0; j < s_ChunkSize; ++j)
         {
           if (j < terrainHeightIndex)
@@ -171,7 +171,7 @@ void Chunk::bindBuffers() const
 
 void Chunk::setBlockType(uint8_t i, uint8_t j, uint8_t k, BlockType blockType)
 {
-  static constexpr uint64_t chunkSize = (uint64_t)s_ChunkSize;
+  static constexpr uint64_t chunkSize = static_cast<uint64_t>(s_ChunkSize);
 
   EN_ASSERT(i < chunkSize && j < chunkSize && k < chunkSize, "Index is out of bounds!");
   m_ChunkComposition[i * chunkSize * chunkSize + j * chunkSize + k] = blockType;
@@ -179,7 +179,7 @@ void Chunk::setBlockType(uint8_t i, uint8_t j, uint8_t k, BlockType blockType)
 
 BlockType Chunk::getBlockType(uint8_t i, uint8_t j, uint8_t k) const
 {
-  static constexpr uint64_t chunkSize = (uint64_t)s_ChunkSize;
+  static constexpr uint64_t chunkSize = static_cast<uint64_t>(s_ChunkSize);
 
   EN_ASSERT(i < chunkSize&& j < chunkSize&& k < chunkSize, "Index is out of bounds!");
   return m_Empty ? BlockType::Air : m_ChunkComposition[i * chunkSize * chunkSize + j * chunkSize + k];
@@ -202,7 +202,9 @@ bool Chunk::allNeighborsLoaded() const
 
 const std::array<int64_t, 3> Chunk::GetPlayerChunkIndex(const glm::vec3& playerPosition)
 {
-  std::array<int64_t, 3> playerChunkIndex = { (int64_t)(playerPosition.x / s_ChunkLength), (int64_t)(playerPosition.y / s_ChunkLength) , (int64_t)(playerPosition.z / s_ChunkLength) };
+  std::array<int64_t, 3> playerChunkIndex = { static_cast<int64_t>(playerPosition.x / s_ChunkLength),
+                                              static_cast<int64_t>(playerPosition.y / s_ChunkLength),
+                                              static_cast<int64_t>(playerPosition.z / s_ChunkLength) };
   for (int i = 0; i < 3; ++i)
     if (playerPosition[i] < 0.0f)
       playerChunkIndex[i]--;
@@ -239,7 +241,7 @@ void Chunk::InitializeIndexBuffer()
 void Chunk::generateVertexArray()
 {
   m_MeshVertexArray = Engine::VertexArray::Create();
-  m_MeshVertexBuffer = Engine::VertexBuffer::Create((uint32_t)m_Mesh.size() * sizeof(uint32_t));
+  m_MeshVertexBuffer = Engine::VertexBuffer::Create(static_cast<uint32_t>(m_Mesh.size()) * sizeof(uint32_t));
   m_MeshVertexBuffer->setLayout({ { ShaderDataType::Uint32, "a_VertexData" } });
   m_MeshVertexArray->addVertexBuffer(m_MeshVertexBuffer);
 

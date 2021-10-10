@@ -1,5 +1,10 @@
 #include "Sandbox2D.h"
+
+#include <codeanalysis\warnings.h> // Disable intellisense warnings
+#pragma warning( push )
+#pragma warning ( disable : ALL_CODE_ANALYSIS_WARNINGS )
 #include <imgui.h>
+#pragma warning( pop )
 
 Sandbox2D::Sandbox2D()
   : Layer("Sandbox2D"),
@@ -40,7 +45,7 @@ void Sandbox2D::onUpdate(std::chrono::duration<float> timestep)
   Engine::Renderer2D::DrawQuad({ {0.0f, 0.0f, -0.1f}, glm::vec2(50.f), glm::vec4(1.0f), 10.0f}, m_CheckerboardTexture);
   for (int i = 0; i < 5; ++i)
     for (int j = 0; j < 5; ++j)
-      Engine::Renderer2D::DrawRotatedQuad({ { (float)i - 2.0f, (float)j - 2.0f, 0.0f }, { 0.66f, 0.66f }, {0.8f, 0.2f, 0.3f, 1.0f}}, rotation, m_CheckerboardTexture);
+      Engine::Renderer2D::DrawRotatedQuad({ { static_cast<float>(i) - 2.0f, static_cast<float>(j) - 2.0f, 0.0f }, { 0.66f, 0.66f }, {0.8f, 0.2f, 0.3f, 1.0f}}, rotation, m_CheckerboardTexture);
 
   for (float y = -5.0f; y < 5.0f; y += 0.5f)
     for (float x = -5.0f; x < 5.0f; x += 0.5f)

@@ -94,7 +94,7 @@ namespace Engine
 
   bool CameraController::onWindowResize(WindowResizeEvent& event)
   {
-    m_AspectRatio = event.getHeight() == 0 ? 0.0f : (float)event.getWidth() / (float)event.getHeight();
+    m_AspectRatio = event.getHeight() == 0 ? 0.0f : static_cast<float>(event.getWidth()) / event.getHeight();
     m_Camera.setProjection(m_Fov, m_AspectRatio, m_NearPlane, m_FarPlane);
     return false;
   }

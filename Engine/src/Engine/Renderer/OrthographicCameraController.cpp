@@ -73,7 +73,7 @@ namespace Engine
 
   bool OrthographicCameraController::onWindowResize(WindowResizeEvent& event)
   {
-    m_AspectRatio = (float)event.getWidth() / (float)event.getHeight();
+    m_AspectRatio = event.getHeight() == 0.0f ? 0.0f : static_cast<float>(event.getWidth()) / event.getHeight();
     m_Camera.setProjection(-m_AspectRatio * m_ZoomLevel, m_AspectRatio * m_ZoomLevel, -m_ZoomLevel, m_ZoomLevel);
     return false;
   }

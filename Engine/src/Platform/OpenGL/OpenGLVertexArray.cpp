@@ -54,62 +54,47 @@ namespace Engine
     const auto& layout = vertexBuffer->getLayout();
     for (const auto& element : layout)
     {
-      switch (element.type)
+      const uint8_t dataTypeID = static_cast<uint8_t>(element.type);
+
+      if (dataTypeID >= static_cast<uint8_t>(ShaderDataType::FloatTypeBegin) && dataTypeID <= static_cast<uint8_t>(ShaderDataType::FloatTypeEnd))
       {
-        case ShaderDataType::Float:
-        case ShaderDataType::Float2:
-        case ShaderDataType::Float3:
-        case ShaderDataType::Float4:
+        glEnableVertexAttribArray(m_VertexBufferIndex);
+        glVertexAttribPointer(m_VertexBufferIndex,
+          element.getComponentCount(),
+          convertToOpenGLBaseType(element.type),
+          element.normalized ? GL_TRUE : GL_FALSE,
+          layout.getStride(),
+          (const void*)(const size_t)element.offset);
+        m_VertexBufferIndex++;
+      }
+      else if (dataTypeID >= static_cast<uint8_t>(ShaderDataType::IntTypeBegin) && dataTypeID <= static_cast<uint8_t>(ShaderDataType::IntTypeEnd))
+      {
+        glEnableVertexAttribArray(m_VertexBufferIndex);
+        glVertexAttribIPointer(m_VertexBufferIndex,
+          element.getComponentCount(),
+          convertToOpenGLBaseType(element.type),
+          layout.getStride(),
+          (const void*)(const size_t)element.offset);
+        m_VertexBufferIndex++;
+      }
+      else if (dataTypeID >= static_cast<uint8_t>(ShaderDataType::MatTypeBegin) && dataTypeID <= static_cast<uint8_t>(ShaderDataType::MatTypeEnd))
+      {
+        uint8_t count = element.getComponentCount();
+        for (uint8_t i = 0; i < count; ++i)
         {
           glEnableVertexAttribArray(m_VertexBufferIndex);
           glVertexAttribPointer(m_VertexBufferIndex,
-                                element.getComponentCount(),
-                                convertToOpenGLBaseType(element.type),
-                                element.normalized ? GL_TRUE : GL_FALSE,
-                                layout.getStride(),
-                                (const void*)(const size_t)element.offset);
+            count,
+            convertToOpenGLBaseType(element.type),
+            element.normalized ? GL_TRUE : GL_FALSE,
+            layout.getStride(),
+            (const void*)(const size_t)(element.offset + sizeof(float) * count * i));
+          glVertexAttribDivisor(m_VertexBufferIndex, 1);
           m_VertexBufferIndex++;
-          break;
         }
-
-        case ShaderDataType::Bool:
-        case ShaderDataType::Uint32:
-        case ShaderDataType::Int:
-        case ShaderDataType::Int2:
-        case ShaderDataType::Int3:
-        case ShaderDataType::Int4:
-        {
-          glEnableVertexAttribArray(m_VertexBufferIndex);
-          glVertexAttribIPointer(m_VertexBufferIndex,
-                                 element.getComponentCount(),
-                                 convertToOpenGLBaseType(element.type),
-                                 layout.getStride(),
-                                 (const void*)(const size_t)element.offset);
-          m_VertexBufferIndex++;
-          break;
-        }
-
-        case ShaderDataType::Mat3:
-        case ShaderDataType::Mat4:
-        {
-          uint8_t count = element.getComponentCount();
-          for (uint8_t i = 0; i < count; ++i)
-          {
-            glEnableVertexAttribArray(m_VertexBufferIndex);
-            glVertexAttribPointer(m_VertexBufferIndex,
-                                  count,
-                                  convertToOpenGLBaseType(element.type),
-                                  element.normalized ? GL_TRUE : GL_FALSE,
-                                  layout.getStride(),
-                                  (const void*)(const size_t)(element.offset + sizeof(float) * count * i));
-            glVertexAttribDivisor(m_VertexBufferIndex, 1);
-            m_VertexBufferIndex++;
-          }
-          break;
-        }
-
-        default: EN_CORE_ASSERT(false, ("Unknown shader data type!"));
       }
+      else
+        EN_CORE_ASSERT(false, ("Unknown shader data type!"));
     }
 
     m_VertexBuffers.push_back(vertexBuffer);

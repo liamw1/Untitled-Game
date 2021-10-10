@@ -1,5 +1,16 @@
 #pragma once
 
+/*
+  Indicates underyling type of data to be send to shader.
+
+  There are three basic categories of data: ints, floats, and mats.
+  These are handled differently from each other, and so it is important
+  that they are grouped together.
+
+  Int types should be enumerated first, then floats, then mats.
+  The beginning and ending of these groups are given their own identifier,
+  which is used in the vertex array for differentiating between these types.
+*/
 enum class ShaderDataType : uint8_t
 {
   None,
@@ -7,7 +18,11 @@ enum class ShaderDataType : uint8_t
   Uint32,
   Int, Int2, Int3, Int4,
   Float, Float2, Float3, Float4,
-  Mat3, Mat4
+  Mat3, Mat4,
+
+  IntTypeBegin = Bool,    IntTypeEnd = Int4,
+  FloatTypeBegin = Float, FloatTypeEnd = Float4,
+  MatTypeBegin = Mat3,    MatTypeEnd = Mat4
 };
 
 namespace Engine
@@ -17,8 +32,8 @@ namespace Engine
     switch (type)
     {
       case ShaderDataType::Bool:        return 1 * sizeof(bool);
-      case ShaderDataType::Int:         return 1 * sizeof(int);
       case ShaderDataType::Uint32:      return 1 * sizeof(uint32_t);
+      case ShaderDataType::Int:         return 1 * sizeof(int);
       case ShaderDataType::Int2:        return 2 * sizeof(int);
       case ShaderDataType::Int3:        return 3 * sizeof(int);
       case ShaderDataType::Int4:        return 4 * sizeof(int);
@@ -45,6 +60,11 @@ namespace Engine
     BufferElement(ShaderDataType type, const std::string& name, bool normalized = false)
       : name(name), type(type), size(shaderDataTypeSize(type)), offset(0), normalized(normalized) {}
 
+    /*
+      Gets the number of components packed into the buffer element type.
+      Note that for mats, the underlying component is a float vector, so
+      the component count of a mat4 is 4, not 16.
+    */
     uint32_t getComponentCount() const
     {
       switch (type)
@@ -59,8 +79,8 @@ namespace Engine
         case ShaderDataType::Float2:      return 2;
         case ShaderDataType::Float3:      return 3;
         case ShaderDataType::Float4:      return 4;
-        case ShaderDataType::Mat3:        return 3;   // 3x float3
-        case ShaderDataType::Mat4:        return 4;   // 4x float4
+        case ShaderDataType::Mat3:        return 3;
+        case ShaderDataType::Mat4:        return 4;
         default: EN_CORE_ASSERT(false, "Unknown ShaderDataType!"); return 0;
       }
     }

@@ -16,8 +16,8 @@ namespace Engine
   {
     const float dx = spriteSize.x * cellSize / spriteSheet->getWidth();
     const float dy = spriteSize.y * cellSize / spriteSheet->getHeight();
-    const float x = (float)i * cellSize / spriteSheet->getWidth();
-    const float y = (float)j * cellSize / spriteSheet->getHeight();
+    const float x = static_cast<float>(i * cellSize) / spriteSheet->getWidth();
+    const float y = static_cast<float>(j * cellSize) / spriteSheet->getHeight();
 
     EN_CORE_ASSERT(x >= 0.0f && x + dx <= 1.0f && y >= 0.0f && y + dy <= 1.0f, "SubTexture coordinates are out of bounds!");
 

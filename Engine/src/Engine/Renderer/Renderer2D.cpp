@@ -75,12 +75,12 @@ namespace Engine
           flushAndReset();
 
         textureIndex = s_TextureSlotIndex;
-        s_TextureSlots[s_TextureSlotIndex] = texture;
+        s_TextureSlots[textureIndex] = texture;
         s_TextureSlotIndex++;
       }
     }
 
-    return (float)textureIndex;
+    return static_cast<float>(textureIndex);
   }
 
 
@@ -127,7 +127,7 @@ namespace Engine
     uint32_t s_WhiteTextureData = 0xffffffff;
     s_WhiteTexture->setData(&s_WhiteTextureData, sizeof(uint32_t));
 
-    int samplers[s_MaxTextureSlots];
+    int samplers[s_MaxTextureSlots]{};
     for (int i = 0; i < s_MaxTextureSlots; ++i)
       samplers[i] = i;
 

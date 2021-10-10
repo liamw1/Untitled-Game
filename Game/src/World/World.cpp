@@ -23,7 +23,7 @@ static int64_t createKey(const std::array<int64_t, 3>& chunkIndex)
 {
   return chunkIndex[0] % bit(10) + bit(10) * (chunkIndex[1] % bit(10)) + bit(20) * (chunkIndex[2] % bit(10));
 }
-static int64_t createKey(int64_t chunkX, int64_t chunkZ)
+static int64_t createHeightMapKey(int64_t chunkX, int64_t chunkZ)
 {
   return chunkX % bit(10) + bit(20) * (chunkZ % bit(10));
 }
@@ -97,7 +97,7 @@ static void loadNewChunks(const std::array<int64_t, 3>& playerChunkIndex, uint32
         EN_ASSERT(s_Chunks.find(key) == s_Chunks.end(), "Chunk is already in map");
 
         // Create key for height map
-        int64_t heightMapKey = createKey(neighborIndex[0], neighborIndex[2]);
+        int64_t heightMapKey = createHeightMapKey(neighborIndex[0], neighborIndex[2]);
 
         // Generate heightmap is none exists
         if (s_HeightMaps.find(heightMapKey) == s_HeightMaps.end())
@@ -184,7 +184,7 @@ void World::Initialize(const glm::vec3& initialPosition)
 
   std::array<int64_t, 3> playerChunkIndex = Chunk::GetPlayerChunkIndex(initialPosition);
 
-  int64_t heightMapKey = createKey(playerChunkIndex[0], playerChunkIndex[2]);
+  int64_t heightMapKey = createHeightMapKey(playerChunkIndex[0], playerChunkIndex[2]);
   s_HeightMaps[heightMapKey] = generateHeightMap(playerChunkIndex[0], playerChunkIndex[2]);
 
   Chunk newChunk = Chunk(playerChunkIndex);

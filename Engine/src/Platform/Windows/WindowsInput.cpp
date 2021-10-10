@@ -10,14 +10,14 @@ namespace Engine
   bool WindowsInput::isKeyPressedImpl(Key keyCode)
   {
     auto window = static_cast<GLFWwindow*>(Application::Get().getWindow().getNativeWindow());
-    auto state = glfwGetKey(window, (int)keyCode);
+    auto state = glfwGetKey(window, static_cast<int>(keyCode));
     return state == GLFW_PRESS || state == GLFW_REPEAT;
   }
 
   bool WindowsInput::isMouseButtonPressedImpl(MouseButton button)
   {
     auto window = static_cast<GLFWwindow*>(Application::Get().getWindow().getNativeWindow());
-    auto state = glfwGetMouseButton(window, (int)button);
+    auto state = glfwGetMouseButton(window, static_cast<int>(button));
     return state == GLFW_PRESS;
   }
 
@@ -26,7 +26,7 @@ namespace Engine
     auto window = static_cast<GLFWwindow*>(Application::Get().getWindow().getNativeWindow());
     double xPos, yPos;
     glfwGetCursorPos(window, &xPos, &yPos);
-    return { (float)xPos, (float)yPos };
+    return { static_cast<float>(xPos), static_cast<float>(yPos) };
   }
 
   float WindowsInput::getMouseXImpl()
