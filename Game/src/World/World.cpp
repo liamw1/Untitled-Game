@@ -150,10 +150,9 @@ static void clean(const std::array<int64_t, 3>& playerChunkIndex)
 
   for (auto it = s_HeightMaps.begin(); it != s_HeightMaps.end();)
   {
-    int64_t key = it->first;
     auto& heightMap = it->second;
 
-    if (isOutOfRange({ heightMap.chunkX, playerChunkIndex[2], heightMap.chunkY }, playerChunkIndex))
+    if (isOutOfRange({ heightMap.chunkX, heightMap.chunkY, playerChunkIndex[2] }, playerChunkIndex))
       it = s_HeightMaps.erase(it);
     else
       it++;
@@ -168,7 +167,7 @@ static void render(const std::array<int64_t, 3>& playerChunkIndex)
   {
     auto& chunk = it->second;
 
-    if (isInRenderRange(chunk.getIndex(), playerChunkIndex) && chunk.allNeighborsLoaded() && !chunk.isEmpty())
+    if (!chunk.isEmpty() && isInRenderRange(chunk.getIndex(), playerChunkIndex) && chunk.allNeighborsLoaded())
     {
       if (!chunk.isMeshGenerated())
         chunk.generateMesh();

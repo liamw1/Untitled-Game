@@ -65,7 +65,7 @@ void Chunk::load(HeightMap heightMap)
         }
       }
     }
-  EN_ASSERT(!(m_Empty && m_Solid), "Chunk cannot be both empty and opaque!");
+  EN_ASSERT(!(m_Empty && m_Solid), "Chunk cannot be both empty and solid!");
 
   if (m_Empty)
   {
@@ -85,9 +85,9 @@ void Chunk::load(HeightMap heightMap)
           m_FaceIsOpaque[static_cast<uint8_t>(BlockFace::North)] = false;
         if (getBlockType(i, 0, j) == BlockType::Air)
           m_FaceIsOpaque[static_cast<uint8_t>(BlockFace::South)] = false;
-        if (getBlockType(s_ChunkSize - 1, i, j) == BlockType::Air)
+        if (getBlockType(i, j, s_ChunkSize - 1) == BlockType::Air)
           m_FaceIsOpaque[static_cast<uint8_t>(BlockFace::Top)] = false;
-        if (getBlockType(0, i, j) == BlockType::Air)
+        if (getBlockType(i, j, 0) == BlockType::Air)
           m_FaceIsOpaque[static_cast<uint8_t>(BlockFace::Bottom)] = false;
       }
 }

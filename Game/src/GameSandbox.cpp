@@ -26,7 +26,7 @@ void GameSandbox::onUpdate(std::chrono::duration<float> timestep)
 {
   EN_PROFILE_FUNCTION();
 
-  // EN_TRACE("fps: {0}", static_cast<int>(1.0f / timestep.count()));
+  EN_TRACE("fps: {0}", static_cast<int>(1.0f / timestep.count()));
 
   m_CameraController.onUpdate(timestep);
 
