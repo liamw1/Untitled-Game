@@ -29,10 +29,10 @@ namespace Engine
     Camera m_Camera;
 
     radians pitch = 0.0f;   // Rotation around x-axis
-    radians roll = 0.0f;    // Rotation around y-axis
-    radians yaw = -PI / 2;  // Rotation around z-axis
+    radians yaw = -PI / 2;  // Rotation around y-axis
+    radians roll = 0.0f;    // Rotation around z-axis
     glm::vec3 m_CameraPosition = { 0.0f, 0.0f, 0.0f };
-    glm::vec3 m_CameraViewDirection = { 0.0f, 0.0f, -1.0f };
+    glm::vec3 m_CameraViewDirection = { 0.0f, 1.0f, 0.0f };
 
     float m_CameraTranslationSpeed = 30.0f;
     float m_CameraSensitivity = 0.0015f;

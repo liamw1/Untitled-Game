@@ -25,32 +25,34 @@ Chunk::~Chunk()
 
 void Chunk::load(HeightMap heightMap)
 {
+  EN_PROFILE_FUNCTION();
+
   m_ChunkComposition = std::make_unique<BlockType[]>(s_ChunkTotalBlocks);
 
-  const float chunkHeight = position()[1];
+  const float chunkHeight = position()[2];
   for (uint8_t i = 0; i < s_ChunkSize; ++i)
-    for (uint8_t k = 0; k < s_ChunkSize; ++k)
+    for (uint8_t j = 0; j < s_ChunkSize; ++j)
     {
-      const float& terrainHeight = heightMap.terrainHeights[i][k];
+      const float& terrainHeight = heightMap.terrainHeights[i][j];
 
       if (terrainHeight <= chunkHeight)
       {
-        for (uint8_t j = 0; j < s_ChunkSize; ++j)
+        for (uint8_t k = 0; k < s_ChunkSize; ++k)
           setBlockType(i, j, k, BlockType::Air);
         m_Solid = false;
       }
       else if (terrainHeight >= chunkHeight + s_ChunkLength)
       {
-        for (uint8_t j = 0; j < s_ChunkSize; ++j)
+        for (uint8_t k = 0; k < s_ChunkSize; ++k)
           setBlockType(i, j, k, BlockType::Grass);
         m_Empty = false;
       }
       else
       {
         const int terrainHeightIndex = static_cast<int>((terrainHeight - chunkHeight) / Block::Length());
-        for (uint8_t j = 0; j < s_ChunkSize; ++j)
+        for (uint8_t k = 0; k < s_ChunkSize; ++k)
         {
-          if (j < terrainHeightIndex)
+          if (k < terrainHeightIndex)
           {
             setBlockType(i, j, k, BlockType::Grass);
             m_Empty = false;
@@ -75,18 +77,18 @@ void Chunk::load(HeightMap heightMap)
     for (uint8_t i = 0; i < s_ChunkSize; ++i)
       for (uint8_t j = 0; j < s_ChunkSize; ++j)
       {
-        if (getBlockType(i, s_ChunkSize - 1, j) == BlockType::Air)
-          m_FaceIsOpaque[static_cast<uint8_t>(BlockFace::Top)] = false;
-        if (getBlockType(i, 0, j) == BlockType::Air)
-          m_FaceIsOpaque[static_cast<uint8_t>(BlockFace::Bottom)] = false;
-        if (getBlockType(i, j, s_ChunkSize - 1) == BlockType::Air)
-          m_FaceIsOpaque[static_cast<uint8_t>(BlockFace::North)] = false;
-        if (getBlockType(i, j, 0) == BlockType::Air)
-          m_FaceIsOpaque[static_cast<uint8_t>(BlockFace::South)] = false;
-        if (getBlockType(0, i, j) == BlockType::Air)
-          m_FaceIsOpaque[static_cast<uint8_t>(BlockFace::East)] = false;
         if (getBlockType(s_ChunkSize - 1, i, j) == BlockType::Air)
+          m_FaceIsOpaque[static_cast<uint8_t>(BlockFace::East)] = false;
+        if (getBlockType(0, i, j) == BlockType::Air)
           m_FaceIsOpaque[static_cast<uint8_t>(BlockFace::West)] = false;
+        if (getBlockType(i, s_ChunkSize - 1, j) == BlockType::Air)
+          m_FaceIsOpaque[static_cast<uint8_t>(BlockFace::North)] = false;
+        if (getBlockType(i, 0, j) == BlockType::Air)
+          m_FaceIsOpaque[static_cast<uint8_t>(BlockFace::South)] = false;
+        if (getBlockType(s_ChunkSize - 1, i, j) == BlockType::Air)
+          m_FaceIsOpaque[static_cast<uint8_t>(BlockFace::Top)] = false;
+        if (getBlockType(0, i, j) == BlockType::Air)
+          m_FaceIsOpaque[static_cast<uint8_t>(BlockFace::Bottom)] = false;
       }
 }
 
@@ -111,13 +113,15 @@ void Chunk::generateMesh()
       return;
   }
 
+  EN_PROFILE_FUNCTION();
+
   static constexpr int8_t offsets[6][4][3]
-    = { { {0, 1, 1}, {1, 1, 1}, {1, 1, 0}, {0, 1, 0} },    /* Top Face    */
-        { {0, 0, 0}, {1, 0, 0}, {1, 0, 1}, {0, 0, 1} },    /* Bottom Face */
-        { {0, 0, 1}, {1, 0, 1}, {1, 1, 1}, {0, 1, 1} },    /* North Face  */
-        { {1, 0, 0}, {0, 0, 0}, {0, 1, 0}, {1, 1, 0} },    /* South Face  */
-        { {0, 0, 0}, {0, 0, 1}, {0, 1, 1}, {0, 1, 0} },    /* East Face   */
-        { {1, 0, 1}, {1, 0, 0}, {1, 1, 0}, {1, 1, 1} } };  /* West Face   */
+    = { { {1, 0, 0}, {1, 1, 0}, {1, 1, 1}, {1, 0, 1} },    /* East Face   */
+        { {0, 1, 0}, {0, 0, 0}, {0, 0, 1}, {0, 1, 1} },    /* West Face   */
+        { {1, 1, 0}, {0, 1, 0}, {0, 1, 1}, {1, 1, 1} },    /* North Face  */
+        { {0, 0, 0}, {1, 0, 0}, {1, 0, 1}, {0, 0, 1} },    /* South Face  */
+        { {0, 0, 1}, {1, 0, 1}, {1, 1, 1}, {0, 1, 1} },    /* Top Face    */
+        { {0, 1, 0}, {1, 1, 0}, {1, 0, 0}, {0, 0, 0} } };  /* Bottom Face */
 
   for (uint8_t i = 0; i < s_ChunkSize; ++i)
     for (uint8_t j = 0; j < s_ChunkSize; ++j)
@@ -254,20 +258,20 @@ void Chunk::generateVertexArray()
 bool Chunk::isBlockNeighborInAnotherChunk(uint8_t i, uint8_t j, uint8_t k, BlockFace face)
 {
   using func = bool(*)(uint8_t, uint8_t, uint8_t);
-  static const func isOnChunkSide[6] = { [](uint8_t i, uint8_t j, uint8_t k) { return j == s_ChunkSize - 1; },
+  static const func isOnChunkSide[6] = { [](uint8_t i, uint8_t j, uint8_t k) { return i == s_ChunkSize - 1; },
+                                         [](uint8_t i, uint8_t j, uint8_t k) { return i == 0; },
+                                         [](uint8_t i, uint8_t j, uint8_t k) { return j == s_ChunkSize - 1; },
                                          [](uint8_t i, uint8_t j, uint8_t k) { return j == 0; },
                                          [](uint8_t i, uint8_t j, uint8_t k) { return k == s_ChunkSize - 1; },
-                                         [](uint8_t i, uint8_t j, uint8_t k) { return k == 0; },
-                                         [](uint8_t i, uint8_t j, uint8_t k) { return i == 0; },
-                                         [](uint8_t i, uint8_t j, uint8_t k) { return i == s_ChunkSize - 1; } };
+                                         [](uint8_t i, uint8_t j, uint8_t k) { return k == 0; } };
 
   return isOnChunkSide[static_cast<uint8_t>(face)](i, j, k);
 }
 
 bool Chunk::isBlockNeighborTransparent(uint8_t i, uint8_t j, uint8_t k, BlockFace face)
 {
-  static constexpr int8_t normals[6][3] = { { 0, 1, 0}, { 0, -1, 0}, { 0, 0, 1}, { 0, 0, -1}, { -1, 0, 0}, { 1, 0, 0} };
-                                       //       Top        Bottom       North       South         East         West
+  static constexpr int8_t normals[6][3] = { { 1, 0, 0}, { -1, 0, 0}, { 0, 1, 0}, { 0, -1, 0}, { 0, 0, 1}, { 0, 0, -1} };
+                                       //      East         West        North       South         Top        Bottom
 
   const uint8_t faceID = static_cast<uint8_t>(face);
   if (isBlockNeighborInAnotherChunk(i, j, k, face))

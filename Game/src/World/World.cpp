@@ -21,11 +21,11 @@ static std::map<int64_t, HeightMap> s_HeightMaps{};
 */
 static int64_t createKey(const std::array<int64_t, 3>& chunkIndex)
 {
-  return chunkIndex[0] % bit(10) + bit(10) * (chunkIndex[1] % bit(10)) + bit(20) * (chunkIndex[2] % bit(10));
+  return chunkIndex[0] % bit(10) + bit(10) * (chunkIndex[2] % bit(10)) + bit(20) * (chunkIndex[1] % bit(10));
 }
-static int64_t createHeightMapKey(int64_t chunkX, int64_t chunkZ)
+static int64_t createHeightMapKey(int64_t chunkX, int64_t chunkY)
 {
-  return chunkX % bit(10) + bit(20) * (chunkZ % bit(10));
+  return chunkX % bit(10) + bit(20) * (chunkY % bit(10));
 }
 
 static bool isOutOfRange(const std::array<int64_t, 3>& chunkIndex, const std::array<int64_t, 3>& playerChunkIndex)
@@ -52,18 +52,18 @@ static bool isInRenderRange(const std::array<int64_t, 3>& chunkIndex, const std:
   return true;
 }
 
-static HeightMap generateHeightMap(int64_t chunkX, int64_t chunkZ)
+static HeightMap generateHeightMap(int64_t chunkX, int64_t chunkY)
 {
   HeightMap heightMap{};
   heightMap.chunkX = chunkX;
-  heightMap.chunkZ = chunkZ;
+  heightMap.chunkY = chunkY;
 
   for (uint8_t i = 0; i < Chunk::Size(); ++i)
-    for (uint8_t k = 0; k < Chunk::Size(); ++k)
+    for (uint8_t j = 0; j < Chunk::Size(); ++j)
     {
-      glm::vec2 blockXZ = glm::vec2(chunkX * Chunk::Length() + i * Block::Length(), chunkZ * Chunk::Length() + k * Block::Length());
-      float terrainHeight = 10.0f * glm::simplex(blockXZ / 64.0f) + 2.0f * glm::simplex(blockXZ / 32.0f) + glm::simplex(blockXZ / 8.0f);
-      heightMap.terrainHeights[i][k] = terrainHeight;
+      glm::vec2 blockXY = glm::vec2(chunkX * Chunk::Length() + i * Block::Length(), chunkY * Chunk::Length() + j * Block::Length());
+      float terrainHeight = 10.0f * glm::simplex(blockXY / 64.0f) + 2.0f * glm::simplex(blockXY / 32.0f) + glm::simplex(blockXY / 8.0f);
+      heightMap.terrainHeights[i][j] = terrainHeight;
     }
   return heightMap;
 }
@@ -72,8 +72,8 @@ static void loadNewChunks(const std::array<int64_t, 3>& playerChunkIndex, uint32
 {
   EN_PROFILE_FUNCTION();
 
-  static constexpr int8_t normals[6][3] = { { 0, 1, 0}, { 0, -1, 0}, { 0, 0, 1}, { 0, 0, -1}, { -1, 0, 0}, { 1, 0, 0} };
-                                       //       Top        Bottom       North       South         East         West
+  static constexpr int8_t normals[6][3] = { { 1, 0, 0}, { -1, 0, 0}, { 0, 1, 0}, { 0, -1, 0}, { 0, 0, 1}, { 0, 0, -1} };
+                                       //      East         West        North       South         Top        Bottom
 
   uint32_t newChunks = 0;
   for (auto it = s_Chunks.begin(); it != s_Chunks.end(); ++it)
@@ -97,11 +97,11 @@ static void loadNewChunks(const std::array<int64_t, 3>& playerChunkIndex, uint32
         EN_ASSERT(s_Chunks.find(key) == s_Chunks.end(), "Chunk is already in map");
 
         // Create key for height map
-        int64_t heightMapKey = createHeightMapKey(neighborIndex[0], neighborIndex[2]);
+        int64_t heightMapKey = createHeightMapKey(neighborIndex[0], neighborIndex[1]);
 
         // Generate heightmap is none exists
         if (s_HeightMaps.find(heightMapKey) == s_HeightMaps.end())
-          s_HeightMaps[heightMapKey] = generateHeightMap(neighborIndex[0], neighborIndex[2]);
+          s_HeightMaps[heightMapKey] = generateHeightMap(neighborIndex[0], neighborIndex[1]);
 
         // Generate chunk
         s_Chunks[key] = std::move(Chunk(neighborIndex));
@@ -153,7 +153,7 @@ static void clean(const std::array<int64_t, 3>& playerChunkIndex)
     int64_t key = it->first;
     auto& heightMap = it->second;
 
-    if (isOutOfRange({ heightMap.chunkX, playerChunkIndex[1], heightMap.chunkZ }, playerChunkIndex))
+    if (isOutOfRange({ heightMap.chunkX, playerChunkIndex[2], heightMap.chunkY }, playerChunkIndex))
       it = s_HeightMaps.erase(it);
     else
       it++;
@@ -184,8 +184,8 @@ void World::Initialize(const glm::vec3& initialPosition)
 
   std::array<int64_t, 3> playerChunkIndex = Chunk::GetPlayerChunkIndex(initialPosition);
 
-  int64_t heightMapKey = createHeightMapKey(playerChunkIndex[0], playerChunkIndex[2]);
-  s_HeightMaps[heightMapKey] = generateHeightMap(playerChunkIndex[0], playerChunkIndex[2]);
+  int64_t heightMapKey = createHeightMapKey(playerChunkIndex[0], playerChunkIndex[1]);
+  s_HeightMaps[heightMapKey] = generateHeightMap(playerChunkIndex[0], playerChunkIndex[1]);
 
   Chunk newChunk = Chunk(playerChunkIndex);
   newChunk.load(s_HeightMaps[heightMapKey]);

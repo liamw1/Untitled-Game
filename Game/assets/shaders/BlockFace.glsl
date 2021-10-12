@@ -13,7 +13,7 @@ const vec2 s_TexOffsets[4] = vec2[4]( vec2(0.0f,		  0.0f         ),
 									  vec2(s_UVOffsets.x, s_UVOffsets.y),
 									  vec2(0.0f,		  s_UVOffsets.y) );
 
-const float s_LightValues[6] = float[6]( 1.0f, 0.5f, 0.7f, 0.8f, 0.9f, 0.6f);
+const float s_LightValues[6] = float[6]( 0.9f, 0.6f, 0.7f, 0.8f, 1.0f, 0.5f);
 
 uniform float u_BlockLength;
 uniform vec3 u_ChunkPosition;

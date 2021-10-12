@@ -26,8 +26,8 @@ namespace Engine
     glm::mat4 m_ViewProjectionMatrix;
 
     glm::vec3 m_Position = { 0.0f, 0.0f, 0.0f };
-    glm::vec3 m_ViewDirection = { 0.0f, 0.0f, -1.0f };
-    constexpr static glm::vec3 s_UpDirection = { 0.0f, 1.0f, 0.0f };
+    glm::vec3 m_ViewDirection = { 0.0f, 1.0f, 0.0f };
+    constexpr static glm::vec3 s_UpDirection = { 0.0f, 0.0f, 1.0f };
 
     void recalculateViewMatrix();
   };

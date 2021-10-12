@@ -5,7 +5,7 @@
 struct HeightMap
 {
   int64_t chunkX;
-  int64_t chunkZ;
+  int64_t chunkY;
   std::array<std::array<float, 32>, 32> terrainHeights;
 };
 

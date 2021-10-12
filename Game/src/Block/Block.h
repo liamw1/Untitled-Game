@@ -3,8 +3,8 @@
 
 enum class BlockFace : uint8_t
 {
-  Top, Bottom, North, South, East, West,
-  First = Top, Last = West
+  East, West, North, South, Top, Bottom,
+  First = East, Last = Bottom
 };
 
 /*

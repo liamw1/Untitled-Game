@@ -10,7 +10,7 @@ GameSandbox::GameSandbox()
   Engine::RenderCommand::Initialize();
   ChunkRenderer::Initialize();
 
-  m_CameraController.setPosition({ Chunk::Length() / 2, 2 * Chunk::Length(), Chunk::Length() / 2 });
+  m_CameraController.setPosition({ Chunk::Length() / 2, Chunk::Length() / 2, 2 * Chunk::Length() });
   World::Initialize(m_CameraController.getCamera().getPosition());
 }
 
@@ -26,7 +26,7 @@ void GameSandbox::onUpdate(std::chrono::duration<float> timestep)
 {
   EN_PROFILE_FUNCTION();
 
-  // EN_TRACE("dt: {0}", timestep.count());
+  // EN_TRACE("fps: {0}", static_cast<int>(1.0f / timestep.count()));
 
   m_CameraController.onUpdate(timestep);
 

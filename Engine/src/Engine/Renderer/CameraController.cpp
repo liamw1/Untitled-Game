@@ -26,27 +26,27 @@ namespace Engine
     if (Input::IsKeyPressed(Key::A))
     {
       m_CameraPosition.x += sinf(yaw) * m_CameraTranslationSpeed * dt;
-      m_CameraPosition.z -= cosf(yaw) * m_CameraTranslationSpeed * dt;
+      m_CameraPosition.y += cosf(yaw) * m_CameraTranslationSpeed * dt;
     }
     if (Input::IsKeyPressed(Key::D))
     {
       m_CameraPosition.x -= sinf(yaw) * m_CameraTranslationSpeed * dt;
-      m_CameraPosition.z += cosf(yaw) * m_CameraTranslationSpeed * dt;
+      m_CameraPosition.y -= cosf(yaw) * m_CameraTranslationSpeed * dt;
     }
     if (Input::IsKeyPressed(Key::W))
     {
       m_CameraPosition.x += cosf(yaw) * m_CameraTranslationSpeed * dt;
-      m_CameraPosition.z += sinf(yaw) * m_CameraTranslationSpeed * dt;
+      m_CameraPosition.y -= sinf(yaw) * m_CameraTranslationSpeed * dt;
     }
     if (Input::IsKeyPressed(Key::S))
     {
       m_CameraPosition.x -= cosf(yaw) * m_CameraTranslationSpeed * dt;
-      m_CameraPosition.z -= sinf(yaw) * m_CameraTranslationSpeed * dt;
+      m_CameraPosition.y += sinf(yaw) * m_CameraTranslationSpeed * dt;
     }
     if (Input::IsKeyPressed(Key::Space))
-      m_CameraPosition.y += m_CameraTranslationSpeed * dt;
+      m_CameraPosition.z += m_CameraTranslationSpeed * dt;
     if (Input::IsKeyPressed(Key::LeftShift))
-      m_CameraPosition.y -= m_CameraTranslationSpeed * dt;
+      m_CameraPosition.z -= m_CameraTranslationSpeed * dt;
 
     m_Camera.setPosition(m_CameraPosition);
   }
@@ -64,15 +64,15 @@ namespace Engine
   {
     // Adjust view angles based on mouse movement
     yaw += (event.getX() - m_LastMousePosition.x) * m_CameraSensitivity;
-    pitch -= (event.getY() - m_LastMousePosition.y) * m_CameraSensitivity;
+    pitch += (event.getY() - m_LastMousePosition.y) * m_CameraSensitivity;
 
     pitch = std::max(pitch, s_MinPitch);
     pitch = std::min(pitch, s_MaxPitch);
 
     // Convert from spherical coordinates to Cartesian coordinates
     m_CameraViewDirection.x = cos(yaw) * cos(pitch);
-    m_CameraViewDirection.y = sin(pitch);
-    m_CameraViewDirection.z = sin(yaw) * cos(pitch);
+    m_CameraViewDirection.y = -sin(yaw) * cos(pitch);
+    m_CameraViewDirection.z = -sin(pitch);
 
     m_Camera.setView(m_CameraPosition, m_CameraViewDirection);
 
