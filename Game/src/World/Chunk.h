@@ -24,6 +24,7 @@ public:
 
   void load(HeightMap heightMap);
   void generateMesh();
+  void onUpdate();
   void bindBuffers() const;
 
   const std::array<int64_t, 3>& getIndex() const { return m_ChunkIndex; }
@@ -35,15 +36,13 @@ public:
   glm::vec3 blockPosition(uint8_t i, uint8_t j, uint8_t k) const;
 
   const Chunk* getNeighbor(BlockFace face) const { return m_Neighbors[static_cast<uint8_t>(face)]; }
-  void setNeighbor(BlockFace face, Chunk* chunk) { m_Neighbors[static_cast<uint8_t>(face)] = chunk; }
+  void setNeighbor(BlockFace face, Chunk* chunk);
 
   const std::vector<uint32_t>& getMesh() const { return m_Mesh; }
   const Engine::Shared<Engine::VertexArray>& getVertexArray() const { return m_MeshVertexArray; }
 
   bool isEmpty() const { return m_Empty; }
   bool isFaceOpaque(BlockFace face) const { return m_FaceIsOpaque[static_cast<uint8_t>(face)]; }
-  bool allNeighborsLoaded() const;
-  bool isMeshGenerated() const { return m_MeshState != MeshState::NotGenerated; }
 
   static constexpr uint8_t Size() { return s_ChunkSize; }
   static constexpr float Length() { return s_ChunkLength; }
@@ -56,6 +55,7 @@ private:
   enum class MeshState : uint8_t
   {
     NotGenerated = 0,
+    NeedsUpdate,
     Simple,
     Optimized
   };

@@ -94,26 +94,13 @@ void Chunk::load(HeightMap heightMap)
 
 void Chunk::generateMesh()
 {
-  for (uint8_t i = 0; i < 6; ++i)
-    EN_ASSERT(m_Neighbors[i] != nullptr, "Chunk neighbor does not exist!");
-
   // If chunk is empty, no need to generate mesh
   if (m_Empty)
     return;
 
-  // If chunk is opaque and surrounded by opaque chunk faces, no need to generate mesh
-  if (m_Solid)
-  {
-    bool allNeighborsOpaque = true;
-    for (BlockFace face : BlockFaceIterator())
-      if (!getNeighbor(face)->isFaceOpaque(!face))
-        allNeighborsOpaque = false;
-
-    if (allNeighborsOpaque)
-      return;
-  }
-
   EN_PROFILE_FUNCTION();
+
+  m_Mesh.clear();
 
   static constexpr int8_t offsets[6][4][3]
     = { { {1, 0, 0}, {1, 1, 0}, {1, 1, 1}, {1, 0, 1} },    /* East Face   */
@@ -167,6 +154,12 @@ void Chunk::generateMesh()
   generateVertexArray();
 }
 
+void Chunk::onUpdate()
+{
+  if (m_MeshState == MeshState::NotGenerated || m_MeshState == MeshState::NeedsUpdate)
+    generateMesh();
+}
+
 void Chunk::bindBuffers() const
 {
   m_MeshVertexBuffer->bind();
@@ -177,7 +170,9 @@ void Chunk::setBlockType(uint8_t i, uint8_t j, uint8_t k, BlockType blockType)
 {
   static constexpr uint64_t chunkSize = static_cast<uint64_t>(s_ChunkSize);
 
+  EN_ASSERT(m_ChunkComposition != nullptr, "Chunk data has not yet been allocated!");
   EN_ASSERT(i < chunkSize && j < chunkSize && k < chunkSize, "Index is out of bounds!");
+
   m_ChunkComposition[i * chunkSize * chunkSize + j * chunkSize + k] = blockType;
 }
 
@@ -185,8 +180,10 @@ BlockType Chunk::getBlockType(uint8_t i, uint8_t j, uint8_t k) const
 {
   static constexpr uint64_t chunkSize = static_cast<uint64_t>(s_ChunkSize);
 
-  EN_ASSERT(i < chunkSize&& j < chunkSize&& k < chunkSize, "Index is out of bounds!");
-  return m_Empty ? BlockType::Air : m_ChunkComposition[i * chunkSize * chunkSize + j * chunkSize + k];
+  EN_ASSERT(m_ChunkComposition != nullptr, "Chunk data has not yet been allocated!");
+  EN_ASSERT(i < chunkSize && j < chunkSize && k < chunkSize, "Index is out of bounds!");
+
+  return m_ChunkComposition[i * chunkSize * chunkSize + j * chunkSize + k];
 }
 
 glm::vec3 Chunk::blockPosition(uint8_t i, uint8_t j, uint8_t k) const
@@ -196,12 +193,10 @@ glm::vec3 Chunk::blockPosition(uint8_t i, uint8_t j, uint8_t k) const
                    m_ChunkIndex[2] * s_ChunkLength + k * Block::Length());
 }
 
-bool Chunk::allNeighborsLoaded() const
+void Chunk::setNeighbor(BlockFace face, Chunk* chunk)
 {
-  for (BlockFace face : BlockFaceIterator())
-    if (m_Neighbors[static_cast<uint8_t>(face)] == nullptr)
-      return false;
-  return true;
+  m_Neighbors[static_cast<uint8_t>(face)] = chunk;
+  m_MeshState = MeshState::NeedsUpdate;
 }
 
 const std::array<int64_t, 3> Chunk::GetPlayerChunkIndex(const glm::vec3& playerPosition)
@@ -276,6 +271,11 @@ bool Chunk::isBlockNeighborTransparent(uint8_t i, uint8_t j, uint8_t k, BlockFac
   const uint8_t faceID = static_cast<uint8_t>(face);
   if (isBlockNeighborInAnotherChunk(i, j, k, face))
   {
+    if (m_Neighbors[faceID] == nullptr)
+      return false;
+    else if (m_Neighbors[faceID]->isEmpty())
+      return true;
+
     return m_Neighbors[faceID]->getBlockType(i - (s_ChunkSize - 1) * normals[faceID][0],
                                              j - (s_ChunkSize - 1) * normals[faceID][1],
                                              k - (s_ChunkSize - 1) * normals[faceID][2]) == BlockType::Air;

@@ -6,7 +6,7 @@
   World data
 */
 static constexpr int s_RenderDistance = 16;
-static constexpr int s_LoadDistance = s_RenderDistance;
+static constexpr int s_LoadDistance = s_RenderDistance + 2;
 static constexpr int s_UnloadDistance = s_LoadDistance;
 
 static std::map<int64_t, Chunk> s_Chunks{};
@@ -68,7 +68,7 @@ static HeightMap generateHeightMap(int64_t chunkX, int64_t chunkY)
   return heightMap;
 }
 
-static void loadNewChunks(const std::array<int64_t, 3>& playerChunkIndex, uint32_t maxNewChunks)
+static bool loadNewChunks(const std::array<int64_t, 3>& playerChunkIndex, uint32_t maxNewChunks)
 {
   EN_PROFILE_FUNCTION();
 
@@ -81,7 +81,7 @@ static void loadNewChunks(const std::array<int64_t, 3>& playerChunkIndex, uint32
     auto& chunk = it->second;
 
     for (BlockFace face : BlockFaceIterator())
-      if (chunk.getNeighbor(face) == nullptr)
+      if (chunk.getNeighbor(face) == nullptr && !chunk.isFaceOpaque(face))
       {
         // Store index of new chunk
         std::array<int64_t, 3> neighborIndex = chunk.getIndex();
@@ -132,6 +132,8 @@ static void loadNewChunks(const std::array<int64_t, 3>& playerChunkIndex, uint32
     if (newChunks >= maxNewChunks)
       break;
   }
+
+  return newChunks > 0;
 }
 
 static void clean(const std::array<int64_t, 3>& playerChunkIndex)
@@ -167,11 +169,9 @@ static void render(const std::array<int64_t, 3>& playerChunkIndex)
   {
     auto& chunk = it->second;
 
-    if (!chunk.isEmpty() && isInRenderRange(chunk.getIndex(), playerChunkIndex) && chunk.allNeighborsLoaded())
+    if (isInRenderRange(chunk.getIndex(), playerChunkIndex))
     {
-      if (!chunk.isMeshGenerated())
-        chunk.generateMesh();
-
+      chunk.onUpdate();
       ChunkRenderer::DrawChunk(&chunk);
     }
   }
@@ -189,6 +189,10 @@ void World::Initialize(const glm::vec3& initialPosition)
   Chunk newChunk = Chunk(playerChunkIndex);
   newChunk.load(s_HeightMaps[heightMapKey]);
   s_Chunks[createKey(playerChunkIndex)] = std::move(newChunk);
+
+  while (loadNewChunks(playerChunkIndex, 10000))
+  {
+  }
 }
 
 void World::ShutDown()
