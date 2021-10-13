@@ -9,7 +9,7 @@ static constexpr int s_RenderDistance = 16;
 static constexpr int s_LoadDistance = s_RenderDistance + 2;
 static constexpr int s_UnloadDistance = s_LoadDistance;
 
-static std::map<int64_t, Chunk> s_Chunks{};
+static std::map<int64_t, Chunk> s_Chunks{};           // NOTE: Should use llvm::DenseMap for better performance
 static std::map<int64_t, HeightMap> s_HeightMaps{};
 
 
