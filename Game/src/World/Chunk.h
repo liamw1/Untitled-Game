@@ -19,8 +19,8 @@ public:
   Chunk(const Chunk& other) = delete;
   Chunk& operator=(const Chunk& other) = delete;
 
-  Chunk(Chunk&& other) = default;
-  Chunk& operator=(Chunk&& other) = default;
+  Chunk(Chunk&& other) noexcept;
+  Chunk& operator=(Chunk&& other) noexcept;
 
   void load(HeightMap heightMap);
   void generateMesh();

@@ -16,11 +16,79 @@ Chunk::Chunk(const std::array<int64_t, 3>& chunkIndex)
 Chunk::~Chunk()
 {
   for (BlockFace face : BlockFaceIterator())
-    if (m_Neighbors[static_cast<uint8_t>(face)] != nullptr)
+  {
+    uint8_t faceID = static_cast<uint8_t>(face);
+    if (m_Neighbors[faceID] != nullptr)
     {
-      EN_ASSERT(m_Neighbors[static_cast<uint8_t>(face)]->getNeighbor(!face) == this, "Incorrect neighbor!");
-      m_Neighbors[static_cast<uint8_t>(face)]->setNeighbor(!face, nullptr);
+      EN_ASSERT(m_Neighbors[faceID]->getNeighbor(!face) == this, "Incorrect neighbor!");
+      m_Neighbors[faceID]->setNeighbor(!face, nullptr);
     }
+  }
+}
+
+Chunk::Chunk(Chunk&& other) noexcept
+  : m_ChunkIndex(std::move(other.m_ChunkIndex)),
+    m_ChunkComposition(std::move(other.m_ChunkComposition)),
+    m_Empty(std::move(other.m_Empty)),
+    m_Solid(std::move(other.m_Solid)),
+    m_FaceIsOpaque(std::move(other.m_FaceIsOpaque)),
+    m_MeshState(std::move(other.m_MeshState)),
+    m_Mesh(std::move(other.m_Mesh)),
+    m_MeshVertexArray(std::move(other.m_MeshVertexArray)),
+    m_MeshVertexBuffer(std::move(other.m_MeshVertexBuffer))
+{
+  m_Neighbors = other.m_Neighbors;
+  for (BlockFace face : BlockFaceIterator())
+  {
+    uint8_t faceID = static_cast<uint8_t>(face);
+    other.m_Neighbors[faceID] = nullptr;
+  }
+
+  // Since the address of 'other' has moved, we must update its neighbors
+  for (BlockFace face : BlockFaceIterator())
+  {
+    uint8_t faceID = static_cast<uint8_t>(face);
+    if (m_Neighbors[faceID] != nullptr)
+    {
+      EN_ASSERT(m_Neighbors[faceID]->getNeighbor(!face) == &other, "Incorrect neighbor!");
+      m_Neighbors[faceID]->setNeighbor(!face, this);
+    }
+  }
+}
+
+Chunk& Chunk::operator=(Chunk&& other) noexcept
+{
+  if (this != &other)
+  {
+    m_ChunkIndex = std::move(other.m_ChunkIndex);
+    m_ChunkComposition = std::move(other.m_ChunkComposition);
+    m_Empty = std::move(other.m_Empty);
+    m_Solid = std::move(other.m_Solid);
+    m_FaceIsOpaque = std::move(other.m_FaceIsOpaque);
+    m_MeshState = std::move(other.m_MeshState);
+    m_Mesh = std::move(other.m_Mesh);
+    m_MeshVertexArray = std::move(other.m_MeshVertexArray);
+    m_MeshVertexBuffer = std::move(other.m_MeshVertexBuffer);
+   
+    m_Neighbors = other.m_Neighbors;
+    for (BlockFace face : BlockFaceIterator())
+    {
+      uint8_t faceID = static_cast<uint8_t>(face);
+      other.m_Neighbors[faceID] = nullptr;
+    }
+
+    // Since the address of 'other' has moved, we must update its neighbors
+    for (BlockFace face : BlockFaceIterator())
+    {
+      uint8_t faceID = static_cast<uint8_t>(face);
+      if (m_Neighbors[faceID] != nullptr)
+      {
+        EN_ASSERT(m_Neighbors[faceID]->getNeighbor(!face) == &other, "Incorrect neighbor!");
+        m_Neighbors[faceID]->setNeighbor(!face, this);
+      }
+    }
+  }
+  return *this;
 }
 
 void Chunk::load(HeightMap heightMap)
