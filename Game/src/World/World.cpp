@@ -1,11 +1,12 @@
 #include "GMpch.h"
 #include "World.h"
 #include "ChunkRenderer.h"
+#include "llvm/ADT/DenseMap.h"
 
 /*
   World data
 */
-static constexpr int s_RenderDistance = 16;
+static constexpr int s_RenderDistance = 4;
 static constexpr int s_LoadDistance = s_RenderDistance + 2;
 static constexpr int s_UnloadDistance = s_LoadDistance;
 
@@ -76,9 +77,9 @@ static bool loadNewChunks(const std::array<int64_t, 3>& playerChunkIndex, uint32
                                        //      East         West        North       South         Top        Bottom
 
   uint32_t newChunks = 0;
-  for (auto it = s_Chunks.begin(); it != s_Chunks.end(); ++it)
+  for (auto& pair : s_Chunks)
   {
-    auto& chunk = it->second;
+    auto& chunk = pair.second;
 
     for (BlockFace face : BlockFaceIterator())
       if (chunk.getNeighbor(face) == nullptr && !chunk.isFaceOpaque(face))
@@ -127,6 +128,9 @@ static bool loadNewChunks(const std::array<int64_t, 3>& playerChunkIndex, uint32
         }
 
         newChunks++;
+
+        if (newChunks >= maxNewChunks)
+          break;
       }
 
     if (newChunks >= maxNewChunks)
@@ -165,9 +169,9 @@ static void render(const std::array<int64_t, 3>& playerChunkIndex)
 {
   EN_PROFILE_FUNCTION();
 
-  for (auto it = s_Chunks.begin(); it != s_Chunks.end(); ++it)
+  for (auto& pair : s_Chunks)
   {
-    auto& chunk = it->second;
+    auto& chunk = pair.second;
 
     if (isInRenderRange(chunk.getIndex(), playerChunkIndex))
     {

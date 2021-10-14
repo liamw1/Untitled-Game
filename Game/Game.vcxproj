@@ -59,7 +59,7 @@
     <IntDir>..\obj\Debug-windows-x86_64\Game\</IntDir>
     <TargetName>Game</TargetName>
     <TargetExt>.exe</TargetExt>
-    <IncludePath>..\Engine\lib\spdlog\include;..\Engine\lib\imgui;..\Engine\lib\glm;$(IncludePath)</IncludePath>
+    <IncludePath>..\Engine\lib\spdlog\include;..\Engine\lib\imgui;..\Engine\lib\glm;lib\llvm\include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
@@ -67,7 +67,7 @@
     <IntDir>..\obj\Release-windows-x86_64\Game\</IntDir>
     <TargetName>Game</TargetName>
     <TargetExt>.exe</TargetExt>
-    <IncludePath>..\Engine\lib\spdlog\include;..\Engine\lib\imgui;..\Engine\lib\glm;$(IncludePath)</IncludePath>
+    <IncludePath>..\Engine\lib\spdlog\include;..\Engine\lib\imgui;..\Engine\lib\glm;lib\llvm\include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Dist|x64'">
     <LinkIncremental>false</LinkIncremental>
@@ -75,7 +75,7 @@
     <IntDir>..\obj\Dist-windows-x86_64\Game\</IntDir>
     <TargetName>Game</TargetName>
     <TargetExt>.exe</TargetExt>
-    <IncludePath>..\Engine\lib\spdlog\include;..\Engine\lib\imgui;..\Engine\lib\glm;$(IncludePath)</IncludePath>
+    <IncludePath>..\Engine\lib\spdlog\include;..\Engine\lib\imgui;..\Engine\lib\glm;lib\llvm\include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -141,6 +141,19 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="lib\llvm\include\llvm-c\DataTypes.h" />
+    <ClInclude Include="lib\llvm\include\llvm\ADT\DenseMap.h" />
+    <ClInclude Include="lib\llvm\include\llvm\ADT\DenseMapInfo.h" />
+    <ClInclude Include="lib\llvm\include\llvm\ADT\EpochTracker.h" />
+    <ClInclude Include="lib\llvm\include\llvm\Support\AlignOf.h" />
+    <ClInclude Include="lib\llvm\include\llvm\Support\Compiler.h" />
+    <ClInclude Include="lib\llvm\include\llvm\Support\DataTypes.h" />
+    <ClInclude Include="lib\llvm\include\llvm\Support\ErrorHandling.h" />
+    <ClInclude Include="lib\llvm\include\llvm\Support\MathExtras.h" />
+    <ClInclude Include="lib\llvm\include\llvm\Support\MemAlloc.h" />
+    <ClInclude Include="lib\llvm\include\llvm\Support\PointerLikeTypeTraits.h" />
+    <ClInclude Include="lib\llvm\include\llvm\Support\ReverseIteration.h" />
+    <ClInclude Include="lib\llvm\include\llvm\Support\type_traits.h" />
     <ClInclude Include="src\Block\Block.h" />
     <ClInclude Include="src\Block\BlockIDs.h" />
     <ClInclude Include="src\GMpch.h" />
@@ -150,6 +163,7 @@
     <ClInclude Include="src\World\World.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="lib\llvm\include\llvm\Support\MemAlloc.cpp" />
     <ClCompile Include="src\GMpch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>

@@ -24,6 +24,7 @@ IncludeDir["ImGui"] = "Engine/lib/imgui"
 IncludeDir["glm"] = "Engine/lib/glm"
 IncludeDir["stb_image"] = "Engine/lib/stb_image"
 IncludeDir["spdlog"] = "Engine/lib/spdlog/include"
+IncludeDir["llvm"] = "Game/lib/llvm/include"
 
 
 
@@ -123,7 +124,9 @@ project "Game"
 	files
 	{
 		"%{prj.name}/src/**.h",
-		"%{prj.name}/src/**.cpp"
+		"%{prj.name}/src/**.cpp",
+		"%{IncludeDir.llvm}/**.h",
+		"%{IncludeDir.llvm}/**.cpp"
 	}
 
 	includedirs
@@ -136,7 +139,8 @@ project "Game"
 	{
 		"%{IncludeDir.spdlog}",
 		"%{IncludeDir.ImGui}",
-		"%{IncludeDir.glm}"
+		"%{IncludeDir.glm}",
+		"%{IncludeDir.llvm}"
 	}
 
 	links
