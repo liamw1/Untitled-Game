@@ -8,7 +8,7 @@ Chunk::Chunk()
 {
 }
 
-Chunk::Chunk(const std::array<int64_t, 3>& chunkIndex)
+Chunk::Chunk(const ChunkIndex& chunkIndex)
   : m_ChunkIndex(chunkIndex)
 {
 }
@@ -257,11 +257,11 @@ void Chunk::setNeighbor(BlockFace face, Chunk* chunk)
   m_MeshState = MeshState::NeedsUpdate;
 }
 
-const std::array<int64_t, 3> Chunk::GetPlayerChunkIndex(const glm::vec3& playerPosition)
+const ChunkIndex Chunk::GetPlayerChunkIndex(const glm::vec3& playerPosition)
 {
-  std::array<int64_t, 3> playerChunkIndex = { static_cast<int64_t>(playerPosition.x / s_ChunkLength),
-                                              static_cast<int64_t>(playerPosition.y / s_ChunkLength),
-                                              static_cast<int64_t>(playerPosition.z / s_ChunkLength) };
+  ChunkIndex playerChunkIndex = { static_cast<int64_t>(playerPosition.x / s_ChunkLength),
+                                  static_cast<int64_t>(playerPosition.y / s_ChunkLength),
+                                  static_cast<int64_t>(playerPosition.z / s_ChunkLength) };
   for (int i = 0; i < 3; ++i)
     if (playerPosition[i] < 0.0f)
       playerChunkIndex[i]--;

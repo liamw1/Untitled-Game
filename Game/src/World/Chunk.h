@@ -2,6 +2,8 @@
 #include "Block/Block.h"
 #include "Block/BlockIDs.h"
 
+using ChunkIndex = std::array<int64_t, 3>;
+
 struct HeightMap
 {
   int64_t chunkX;
@@ -13,7 +15,7 @@ class Chunk
 {
 public:
   Chunk();
-  Chunk(const std::array<int64_t, 3>& chunkIndex);
+  Chunk(const ChunkIndex& chunkIndex);
   ~Chunk();
 
   Chunk(const Chunk& other) = delete;
@@ -27,7 +29,7 @@ public:
   void onUpdate();
   void bindBuffers() const;
 
-  const std::array<int64_t, 3>& getIndex() const { return m_ChunkIndex; }
+  const ChunkIndex& getIndex() const { return m_ChunkIndex; }
   glm::vec3 position() const { return glm::vec3(m_ChunkIndex[0] * Length(), m_ChunkIndex[1] * Length(), m_ChunkIndex[2] * Length()); }
   glm::vec3 center() const { return glm::vec3(m_ChunkIndex[0] * 1.5f * Length(), m_ChunkIndex[1] * 1.5f * Length(), m_ChunkIndex[2] * 1.5f * Length()); }
 
@@ -47,7 +49,7 @@ public:
   static constexpr uint8_t Size() { return s_ChunkSize; }
   static constexpr float Length() { return s_ChunkLength; }
   static constexpr uint32_t TotalBlocks() { return s_ChunkTotalBlocks; }
-  static const std::array<int64_t, 3> GetPlayerChunkIndex(const glm::vec3& playerPosition);
+  static const ChunkIndex GetPlayerChunkIndex(const glm::vec3& playerPosition);
 
   static void InitializeIndexBuffer();
 
@@ -66,7 +68,7 @@ private:
   static constexpr uint32_t s_ChunkTotalBlocks = s_ChunkSize * s_ChunkSize * s_ChunkSize;
 
   // Position and composition
-  std::array<int64_t, 3> m_ChunkIndex;
+  ChunkIndex m_ChunkIndex;
   std::unique_ptr<BlockType[]> m_ChunkComposition = nullptr;
   bool m_Empty = true;
   bool m_Solid = true;

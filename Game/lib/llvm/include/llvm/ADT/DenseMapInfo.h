@@ -93,8 +93,8 @@ template<> struct DenseMapInfo<char> {
 
 // Provide DenseMapInfo for unsigned chars.
 template <> struct DenseMapInfo<unsigned char> {
-  static inline unsigned char getEmptyKey() { return ~0; }
-  static inline unsigned char getTombstoneKey() { return ~0 - 1; }
+  static inline unsigned char getEmptyKey() { return std::numeric_limits<unsigned char>::max(); }
+  static inline unsigned char getTombstoneKey() { return std::numeric_limits<unsigned char>::max() - 1; }
   static unsigned getHashValue(const unsigned char &Val) { return Val * 37U; }
 
   static bool isEqual(const unsigned char &LHS, const unsigned char &RHS) {

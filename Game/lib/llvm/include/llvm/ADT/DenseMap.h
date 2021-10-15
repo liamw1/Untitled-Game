@@ -143,12 +143,12 @@ public:
 
   /// Return 1 if the specified key is in the map, 0 otherwise.
   size_type count(const_arg_type_t<KeyT> Val) const {
-    const BucketT *TheBucket;
+    const BucketT *TheBucket = nullptr;
     return LookupBucketFor(Val, TheBucket) ? 1 : 0;
   }
 
   iterator find(const_arg_type_t<KeyT> Val) {
-    BucketT *TheBucket;
+    BucketT *TheBucket = nullptr;
     if (LookupBucketFor(Val, TheBucket))
       return makeIterator(TheBucket,
                           shouldReverseIterate<KeyT>() ? getBuckets()
@@ -157,7 +157,7 @@ public:
     return end();
   }
   const_iterator find(const_arg_type_t<KeyT> Val) const {
-    const BucketT *TheBucket;
+    const BucketT *TheBucket = nullptr;
     if (LookupBucketFor(Val, TheBucket))
       return makeConstIterator(TheBucket,
                                shouldReverseIterate<KeyT>() ? getBuckets()
@@ -173,7 +173,7 @@ public:
   /// type used.
   template<class LookupKeyT>
   iterator find_as(const LookupKeyT &Val) {
-    BucketT *TheBucket;
+    BucketT *TheBucket = nullptr;
     if (LookupBucketFor(Val, TheBucket))
       return makeIterator(TheBucket,
                           shouldReverseIterate<KeyT>() ? getBuckets()
@@ -183,7 +183,7 @@ public:
   }
   template<class LookupKeyT>
   const_iterator find_as(const LookupKeyT &Val) const {
-    const BucketT *TheBucket;
+    const BucketT *TheBucket = nullptr;
     if (LookupBucketFor(Val, TheBucket))
       return makeConstIterator(TheBucket,
                                shouldReverseIterate<KeyT>() ? getBuckets()
@@ -195,7 +195,7 @@ public:
   /// lookup - Return the entry for the specified key, or a default
   /// constructed value if no such entry exists.
   ValueT lookup(const_arg_type_t<KeyT> Val) const {
-    const BucketT *TheBucket;
+    const BucketT *TheBucket = nullptr;
     if (LookupBucketFor(Val, TheBucket))
       return TheBucket->getSecond();
     return ValueT();
@@ -220,7 +220,7 @@ public:
   // it is not moved.
   template <typename... Ts>
   std::pair<iterator, bool> try_emplace(KeyT &&Key, Ts &&... Args) {
-    BucketT *TheBucket;
+    BucketT *TheBucket = nullptr;
     if (LookupBucketFor(Key, TheBucket))
       return std::make_pair(makeIterator(TheBucket,
                                          shouldReverseIterate<KeyT>()
@@ -245,7 +245,7 @@ public:
   // it is not moved.
   template <typename... Ts>
   std::pair<iterator, bool> try_emplace(const KeyT &Key, Ts &&... Args) {
-    BucketT *TheBucket;
+    BucketT *TheBucket = nullptr;
     if (LookupBucketFor(Key, TheBucket))
       return std::make_pair(makeIterator(TheBucket,
                                          shouldReverseIterate<KeyT>()
@@ -272,7 +272,7 @@ public:
   template <typename LookupKeyT>
   std::pair<iterator, bool> insert_as(std::pair<KeyT, ValueT> &&KV,
                                       const LookupKeyT &Val) {
-    BucketT *TheBucket;
+    BucketT *TheBucket = nullptr;
     if (LookupBucketFor(Val, TheBucket))
       return std::make_pair(makeIterator(TheBucket,
                                          shouldReverseIterate<KeyT>()
@@ -300,7 +300,7 @@ public:
   }
 
   bool erase(const KeyT &Val) {
-    BucketT *TheBucket;
+    BucketT *TheBucket = nullptr;
     if (!LookupBucketFor(Val, TheBucket))
       return false; // not in map.
 
@@ -319,7 +319,7 @@ public:
   }
 
   value_type& FindAndConstruct(const KeyT &Key) {
-    BucketT *TheBucket;
+    BucketT *TheBucket = nullptr;
     if (LookupBucketFor(Key, TheBucket))
       return *TheBucket;
 
@@ -331,7 +331,7 @@ public:
   }
 
   value_type& FindAndConstruct(KeyT &&Key) {
-    BucketT *TheBucket;
+    BucketT *TheBucket = nullptr;
     if (LookupBucketFor(Key, TheBucket))
       return *TheBucket;
 
@@ -389,7 +389,7 @@ protected:
       return 0;
     // +1 is required because of the strict equality.
     // For example if NumEntries is 48, we need to return 401.
-    return NextPowerOf2(NumEntries * 4 / 3 + 1);
+    return static_cast<unsigned>(NextPowerOf2(static_cast<uint64_t>(NumEntries) * 4 / 3 + 1));
   }
 
   void moveFromOldBuckets(BucketT *OldBucketsBegin, BucketT *OldBucketsEnd) {
@@ -402,7 +402,7 @@ protected:
       if (!KeyInfoT::isEqual(B->getFirst(), EmptyKey) &&
           !KeyInfoT::isEqual(B->getFirst(), TombstoneKey)) {
         // Insert the key/value into the new table.
-        BucketT *DestBucket;
+        BucketT *DestBucket = nullptr;
         bool FoundVal = LookupBucketFor(B->getFirst(), DestBucket);
         (void)FoundVal; // silence warning.
         assert(!FoundVal && "Key already in new map?");
@@ -657,7 +657,7 @@ private:
 
   template <typename LookupKeyT>
   bool LookupBucketFor(const LookupKeyT &Val, BucketT *&FoundBucket) {
-    const BucketT *ConstFoundBucket;
+    const BucketT *ConstFoundBucket = nullptr;
     bool Result = const_cast<const DenseMapBase *>(this)
       ->LookupBucketFor(Val, ConstFoundBucket);
     FoundBucket = const_cast<BucketT *>(ConstFoundBucket);
@@ -803,7 +803,7 @@ public:
     unsigned OldNumBuckets = NumBuckets;
     BucketT *OldBuckets = Buckets;
 
-    allocateBuckets(std::max<unsigned>(64, static_cast<unsigned>(NextPowerOf2(AtLeast-1))));
+    allocateBuckets(std::max<unsigned>(64, static_cast<unsigned>(NextPowerOf2(static_cast<uint64_t>(AtLeast-1)))));
     assert(Buckets);
     if (!OldBuckets) {
       this->BaseT::initEmpty();
@@ -1040,7 +1040,7 @@ public:
 
   void grow(unsigned AtLeast) {
     if (AtLeast > InlineBuckets)
-      AtLeast = std::max<unsigned>(64, NextPowerOf2(AtLeast-1));
+      AtLeast = std::max<unsigned>(64, NextPowerOf2(static_cast<uint64_t>(AtLeast-1)));
 
     if (Small) {
       // First move the inline buckets into a temporary storage.

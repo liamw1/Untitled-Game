@@ -304,7 +304,7 @@ static const unsigned char BitReverseTable256[256] = {
 template <typename T>
 T reverseBits(T Val) {
   unsigned char in[sizeof(Val)];
-  unsigned char out[sizeof(Val)];
+  unsigned char out[sizeof(Val)]{};
   std::memcpy(in, &Val, sizeof(Val));
   for (unsigned i = 0; i < sizeof(Val); ++i)
     out[(sizeof(Val) - i) - 1] = BitReverseTable256[in[i]];
@@ -801,7 +801,7 @@ std::enable_if_t<std::is_unsigned<T>::value, T> AbsoluteDifference(T X, T Y) {
 template <typename T>
 std::enable_if_t<std::is_unsigned<T>::value, T>
 SaturatingAdd(T X, T Y, bool *ResultOverflowed = nullptr) {
-  bool Dummy;
+  bool Dummy = false;
   bool &Overflowed = ResultOverflowed ? *ResultOverflowed : Dummy;
   // Hacker's Delight, p. 29
   T Z = X + Y;
@@ -818,7 +818,7 @@ SaturatingAdd(T X, T Y, bool *ResultOverflowed = nullptr) {
 template <typename T>
 std::enable_if_t<std::is_unsigned<T>::value, T>
 SaturatingMultiply(T X, T Y, bool *ResultOverflowed = nullptr) {
-  bool Dummy;
+  bool Dummy = false;
   bool &Overflowed = ResultOverflowed ? *ResultOverflowed : Dummy;
 
   // Hacker's Delight, p. 30 has a different algorithm, but we don't use that
@@ -864,7 +864,7 @@ SaturatingMultiply(T X, T Y, bool *ResultOverflowed = nullptr) {
 template <typename T>
 std::enable_if_t<std::is_unsigned<T>::value, T>
 SaturatingMultiplyAdd(T X, T Y, T A, bool *ResultOverflowed = nullptr) {
-  bool Dummy;
+  bool Dummy = false;
   bool &Overflowed = ResultOverflowed ? *ResultOverflowed : Dummy;
 
   T Product = SaturatingMultiply(X, Y, &Overflowed);

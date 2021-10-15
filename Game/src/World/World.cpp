@@ -1,7 +1,7 @@
 #include "GMpch.h"
 #include "World.h"
 #include "ChunkRenderer.h"
-#include "llvm/ADT/DenseMap.h"
+#include <llvm/ADT/DenseMap.h>
 
 /*
   World data
@@ -20,7 +20,7 @@ static llvm::DenseMap<int64_t, HeightMap> s_HeightMaps{};
   Guaranteed to be unique as long as the unload distance < 1024.
   This can be changed to be up to 1024^2 by doubling the bit numbers.
 */
-static int64_t createKey(const std::array<int64_t, 3>& chunkIndex)
+static int64_t createKey(const ChunkIndex& chunkIndex)
 {
   return chunkIndex[0] % bit(10) + bit(10) * (chunkIndex[2] % bit(10)) + bit(20) * (chunkIndex[1] % bit(10));
 }
@@ -29,7 +29,7 @@ static int64_t createHeightMapKey(int64_t chunkX, int64_t chunkY)
   return chunkX % bit(10) + bit(20) * (chunkY % bit(10));
 }
 
-static bool isOutOfRange(const std::array<int64_t, 3>& chunkIndex, const std::array<int64_t, 3>& playerChunkIndex)
+static bool isOutOfRange(const ChunkIndex& chunkIndex, const ChunkIndex& playerChunkIndex)
 {
   for (int i = 0; i < 3; ++i)
     if (abs(playerChunkIndex[i] - chunkIndex[i]) > s_UnloadDistance)
@@ -37,7 +37,7 @@ static bool isOutOfRange(const std::array<int64_t, 3>& chunkIndex, const std::ar
   return false;
 }
 
-static bool isInLoadRange(const std::array<int64_t, 3>& chunkIndex, const std::array<int64_t, 3>& playerChunkIndex)
+static bool isInLoadRange(const ChunkIndex& chunkIndex, const ChunkIndex& playerChunkIndex)
 {
   for (int i = 0; i < 3; ++i)
     if (abs(playerChunkIndex[i] - chunkIndex[i]) > s_LoadDistance)
@@ -45,7 +45,7 @@ static bool isInLoadRange(const std::array<int64_t, 3>& chunkIndex, const std::a
   return true;
 }
 
-static bool isInRenderRange(const std::array<int64_t, 3>& chunkIndex, const std::array<int64_t, 3>& playerChunkIndex)
+static bool isInRenderRange(const ChunkIndex& chunkIndex, const ChunkIndex& playerChunkIndex)
 {
   for (int i = 0; i < 3; ++i)
     if (abs(playerChunkIndex[i] - chunkIndex[i]) > s_RenderDistance)
@@ -69,7 +69,7 @@ static HeightMap generateHeightMap(int64_t chunkX, int64_t chunkY)
   return heightMap;
 }
 
-static bool loadNewChunks(const std::array<int64_t, 3>& playerChunkIndex, uint32_t maxNewChunks)
+static bool loadNewChunks(const ChunkIndex& playerChunkIndex, uint32_t maxNewChunks)
 {
   EN_PROFILE_FUNCTION();
 
@@ -77,7 +77,7 @@ static bool loadNewChunks(const std::array<int64_t, 3>& playerChunkIndex, uint32
                                        //      East         West        North       South         Top        Bottom
 
   // Find new chunks to generate
-  std::vector<std::array<int64_t, 3>> newChunks{};
+  std::vector<ChunkIndex> newChunks{};
   for (auto& pair : s_Chunks)
   {
     const Chunk& chunk = pair.second;
@@ -86,7 +86,7 @@ static bool loadNewChunks(const std::array<int64_t, 3>& playerChunkIndex, uint32
       if (chunk.getNeighbor(face) == nullptr && !chunk.isFaceOpaque(face))
       {
         // Store index of potential new chunk
-        std::array<int64_t, 3> neighborIndex = chunk.getIndex();
+        ChunkIndex neighborIndex = chunk.getIndex();
         for (int i = 0; i < 3; ++i)
           neighborIndex[i] += normals[static_cast<uint8_t>(face)][i];
 
@@ -104,19 +104,15 @@ static bool loadNewChunks(const std::array<int64_t, 3>& playerChunkIndex, uint32
   // Added new chunks to map
   for (int i = 0; i < newChunks.size(); ++i)
   {
-    std::array<int64_t, 3> newChunkIndex = newChunks[i];
+    ChunkIndex newChunkIndex = newChunks[i];
 
-    // Create key for hash map
+    // Create key for hash map.  If chunk is already in map, skip it
     int64_t key = createKey(newChunkIndex);
-
-    // If chunk is already in map, skip it
     if (s_Chunks.find(key) != s_Chunks.end())
       continue;
 
-    // Create key for height map
-    int64_t heightMapKey = createHeightMapKey(newChunkIndex[0], newChunkIndex[1]);
-
     // Generate heightmap is none exists
+    int64_t heightMapKey = createHeightMapKey(newChunkIndex[0], newChunkIndex[1]);
     if (s_HeightMaps.find(heightMapKey) == s_HeightMaps.end())
       s_HeightMaps[heightMapKey] = generateHeightMap(newChunkIndex[0], newChunkIndex[1]);
 
@@ -129,11 +125,11 @@ static bool loadNewChunks(const std::array<int64_t, 3>& playerChunkIndex, uint32
     for (BlockFace dir : BlockFaceIterator())
     {
       // Store index of chunk adjacent to new chunk in direction "dir"
-      std::array<int64_t, 3> adjIndex = newChunkIndex;
+      ChunkIndex adjIndex = newChunkIndex;
       for (int i = 0; i < 3; ++i)
         adjIndex[i] += normals[static_cast<uint8_t>(dir)][i];
 
-      // Find and add already existing neighbors to new chunk
+      // Find and add neighbors (if they exist) to new chunk
       int64_t adjKey = createKey(adjIndex);
       if (s_Chunks.find(adjKey) != s_Chunks.end())
       {
@@ -147,7 +143,7 @@ static bool loadNewChunks(const std::array<int64_t, 3>& playerChunkIndex, uint32
   return newChunks.size() > 0;
 }
 
-static void clean(const std::array<int64_t, 3>& playerChunkIndex)
+static void clean(const ChunkIndex& playerChunkIndex)
 {
   EN_PROFILE_FUNCTION();
 
@@ -155,7 +151,7 @@ static void clean(const std::array<int64_t, 3>& playerChunkIndex)
   for (auto& pair : s_Chunks)
   {
     const Chunk& chunk = pair.second;
-    const std::array<int64_t, 3> chunkIndex = chunk.getIndex();
+    const ChunkIndex chunkIndex = chunk.getIndex();
 
     if (isOutOfRange(chunkIndex, playerChunkIndex))
       chunksToRemove.push_back(createKey(chunkIndex));
@@ -175,7 +171,7 @@ static void clean(const std::array<int64_t, 3>& playerChunkIndex)
     s_HeightMaps.erase(heightMapsToRemove[i]);
 }
 
-static void render(const std::array<int64_t, 3>& playerChunkIndex)
+static void render(const ChunkIndex& playerChunkIndex)
 {
   EN_PROFILE_FUNCTION();
 
@@ -195,7 +191,7 @@ void World::Initialize(const glm::vec3& initialPosition)
 {
   Chunk::InitializeIndexBuffer();
 
-  std::array<int64_t, 3> playerChunkIndex = Chunk::GetPlayerChunkIndex(initialPosition);
+  ChunkIndex playerChunkIndex = Chunk::GetPlayerChunkIndex(initialPosition);
 
   int64_t heightMapKey = createHeightMapKey(playerChunkIndex[0], playerChunkIndex[1]);
   s_HeightMaps[heightMapKey] = generateHeightMap(playerChunkIndex[0], playerChunkIndex[1]);
@@ -217,7 +213,7 @@ void World::OnUpdate(const glm::vec3& playerPosition)
 {
   EN_PROFILE_FUNCTION();
   
-  std::array<int64_t, 3> playerChunkIndex = Chunk::GetPlayerChunkIndex(playerPosition);
+  ChunkIndex playerChunkIndex = Chunk::GetPlayerChunkIndex(playerPosition);
 
   clean(playerChunkIndex);
   render(playerChunkIndex);
