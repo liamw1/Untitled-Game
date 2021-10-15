@@ -47,8 +47,10 @@ Chunk::Chunk(Chunk&& other) noexcept
     uint8_t faceID = static_cast<uint8_t>(face);
     if (m_Neighbors[faceID] != nullptr)
     {
+      uint8_t oppFaceID = static_cast<uint8_t>(!face);
+
       EN_ASSERT(m_Neighbors[faceID]->getNeighbor(!face) == &other, "Incorrect neighbor!");
-      m_Neighbors[faceID]->setNeighbor(!face, this);
+      m_Neighbors[faceID]->m_Neighbors[oppFaceID] = this; // Avoid using setNeighbor() to prevent re-meshing
     }
   }
 }
@@ -77,8 +79,10 @@ Chunk& Chunk::operator=(Chunk&& other) noexcept
       uint8_t faceID = static_cast<uint8_t>(face);
       if (m_Neighbors[faceID] != nullptr)
       {
+        uint8_t oppFaceID = static_cast<uint8_t>(!face);
+
         EN_ASSERT(m_Neighbors[faceID]->getNeighbor(!face) == &other, "Incorrect neighbor!");
-        m_Neighbors[faceID]->setNeighbor(!face, this);
+        m_Neighbors[faceID]->m_Neighbors[oppFaceID] = this; // Avoid using setNeighbor() to prevent re-meshing
       }
     }
   }
@@ -87,7 +91,7 @@ Chunk& Chunk::operator=(Chunk&& other) noexcept
 
 void Chunk::load(HeightMap heightMap)
 {
-  m_ChunkComposition = std::make_unique<BlockType[]>(s_ChunkTotalBlocks);
+  m_ChunkComposition = Engine::CreateUnique<BlockType[]>(s_ChunkTotalBlocks);
 
   const float chunkHeight = position()[2];
   for (uint8_t i = 0; i < s_ChunkSize; ++i)
@@ -157,6 +161,8 @@ void Chunk::generateMesh()
   // If chunk is empty, no need to generate mesh
   if (m_Empty)
     return;
+
+  EN_PROFILE_FUNCTION();
 
   m_Mesh.clear();
 

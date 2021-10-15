@@ -69,7 +69,7 @@ private:
 
   // Position and composition
   ChunkIndex m_ChunkIndex;
-  std::unique_ptr<BlockType[]> m_ChunkComposition = nullptr;
+  Engine::Unique<BlockType[]> m_ChunkComposition = nullptr;
   bool m_Empty = true;
   bool m_Solid = true;
   std::array<bool, 6> m_FaceIsOpaque = { true, true, true, true, true, true };

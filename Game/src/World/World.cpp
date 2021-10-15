@@ -22,11 +22,11 @@ static llvm::DenseMap<int64_t, HeightMap> s_HeightMaps{};
 */
 static int64_t createKey(const ChunkIndex& chunkIndex)
 {
-  return chunkIndex[0] % bit(10) + bit(10) * (chunkIndex[2] % bit(10)) + bit(20) * (chunkIndex[1] % bit(10));
+  return chunkIndex[0] % bit(10) + bit(10) * (chunkIndex[1] % bit(10)) + bit(20) * (chunkIndex[2] % bit(10));
 }
 static int64_t createHeightMapKey(int64_t chunkX, int64_t chunkY)
 {
-  return chunkX % bit(10) + bit(20) * (chunkY % bit(10));
+  return chunkX % bit(10) + bit(10) * (chunkY % bit(10));
 }
 
 static bool isOutOfRange(const ChunkIndex& chunkIndex, const ChunkIndex& playerChunkIndex)
@@ -117,7 +117,10 @@ static bool loadNewChunks(const ChunkIndex& playerChunkIndex, uint32_t maxNewChu
       s_HeightMaps[heightMapKey] = generateHeightMap(newChunkIndex[0], newChunkIndex[1]);
 
     // Generate chunk
-    s_Chunks[key] = std::move(Chunk(newChunkIndex));
+    auto insertionResult = s_Chunks.try_emplace(key, newChunkIndex);  // Construct chunk in-place
+    bool insertionSuccess = insertionResult.second;
+    EN_ASSERT(insertionSuccess, "Chunk is already in map!");
+
     Chunk& newChunk = s_Chunks[key];
     newChunk.load(s_HeightMaps[heightMapKey]);
 
@@ -196,9 +199,10 @@ void World::Initialize(const glm::vec3& initialPosition)
   int64_t heightMapKey = createHeightMapKey(playerChunkIndex[0], playerChunkIndex[1]);
   s_HeightMaps[heightMapKey] = generateHeightMap(playerChunkIndex[0], playerChunkIndex[1]);
 
-  Chunk newChunk = Chunk(playerChunkIndex);
-  newChunk.load(s_HeightMaps[heightMapKey]);
-  s_Chunks[createKey(playerChunkIndex)] = std::move(newChunk);
+  int64_t key = createKey(playerChunkIndex);
+  s_Chunks.try_emplace(key, playerChunkIndex);
+  Chunk& playerChunk = s_Chunks[key];
+  playerChunk.load(s_HeightMaps[heightMapKey]);
 
   while (loadNewChunks(playerChunkIndex, 10000))
   {
