@@ -6,12 +6,12 @@
 /*
   World data
 */
-static constexpr int s_RenderDistance = 4;
+static constexpr int s_RenderDistance = 16;
 static constexpr int s_LoadDistance = s_RenderDistance + 2;
 static constexpr int s_UnloadDistance = s_LoadDistance;
 
-static std::map<int64_t, Chunk> s_Chunks{};           // NOTE: Should use llvm::DenseMap for better performance
-static std::map<int64_t, HeightMap> s_HeightMaps{};
+static llvm::DenseMap<int64_t, Chunk> s_Chunks{};
+static llvm::DenseMap<int64_t, HeightMap> s_HeightMaps{};
 
 
 
@@ -76,93 +76,103 @@ static bool loadNewChunks(const std::array<int64_t, 3>& playerChunkIndex, uint32
   static constexpr int8_t normals[6][3] = { { 1, 0, 0}, { -1, 0, 0}, { 0, 1, 0}, { 0, -1, 0}, { 0, 0, 1}, { 0, 0, -1} };
                                        //      East         West        North       South         Top        Bottom
 
-  uint32_t newChunks = 0;
+  // Find new chunks to generate
+  std::vector<std::array<int64_t, 3>> newChunks{};
   for (auto& pair : s_Chunks)
   {
-    auto& chunk = pair.second;
+    const Chunk& chunk = pair.second;
 
     for (BlockFace face : BlockFaceIterator())
       if (chunk.getNeighbor(face) == nullptr && !chunk.isFaceOpaque(face))
       {
-        // Store index of new chunk
+        // Store index of potential new chunk
         std::array<int64_t, 3> neighborIndex = chunk.getIndex();
         for (int i = 0; i < 3; ++i)
           neighborIndex[i] += normals[static_cast<uint8_t>(face)][i];
 
-        // If potential chunk is out of load range, do nothing
+        // If potential chunk is out of load range, skip it
         if (!isInLoadRange(neighborIndex, playerChunkIndex))
           continue;
 
-        // Create key for hash map
-        int64_t key = createKey(neighborIndex);
-        EN_ASSERT(s_Chunks.find(key) == s_Chunks.end(), "Chunk is already in map");
-
-        // Create key for height map
-        int64_t heightMapKey = createHeightMapKey(neighborIndex[0], neighborIndex[1]);
-
-        // Generate heightmap is none exists
-        if (s_HeightMaps.find(heightMapKey) == s_HeightMaps.end())
-          s_HeightMaps[heightMapKey] = generateHeightMap(neighborIndex[0], neighborIndex[1]);
-
-        // Generate chunk
-        s_Chunks[key] = std::move(Chunk(neighborIndex));
-        Chunk& newChunk = s_Chunks[key];
-        newChunk.load(s_HeightMaps[heightMapKey]);
-
-        // Set neighbors in all directions
-        for (BlockFace dir : BlockFaceIterator())
-        {
-          // Store index of chunk adjacent to new chunk in direction "dir"
-          std::array<int64_t, 3> adjIndex = neighborIndex;
-          for (int i = 0; i < 3; ++i)
-            adjIndex[i] += normals[static_cast<uint8_t>(dir)][i];
-
-          // Find and add already existing neighbors to new chunk
-          int64_t adjKey = createKey(adjIndex);
-          if (s_Chunks.find(adjKey) != s_Chunks.end())
-          {
-            Chunk& adjChunk = s_Chunks[adjKey];
-            newChunk.setNeighbor(dir, &adjChunk);
-            adjChunk.setNeighbor(!dir, &newChunk);
-          }
-        }
-
-        newChunks++;
-
-        if (newChunks >= maxNewChunks)
-          break;
+        newChunks.push_back(neighborIndex);
       }
 
-    if (newChunks >= maxNewChunks)
+    if (newChunks.size() >= maxNewChunks)
       break;
   }
 
-  return newChunks > 0;
+  // Added new chunks to map
+  for (int i = 0; i < newChunks.size(); ++i)
+  {
+    std::array<int64_t, 3> newChunkIndex = newChunks[i];
+
+    // Create key for hash map
+    int64_t key = createKey(newChunkIndex);
+
+    // If chunk is already in map, skip it
+    if (s_Chunks.find(key) != s_Chunks.end())
+      continue;
+
+    // Create key for height map
+    int64_t heightMapKey = createHeightMapKey(newChunkIndex[0], newChunkIndex[1]);
+
+    // Generate heightmap is none exists
+    if (s_HeightMaps.find(heightMapKey) == s_HeightMaps.end())
+      s_HeightMaps[heightMapKey] = generateHeightMap(newChunkIndex[0], newChunkIndex[1]);
+
+    // Generate chunk
+    s_Chunks[key] = std::move(Chunk(newChunkIndex));
+    Chunk& newChunk = s_Chunks[key];
+    newChunk.load(s_HeightMaps[heightMapKey]);
+
+    // Set neighbors in all directions
+    for (BlockFace dir : BlockFaceIterator())
+    {
+      // Store index of chunk adjacent to new chunk in direction "dir"
+      std::array<int64_t, 3> adjIndex = newChunkIndex;
+      for (int i = 0; i < 3; ++i)
+        adjIndex[i] += normals[static_cast<uint8_t>(dir)][i];
+
+      // Find and add already existing neighbors to new chunk
+      int64_t adjKey = createKey(adjIndex);
+      if (s_Chunks.find(adjKey) != s_Chunks.end())
+      {
+        Chunk& adjChunk = s_Chunks[adjKey];
+        newChunk.setNeighbor(dir, &adjChunk);
+        adjChunk.setNeighbor(!dir, &newChunk);
+      }
+    }
+  }
+
+  return newChunks.size() > 0;
 }
 
 static void clean(const std::array<int64_t, 3>& playerChunkIndex)
 {
   EN_PROFILE_FUNCTION();
 
-  for (auto it = s_Chunks.begin(); it != s_Chunks.end();)
+  std::vector<int64_t> chunksToRemove{};
+  for (auto& pair : s_Chunks)
   {
-    auto& chunk = it->second;
+    const Chunk& chunk = pair.second;
+    const std::array<int64_t, 3> chunkIndex = chunk.getIndex();
 
-    if (isOutOfRange(chunk.getIndex(), playerChunkIndex))
-      it = s_Chunks.erase(it);
-    else
-      it++;
+    if (isOutOfRange(chunkIndex, playerChunkIndex))
+      chunksToRemove.push_back(createKey(chunkIndex));
   }
+  for (int i = 0; i < chunksToRemove.size(); ++i)
+    s_Chunks.erase(chunksToRemove[i]);
 
-  for (auto it = s_HeightMaps.begin(); it != s_HeightMaps.end();)
+  std::vector<int64_t> heightMapsToRemove{};
+  for (auto& pair : s_HeightMaps)
   {
-    auto& heightMap = it->second;
+    const HeightMap& heightMap = pair.second;
 
     if (isOutOfRange({ heightMap.chunkX, heightMap.chunkY, playerChunkIndex[2] }, playerChunkIndex))
-      it = s_HeightMaps.erase(it);
-    else
-      it++;
+      heightMapsToRemove.push_back(createHeightMapKey(heightMap.chunkX, heightMap.chunkY));
   }
+  for (int i = 0; i < heightMapsToRemove.size(); ++i)
+    s_HeightMaps.erase(heightMapsToRemove[i]);
 }
 
 static void render(const std::array<int64_t, 3>& playerChunkIndex)
@@ -171,9 +181,9 @@ static void render(const std::array<int64_t, 3>& playerChunkIndex)
 
   for (auto& pair : s_Chunks)
   {
-    auto& chunk = pair.second;
+    Chunk& chunk = pair.second;
 
-    if (isInRenderRange(chunk.getIndex(), playerChunkIndex))
+    if (!chunk.isEmpty() && isInRenderRange(chunk.getIndex(), playerChunkIndex))
     {
       chunk.onUpdate();
       ChunkRenderer::DrawChunk(&chunk);

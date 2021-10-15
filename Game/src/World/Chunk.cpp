@@ -39,10 +39,7 @@ Chunk::Chunk(Chunk&& other) noexcept
 {
   m_Neighbors = other.m_Neighbors;
   for (BlockFace face : BlockFaceIterator())
-  {
-    uint8_t faceID = static_cast<uint8_t>(face);
-    other.m_Neighbors[faceID] = nullptr;
-  }
+    other.m_Neighbors[static_cast<uint8_t>(face)] = nullptr;
 
   // Since the address of 'other' has moved, we must update its neighbors
   for (BlockFace face : BlockFaceIterator())
@@ -72,10 +69,7 @@ Chunk& Chunk::operator=(Chunk&& other) noexcept
    
     m_Neighbors = other.m_Neighbors;
     for (BlockFace face : BlockFaceIterator())
-    {
-      uint8_t faceID = static_cast<uint8_t>(face);
-      other.m_Neighbors[faceID] = nullptr;
-    }
+      other.m_Neighbors[static_cast<uint8_t>(face)] = nullptr;
 
     // Since the address of 'other' has moved, we must update its neighbors
     for (BlockFace face : BlockFaceIterator())
@@ -93,8 +87,6 @@ Chunk& Chunk::operator=(Chunk&& other) noexcept
 
 void Chunk::load(HeightMap heightMap)
 {
-  EN_PROFILE_FUNCTION();
-
   m_ChunkComposition = std::make_unique<BlockType[]>(s_ChunkTotalBlocks);
 
   const float chunkHeight = position()[2];
@@ -165,8 +157,6 @@ void Chunk::generateMesh()
   // If chunk is empty, no need to generate mesh
   if (m_Empty)
     return;
-
-  EN_PROFILE_FUNCTION();
 
   m_Mesh.clear();
 
