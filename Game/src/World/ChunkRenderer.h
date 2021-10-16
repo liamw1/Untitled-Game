@@ -13,5 +13,5 @@ namespace ChunkRenderer
   void BeginScene(Engine::Camera& camera);
   void EndScene();
 
-  void DrawChunk(const Chunk& chunk);
+  void DrawChunk(const Chunk* chunk);
 };

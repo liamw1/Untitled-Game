@@ -35,14 +35,14 @@ void ChunkRenderer::EndScene()
 {
 }
 
-void ChunkRenderer::DrawChunk(const Chunk& chunk)
+void ChunkRenderer::DrawChunk(const Chunk* chunk)
 {
-  uint32_t meshIndexCount = 6 * static_cast<uint32_t>(chunk.getMesh().size()) / 4;
+  uint32_t meshIndexCount = 6 * static_cast<uint32_t>(chunk->getMesh().size()) / 4;
 
   if (meshIndexCount == 0)
     return; // Nothing to draw
 
-  chunk.bindBuffers();
-  s_BlockFaceShader->setFloat3("u_ChunkPosition", chunk.position());
-  Engine::RenderCommand::DrawIndexed(chunk.getVertexArray(), meshIndexCount);
+  chunk->bindBuffers();
+  s_BlockFaceShader->setFloat3("u_ChunkPosition", chunk->position());
+  Engine::RenderCommand::DrawIndexed(chunk->getVertexArray(), meshIndexCount);
 }

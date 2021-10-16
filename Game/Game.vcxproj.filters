@@ -87,6 +87,9 @@
     <ClInclude Include="src\World\Chunk.h">
       <Filter>src\World</Filter>
     </ClInclude>
+    <ClInclude Include="src\World\ChunkManager.h">
+      <Filter>src\World</Filter>
+    </ClInclude>
     <ClInclude Include="src\World\ChunkRenderer.h">
       <Filter>src\World</Filter>
     </ClInclude>
@@ -108,6 +111,9 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="src\World\Chunk.cpp">
+      <Filter>src\World</Filter>
+    </ClCompile>
+    <ClCompile Include="src\World\ChunkManager.cpp">
       <Filter>src\World</Filter>
     </ClCompile>
     <ClCompile Include="src\World\ChunkRenderer.cpp">
