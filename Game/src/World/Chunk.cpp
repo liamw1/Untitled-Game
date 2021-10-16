@@ -30,7 +30,6 @@ Chunk::Chunk(Chunk&& other) noexcept
   : m_ChunkIndex(std::move(other.m_ChunkIndex)),
     m_ChunkComposition(std::move(other.m_ChunkComposition)),
     m_Empty(std::move(other.m_Empty)),
-    m_Solid(std::move(other.m_Solid)),
     m_FaceIsOpaque(std::move(other.m_FaceIsOpaque)),
     m_MeshState(std::move(other.m_MeshState)),
     m_Mesh(std::move(other.m_Mesh)),
@@ -62,7 +61,6 @@ Chunk& Chunk::operator=(Chunk&& other) noexcept
     m_ChunkIndex = std::move(other.m_ChunkIndex);
     m_ChunkComposition = std::move(other.m_ChunkComposition);
     m_Empty = std::move(other.m_Empty);
-    m_Solid = std::move(other.m_Solid);
     m_FaceIsOpaque = std::move(other.m_FaceIsOpaque);
     m_MeshState = std::move(other.m_MeshState);
     m_Mesh = std::move(other.m_Mesh);
@@ -103,7 +101,6 @@ void Chunk::load(HeightMap heightMap)
       {
         for (uint8_t k = 0; k < s_ChunkSize; ++k)
           setBlockType(i, j, k, BlockType::Air);
-        m_Solid = false;
       }
       else if (terrainHeight >= chunkHeight + s_ChunkLength)
       {
@@ -124,12 +121,10 @@ void Chunk::load(HeightMap heightMap)
           else
           {
             setBlockType(i, j, k, BlockType::Air);
-            m_Solid = false;
           }
         }
       }
     }
-  EN_ASSERT(!(m_Empty && m_Solid), "Chunk cannot be both empty and solid!");
 
   if (m_Empty)
   {
@@ -161,8 +156,6 @@ void Chunk::generateMesh()
   // If chunk is empty, no need to generate mesh
   if (m_Empty)
     return;
-
-  EN_PROFILE_FUNCTION();
 
   m_Mesh.clear();
 
@@ -218,7 +211,7 @@ void Chunk::generateMesh()
   generateVertexArray();
 }
 
-void Chunk::onUpdate()
+void Chunk::update()
 {
   if (m_MeshState == MeshState::NotGenerated || m_MeshState == MeshState::NeedsUpdate)
     generateMesh();

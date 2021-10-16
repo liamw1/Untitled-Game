@@ -6,13 +6,57 @@
 /*
   World data
 */
+enum class MapType : uint8_t
+{
+  Empty = 0,
+  Boundary,
+  Renderable,
+
+  First = Empty, Last = Renderable
+};
+
+class MapTypeIterator
+{
+public:
+  MapTypeIterator(const MapType mapType)
+    : value(static_cast<uint8_t>(mapType))
+  {
+  }
+  MapTypeIterator()
+    : value(static_cast<uint8_t>(MapType::First))
+  {
+  }
+
+  MapTypeIterator& operator++()
+  {
+    ++value;
+    return *this;
+  }
+  MapType operator*() { return static_cast<MapType>(value); }
+  bool operator!=(const MapTypeIterator& iter) { return value != iter.value; }
+
+  MapTypeIterator begin() { return *this; }
+  MapTypeIterator end()
+  {
+    static const MapTypeIterator endIter = ++MapTypeIterator(MapType::Last);
+    return endIter;
+  }
+
+private:
+  uint8_t value;
+};
+
 static constexpr int s_RenderDistance = 16;
 static constexpr int s_LoadDistance = s_RenderDistance + 2;
 static constexpr int s_UnloadDistance = s_LoadDistance;
 
-static llvm::DenseMap<int64_t, Chunk> s_Chunks{};
 static llvm::DenseMap<int64_t, HeightMap> s_HeightMaps{};
 
+// Idea: Maps only should store pointers to chunks, which reside in a single array/vector
+static std::array<llvm::DenseMap<int64_t, Chunk>, 3> s_Chunks;
+static llvm::DenseMap<int64_t, Chunk>& s_EmptyChunks = s_Chunks[static_cast<uint8_t>(MapType::Empty)];
+static llvm::DenseMap<int64_t, Chunk>& s_BoundaryChunks = s_Chunks[static_cast<uint8_t>(MapType::Boundary)];
+static llvm::DenseMap<int64_t, Chunk>& s_RenderableChunks = s_Chunks[static_cast<uint8_t>(MapType::Renderable)];
 
 
 /*
@@ -63,7 +107,7 @@ static HeightMap generateHeightMap(int64_t chunkX, int64_t chunkY)
     for (uint8_t j = 0; j < Chunk::Size(); ++j)
     {
       glm::vec2 blockXY = glm::vec2(chunkX * Chunk::Length() + i * Block::Length(), chunkY * Chunk::Length() + j * Block::Length());
-      float terrainHeight = 10.0f * glm::simplex(blockXY / 64.0f) + 2.0f * glm::simplex(blockXY / 32.0f) + glm::simplex(blockXY / 8.0f);
+      float terrainHeight = 30.0f * glm::simplex(blockXY / 256.0f) + 10.0f * glm::simplex(blockXY / 64.0f) + glm::simplex(blockXY / 8.0f);
       heightMap.terrainHeights[i][j] = terrainHeight;
     }
   return heightMap;
@@ -76,15 +120,40 @@ static bool loadNewChunks(const ChunkIndex& playerChunkIndex, uint32_t maxNewChu
   static constexpr int8_t normals[6][3] = { { 1, 0, 0}, { -1, 0, 0}, { 0, 1, 0}, { 0, -1, 0}, { 0, 0, 1}, { 0, 0, -1} };
                                        //      East         West        North       South         Top        Bottom
 
+  // Load First chunk if none exist
+  bool noChunksLoaded = true;
+  for (MapType mapType : MapTypeIterator())
+  {
+    const uint8_t mapTypeID = static_cast<uint8_t>(mapType);
+
+    if (s_Chunks[mapTypeID].size() > 0)
+      noChunksLoaded = false;
+  }
+  if (noChunksLoaded)
+  {
+    int64_t heightMapKey = createHeightMapKey(playerChunkIndex[0], playerChunkIndex[1]);
+    s_HeightMaps[heightMapKey] = generateHeightMap(playerChunkIndex[0], playerChunkIndex[1]);
+
+    int64_t key = createKey(playerChunkIndex);
+    s_BoundaryChunks.try_emplace(key, playerChunkIndex);
+
+    Chunk& playerChunk = s_BoundaryChunks[key];
+    playerChunk.load(s_HeightMaps[heightMapKey]);
+  }
+
   // Find new chunks to generate
   std::vector<ChunkIndex> newChunks{};
-  for (auto& pair : s_Chunks)
+  std::vector<ChunkIndex> chunksToMove{};
+  for (auto& pair : s_BoundaryChunks)
   {
     const Chunk& chunk = pair.second;
 
+    bool isOnBoundary = false;
     for (BlockFace face : BlockFaceIterator())
       if (chunk.getNeighbor(face) == nullptr && !chunk.isFaceOpaque(face))
       {
+        isOnBoundary = true;
+
         // Store index of potential new chunk
         ChunkIndex neighborIndex = chunk.getIndex();
         for (int i = 0; i < 3; ++i)
@@ -97,19 +166,41 @@ static bool loadNewChunks(const ChunkIndex& playerChunkIndex, uint32_t maxNewChu
         newChunks.push_back(neighborIndex);
       }
 
+    if (!isOnBoundary)
+      chunksToMove.push_back(chunk.getIndex());
+
     if (newChunks.size() >= maxNewChunks)
       break;
   }
 
-  // Added new chunks to map
+  // Move chunks out of s_BoundaryChunks when all their neighbors are accounted for
+  for (int i = 0; i < chunksToMove.size(); ++i)
+  {
+    int64_t key = createKey(chunksToMove[i]);
+    Chunk& chunk = s_BoundaryChunks[key];
+
+    MapType destination = chunk.isEmpty() ? MapType::Empty : MapType::Renderable;
+    auto insertionResult = s_Chunks[static_cast<uint8_t>(destination)].insert({ key, std::move(chunk) });
+    bool insertionSuccess = insertionResult.second;
+    EN_ASSERT(insertionSuccess, "Chunk is already in map!");
+
+    s_BoundaryChunks.erase(key);
+  }
+
+  // Added new chunks to s_BoundaryChunks
   for (int i = 0; i < newChunks.size(); ++i)
   {
-    ChunkIndex newChunkIndex = newChunks[i];
+    const ChunkIndex newChunkIndex = newChunks[i];
 
     // Create key for hash map.  If chunk is already in map, skip it
     int64_t key = createKey(newChunkIndex);
-    if (s_Chunks.find(key) != s_Chunks.end())
-      continue;
+    for (MapType mapType : MapTypeIterator())
+    {
+      const uint8_t mapTypeID = static_cast<uint8_t>(mapType);
+
+      if (s_Chunks[mapTypeID].find(key) != s_Chunks[mapTypeID].end())
+        continue;
+    }
 
     // Generate heightmap is none exists
     int64_t heightMapKey = createHeightMapKey(newChunkIndex[0], newChunkIndex[1]);
@@ -117,11 +208,11 @@ static bool loadNewChunks(const ChunkIndex& playerChunkIndex, uint32_t maxNewChu
       s_HeightMaps[heightMapKey] = generateHeightMap(newChunkIndex[0], newChunkIndex[1]);
 
     // Generate chunk
-    auto insertionResult = s_Chunks.try_emplace(key, newChunkIndex);  // Construct chunk in-place
+    auto insertionResult = s_BoundaryChunks.try_emplace(key, newChunkIndex);
     bool insertionSuccess = insertionResult.second;
     EN_ASSERT(insertionSuccess, "Chunk is already in map!");
 
-    Chunk& newChunk = s_Chunks[key];
+    Chunk& newChunk = s_BoundaryChunks[key];
     newChunk.load(s_HeightMaps[heightMapKey]);
 
     // Set neighbors in all directions
@@ -134,11 +225,18 @@ static bool loadNewChunks(const ChunkIndex& playerChunkIndex, uint32_t maxNewChu
 
       // Find and add neighbors (if they exist) to new chunk
       int64_t adjKey = createKey(adjIndex);
-      if (s_Chunks.find(adjKey) != s_Chunks.end())
+      for (MapType mapType : MapTypeIterator())
       {
-        Chunk& adjChunk = s_Chunks[adjKey];
-        newChunk.setNeighbor(dir, &adjChunk);
-        adjChunk.setNeighbor(!dir, &newChunk);
+        const uint8_t mapTypeID = static_cast<uint8_t>(mapType);
+
+        if (s_Chunks[mapTypeID].find(adjKey) != s_Chunks[mapTypeID].end())
+        {
+          Chunk& adjChunk = s_Chunks[mapTypeID][adjKey];
+          newChunk.setNeighbor(dir, &adjChunk);
+          adjChunk.setNeighbor(!dir, &newChunk);
+
+          break;
+        }
       }
     }
   }
@@ -150,18 +248,32 @@ static void clean(const ChunkIndex& playerChunkIndex)
 {
   EN_PROFILE_FUNCTION();
 
-  std::vector<int64_t> chunksToRemove{};
-  for (auto& pair : s_Chunks)
+  // Destroy chunks outside of unload range
+  std::vector<std::pair<MapType, int64_t>> chunksToRemove{};
+  for (MapType mapType : MapTypeIterator())
   {
-    const Chunk& chunk = pair.second;
-    const ChunkIndex chunkIndex = chunk.getIndex();
+    const uint8_t mapTypeID = static_cast<uint8_t>(mapType);
 
-    if (isOutOfRange(chunkIndex, playerChunkIndex))
-      chunksToRemove.push_back(createKey(chunkIndex));
+    for (auto& pair : s_Chunks[mapTypeID])
+    {
+      const Chunk& chunk = pair.second;
+      const ChunkIndex chunkIndex = chunk.getIndex();
+
+      if (isOutOfRange(chunkIndex, playerChunkIndex))
+        chunksToRemove.emplace_back(mapType, createKey(chunkIndex));
+    }
   }
   for (int i = 0; i < chunksToRemove.size(); ++i)
-    s_Chunks.erase(chunksToRemove[i]);
+  {
+    const uint8_t mapTypeID = static_cast<uint8_t>(chunksToRemove[i].first);
+    const int64_t& key = chunksToRemove[i].second;
 
+    // NOTE: Should probably move neighbors to s_BoundaryChunks before erasing, but it works fine now so whatevs
+    bool eraseSuccessful = s_Chunks[mapTypeID].erase(key);
+    EN_ASSERT(eraseSuccessful, "Chunk is not in map!");
+  }
+
+  // Destroy heightmaps outside of unload range
   std::vector<int64_t> heightMapsToRemove{};
   for (auto& pair : s_HeightMaps)
   {
@@ -178,14 +290,14 @@ static void render(const ChunkIndex& playerChunkIndex)
 {
   EN_PROFILE_FUNCTION();
 
-  for (auto& pair : s_Chunks)
+  for (auto& pair : s_RenderableChunks)
   {
     Chunk& chunk = pair.second;
 
-    if (!chunk.isEmpty() && isInRenderRange(chunk.getIndex(), playerChunkIndex))
+    if (isInRenderRange(chunk.getIndex(), playerChunkIndex))
     {
-      chunk.onUpdate();
-      ChunkRenderer::DrawChunk(&chunk);
+      chunk.update();
+      ChunkRenderer::DrawChunk(chunk);
     }
   }
 }
@@ -195,14 +307,6 @@ void World::Initialize(const glm::vec3& initialPosition)
   Chunk::InitializeIndexBuffer();
 
   ChunkIndex playerChunkIndex = Chunk::GetPlayerChunkIndex(initialPosition);
-
-  int64_t heightMapKey = createHeightMapKey(playerChunkIndex[0], playerChunkIndex[1]);
-  s_HeightMaps[heightMapKey] = generateHeightMap(playerChunkIndex[0], playerChunkIndex[1]);
-
-  int64_t key = createKey(playerChunkIndex);
-  s_Chunks.try_emplace(key, playerChunkIndex);
-  Chunk& playerChunk = s_Chunks[key];
-  playerChunk.load(s_HeightMaps[heightMapKey]);
 
   while (loadNewChunks(playerChunkIndex, 10000))
   {
@@ -222,6 +326,4 @@ void World::OnUpdate(const glm::vec3& playerPosition)
   clean(playerChunkIndex);
   render(playerChunkIndex);
   loadNewChunks(playerChunkIndex, 200);
-
-  // EN_INFO("Chunks loaded: {0}", s_Chunks.size());
 }

@@ -26,7 +26,7 @@ public:
 
   void load(HeightMap heightMap);
   void generateMesh();
-  void onUpdate();
+  void update();
   void bindBuffers() const;
 
   const ChunkIndex& getIndex() const { return m_ChunkIndex; }
@@ -71,7 +71,6 @@ private:
   ChunkIndex m_ChunkIndex;
   Engine::Unique<BlockType[]> m_ChunkComposition = nullptr;
   bool m_Empty = true;
-  bool m_Solid = true;
   std::array<bool, 6> m_FaceIsOpaque = { true, true, true, true, true, true };
 
   // Mesh data
