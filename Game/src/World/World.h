@@ -7,4 +7,6 @@ namespace World
   void ShutDown();
 
   void OnUpdate(const glm::vec3& playerPosition);
+
+  void OnEvent(Engine::Event& event);
 };

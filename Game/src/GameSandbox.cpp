@@ -47,6 +47,7 @@ void GameSandbox::onEvent(Engine::Event& event)
   dispatcher.dispatch<Engine::KeyPressEvent>(EN_BIND_EVENT_FN(onKeyPressEvent));
 
   m_CameraController.onEvent(event);
+  World::OnEvent(event);
 }
 
 bool GameSandbox::onKeyPressEvent(Engine::KeyPressEvent& event)
