@@ -4,8 +4,10 @@
 
 ChunkManager::ChunkManager()
 {
-  m_OpenChunkSlots.reserve(m_ChunkArray.size());
-  for (int i = 0; i < m_ChunkArray.size(); ++i)
+  m_ChunkArray = Engine::CreateUnique<Chunk[]>(s_TotalPossibleChunks);
+
+  m_OpenChunkSlots.reserve(s_TotalPossibleChunks);
+  for (int i = 0; i < s_TotalPossibleChunks; ++i)
     m_OpenChunkSlots.push_back(i);
 }
 
@@ -13,27 +15,17 @@ void ChunkManager::clean()
 {
   EN_PROFILE_FUNCTION();
 
-  // Destroy chunks outside of unload range
-  std::vector<std::pair<MapType, Chunk*>> chunksToRemove{};
-  for (MapType mapType : MapTypeIterator())
+  // Destroy boundary chunks outside of unload range
+  std::vector<Chunk*> chunksToRemove{};
+  for (auto& pair : m_BoundaryChunks)
   {
-    const uint8_t mapTypeID = static_cast<uint8_t>(mapType);
+    Chunk* chunk = pair.second;
 
-    for (auto& pair : m_Chunks[mapTypeID])
-    {
-      Chunk* chunk = pair.second;
-
-      if (isOutOfRange(chunk->getIndex()))
-        chunksToRemove.emplace_back(mapType, chunk);
-    }
+    if (isOutOfRange(chunk->getIndex()))
+      chunksToRemove.push_back(chunk);
   }
   for (int i = 0; i < chunksToRemove.size(); ++i)
-  {
-    MapType& mapType = chunksToRemove[i].first;
-    Chunk* chunk = chunksToRemove[i].second;
-
-    unloadChunk(chunk, mapType);
-  }
+    unloadChunk(chunksToRemove[i]);
 
   // Destroy heightmaps outside of unload range
   std::vector<int64_t> heightMapsToRemove{};
@@ -251,11 +243,32 @@ Chunk* ChunkManager::loadNewChunk(const ChunkIndex& chunkIndex)
   return newChunk;
 }
 
-void ChunkManager::unloadChunk(Chunk* chunk, MapType mapType)
+void ChunkManager::unloadChunk(Chunk* chunk)
 {
-  // Remove chunk pointer from map
+  EN_ASSERT(m_BoundaryChunks.find(createKey(chunk->getIndex())) != m_BoundaryChunks.end(), "Chunk is not in boundary chunk map!");
+
+  // Move neighbors to m_BoundaryChunks
+  for (BlockFace face : BlockFaceIterator())
+  {
+    Chunk* chunkNeighbor = chunk->getNeighbor(face);
+
+    // If neighbor does not exist, skip
+    if (chunkNeighbor == nullptr)
+      continue;
+
+    // Check if chunk is in m_BoundaryChunk.  If so, skip it
+    if (m_BoundaryChunks.find(createKey(chunkNeighbor->getIndex())) != m_BoundaryChunks.end())
+      continue;
+
+    // Move chunk pointer to m_BoundaryChunks
+    MapType source = chunkNeighbor->isEmpty() ? MapType::Empty : MapType::Renderable;
+    EN_ASSERT(m_Chunks[static_cast<uint8_t>(source)].find(createKey(chunkNeighbor->getIndex())) != m_Chunks[static_cast<uint8_t>(source)].end(), "Chunk is not in correct map!");
+    moveToMap(chunkNeighbor, source, MapType::Boundary);
+  }
+
+  // Remove chunk pointer from m_BoundaryChunks
   int64_t key = createKey(chunk->getIndex());
-  bool eraseSuccessful = m_Chunks[static_cast<uint8_t>(mapType)].erase(key);
+  bool eraseSuccessful = m_BoundaryChunks.erase(key);
   EN_ASSERT(eraseSuccessful, "Chunk is not in map!");
 
   // Open up chunk slot
@@ -263,7 +276,8 @@ void ChunkManager::unloadChunk(Chunk* chunk, MapType mapType)
   EN_ASSERT(&m_ChunkArray[index] == chunk, "Calculated index does not correspond to given pointer!");
   m_OpenChunkSlots.push_back(index);
 
-  // NOTE: Should probably move neighbors to m_BoundaryChunks before erasing, but it works fine now so whatevs
+  // Delete chunk data
+  m_ChunkArray[index].reset();
 }
 
 void ChunkManager::addToMap(Chunk* chunk, MapType mapType)

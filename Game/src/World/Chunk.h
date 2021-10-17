@@ -28,6 +28,7 @@ public:
   void generateMesh();
   void update();
   void bindBuffers() const;
+  void reset();
 
   const ChunkIndex& getIndex() const { return m_ChunkIndex; }
   glm::vec3 position() const { return glm::vec3(m_ChunkIndex[0] * Length(), m_ChunkIndex[1] * Length(), m_ChunkIndex[2] * Length()); }
@@ -37,7 +38,7 @@ public:
   BlockType getBlockType(uint8_t i, uint8_t j, uint8_t k) const;
   glm::vec3 blockPosition(uint8_t i, uint8_t j, uint8_t k) const;
 
-  const Chunk* getNeighbor(BlockFace face) const { return m_Neighbors[static_cast<uint8_t>(face)]; }
+  Chunk* const getNeighbor(BlockFace face) const { return m_Neighbors[static_cast<uint8_t>(face)]; }
   void setNeighbor(BlockFace face, Chunk* chunk);
 
   const std::vector<uint32_t>& getMesh() const { return m_Mesh; }
@@ -87,4 +88,7 @@ private:
 
   bool isBlockNeighborInAnotherChunk(uint8_t i, uint8_t j, uint8_t k, BlockFace face);
   bool isBlockNeighborTransparent(uint8_t i, uint8_t j, uint8_t k, BlockFace face);
+
+  void sendAddressUpdate();
+  void excise();
 };

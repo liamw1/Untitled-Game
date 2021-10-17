@@ -16,11 +16,11 @@ public:
 private:
   enum class MapType : uint8_t
   {
-    Empty = 0,
-    Boundary,
+    Boundary = 0,
+    Empty,
     Renderable,
 
-    First = Empty, Last = Renderable
+    First = Boundary, Last = Renderable
   };
 
   class MapTypeIterator
@@ -55,16 +55,20 @@ private:
   static constexpr int s_UnloadDistance = s_LoadDistance;
   static constexpr int s_TotalPossibleChunks = (2 * s_UnloadDistance + 1) * (2 * s_UnloadDistance + 1) * (2 * s_UnloadDistance + 1);
 
-  std::array<Chunk, s_TotalPossibleChunks> m_ChunkArray;
+  // Chunk data
+  Engine::Unique<Chunk[]> m_ChunkArray;
   std::vector<int> m_OpenChunkSlots;
 
+  // Chunk pointers
   std::array<llvm::DenseMap<int64_t, Chunk*>, 3> m_Chunks;
   llvm::DenseMap<int64_t, Chunk*>& m_EmptyChunks = m_Chunks[static_cast<uint8_t>(MapType::Empty)];
   llvm::DenseMap<int64_t, Chunk*>& m_BoundaryChunks = m_Chunks[static_cast<uint8_t>(MapType::Boundary)];
   llvm::DenseMap<int64_t, Chunk*>& m_RenderableChunks = m_Chunks[static_cast<uint8_t>(MapType::Renderable)];
 
+  // Terrain data
   llvm::DenseMap<int64_t, HeightMap> m_HeightMaps{};
 
+  // Player data
   ChunkIndex m_PlayerChunkIndex{};
 
   int64_t createKey(const ChunkIndex& chunkIndex) const;
@@ -77,7 +81,7 @@ private:
   HeightMap generateHeightMap(int64_t chunkX, int64_t chunkY);
 
   Chunk* loadNewChunk(const ChunkIndex& chunkIndex);
-  void unloadChunk(Chunk* chunk, MapType mapType);
+  void unloadChunk(Chunk* chunk);
 
   void addToMap(Chunk* chunk, MapType mapType);
   void moveToMap(Chunk* chunk, MapType source, MapType destination);
