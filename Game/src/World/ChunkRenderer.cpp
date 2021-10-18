@@ -23,7 +23,7 @@ void ChunkRenderer::Initialize()
   s_TextureAtlas = Engine::Texture2D::Create("assets/textures/voxel-pack/Spritesheets/spritesheet_tiles.png");
 }
 
-void ChunkRenderer::BeginScene(Engine::Camera& camera)
+void ChunkRenderer::BeginScene(const Engine::Camera& camera)
 {
   s_BlockFaceShader->setFloat("u_BlockLength", Block::Length());
   s_BlockFaceShader->setMat4("u_ViewProjection", camera.getViewProjectionMatrix());

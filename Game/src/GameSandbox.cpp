@@ -32,9 +32,7 @@ void GameSandbox::onUpdate(std::chrono::duration<float> timestep)
 
   Engine::RenderCommand::Clear({ 0.788f, 0.949f, 0.949f, 1.0f });
 
-  ChunkRenderer::BeginScene(m_CameraController.getCamera());
-  World::OnUpdate(m_CameraController.getCamera().getPosition());
-  ChunkRenderer::EndScene();
+  World::OnUpdate(m_CameraController.getCamera());
 }
 
 void GameSandbox::onImGuiRender()

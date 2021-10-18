@@ -10,7 +10,7 @@ public:
   void updatePlayerChunk(const ChunkIndex& playerChunkIndex) { m_PlayerChunkIndex = playerChunkIndex; };
 
   void clean();
-  void render();
+  void render(const Engine::Camera& playerCamera);
   bool loadNewChunks(uint32_t maxNewChunks);
 
 private:
@@ -77,6 +77,7 @@ private:
   bool isOutOfRange(const ChunkIndex& chunkIndex) const;
   bool isInLoadRange(const ChunkIndex& chunkIndex) const;
   bool isInRenderRange(const ChunkIndex& chunkIndex) const;
+  bool isInViewFrustum(const Chunk* chunk, const Engine::Camera& playerCamera) const;
 
   HeightMap generateHeightMap(int64_t chunkX, int64_t chunkY);
 

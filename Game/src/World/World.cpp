@@ -1,6 +1,7 @@
 #include "GMpch.h"
 #include "World.h"
 #include "ChunkManager.h"
+#include "ChunkRenderer.h"
 
 static bool s_RenderingPaused = false;
 static ChunkManager s_ChunkManager{};
@@ -20,20 +21,24 @@ void World::ShutDown()
 {
 }
 
-void World::OnUpdate(const glm::vec3& playerPosition)
+void World::OnUpdate(const Engine::Camera& playerCamera)
 {
   EN_PROFILE_FUNCTION();
 
+  ChunkRenderer::BeginScene(playerCamera);
+
   if (s_RenderingPaused)
-    s_ChunkManager.render();
+    s_ChunkManager.render(playerCamera);
   else
   {
-    s_ChunkManager.updatePlayerChunk(Chunk::GetPlayerChunkIndex(playerPosition));
+    s_ChunkManager.updatePlayerChunk(Chunk::GetPlayerChunkIndex(playerCamera.getPosition()));
 
     s_ChunkManager.clean();
-    s_ChunkManager.render();
+    s_ChunkManager.render(playerCamera);
     s_ChunkManager.loadNewChunks(200);
   }
+
+  ChunkRenderer::EndScene();
 }
 
 static bool onKeyPressEvent(Engine::KeyPressEvent& event)

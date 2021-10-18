@@ -40,7 +40,7 @@ void ChunkManager::clean()
     m_HeightMaps.erase(heightMapsToRemove[i]);
 }
 
-void ChunkManager::render()
+void ChunkManager::render(const Engine::Camera& playerCamera)
 {
   EN_PROFILE_FUNCTION();
 
@@ -51,7 +51,9 @@ void ChunkManager::render()
     if (isInRenderRange(chunk->getIndex()))
     {
       chunk->update();
-      ChunkRenderer::DrawChunk(chunk);
+
+      if (isInViewFrustum(chunk, playerCamera))
+        ChunkRenderer::DrawChunk(chunk);
     }
   }
 }
@@ -201,6 +203,33 @@ bool ChunkManager::isInRenderRange(const ChunkIndex& chunkIndex) const
     if (abs(m_PlayerChunkIndex[i] - chunkIndex[i]) > s_RenderDistance)
       return false;
   return true;
+}
+
+bool ChunkManager::isInViewFrustum(const Chunk* chunk, const Engine::Camera& playerCamera) const
+{
+  /*
+    Right now we check that each corner is inside frustum, but really we should check whether
+    each chunk face collides with any of the frustum planes.  Current method results in 
+    chunks not being rendered on screen when player is close to them.
+  */
+
+  static constexpr glm::vec3 cornerOffsets[8] = { glm::vec3(0.0f,            0.0f,            0.0f           ),
+                                                  glm::vec3(Chunk::Length(), 0.0f,            0.0f           ),
+                                                  glm::vec3(0.0f,            Chunk::Length(), 0.0f           ),
+                                                  glm::vec3(Chunk::Length(), Chunk::Length(), 0.0f           ),
+                                                  glm::vec3(0.0f,            0.0f,            Chunk::Length()),
+                                                  glm::vec3(Chunk::Length(), 0.0f,            Chunk::Length()),
+                                                  glm::vec3(0.0f,            Chunk::Length(), Chunk::Length()),
+                                                  glm::vec3(Chunk::Length(), Chunk::Length(), Chunk::Length()) };
+
+  for (int i = 0; i < 8; ++i)
+  {
+    glm::vec4 vPrime = playerCamera.getProjectionMatrix() * playerCamera.getViewMatrix() * glm::vec4(chunk->position() + cornerOffsets[i], 1.0f);
+
+    if (abs(vPrime[0]) < vPrime[3] && abs(vPrime[1]) < vPrime[3] && abs(vPrime[2]) < vPrime[3])
+      return true;
+  }
+  return false;
 }
 
 HeightMap ChunkManager::generateHeightMap(int64_t chunkX, int64_t chunkY)
