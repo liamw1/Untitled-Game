@@ -7,7 +7,7 @@
   Renderer 2D data
 */
 static Engine::Shared<Engine::Shader> s_BlockFaceShader;
-static Engine::Shared<Engine::Texture2D> s_TextureAtlas;
+static Engine::Shared<Engine::TextureArray> s_TextureArray;
 constexpr static uint8_t s_TextureSlot = 1;
 
 
@@ -18,16 +18,19 @@ void ChunkRenderer::Initialize()
 
   s_BlockFaceShader = Engine::Shader::Create("assets/shaders/BlockFace.glsl");
   s_BlockFaceShader->bind();
-  s_BlockFaceShader->setInt("u_TextureAtlas", s_TextureSlot);
+  s_BlockFaceShader->setInt("u_TextureArray", s_TextureSlot);
 
-  s_TextureAtlas = Engine::Texture2D::Create("assets/textures/voxel-pack/Spritesheets/spritesheet_tiles.png");
+  s_TextureArray = Engine::TextureArray::Create(8, 128);
+  s_TextureArray->addTexture("assets/textures/voxel-pack/PNG/Tiles/grass_top.png");
+  s_TextureArray->addTexture("assets/textures/voxel-pack/PNG/Tiles/dirt_grass.png");
+  s_TextureArray->addTexture("assets/textures/voxel-pack/PNG/Tiles/dirt.png");
 }
 
 void ChunkRenderer::BeginScene(const Engine::Camera& camera)
 {
   s_BlockFaceShader->setFloat("u_BlockLength", Block::Length());
   s_BlockFaceShader->setMat4("u_ViewProjection", camera.getViewProjectionMatrix());
-  s_TextureAtlas->bind(s_TextureSlot);
+  s_TextureArray->bind(s_TextureSlot);
   s_BlockFaceShader->bind();
 }
 

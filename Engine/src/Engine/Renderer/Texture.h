@@ -6,6 +6,16 @@
 */
 namespace Engine
 {
+  class TextureArray
+  {
+  public:
+    virtual void bind(uint32_t slot = 0) const = 0;
+
+    virtual void addTexture(const std::string& path) = 0;
+
+    static Shared<TextureArray> Create(uint32_t textureCount, uint32_t textureSize);
+  };
+
   class Texture
   {
   public:

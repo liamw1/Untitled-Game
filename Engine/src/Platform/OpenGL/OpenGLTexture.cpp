@@ -10,6 +10,71 @@
 
 namespace Engine
 {
+  OpenGLTextureArray::OpenGLTextureArray(uint32_t textureCount, uint32_t textureSize)
+    : m_MaxTextures(textureCount), m_TextureSize(textureSize)
+  {
+    EN_PROFILE_FUNCTION();
+
+    glCreateTextures(GL_TEXTURE_2D_ARRAY, 1, &m_RendererID);
+
+    glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, m_InternalFormat, m_TextureSize, m_TextureSize,
+                 m_MaxTextures, 0, m_DataFormat, GL_UNSIGNED_BYTE, nullptr);
+
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_REPEAT);
+  }
+
+  OpenGLTextureArray::~OpenGLTextureArray()
+  {
+    EN_PROFILE_FUNCTION();
+
+    glDeleteTextures(1, &m_RendererID);
+  }
+
+  void OpenGLTextureArray::bind(uint32_t slot) const
+  {
+    glBindTexture(GL_TEXTURE_2D_ARRAY, m_RendererID);
+  }
+
+  void OpenGLTextureArray::addTexture(const std::string& path)
+  {
+    EN_PROFILE_FUNCTION();
+
+    int width, height, channels;
+    stbi_set_flip_vertically_on_load(true);
+    stbi_uc* data = nullptr;
+    {
+      EN_PROFILE_SCOPE("stbi_load --> OpenGLTexture2D::OpenGLTexture2D(const std::string&)");
+      data = stbi_load(path.c_str(), &width, &height, &channels, 0);
+    }
+    EN_CORE_ASSERT(data != nullptr, "Failed to load image!");
+    EN_CORE_ASSERT(width == m_TextureSize && height == m_TextureSize, "Texture has incorrect size!");
+
+    GLenum internalFormat = 0, dataFormat = 0;
+    if (channels == 4)
+    {
+      internalFormat = GL_RGBA8;
+      dataFormat = GL_RGBA;
+    }
+    else if (channels == 3)
+    {
+      internalFormat = GL_RGB8;
+      dataFormat = GL_RGB;
+    }
+    EN_CORE_ASSERT(internalFormat * dataFormat != 0, "Format not supported!");
+    EN_CORE_ASSERT(internalFormat == m_InternalFormat && dataFormat == m_DataFormat, "Texture has incorrect format!");
+
+    glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, m_TextureCount, m_TextureSize,
+                    m_TextureSize, 1, m_DataFormat, GL_UNSIGNED_BYTE, data);
+
+    glGenerateMipmap(GL_TEXTURE_2D_ARRAY);
+
+    stbi_image_free(data);
+    m_TextureCount++;
+  }
+
   OpenGLTexture2D::OpenGLTexture2D(uint32_t width, uint32_t height)
     : m_Width(width), m_Height(height)
   {
@@ -54,7 +119,7 @@ namespace Engine
       internalFormat = GL_RGB8;
       dataFormat = GL_RGB;
     }
-    EN_CORE_ASSERT(internalFormat * dataFormat != 0, "Format now supported!");
+    EN_CORE_ASSERT(internalFormat * dataFormat != 0, "Format not supported!");
 
     m_InternalFormat = internalFormat;
     m_DataFormat = dataFormat;

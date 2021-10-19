@@ -156,20 +156,11 @@ void Chunk::generateMesh()
                 vertexData += static_cast<uint8_t>(face) << 18;
                 vertexData += v << 21;
 
-                if (face == BlockFace::Top)
+                switch (face)
                 {
-                  vertexData += 6Ui8 << 23;
-                  vertexData += 8Ui8 << 27;
-                }
-                else if (face == BlockFace::Bottom)
-                {
-                  vertexData += 7Ui8 << 23;
-                  vertexData += 4Ui8 << 27;
-                }
-                else
-                {
-                  vertexData += 7Ui8 << 23;
-                  vertexData += 5Ui8 << 27;
+                case BlockFace::Top:    vertexData += 0Ui8 << 23;  break;
+                case BlockFace::Bottom: vertexData += 2Ui8 << 23;  break;
+                default:                vertexData += 1Ui8 << 23;
                 }
 
                 m_Mesh.push_back(vertexData);
@@ -339,8 +330,6 @@ void Chunk::sendAddressUpdate()
     if (m_Neighbors[faceID] != nullptr)
     {
       uint8_t oppFaceID = static_cast<uint8_t>(!face);
-
-      EN_ASSERT(m_Neighbors[faceID]->getNeighbor(!face) == &other, "Incorrect neighbor!");
       m_Neighbors[faceID]->m_Neighbors[oppFaceID] = this; // Avoid using setNeighbor() to prevent re-meshing
     }
   }
