@@ -8,6 +8,8 @@
 #include <stb_image.h>
 #pragma warning( pop )
 
+static constexpr uint32_t s_MipmapLevels = 8;
+
 namespace Engine
 {
   OpenGLTextureArray::OpenGLTextureArray(uint32_t textureCount, uint32_t textureSize)
@@ -15,15 +17,11 @@ namespace Engine
   {
     EN_PROFILE_FUNCTION();
 
-    glCreateTextures(GL_TEXTURE_2D_ARRAY, 1, &m_RendererID);
+    glGenTextures(1, &m_RendererID);
+    glActiveTexture(GL_TEXTURE0);
+    bind();
 
-    glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, m_InternalFormat, m_TextureSize, m_TextureSize,
-                 m_MaxTextures, 0, m_DataFormat, GL_UNSIGNED_BYTE, nullptr);
-
-    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexStorage3D(GL_TEXTURE_2D_ARRAY, s_MipmapLevels, m_InternalFormat, m_TextureSize, m_TextureSize, m_MaxTextures);
   }
 
   OpenGLTextureArray::~OpenGLTextureArray()
@@ -70,6 +68,13 @@ namespace Engine
                     m_TextureSize, 1, m_DataFormat, GL_UNSIGNED_BYTE, data);
 
     glGenerateMipmap(GL_TEXTURE_2D_ARRAY);
+
+    glTexParameterf(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAX_ANISOTROPY, 16.0f);
+
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
     stbi_image_free(data);
     m_TextureCount++;

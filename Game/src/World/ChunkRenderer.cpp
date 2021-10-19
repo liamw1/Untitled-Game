@@ -8,7 +8,7 @@
 */
 static Engine::Shared<Engine::Shader> s_BlockFaceShader;
 static Engine::Shared<Engine::TextureArray> s_TextureArray;
-constexpr static uint8_t s_TextureSlot = 1;
+constexpr static uint8_t s_TextureSlot = 0;
 
 
 
@@ -21,9 +21,9 @@ void ChunkRenderer::Initialize()
   s_BlockFaceShader->setInt("u_TextureArray", s_TextureSlot);
 
   s_TextureArray = Engine::TextureArray::Create(8, 128);
-  s_TextureArray->addTexture("assets/textures/voxel-pack/PNG/Tiles/grass_top.png");
-  s_TextureArray->addTexture("assets/textures/voxel-pack/PNG/Tiles/dirt_grass.png");
-  s_TextureArray->addTexture("assets/textures/voxel-pack/PNG/Tiles/dirt.png");
+  s_TextureArray->addTexture("assets/textures/voxel-pack/PNG/Tiles/brick_grey.png");
+  s_TextureArray->addTexture("assets/textures/voxel-pack/PNG/Tiles/brick_grey.png");
+  s_TextureArray->addTexture("assets/textures/voxel-pack/PNG/Tiles/brick_grey.png");
 }
 
 void ChunkRenderer::BeginScene(const Engine::Camera& camera)
