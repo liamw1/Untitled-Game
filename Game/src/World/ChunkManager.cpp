@@ -60,9 +60,8 @@ void ChunkManager::render(const Engine::Camera& playerCamera)
   static constexpr float chunkSphereRadius = sqrt3 * Chunk::Length() / 2;
   for (int planeID = 0; planeID < 6; ++planeID)
   {
-    const glm::vec3 planeNormal = glm::vec3(frustumPlanes[planeID]);
-
-    frustumPlanes[planeID].w += chunkSphereRadius * glm::dot(planeNormal, planeNormal);
+    const float planeNormalMag = glm::length(glm::vec3(frustumPlanes[planeID]));
+    frustumPlanes[planeID].w += chunkSphereRadius * planeNormalMag;
   }
 
   for (auto& pair : m_RenderableChunks)
