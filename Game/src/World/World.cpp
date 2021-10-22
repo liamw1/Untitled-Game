@@ -8,8 +8,6 @@ static ChunkManager s_ChunkManager{};
 
 void World::Initialize(const glm::vec3& initialPosition)
 {
-  Chunk::InitializeIndexBuffer();
-
   s_ChunkManager.updatePlayerChunk(Chunk::GetPlayerChunkIndex(initialPosition));
 
   while (s_ChunkManager.loadNewChunks(10000))

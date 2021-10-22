@@ -28,6 +28,12 @@ void GameSandbox::onUpdate(std::chrono::duration<float> timestep)
 
   EN_TRACE("fps: {0}", static_cast<int>(1.0f / timestep.count()));
 
+#if 0
+  EN_TRACE("({0}, {1}, {2})", static_cast<int>(m_CameraController.getCamera().getPosition()[0] / Block::Length()),
+                              static_cast<int>(m_CameraController.getCamera().getPosition()[1] / Block::Length()),
+                              static_cast<int>(m_CameraController.getCamera().getPosition()[2] / Block::Length()));
+#endif
+
   m_CameraController.onUpdate(timestep);
 
   Engine::RenderCommand::Clear({ 0.788f, 0.949f, 0.949f, 1.0f });

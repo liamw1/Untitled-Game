@@ -28,7 +28,7 @@ namespace Engine
     Mouse        = bit(3),
     MouseButton  = bit(4)
   };
-  ENABLE_BITMASK_OPERATORS(EventCategory);
+  EN_ENABLE_BITMASK_OPERATORS(EventCategory);
 
   class Event
   {

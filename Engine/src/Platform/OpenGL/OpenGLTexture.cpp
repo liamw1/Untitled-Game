@@ -9,6 +9,7 @@
 #pragma warning( pop )
 
 static constexpr uint32_t s_MipmapLevels = 8;
+static constexpr float s_AnistropicFilteringAmount = 16.0f;
 
 namespace Engine
 {
@@ -17,11 +18,8 @@ namespace Engine
   {
     EN_PROFILE_FUNCTION();
 
-    glGenTextures(1, &m_RendererID);
-    glActiveTexture(GL_TEXTURE0);
-    bind();
-
-    glTexStorage3D(GL_TEXTURE_2D_ARRAY, s_MipmapLevels, m_InternalFormat, m_TextureSize, m_TextureSize, m_MaxTextures);
+    glCreateTextures(GL_TEXTURE_2D_ARRAY, 1, &m_RendererID);
+    glTextureStorage3D(m_RendererID, s_MipmapLevels, m_InternalFormat, m_TextureSize, m_TextureSize, m_MaxTextures);
   }
 
   OpenGLTextureArray::~OpenGLTextureArray()
@@ -33,7 +31,7 @@ namespace Engine
 
   void OpenGLTextureArray::bind(uint32_t slot) const
   {
-    glBindTexture(GL_TEXTURE_2D_ARRAY, m_RendererID);
+    glBindTextureUnit(slot, m_RendererID);
   }
 
   void OpenGLTextureArray::addTexture(const std::string& path)
@@ -63,18 +61,19 @@ namespace Engine
     }
     EN_CORE_ASSERT(internalFormat * dataFormat != 0, "Format not supported!");
     EN_CORE_ASSERT(internalFormat == m_InternalFormat && dataFormat == m_DataFormat, "Texture has incorrect format!");
+    EN_CORE_ASSERT(m_TextureCount < m_MaxTextures, "Textures added has exceeded maximum textures!");
 
-    glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, m_TextureCount, m_TextureSize,
-                    m_TextureSize, 1, m_DataFormat, GL_UNSIGNED_BYTE, data);
+    glTextureSubImage3D(m_RendererID, 0, 0, 0, m_TextureCount, m_TextureSize,
+                        m_TextureSize, 1, m_DataFormat, GL_UNSIGNED_BYTE, data);
 
-    glGenerateMipmap(GL_TEXTURE_2D_ARRAY);
+    glGenerateTextureMipmap(m_RendererID);
 
-    glTexParameterf(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAX_ANISOTROPY, 16.0f);
+    glTextureParameterf(m_RendererID, GL_TEXTURE_MAX_ANISOTROPY, s_AnistropicFilteringAmount);
 
-    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTextureParameteri(m_RendererID, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTextureParameteri(m_RendererID, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTextureParameteri(m_RendererID, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTextureParameteri(m_RendererID, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
     stbi_image_free(data);
     m_TextureCount++;

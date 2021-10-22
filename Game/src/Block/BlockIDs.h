@@ -7,5 +7,5 @@ enum class BlockType : blockID
 {
   Air = 0,
   Grass,
-  Sand
+  Dirt
 };

@@ -21,9 +21,9 @@ void ChunkRenderer::Initialize()
   s_BlockFaceShader->setInt("u_TextureArray", s_TextureSlot);
 
   s_TextureArray = Engine::TextureArray::Create(8, 128);
-  s_TextureArray->addTexture("assets/textures/voxel-pack/PNG/Tiles/brick_grey.png");
-  s_TextureArray->addTexture("assets/textures/voxel-pack/PNG/Tiles/brick_grey.png");
-  s_TextureArray->addTexture("assets/textures/voxel-pack/PNG/Tiles/brick_grey.png");
+  s_TextureArray->addTexture("assets/textures/voxel-pack/PNG/Tiles/grass_top.png");
+  s_TextureArray->addTexture("assets/textures/voxel-pack/PNG/Tiles/dirt_grass.png");
+  s_TextureArray->addTexture("assets/textures/voxel-pack/PNG/Tiles/dirt.png");
 }
 
 void ChunkRenderer::BeginScene(const Engine::Camera& camera)
@@ -42,10 +42,7 @@ void ChunkRenderer::DrawChunk(const Chunk* chunk)
 {
   uint32_t meshIndexCount = 6 * static_cast<uint32_t>(chunk->getMesh().size()) / 4;
 
-  if (meshIndexCount == 0)
-    return; // Nothing to draw
-
   chunk->bindBuffers();
-  s_BlockFaceShader->setFloat3("u_ChunkPosition", chunk->position());
+  s_BlockFaceShader->setFloat3("u_ChunkPosition", chunk->anchorPoint());
   Engine::RenderCommand::DrawIndexed(chunk->getVertexArray(), meshIndexCount);
 }

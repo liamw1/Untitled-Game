@@ -11,6 +11,8 @@ Chunk::Chunk()
 Chunk::Chunk(const ChunkIndex& chunkIndex)
   : m_ChunkIndex(chunkIndex)
 {
+  if (s_MeshIndexBuffer == nullptr)
+    InitializeIndexBuffer();
 }
 
 Chunk::~Chunk()
@@ -21,7 +23,6 @@ Chunk::~Chunk()
 Chunk::Chunk(Chunk&& other) noexcept
   : m_ChunkIndex(std::move(other.m_ChunkIndex)),
     m_ChunkComposition(std::move(other.m_ChunkComposition)),
-    m_Empty(std::move(other.m_Empty)),
     m_FaceIsOpaque(std::move(other.m_FaceIsOpaque)),
     m_MeshState(std::move(other.m_MeshState)),
     m_Mesh(std::move(other.m_Mesh)),
@@ -42,7 +43,6 @@ Chunk& Chunk::operator=(Chunk&& other) noexcept
   {
     m_ChunkIndex = std::move(other.m_ChunkIndex);
     m_ChunkComposition = std::move(other.m_ChunkComposition);
-    m_Empty = std::move(other.m_Empty);
     m_FaceIsOpaque = std::move(other.m_FaceIsOpaque);
     m_MeshState = std::move(other.m_MeshState);
     m_Mesh = std::move(other.m_Mesh);
@@ -61,34 +61,40 @@ Chunk& Chunk::operator=(Chunk&& other) noexcept
 
 void Chunk::load(HeightMap heightMap)
 {
+  const float chunkHeight = anchorPoint()[2];
   m_ChunkComposition = Engine::CreateUnique<BlockType[]>(s_ChunkTotalBlocks);
 
-  const float chunkHeight = position()[2];
+  bool isEmpty = true;
   for (uint8_t i = 0; i < s_ChunkSize; ++i)
     for (uint8_t j = 0; j < s_ChunkSize; ++j)
     {
       const float& terrainHeight = heightMap.terrainHeights[i][j];
 
-      if (terrainHeight <= chunkHeight)
+      if (terrainHeight < chunkHeight)
       {
         for (uint8_t k = 0; k < s_ChunkSize; ++k)
           setBlockType(i, j, k, BlockType::Air);
       }
-      else if (terrainHeight >= chunkHeight + s_ChunkLength)
+      else if (terrainHeight > chunkHeight + s_ChunkLength + Block::Length())
       {
         for (uint8_t k = 0; k < s_ChunkSize; ++k)
-          setBlockType(i, j, k, BlockType::Grass);
-        m_Empty = false;
+          setBlockType(i, j, k, BlockType::Dirt);
+        isEmpty = false;
       }
       else
       {
         const int terrainHeightIndex = static_cast<int>((terrainHeight - chunkHeight) / Block::Length());
         for (uint8_t k = 0; k < s_ChunkSize; ++k)
         {
-          if (k < terrainHeightIndex)
+          if (k == terrainHeightIndex)
           {
             setBlockType(i, j, k, BlockType::Grass);
-            m_Empty = false;
+            isEmpty = false;
+          }
+          else if (k < terrainHeightIndex)
+          {
+            setBlockType(i, j, k, BlockType::Dirt);
+            isEmpty = false;
           }
           else
             setBlockType(i, j, k, BlockType::Air);
@@ -96,7 +102,7 @@ void Chunk::load(HeightMap heightMap)
       }
     }
 
-  if (m_Empty)
+  if (isEmpty)
   {
     m_ChunkComposition.reset();
     for (BlockFace face : BlockFaceIterator())
@@ -124,7 +130,7 @@ void Chunk::load(HeightMap heightMap)
 void Chunk::generateMesh()
 {
   // If chunk is empty, no need to generate mesh
-  if (m_Empty)
+  if (isEmpty())
     return;
 
   m_Mesh.clear();
@@ -156,12 +162,15 @@ void Chunk::generateMesh()
                 vertexData += static_cast<uint8_t>(face) << 18;
                 vertexData += v << 21;
 
-                switch (face)
-                {
-                case BlockFace::Top:    vertexData += 0Ui8 << 23;  break;
-                case BlockFace::Bottom: vertexData += 2Ui8 << 23;  break;
-                default:                vertexData += 1Ui8 << 23;
-                }
+                if (getBlockType(i, j, k) == BlockType::Grass)
+                  switch (face)
+                  {
+                    case BlockFace::Top:    vertexData += 0Ui8 << 23;  break;
+                    case BlockFace::Bottom: vertexData += 2Ui8 << 23;  break;
+                    default:                vertexData += 1Ui8 << 23;
+                  }
+                else
+                  vertexData += 2Ui8 << 23;
 
                 m_Mesh.push_back(vertexData);
               }
@@ -180,7 +189,6 @@ void Chunk::update()
 
 void Chunk::bindBuffers() const
 {
-  m_MeshVertexBuffer->bind();
   m_MeshVertexArray->bind();
 }
 
@@ -188,7 +196,6 @@ void Chunk::reset()
 {
   // Reset data to default values
   m_ChunkComposition.reset();
-  m_Empty = true;
   m_FaceIsOpaque = { true, true, true, true, true, true };
   m_MeshState = MeshState::NotGenerated;
   m_Mesh.clear();
@@ -200,6 +207,16 @@ void Chunk::reset()
   m_Neighbors = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
 }
 
+BlockType Chunk::getBlockType(uint8_t i, uint8_t j, uint8_t k) const
+{
+  static constexpr uint64_t chunkSize = static_cast<uint64_t>(s_ChunkSize);
+
+  EN_ASSERT(m_ChunkComposition != nullptr, "Chunk data has not yet been allocated!");
+  EN_ASSERT(i < chunkSize&& j < chunkSize&& k < chunkSize, "Index is out of bounds!");
+
+  return m_ChunkComposition[i * chunkSize * chunkSize + j * chunkSize + k];
+}
+
 void Chunk::setBlockType(uint8_t i, uint8_t j, uint8_t k, BlockType blockType)
 {
   static constexpr uint64_t chunkSize = static_cast<uint64_t>(s_ChunkSize);
@@ -208,23 +225,6 @@ void Chunk::setBlockType(uint8_t i, uint8_t j, uint8_t k, BlockType blockType)
   EN_ASSERT(i < chunkSize && j < chunkSize && k < chunkSize, "Index is out of bounds!");
 
   m_ChunkComposition[i * chunkSize * chunkSize + j * chunkSize + k] = blockType;
-}
-
-BlockType Chunk::getBlockType(uint8_t i, uint8_t j, uint8_t k) const
-{
-  static constexpr uint64_t chunkSize = static_cast<uint64_t>(s_ChunkSize);
-
-  EN_ASSERT(m_ChunkComposition != nullptr, "Chunk data has not yet been allocated!");
-  EN_ASSERT(i < chunkSize && j < chunkSize && k < chunkSize, "Index is out of bounds!");
-
-  return m_ChunkComposition[i * chunkSize * chunkSize + j * chunkSize + k];
-}
-
-glm::vec3 Chunk::blockPosition(uint8_t i, uint8_t j, uint8_t k) const
-{
-  return glm::vec3(m_ChunkIndex[0] * s_ChunkLength + i * Block::Length(),
-                   m_ChunkIndex[1] * s_ChunkLength + j * Block::Length(),
-                   m_ChunkIndex[2] * s_ChunkLength + k * Block::Length());
 }
 
 void Chunk::setNeighbor(BlockFace face, Chunk* chunk)

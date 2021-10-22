@@ -6,8 +6,8 @@ using ChunkIndex = std::array<int64_t, 3>;
 
 struct HeightMap
 {
-  int64_t chunkX;
-  int64_t chunkY;
+  int64_t chunkI;
+  int64_t chunkJ;
   std::array<std::array<float, 32>, 32> terrainHeights;
 };
 
@@ -24,27 +24,83 @@ public:
   Chunk(Chunk&& other) noexcept;
   Chunk& operator=(Chunk&& other) noexcept;
 
+  BlockType getBlockType(uint8_t i, uint8_t j, uint8_t k) const;
+  void setBlockType(uint8_t i, uint8_t j, uint8_t k, BlockType blockType);
+
+  /*
+    Creates and fills composition array with blocks based on the given height map.
+    Deletes composition array if all blocks are air.
+  */
   void load(HeightMap heightMap);
+
+  /*
+    Generates simplistic mesh based on chunk compostion.
+    Block faces covered by opaque blocks will not be added to mesh.
+  */
   void generateMesh();
+
+  /*
+    Applies necessary updates to chunk.  
+    Chunk may be re-meshed, so call conservatively.
+  */
   void update();
+
+  /*
+    Binds buffers necessary for rendering.
+  */
   void bindBuffers() const;
+
+  /*
+    Restors chunk to default state.
+  */
   void reset();
 
+  /*
+    \returns The chunk's index, which identifies it uniquely.
+  */
   const ChunkIndex& getIndex() const { return m_ChunkIndex; }
-  glm::vec3 position() const { return glm::vec3(m_ChunkIndex[0] * Length(), m_ChunkIndex[1] * Length(), m_ChunkIndex[2] * Length()); }
-  glm::vec3 center() const { return glm::vec3(m_ChunkIndex[0] * 1.5f * Length(), m_ChunkIndex[1] * 1.5f * Length(), m_ChunkIndex[2] * 1.5f * Length()); }
 
-  void setBlockType(uint8_t i, uint8_t j, uint8_t k, BlockType blockType);
-  BlockType getBlockType(uint8_t i, uint8_t j, uint8_t k) const;
-  glm::vec3 blockPosition(uint8_t i, uint8_t j, uint8_t k) const;
+  /*
+    A chunk's anchor point is its bottom southeast vertex.
 
+    Useful property:
+    If the anchor point is denoted by A, then for any point
+    X within the chunk, A_i <= X_i.
+  */
+  glm::vec3 anchorPoint() const { return glm::vec3(m_ChunkIndex[0] * Length(), m_ChunkIndex[1] * Length(), m_ChunkIndex[2] * Length()); }
+
+  /*
+    \returns The chunk's geometric center.
+  */
+  glm::vec3 center() const { return anchorPoint() + Length() / 2; }
+
+  /*
+    \returns A pointer to the neighboring chunk in the specified direction.
+             Will return nullptr if neighbor has not been loaded yet. 
+    
+    Neighbor is allowed to be modified, use this power responsibly!
+  */
   Chunk* const getNeighbor(BlockFace face) const { return m_Neighbors[static_cast<uint8_t>(face)]; }
+
+  /*
+    Sets neighboring chunk in the specified direction.
+    Upon use, a flag is set to re-mesh chunk when appropriate.
+  */
   void setNeighbor(BlockFace face, Chunk* chunk);
 
+  /*
+    \returns A vector of compressed vertex data that represents the chunk's mesh.
+
+    Compresed format is follows,
+     bits 0-17:  Relative position of vertex within chunk (3-comps, 6 bits each)
+     bits 18-20: Normal direction of quad (follows BlockFace convention)
+     bits 21-22: Texture coordinate index (see BlockFace.glsl for details)
+     bits 23-31: Texure ID
+  */
   const std::vector<uint32_t>& getMesh() const { return m_Mesh; }
   const Engine::Shared<Engine::VertexArray>& getVertexArray() const { return m_MeshVertexArray; }
 
-  bool isEmpty() const { return m_Empty; }
+  bool isEmpty() const { return m_ChunkComposition == nullptr; }
   bool isFaceOpaque(BlockFace face) const { return m_FaceIsOpaque[static_cast<uint8_t>(face)]; }
 
   static constexpr uint8_t Size() { return s_ChunkSize; }
@@ -71,7 +127,6 @@ private:
   // Position and composition
   ChunkIndex m_ChunkIndex;
   Engine::Unique<BlockType[]> m_ChunkComposition = nullptr;
-  bool m_Empty = true;
   std::array<bool, 6> m_FaceIsOpaque = { true, true, true, true, true, true };
 
   // Mesh data
@@ -89,6 +144,14 @@ private:
   bool isBlockNeighborInAnotherChunk(uint8_t i, uint8_t j, uint8_t k, BlockFace face);
   bool isBlockNeighborTransparent(uint8_t i, uint8_t j, uint8_t k, BlockFace face);
 
+  /*
+    For updating neighbors if chunk moves to a different
+    location in memory.
+  */
   void sendAddressUpdate();
+
+  /*
+    Severs communication with neighboring chunks.
+  */
   void excise();
 };

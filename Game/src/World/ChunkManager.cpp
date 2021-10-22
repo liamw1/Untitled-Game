@@ -1,6 +1,7 @@
 #include "GMpch.h"
 #include "ChunkManager.h"
 #include "ChunkRenderer.h"
+#include <glm/gtc/matrix_access.hpp>
 
 ChunkManager::ChunkManager()
 {
@@ -33,8 +34,8 @@ void ChunkManager::clean()
   {
     const HeightMap& heightMap = pair.second;
 
-    if (isOutOfRange({ heightMap.chunkX, heightMap.chunkY, m_PlayerChunkIndex[2] }))
-      heightMapsToRemove.push_back(createHeightMapKey(heightMap.chunkX, heightMap.chunkY));
+    if (isOutOfRange({ heightMap.chunkI, heightMap.chunkJ, m_PlayerChunkIndex[2] }))
+      heightMapsToRemove.push_back(createHeightMapKey(heightMap.chunkI, heightMap.chunkJ));
   }
   for (int i = 0; i < heightMapsToRemove.size(); ++i)
     m_HeightMaps.erase(heightMapsToRemove[i]);
@@ -43,6 +44,18 @@ void ChunkManager::clean()
 void ChunkManager::render(const Engine::Camera& playerCamera)
 {
   EN_PROFILE_FUNCTION();
+  
+  std::array<glm::vec4, 6> frustumPlanes = calculateViewFrustumPlanes(playerCamera);
+
+  // Shift each plane by an amount equal to radius of a sphere that contains chunk
+  static constexpr float sqrt3 = 1.732050807568877f;
+  static constexpr float chunkSphereRadius = sqrt3 * Chunk::Length() / 2;
+  for (int planeID = 0; planeID < 6; ++planeID)
+  {
+    const glm::vec3 planeNormal = glm::vec3(frustumPlanes[planeID]);
+
+    frustumPlanes[planeID].w += chunkSphereRadius * glm::dot(planeNormal, planeNormal);
+  }
 
   for (auto& pair : m_RenderableChunks)
   {
@@ -52,7 +65,7 @@ void ChunkManager::render(const Engine::Camera& playerCamera)
     {
       chunk->update();
 
-      if (isInViewFrustum(chunk, playerCamera))
+      if (isInFrustum(chunk->center(), frustumPlanes))
         ChunkRenderer::DrawChunk(chunk);
     }
   }
@@ -176,9 +189,9 @@ int64_t ChunkManager::createKey(const ChunkIndex& chunkIndex) const
   return chunkIndex[0] % bit(10) + bit(10) * (chunkIndex[1] % bit(10)) + bit(20) * (chunkIndex[2] % bit(10));
 }
 
-int64_t ChunkManager::createHeightMapKey(int64_t chunkX, int64_t chunkY) const
+int64_t ChunkManager::createHeightMapKey(int64_t chunkI, int64_t chunkJ) const
 {
-  return chunkX % bit(10) + bit(10) * (chunkY % bit(10));
+  return chunkI % bit(10) + bit(10) * (chunkJ % bit(10));
 }
 
 bool ChunkManager::isOutOfRange(const ChunkIndex& chunkIndex) const
@@ -205,43 +218,44 @@ bool ChunkManager::isInRenderRange(const ChunkIndex& chunkIndex) const
   return true;
 }
 
-bool ChunkManager::isInViewFrustum(const Chunk* chunk, const Engine::Camera& playerCamera) const
+std::array<glm::vec4, 6> ChunkManager::calculateViewFrustumPlanes(const Engine::Camera& playerCamera) const
 {
-  /*
-    Right now we check that each corner is inside frustum, but really we should check whether
-    each chunk face collides with any of the frustum planes.  Current method results in 
-    chunks not being rendered on screen when player is close to them.
-  */
+  const glm::mat4& viewProj = playerCamera.getViewProjectionMatrix();
+  const glm::vec4& row1 = glm::row(viewProj, 0);
+  const glm::vec4& row2 = glm::row(viewProj, 1);
+  const glm::vec4& row3 = glm::row(viewProj, 2);
+  const glm::vec4& row4 = glm::row(viewProj, 3);
 
-  static constexpr glm::vec3 cornerOffsets[8] = { glm::vec3(0.0f,            0.0f,            0.0f           ),
-                                                  glm::vec3(Chunk::Length(), 0.0f,            0.0f           ),
-                                                  glm::vec3(0.0f,            Chunk::Length(), 0.0f           ),
-                                                  glm::vec3(Chunk::Length(), Chunk::Length(), 0.0f           ),
-                                                  glm::vec3(0.0f,            0.0f,            Chunk::Length()),
-                                                  glm::vec3(Chunk::Length(), 0.0f,            Chunk::Length()),
-                                                  glm::vec3(0.0f,            Chunk::Length(), Chunk::Length()),
-                                                  glm::vec3(Chunk::Length(), Chunk::Length(), Chunk::Length()) };
+  std::array<glm::vec4, 6> frustumPlanes{};
+  frustumPlanes[static_cast<uint8_t>(FrustumPlane::Left)] = row4 + row1;
+  frustumPlanes[static_cast<uint8_t>(FrustumPlane::Right)] = row4 - row1;
+  frustumPlanes[static_cast<uint8_t>(FrustumPlane::Bottom)] = row4 + row2;
+  frustumPlanes[static_cast<uint8_t>(FrustumPlane::Top)] = row4 - row2;
+  frustumPlanes[static_cast<uint8_t>(FrustumPlane::Near)] = row4 + row3;
+  frustumPlanes[static_cast<uint8_t>(FrustumPlane::Far)] = row4 - row3;
 
-  for (int i = 0; i < 8; ++i)
-  {
-    glm::vec4 vPrime = playerCamera.getProjectionMatrix() * playerCamera.getViewMatrix() * glm::vec4(chunk->position() + cornerOffsets[i], 1.0f);
-
-    if (abs(vPrime[0]) < vPrime[3] && abs(vPrime[1]) < vPrime[3] && abs(vPrime[2]) < vPrime[3])
-      return true;
-  }
-  return false;
+  return frustumPlanes;
 }
 
-HeightMap ChunkManager::generateHeightMap(int64_t chunkX, int64_t chunkY)
+bool ChunkManager::isInFrustum(const glm::vec3& point, const std::array<glm::vec4, 6>& frustumPlanes) const
+{
+  for (uint8_t planeID = 0; planeID < 5; ++planeID) // Skip far plane
+    if (glm::dot(glm::vec4(point, 1.0f), frustumPlanes[planeID]) < 0)
+      return false;
+
+  return true;
+}
+
+HeightMap ChunkManager::generateHeightMap(int64_t chunkI, int64_t chunkJ)
 {
   HeightMap heightMap{};
-  heightMap.chunkX = chunkX;
-  heightMap.chunkY = chunkY;
+  heightMap.chunkI = chunkI;
+  heightMap.chunkJ = chunkJ;
 
   for (uint8_t i = 0; i < Chunk::Size(); ++i)
     for (uint8_t j = 0; j < Chunk::Size(); ++j)
     {
-      glm::vec2 blockXY = glm::vec2(chunkX * Chunk::Length() + i * Block::Length(), chunkY * Chunk::Length() + j * Block::Length());
+      glm::vec2 blockXY = glm::vec2(chunkI * Chunk::Length() + i * Block::Length(), chunkJ * Chunk::Length() + j * Block::Length());
       float terrainHeight = 30.0f * glm::simplex(blockXY / 256.0f) + 10.0f * glm::simplex(blockXY / 64.0f) + glm::simplex(blockXY / 8.0f);
       heightMap.terrainHeights[i][j] = terrainHeight;
     }

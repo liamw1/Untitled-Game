@@ -52,7 +52,7 @@ namespace Engine
 
 // ==================== Enabling Bitmasking for Enum Classes ==================== //
 // Code borrowed from: https://wiggling-bits.net/using-enum-classes-as-type-safe-bitmasks/
-#define ENABLE_BITMASK_OPERATORS(x)   \
+#define EN_ENABLE_BITMASK_OPERATORS(x)\
 template<>                            \
 struct EnableBitMaskOperators<x>      \
 {                                     \
@@ -80,3 +80,35 @@ operator|(Enum enumA, Enum enumB)
   return static_cast<Enum>(static_cast<std::underlying_type<Enum>::type>(enumA) |
     static_cast<std::underlying_type<Enum>::type>(enumB));
 }
+
+// ==================== Enabling Iteration for Enum Classes ==================== //
+// Code borrowed from: https://stackoverflow.com/questions/261963/how-can-i-iterate-over-an-enum
+template<typename Enum, Enum beginEnum, Enum endEnum>
+class Iterator
+{
+  using val_t = typename std::underlying_type<Enum>::type;
+
+public:
+  Iterator(Enum valEnum)
+    : value(static_cast<val_t>(valEnum)) {}
+  Iterator()
+    : value(static_cast<val_t>(beginEnum)) {}
+
+  Iterator& operator++()
+  {
+    ++value;
+    return *this;
+  }
+  Enum operator*() { return static_cast<Enum>(value); }
+  bool operator!=(const Iterator& other) { return value != other.value; }
+
+  Iterator begin() { return *this; }
+  Iterator end()
+  {
+    static const Iterator endIter = ++Iterator(endEnum);
+    return endIter;
+  }
+
+private:
+  val_t value;
+};

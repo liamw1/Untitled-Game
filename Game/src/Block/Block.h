@@ -6,6 +6,7 @@ enum class BlockFace : uint8_t
   East, West, North, South, Top, Bottom,
   First = East, Last = Bottom
 };
+using BlockFaceIterator = Iterator<BlockFace, BlockFace::First, BlockFace::Last>;
 
 /*
   \returns The face directly opposite the given face.
@@ -16,33 +17,6 @@ inline BlockFace operator!(const BlockFace& face)
   BlockFace oppFace = static_cast<BlockFace>(faceVal % 2 == 0 ? faceVal + 1 : faceVal - 1);
   return oppFace;
 }
-
-class BlockFaceIterator
-{
-public:
-  BlockFaceIterator(const BlockFace face)
-    : value(static_cast<uint8_t>(face)) {}
-  BlockFaceIterator()
-    : value(static_cast<uint8_t>(BlockFace::First)) {}
-
-  BlockFaceIterator& operator++()
-  {
-    ++value;
-    return *this;
-  }
-  BlockFace operator*() { return static_cast<BlockFace>(value); }
-  bool operator!=(const BlockFaceIterator& iter) { return value != iter.value; }
-
-  BlockFaceIterator begin() { return *this; }
-  BlockFaceIterator end()
-  {
-    static const BlockFaceIterator endIter = ++BlockFaceIterator(BlockFace::Last);
-    return endIter;
-  }
-
-private:
-  uint8_t value;
-};
 
 class Block
 {

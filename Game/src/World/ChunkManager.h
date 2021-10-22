@@ -7,11 +7,25 @@ class ChunkManager
 public:
   ChunkManager();
 
-  void updatePlayerChunk(const ChunkIndex& playerChunkIndex) { m_PlayerChunkIndex = playerChunkIndex; };
-
+  /*
+    Unloads chunks on boundary as they go out of unload range.
+  */
   void clean();
+
+  /*
+    Decides which chunks to submit for rendering.
+  */
   void render(const Engine::Camera& playerCamera);
+
+  /*
+    Loads new chunks inside load range.
+  */
   bool loadNewChunks(uint32_t maxNewChunks);
+
+  /*
+    For updating the chunk manager of what chunk the player is currently inside.
+  */
+  void updatePlayerChunk(const ChunkIndex& playerChunkIndex) { m_PlayerChunkIndex = playerChunkIndex; };
 
 private:
   enum class MapType : uint8_t
@@ -22,32 +36,13 @@ private:
 
     First = Boundary, Last = Renderable
   };
+  using MapTypeIterator = Iterator<MapType, MapType::First, MapType::Last>;
 
-  class MapTypeIterator
+  enum class FrustumPlane : uint8_t
   {
-  public:
-    MapTypeIterator(const MapType mapType)
-      : value(static_cast<uint8_t>(mapType)) {}
-    MapTypeIterator()
-      : value(static_cast<uint8_t>(MapType::First)) {}
-
-    MapTypeIterator& operator++()
-    {
-      ++value;
-      return *this;
-    }
-    MapType operator*() { return static_cast<MapType>(value); }
-    bool operator!=(const MapTypeIterator& iter) { return value != iter.value; }
-
-    MapTypeIterator begin() { return *this; }
-    MapTypeIterator end()
-    {
-      static const MapTypeIterator endIter = ++MapTypeIterator(MapType::Last);
-      return endIter;
-    }
-
-  private:
-    uint8_t value;
+    Left, Right,
+    Bottom, Top,
+    Near, Far
   };
 
   static constexpr int s_RenderDistance = 16;
@@ -71,19 +66,61 @@ private:
   // Player data
   ChunkIndex m_PlayerChunkIndex{};
 
+  /*
+    Generates a (nearly) unique key for chunk hash maps.
+  */
   int64_t createKey(const ChunkIndex& chunkIndex) const;
-  int64_t createHeightMapKey(int64_t chunkX, int64_t chunkY) const;
+  int64_t createHeightMapKey(int64_t chunkI, int64_t chunkJ) const;
 
   bool isOutOfRange(const ChunkIndex& chunkIndex) const;
   bool isInLoadRange(const ChunkIndex& chunkIndex) const;
   bool isInRenderRange(const ChunkIndex& chunkIndex) const;
-  bool isInViewFrustum(const Chunk* chunk, const Engine::Camera& playerCamera) const;
 
-  HeightMap generateHeightMap(int64_t chunkX, int64_t chunkY);
+  /*
+    \returns An array of vectors representing the view frustum planes.
+             For a plane of the form Ax + By + Cz + D = 0, 
+             its corresponding vector is {A, B, C, D}.
+  */
+  std::array<glm::vec4, 6> calculateViewFrustumPlanes(const Engine::Camera& playerCamera) const;
 
+  /*
+    \returns Whether the given point is inside the given set of frustum planes.
+             Could be any frustum, not necessarily the view frustum.
+  */
+  bool isInFrustum(const glm::vec3& point, const std::array<glm::vec4, 6>& frustumPlanes) const;
+
+  /*
+    Generates a chunk-sized section of terrain heights using simplex noise.
+  */
+  HeightMap generateHeightMap(int64_t chunkI, int64_t chunkJ);
+
+  /*
+    Searches for open chunk slot and loads chunk at the given index.
+    New chunk is always categorized as a boundary chunk.
+
+    \returns A pointer to the newly created chunk.
+  */
   Chunk* loadNewChunk(const ChunkIndex& chunkIndex);
+
+  /*
+    Searches for chunk, removes it from whatever map it is currently in,
+    unloads it, and frees the slot it was occupying.
+
+    The neighbors of the removed chunk are re-categorized as boundary chunks.
+  */
   void unloadChunk(Chunk* chunk);
 
+  /*
+    Adds chunk pointer to the specified map.
+    Chunk should be in any other map before calling this function.
+  */
   void addToMap(Chunk* chunk, MapType mapType);
+
+  /*
+    Moves chunk pointer from one map to another.
+
+    \param source      The map the chunk is currently inside.
+    \param destination The map the chunk will placed into.
+  */
   void moveToMap(Chunk* chunk, MapType source, MapType destination);
 };
