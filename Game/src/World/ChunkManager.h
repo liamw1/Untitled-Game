@@ -19,6 +19,8 @@ public:
 
   /*
     Loads new chunks inside load range.
+
+    \returns True if at least one chunk has been loaded.
   */
   bool loadNewChunks(uint32_t maxNewChunks);
 
@@ -84,7 +86,7 @@ private:
   std::array<glm::vec4, 6> calculateViewFrustumPlanes(const Engine::Camera& playerCamera) const;
 
   /*
-    \returns Whether the given point is inside the given set of frustum planes.
+    \returns True if the given point is inside the given set of frustum planes.
              Could be any frustum, not necessarily the view frustum.
   */
   bool isInFrustum(const glm::vec3& point, const std::array<glm::vec4, 6>& frustumPlanes) const;
@@ -104,7 +106,8 @@ private:
 
   /*
     Searches for chunk, removes it from whatever map it is currently in,
-    unloads it, and frees the slot it was occupying.
+    unloads it, and frees the slot it was occupying.  Only bondary chunks
+    can be unloaded.
 
     The neighbors of the removed chunk are re-categorized as boundary chunks.
   */

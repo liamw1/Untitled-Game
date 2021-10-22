@@ -16,6 +16,14 @@ void ChunkManager::clean()
 {
   EN_PROFILE_FUNCTION();
 
+  // If no boundary chunks exist, move chunks to boundary chunk map
+  if (m_BoundaryChunks.size() == 0)
+    for (auto& pair : m_RenderableChunks)
+    {
+      Chunk* chunk = pair.second;
+      moveToMap(chunk, MapType::Renderable, MapType::Boundary);
+    }
+
   // Destroy boundary chunks outside of unload range
   std::vector<Chunk*> chunksToRemove{};
   for (auto& pair : m_BoundaryChunks)
@@ -78,16 +86,12 @@ bool ChunkManager::loadNewChunks(uint32_t maxNewChunks)
   static constexpr int8_t normals[6][3] = { { 1, 0, 0}, { -1, 0, 0}, { 0, 1, 0}, { 0, -1, 0}, { 0, 0, 1}, { 0, 0, -1} };
                                        //      East         West        North       South         Top        Bottom
 
-  // Load First chunk if none exist
-  bool noChunksLoaded = true;
-  for (MapType mapType : MapTypeIterator())
-  {
-    const uint8_t mapTypeID = static_cast<uint8_t>(mapType);
+  // If there are no open chunk slots, don't load any more
+  if (m_OpenChunkSlots.size() == 0)
+    return false;
 
-    if (m_Chunks[mapTypeID].size() > 0)
-      noChunksLoaded = false;
-  }
-  if (noChunksLoaded)
+  // Load First chunk if none exist
+  if (m_OpenChunkSlots.size() == s_TotalPossibleChunks)
     loadNewChunk(m_PlayerChunkIndex);
 
   // Find new chunks to generate
@@ -179,6 +183,10 @@ bool ChunkManager::loadNewChunks(uint32_t maxNewChunks)
         }
       }
     }
+
+    // If there are no open chunk slots, don't load any more
+    if (m_OpenChunkSlots.size() == 0)
+      break;
   }
 
   return newChunks.size() > 0;
@@ -221,10 +229,10 @@ bool ChunkManager::isInRenderRange(const ChunkIndex& chunkIndex) const
 std::array<glm::vec4, 6> ChunkManager::calculateViewFrustumPlanes(const Engine::Camera& playerCamera) const
 {
   const glm::mat4& viewProj = playerCamera.getViewProjectionMatrix();
-  const glm::vec4& row1 = glm::row(viewProj, 0);
-  const glm::vec4& row2 = glm::row(viewProj, 1);
-  const glm::vec4& row3 = glm::row(viewProj, 2);
-  const glm::vec4& row4 = glm::row(viewProj, 3);
+  const glm::vec4 row1 = glm::row(viewProj, 0);
+  const glm::vec4 row2 = glm::row(viewProj, 1);
+  const glm::vec4 row3 = glm::row(viewProj, 2);
+  const glm::vec4 row4 = glm::row(viewProj, 3);
 
   std::array<glm::vec4, 6> frustumPlanes{};
   frustumPlanes[static_cast<uint8_t>(FrustumPlane::Left)] = row4 + row1;

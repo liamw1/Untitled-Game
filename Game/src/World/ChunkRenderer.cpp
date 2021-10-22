@@ -42,6 +42,9 @@ void ChunkRenderer::DrawChunk(const Chunk* chunk)
 {
   uint32_t meshIndexCount = 6 * static_cast<uint32_t>(chunk->getMesh().size()) / 4;
 
+  if (meshIndexCount == 0)
+    return; // Nothing to draw
+
   chunk->bindBuffers();
   s_BlockFaceShader->setFloat3("u_ChunkPosition", chunk->anchorPoint());
   Engine::RenderCommand::DrawIndexed(chunk->getVertexArray(), meshIndexCount);
