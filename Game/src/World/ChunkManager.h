@@ -79,6 +79,9 @@ private:
   bool isInRenderRange(const ChunkIndex& chunkIndex) const;
 
   /*
+    Uses algorithm described in 
+    https://www.gamedevs.org/uploads/fast-extraction-viewing-frustum-planes-from-world-view-projection-matrix.pdf
+    
     \returns An array of vectors representing the view frustum planes.
              For a plane of the form Ax + By + Cz + D = 0, 
              its corresponding vector is {A, B, C, D}.
