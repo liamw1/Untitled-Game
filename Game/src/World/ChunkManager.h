@@ -27,7 +27,9 @@ public:
   /*
     For updating the chunk manager of what chunk the player is currently inside.
   */
-  void updatePlayerChunk(const ChunkIndex& playerChunkIndex) { m_PlayerChunkIndex = playerChunkIndex; };
+  void updatePlayerChunk(const glm::vec3& playerPosition) { m_PlayerChunkIndex = Chunk::ChunkIndexFromPos(playerPosition); }
+
+  Chunk* findChunk(const ChunkIndex& chunkIndex) const;
 
 private:
   enum class MapType : uint8_t
@@ -47,7 +49,7 @@ private:
     Near, Far
   };
 
-  static constexpr int s_RenderDistance = 16;
+  static constexpr int s_RenderDistance = 4;
   static constexpr int s_LoadDistance = s_RenderDistance + 2;
   static constexpr int s_UnloadDistance = s_LoadDistance;
   static constexpr int s_TotalPossibleChunks = (2 * s_UnloadDistance + 1) * (2 * s_UnloadDistance + 1) * (2 * s_UnloadDistance + 1);

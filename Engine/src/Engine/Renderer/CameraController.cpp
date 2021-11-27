@@ -16,37 +16,40 @@ namespace Engine
       m_Camera(m_Fov, m_AspectRatio, m_NearPlane, m_FarPlane),
       m_LastMousePosition(Application::Get().getWindow().getWidth() / 2, Application::Get().getWindow().getHeight() / 2)
   {
-    setMouseState(isMouseEnabled);
+    setMouseState(m_IsMouseEnabled);
   }
 
   void CameraController::onUpdate(std::chrono::duration<float> timestep)
   {
-    const float dt = timestep.count();  // Time between frames in seconds
+    if (m_FreeCamEnabled)
+    {
+      const float dt = timestep.count();  // Time between frames in seconds
 
-    if (Input::IsKeyPressed(Key::A))
-    {
-      m_CameraPosition.x += sinf(yaw) * m_CameraTranslationSpeed * dt;
-      m_CameraPosition.y += cosf(yaw) * m_CameraTranslationSpeed * dt;
+      if (Input::IsKeyPressed(Key::A))
+      {
+        m_CameraPosition.x += sinf(m_Yaw) * m_CameraTranslationSpeed * dt;
+        m_CameraPosition.y += cosf(m_Yaw) * m_CameraTranslationSpeed * dt;
+      }
+      if (Input::IsKeyPressed(Key::D))
+      {
+        m_CameraPosition.x -= sinf(m_Yaw) * m_CameraTranslationSpeed * dt;
+        m_CameraPosition.y -= cosf(m_Yaw) * m_CameraTranslationSpeed * dt;
+      }
+      if (Input::IsKeyPressed(Key::W))
+      {
+        m_CameraPosition.x += cosf(m_Yaw) * m_CameraTranslationSpeed * dt;
+        m_CameraPosition.y -= sinf(m_Yaw) * m_CameraTranslationSpeed * dt;
+      }
+      if (Input::IsKeyPressed(Key::S))
+      {
+        m_CameraPosition.x -= cosf(m_Yaw) * m_CameraTranslationSpeed * dt;
+        m_CameraPosition.y += sinf(m_Yaw) * m_CameraTranslationSpeed * dt;
+      }
+      if (Input::IsKeyPressed(Key::Space))
+        m_CameraPosition.z += m_CameraTranslationSpeed * dt;
+      if (Input::IsKeyPressed(Key::LeftShift))
+        m_CameraPosition.z -= m_CameraTranslationSpeed * dt;
     }
-    if (Input::IsKeyPressed(Key::D))
-    {
-      m_CameraPosition.x -= sinf(yaw) * m_CameraTranslationSpeed * dt;
-      m_CameraPosition.y -= cosf(yaw) * m_CameraTranslationSpeed * dt;
-    }
-    if (Input::IsKeyPressed(Key::W))
-    {
-      m_CameraPosition.x += cosf(yaw) * m_CameraTranslationSpeed * dt;
-      m_CameraPosition.y -= sinf(yaw) * m_CameraTranslationSpeed * dt;
-    }
-    if (Input::IsKeyPressed(Key::S))
-    {
-      m_CameraPosition.x -= cosf(yaw) * m_CameraTranslationSpeed * dt;
-      m_CameraPosition.y += sinf(yaw) * m_CameraTranslationSpeed * dt;
-    }
-    if (Input::IsKeyPressed(Key::Space))
-      m_CameraPosition.z += m_CameraTranslationSpeed * dt;
-    if (Input::IsKeyPressed(Key::LeftShift))
-      m_CameraPosition.z -= m_CameraTranslationSpeed * dt;
 
     m_Camera.setPosition(m_CameraPosition);
   }
@@ -63,16 +66,16 @@ namespace Engine
   bool CameraController::onMouseMove(MouseMoveEvent& event)
   {
     // Adjust view angles based on mouse movement
-    yaw += (event.getX() - m_LastMousePosition.x) * m_CameraSensitivity;
-    pitch += (event.getY() - m_LastMousePosition.y) * m_CameraSensitivity;
+    m_Yaw += (event.getX() - m_LastMousePosition.x) * m_CameraSensitivity;
+    m_Pitch += (event.getY() - m_LastMousePosition.y) * m_CameraSensitivity;
 
-    pitch = std::max(pitch, s_MinPitch);
-    pitch = std::min(pitch, s_MaxPitch);
+    m_Pitch = std::max(m_Pitch, s_MinPitch);
+    m_Pitch = std::min(m_Pitch, s_MaxPitch);
 
     // Convert from spherical coordinates to Cartesian coordinates
-    m_CameraViewDirection.x = cos(yaw) * cos(pitch);
-    m_CameraViewDirection.y = -sin(yaw) * cos(pitch);
-    m_CameraViewDirection.z = -sin(pitch);
+    m_CameraViewDirection.x = cos(m_Yaw) * cos(m_Pitch);
+    m_CameraViewDirection.y = -sin(m_Yaw) * cos(m_Pitch);
+    m_CameraViewDirection.z = -sin(m_Pitch);
 
     m_Camera.setView(m_CameraPosition, m_CameraViewDirection);
 
@@ -102,9 +105,9 @@ namespace Engine
   bool CameraController::onKeyPress(KeyPressEvent& event)
   {
     if (event.getKeyCode() == Key::Escape)
-      isMouseEnabled = !isMouseEnabled;
+      m_IsMouseEnabled = !m_IsMouseEnabled;
 
-    setMouseState(isMouseEnabled);
+    setMouseState(m_IsMouseEnabled);
     return true;
   }
 

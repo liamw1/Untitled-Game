@@ -1,5 +1,5 @@
 #pragma once
-#include <cstdint>
+#include "BlockIDs.h"
 
 enum class BlockFace : uint8_t
 {
@@ -21,8 +21,26 @@ inline BlockFace operator!(const BlockFace& face)
 class Block
 {
 public:
+  static void Initialize();
+
+  static BlockTexture GetTexture(BlockType block, BlockFace face);
+  static std::string GetTexturePath(BlockTexture texture);
+
+  static bool HasTransparency(BlockType block);
+  static bool HasCollision(BlockType block);
+
   static constexpr float Length() { return s_BlockSize; }
 
 private:
   static constexpr float s_BlockSize = 0.2f;
+  static constexpr int s_MaxBlockTypes = std::numeric_limits<blockID>::max() + 1;
+  static constexpr int s_MaxBlockTextures = 6 * s_MaxBlockTypes;
+  static bool s_Initialized;
+
+  static std::array<std::array<BlockTexture, 6>, s_MaxBlockTypes> s_TexIDs;
+  static std::array<std::string, s_MaxBlockTextures> s_TexturePaths;
+
+  static void assignTextures(BlockType block, BlockTexture faceTextures);
+  static void assignTextures(BlockType block, BlockTexture topBotTextures, BlockTexture sideTextures);
+  static void assignTextures(BlockType block, BlockTexture topTexture, BlockTexture sideTextures, BlockTexture bottomTexture);
 };

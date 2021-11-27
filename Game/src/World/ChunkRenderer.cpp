@@ -20,10 +20,10 @@ void ChunkRenderer::Initialize()
   s_BlockFaceShader->bind();
   s_BlockFaceShader->setInt("u_TextureArray", s_TextureSlot);
 
-  s_TextureArray = Engine::TextureArray::Create(8, 128);
-  s_TextureArray->addTexture("assets/textures/voxel-pack/PNG/Tiles/grass_top.png");
-  s_TextureArray->addTexture("assets/textures/voxel-pack/PNG/Tiles/dirt_grass.png");
-  s_TextureArray->addTexture("assets/textures/voxel-pack/PNG/Tiles/dirt.png");
+  s_TextureArray = Engine::TextureArray::Create(16, 128);
+  Block::Initialize();
+  for (BlockTexture texture : BlockTextureIterator())
+    s_TextureArray->addTexture(Block::GetTexturePath(texture));
 }
 
 void ChunkRenderer::BeginScene(const Engine::Camera& camera)

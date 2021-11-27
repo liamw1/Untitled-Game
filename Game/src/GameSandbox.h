@@ -1,4 +1,5 @@
 #pragma once
+#include "World/World.h"
 
 class GameSandbox : public Engine::Layer
 {
@@ -14,8 +15,9 @@ public:
   void onEvent(Engine::Event& event) override;
 
 private:
-  Engine::CameraController m_CameraController;
   Engine::Shared<Engine::Texture2D> m_CheckerboardTexture;
+  World m_World;
+  Player m_Player;
 
   bool onKeyPressEvent(Engine::KeyPressEvent& event);
 };

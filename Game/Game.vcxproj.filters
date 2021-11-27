@@ -96,6 +96,7 @@
     <ClInclude Include="src\World\World.h">
       <Filter>src\World</Filter>
     </ClInclude>
+    <ClInclude Include="src\Player\Player.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="lib\llvm\include\llvm\Support\MemAlloc.cpp">
@@ -122,5 +123,7 @@
     <ClCompile Include="src\World\World.cpp">
       <Filter>src\World</Filter>
     </ClCompile>
+    <ClCompile Include="src\Block\Block.cpp" />
+    <ClCompile Include="src\Player\Player.cpp" />
   </ItemGroup>
 </Project>

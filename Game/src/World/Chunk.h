@@ -1,8 +1,8 @@
 #pragma once
 #include "Block/Block.h"
-#include "Block/BlockIDs.h"
 
 using ChunkIndex = std::array<int64_t, 3>;
+using LocalIndex = std::array<uint8_t, 3>;
 
 struct HeightMap
 {
@@ -25,7 +25,10 @@ public:
   Chunk& operator=(Chunk&& other) noexcept;
 
   BlockType getBlockType(uint8_t i, uint8_t j, uint8_t k) const;
+  BlockType getBlockType(const LocalIndex& blockIndex) const;
+  BlockType getBlockType(const glm::vec3& position) const;
   void setBlockType(uint8_t i, uint8_t j, uint8_t k, BlockType blockType);
+  void setBlockType(const LocalIndex& blockIndex, BlockType blockType);
 
   /*
     Creates and fills composition array with blocks based on the given height map.
@@ -106,7 +109,7 @@ public:
   static constexpr uint8_t Size() { return s_ChunkSize; }
   static constexpr float Length() { return s_ChunkLength; }
   static constexpr uint32_t TotalBlocks() { return s_ChunkTotalBlocks; }
-  static const ChunkIndex GetPlayerChunkIndex(const glm::vec3& playerPosition);
+  static const ChunkIndex ChunkIndexFromPos(const glm::vec3& position);
 
   static void InitializeIndexBuffer();
 
@@ -154,4 +157,6 @@ private:
     Severs communication with neighboring chunks.
   */
   void excise();
+
+  LocalIndex blockIndexFromPos(const glm::vec3& position) const;
 };

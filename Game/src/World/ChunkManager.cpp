@@ -191,6 +191,21 @@ bool ChunkManager::loadNewChunks(uint32_t maxNewChunks)
   return newChunks.size() > 0;
 }
 
+Chunk* ChunkManager::findChunk(const ChunkIndex& chunkIndex) const
+{
+  const int64_t key = createKey(chunkIndex);
+
+  for (MapType mapType : MapTypeIterator())
+  {
+    const uint8_t mapTypeID = static_cast<uint8_t>(mapType);
+
+    auto pair = m_Chunks[mapTypeID].find(key);
+    if (pair != m_Chunks[mapTypeID].end())
+      return (*pair).second;
+  }
+  return nullptr;
+}
+
 int64_t ChunkManager::createKey(const ChunkIndex& chunkIndex) const
 {
   return chunkIndex[0] % bit(10) + bit(10) * (chunkIndex[1] % bit(10)) + bit(20) * (chunkIndex[2] % bit(10));

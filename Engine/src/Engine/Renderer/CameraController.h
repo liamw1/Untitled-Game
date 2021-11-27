@@ -18,23 +18,25 @@ namespace Engine
 
     Camera& getCamera() { return m_Camera; }
     const Camera& getCamera() const { return m_Camera; }
+    const glm::vec3& getViewDirection() const { return m_CameraViewDirection; }
 
   private:
     // Camera state
-    bool isMouseEnabled = false;
+    bool m_IsMouseEnabled = false;
+    bool m_FreeCamEnabled = false;
     float m_Fov;
     float m_AspectRatio;
     float m_NearPlane;
     float m_FarPlane;
     Camera m_Camera;
 
-    radians pitch = 0.0f;   // Rotation around x-axis
-    radians yaw = -PI / 2;  // Rotation around y-axis
-    radians roll = 0.0f;    // Rotation around z-axis
+    radians m_Roll = 0.0f;    // Rotation around x-axis
+    radians m_Pitch = 0.0f;   // Rotation around y-axis
+    radians m_Yaw = -PI / 2;  // Rotation around z-axis
     glm::vec3 m_CameraPosition = { 0.0f, 0.0f, 0.0f };
     glm::vec3 m_CameraViewDirection = { 0.0f, 1.0f, 0.0f };
 
-    float m_CameraTranslationSpeed = 30.0f;
+    float m_CameraTranslationSpeed = 5.0f;
     float m_CameraSensitivity = 0.0015f;
     float m_CameraZoomSensitivity = 2.0f;
 

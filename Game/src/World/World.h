@@ -1,12 +1,19 @@
 #pragma once
-#include "Chunk.h"
+#include "ChunkManager.h"
+#include "Player/Player.h"
 
-namespace World
+class World
 {
-  void Initialize(const glm::vec3& initialPosition);
-  void ShutDown();
+public:
+  World(const glm::vec3& initialPosition);
 
-  void OnUpdate(const Engine::Camera& playerCamera);
+  void onUpdate(std::chrono::duration<float> timestep, Player& player);
 
-  void OnEvent(Engine::Event& event);
+  void onEvent(Engine::Event& event);
+
+private:
+  bool m_RenderingPaused = false;
+  ChunkManager m_ChunkManager{};
+
+  bool onKeyPressEvent(Engine::KeyPressEvent& event);
 };
