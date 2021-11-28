@@ -210,7 +210,7 @@ BlockType Chunk::getBlockType(uint8_t i, uint8_t j, uint8_t k) const
 
 BlockType Chunk::getBlockType(const LocalIndex& blockIndex) const
 {
-  return getBlockType(blockIndex[0], blockIndex[1], blockIndex[2]);
+  return getBlockType(blockIndex.i, blockIndex.j, blockIndex.k);
 }
 
 BlockType Chunk::getBlockType(const glm::vec3& position) const
@@ -230,7 +230,7 @@ void Chunk::setBlockType(uint8_t i, uint8_t j, uint8_t k, BlockType blockType)
 
 void Chunk::setBlockType(const LocalIndex& blockIndex, BlockType blockType)
 {
-  setBlockType(blockIndex[0], blockIndex[1], blockIndex[2], blockType);
+  setBlockType(blockIndex.i, blockIndex.j, blockIndex.k, blockType);
 }
 
 void Chunk::setNeighbor(BlockFace face, Chunk* chunk)

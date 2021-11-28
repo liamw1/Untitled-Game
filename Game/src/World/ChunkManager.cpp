@@ -42,7 +42,7 @@ void ChunkManager::clean()
   {
     const HeightMap& heightMap = pair.second;
 
-    if (isOutOfRange({ heightMap.chunkI, heightMap.chunkJ, m_PlayerChunkIndex[2] }))
+    if (isOutOfRange({ heightMap.chunkI, heightMap.chunkJ, m_PlayerChunkIndex.k }))
       heightMapsToRemove.push_back(createHeightMapKey(heightMap.chunkI, heightMap.chunkJ));
   }
   for (int i = 0; i < heightMapsToRemove.size(); ++i)
@@ -208,7 +208,7 @@ Chunk* ChunkManager::findChunk(const ChunkIndex& chunkIndex) const
 
 int64_t ChunkManager::createKey(const ChunkIndex& chunkIndex) const
 {
-  return chunkIndex[0] % bit(10) + bit(10) * (chunkIndex[1] % bit(10)) + bit(20) * (chunkIndex[2] % bit(10));
+  return chunkIndex.i % bit(10) + bit(10) * (chunkIndex.j % bit(10)) + bit(20) * (chunkIndex.k % bit(10));
 }
 
 int64_t ChunkManager::createHeightMapKey(int64_t chunkI, int64_t chunkJ) const
@@ -293,9 +293,9 @@ Chunk* ChunkManager::loadNewChunk(const ChunkIndex& chunkIndex)
   m_OpenChunkSlots.pop_back();
 
   // Generate heightmap is none exists
-  int64_t heightMapKey = createHeightMapKey(chunkIndex[0], chunkIndex[1]);
+  int64_t heightMapKey = createHeightMapKey(chunkIndex.i, chunkIndex.j);
   if (m_HeightMaps.find(heightMapKey) == m_HeightMaps.end())
-    m_HeightMaps[heightMapKey] = generateHeightMap(chunkIndex[0], chunkIndex[1]);
+    m_HeightMaps[heightMapKey] = generateHeightMap(chunkIndex.i, chunkIndex.j);
 
   // Insert chunk into array and load it
   m_ChunkArray[chunkSlot] = std::move(Chunk(chunkIndex));

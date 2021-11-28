@@ -1,14 +1,83 @@
 #pragma once
 #include "Block/Block.h"
 
-using ChunkIndex = std::array<int64_t, 3>;
-using LocalIndex = std::array<uint8_t, 3>;
-
 struct HeightMap
 {
   int64_t chunkI;
   int64_t chunkJ;
   std::array<std::array<float, 32>, 32> terrainHeights;
+};
+
+struct ChunkIndex
+{
+  int64_t i;
+  int64_t j;
+  int64_t k;
+
+  int64_t& operator[](int index)
+  {
+    EN_ASSERT(index >= 0 && index < 3, "Index is out of bounds!");
+    switch (index)
+    {
+      default:
+      case 0: return i;
+      case 1: return j;
+      case 2: return k;
+    }
+  }
+
+  const int64_t& operator[](int index) const
+  {
+    EN_ASSERT(index >= 0 && index < 3, "Index is out of bounds!");
+    switch (index)
+    {
+      default:
+      case 0: return i;
+      case 1: return j;
+      case 2: return k;
+    }
+  }
+
+  bool operator==(const ChunkIndex& other) const
+  {
+    return i == other.i && j == other.j && k == other.k;
+  }
+};
+
+struct LocalIndex
+{
+  uint8_t i;
+  uint8_t j;
+  uint8_t k;
+
+  uint8_t& operator[](int index)
+  {
+    EN_ASSERT(index >= 0 && index < 3, "Index is out of bounds!");
+    switch (index)
+    {
+      default:
+      case 0: return i;
+      case 1: return j;
+      case 2: return k;
+    }
+  }
+
+  const uint8_t& operator[](int index) const
+  {
+    EN_ASSERT(index >= 0 && index < 3, "Index is out of bounds!");
+    switch (index)
+    {
+      default:
+      case 0: return i;
+      case 1: return j;
+      case 2: return k;
+    }
+  }
+
+  bool operator==(const ChunkIndex& other) const
+  {
+    return i == other.i && j == other.j && k == other.k;
+  }
 };
 
 class Chunk
@@ -70,7 +139,7 @@ public:
     If the anchor point is denoted by A, then for any point
     X within the chunk, A_i <= X_i.
   */
-  glm::vec3 anchorPoint() const { return glm::vec3(m_ChunkIndex[0] * Length(), m_ChunkIndex[1] * Length(), m_ChunkIndex[2] * Length()); }
+  glm::vec3 anchorPoint() const { return glm::vec3(m_ChunkIndex.i * Length(), m_ChunkIndex.j * Length(), m_ChunkIndex.k * Length()); }
 
   /*
     \returns The chunk's geometric center.
