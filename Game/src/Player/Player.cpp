@@ -4,7 +4,7 @@
 
 Player::Player()
   : m_Timestep(0.0f),
-    m_CameraController(glm::radians(45.0f), 1280.0f / 720.0f, 0.1f, 1000.0f),
+    m_CameraController(glm::radians(45.0f), 1280.0f / 720.0f, 0.05f, 1000.0f),
     m_Position(0.0f),
     m_Velocity(0.0f)
 {
@@ -46,7 +46,7 @@ void Player::updateEnd()
   glm::vec2 planarViewDirection = glm::normalize(glm::vec2(viewDirection));
 
   // Update camera position
-  glm::vec3 eyesPosition = glm::vec3(0.4f * s_Width * planarViewDirection + glm::vec2(m_Position), m_Position.z + 0.4f * s_Height);
+  glm::vec3 eyesPosition = glm::vec3(0.2f * s_Width * planarViewDirection + glm::vec2(m_Position), m_Position.z + 0.4f * s_Height);
   m_CameraController.setPosition(eyesPosition);
 
   m_CameraController.onUpdate(m_Timestep);

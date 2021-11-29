@@ -17,5 +17,5 @@ private:
 
   bool onKeyPressEvent(Engine::KeyPressEvent& event);
 
-  std::pair<bool, BlockFace> castRaySegment(const glm::vec3& pointA, const glm::vec3& pointB) const;
+  std::pair<float, BlockFace> castRaySegment(const glm::vec3& pointA, const glm::vec3& pointB) const;
 };
