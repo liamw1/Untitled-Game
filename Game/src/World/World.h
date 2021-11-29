@@ -16,4 +16,6 @@ private:
   ChunkManager m_ChunkManager{};
 
   bool onKeyPressEvent(Engine::KeyPressEvent& event);
+
+  std::pair<bool, BlockFace> castRaySegment(const glm::vec3& pointA, const glm::vec3& pointB) const;
 };

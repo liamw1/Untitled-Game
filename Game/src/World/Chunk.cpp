@@ -241,12 +241,9 @@ void Chunk::setNeighbor(BlockFace face, Chunk* chunk)
 
 const ChunkIndex Chunk::ChunkIndexFromPos(const glm::vec3& position)
 {
-  ChunkIndex chunkIndex = { static_cast<int64_t>(position.x / s_ChunkLength),
-                            static_cast<int64_t>(position.y / s_ChunkLength),
-                            static_cast<int64_t>(position.z / s_ChunkLength) };
-  for (int i = 0; i < 3; ++i)
-    if (position[i] < 0.0f)
-      chunkIndex[i]--;
+  ChunkIndex chunkIndex = { static_cast<int64_t>(floor(position.x / s_ChunkLength)),
+                            static_cast<int64_t>(floor(position.y / s_ChunkLength)),
+                            static_cast<int64_t>(floor(position.z / s_ChunkLength)) };
 
   return chunkIndex;
 }

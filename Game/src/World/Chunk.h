@@ -99,6 +99,8 @@ public:
   void setBlockType(uint8_t i, uint8_t j, uint8_t k, BlockType blockType);
   void setBlockType(const LocalIndex& blockIndex, BlockType blockType);
 
+  LocalIndex blockIndexFromPos(const glm::vec3& position) const;
+
   /*
     Creates and fills composition array with blocks based on the given height map.
     Deletes composition array if all blocks are air.
@@ -226,6 +228,4 @@ private:
     Severs communication with neighboring chunks.
   */
   void excise();
-
-  LocalIndex blockIndexFromPos(const glm::vec3& position) const;
 };
