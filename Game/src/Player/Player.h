@@ -46,5 +46,5 @@ private:
   glm::vec3 m_Position;
   glm::vec3 m_Velocity;
 
-  float m_TranslationSpeed = 32.0f * Block::Length();
+  float m_TranslationSpeed = 16 * Block::Length();
 };

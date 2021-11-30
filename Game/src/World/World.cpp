@@ -48,7 +48,7 @@ beginCollisionDetection:;
       {
         glm::vec3 cornerPos = anchorPoint + Block::Length() * glm::vec3(i, j, k);
 
-        auto intersection = castRaySegment(cornerPos - player.getVelocity() * dt, cornerPos);
+        auto intersection = castRay(cornerPos - player.getVelocity() * dt, cornerPos);
         const float& t = intersection.first;
         const BlockFace& face = intersection.second;
 
@@ -61,7 +61,7 @@ beginCollisionDetection:;
 
   if (tmin <= 1.0f)
   {
-#if 1
+#if 0
     switch (firstCollision)
     {
       case BlockFace::East:   EN_TRACE("Collision: East");   break;
@@ -107,48 +107,55 @@ bool World::onKeyPressEvent(Engine::KeyPressEvent& event)
   return false;
 }
 
-std::pair<float, BlockFace> World::castRaySegment(const glm::vec3& pointA, const glm::vec3& pointB) const
+std::pair<float, BlockFace> World::castRay(const glm::vec3& pointA, const glm::vec3& pointB) const
 {
   static constexpr glm::vec3 normals[3] = { { 1, 0, 0 }, { 0, 1, 0 }, { 0, 0, 1 } };
 
   glm::vec3 rayDirection = pointB - pointA;
   
   // Find plane intersections in the x,y,z directions
-  float tmin = 1.1f;
+  float tmin = 2.0f;
   BlockFace firstCollision = BlockFace::First;
   for (uint8_t i = 0; i < 3; ++i)
   {
+    const bool alignedWithPositiveNormal = pointB[i] >= pointA[i];
+
+    // Global block indices of first and last planes ray could intersect in direction i
     int64_t n0, nf;
-    if (pointB[i] >= pointA[i])
+    if (alignedWithPositiveNormal)
     {
-      n0 = static_cast<int64_t>(floor(pointA[i] / Block::Length()));
+      n0 = static_cast<int64_t>(ceil(pointA[i] / Block::Length()));
       nf = static_cast<int64_t>(ceil(pointB[i] / Block::Length()));
     }
     else
     {
-      n0 = static_cast<int64_t>(floor(pointB[i] / Block::Length()));
-      nf = static_cast<int64_t>(ceil(pointA[i] / Block::Length()));
+      n0 = static_cast<int64_t>(floor(pointA[i] / Block::Length()));
+      nf = static_cast<int64_t>(floor(pointB[i] / Block::Length()));
     }
 
-    for (int64_t n = n0; n <= nf; ++n)
+    for (int64_t n = n0; alignedWithPositiveNormal ? n <= nf : n >= nf; alignedWithPositiveNormal ? ++n : --n)
     {
       float t = (n * Block::Length() - pointA[i]) / rayDirection[i];
 
-      // if (t >= 1.0f)
-      //   break;
+      if (t > 1.0f || !isfinite(t))
+        break;
 
-      if (t >= 0.0f && t <= 1.0f && t < tmin)
+      if (t < tmin)
       {
+        // Relabeling coordinates
         const uint8_t u = i;
         const uint8_t v = (i + 1) % 3;
         const uint8_t w = (i + 2) % 3;
+
+        // Intersection point between ray and plane
         glm::vec3 intersection = pointA + t * rayDirection;
 
+        // If ray hit West/South/Bottom block face, we can use n for block coordinate, otherwise, we need to step back a block
         int64_t N = n;
-        bool alignedWithPositiveNormal = glm::dot(rayDirection, normals[u]) >= 0.0f;
         if (!alignedWithPositiveNormal)
           N--;
 
+        // Get index of chunk in which intersection took place
         ChunkIndex chunkIndex{};
         chunkIndex[u] = N / Chunk::Size();
         chunkIndex[v] = static_cast<int64_t>(floor(intersection[v] / Chunk::Length()));
@@ -156,21 +163,26 @@ std::pair<float, BlockFace> World::castRaySegment(const glm::vec3& pointA, const
         if (N < 0 && N % Chunk::Size() != 0)
           chunkIndex[u]--;
 
+        // Get local index of block that was hit by ray
         LocalIndex localIndex{};
         localIndex[u] = modulo(N, Chunk::Size());
         localIndex[v] = modulo(static_cast<int64_t>(floor(intersection[v] / Block::Length())), Chunk::Size());
         localIndex[w] = modulo(static_cast<int64_t>(floor(intersection[w] / Block::Length())), Chunk::Size());
 
+        // Search to see if chunk is loaded
         Chunk* chunk = m_ChunkManager.findChunk(chunkIndex);
         if (chunk == nullptr)
           continue;
 
+        // If block has collision, note the intersection and move on
         if (Block::HasCollision(chunk->getBlockType(localIndex)))
         {
           tmin = t;
 
           uint8_t faceID = 2 * u + alignedWithPositiveNormal;
           firstCollision = static_cast<BlockFace>(faceID);
+
+          continue;
         }
       }
     }
