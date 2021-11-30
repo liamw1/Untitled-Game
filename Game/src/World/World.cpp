@@ -34,13 +34,13 @@ void World::onUpdate(std::chrono::duration<float> timestep, Player& player)
   /* Player collision detection */
 beginCollisionDetection:;
 
-  glm::vec3 playerPosition = player.getPosition();
+  const glm::vec3 playerPosition = player.getPosition();
 
   static const int playerWidth = static_cast<int>(ceil(Player::Width() / Block::Length()));
   static const int playerHeight = static_cast<int>(ceil(Player::Height() / Block::Length()));
-  glm::vec3 anchorPoint = playerPosition - 0.5f * glm::vec3(Player::Width(), Player::Width(), Player::Height());
+  const glm::vec3 anchorPoint = playerPosition - 0.5f * glm::vec3(Player::Width(), Player::Width(), Player::Height());
 
-  float tmin = 1.1f;
+  float tmin = 2.0f;
   BlockFace firstCollision = BlockFace::First;
   for (int i = 0; i <= playerWidth; ++i)
     for (int j = 0; j <= playerWidth; ++j)
@@ -48,11 +48,11 @@ beginCollisionDetection:;
       {
         glm::vec3 cornerPos = anchorPoint + Block::Length() * glm::vec3(i, j, k);
 
-        auto intersection = castRay(cornerPos - player.getVelocity() * dt, cornerPos);
+        auto intersection = castRaySegment(cornerPos - player.getVelocity() * dt, cornerPos);
         const float& t = intersection.first;
         const BlockFace& face = intersection.second;
 
-        if (t <= 1.0f && t < tmin)
+        if (t < tmin)
         {
           tmin = t;
           firstCollision = face;
@@ -83,11 +83,8 @@ beginCollisionDetection:;
 
   player.updateEnd();
 
-  ChunkRenderer::BeginScene(playerCamera);
-
-  if (m_RenderingPaused)
-    m_ChunkManager.render(playerCamera);
-  else
+  /* Rendering stage */
+  if (!m_RenderingPaused)
   {
     m_ChunkManager.updatePlayerChunk(playerCamera.getPosition());
 
@@ -95,8 +92,8 @@ beginCollisionDetection:;
     m_ChunkManager.render(playerCamera);
     m_ChunkManager.loadNewChunks(200);
   }
-
-  ChunkRenderer::EndScene();
+  else
+    m_ChunkManager.render(playerCamera);
 }
 
 bool World::onKeyPressEvent(Engine::KeyPressEvent& event)
@@ -107,22 +104,22 @@ bool World::onKeyPressEvent(Engine::KeyPressEvent& event)
   return false;
 }
 
-std::pair<float, BlockFace> World::castRay(const glm::vec3& pointA, const glm::vec3& pointB) const
+std::pair<float, BlockFace> World::castRaySegment(const glm::vec3& pointA, const glm::vec3& pointB) const
 {
   static constexpr glm::vec3 normals[3] = { { 1, 0, 0 }, { 0, 1, 0 }, { 0, 0, 1 } };
 
-  glm::vec3 rayDirection = pointB - pointA;
+  const glm::vec3 rayDirection = pointB - pointA;
   
-  // Find plane intersections in the x,y,z directions
+  // Find solid block face intersections in the x,y,z directions
   float tmin = 2.0f;
-  BlockFace firstCollision = BlockFace::First;
+  BlockFace firstIntersection = BlockFace::First;
   for (uint8_t i = 0; i < 3; ++i)
   {
-    const bool alignedWithPositiveNormal = pointB[i] >= pointA[i];
+    const bool alignedWithPositiveAxis = rayDirection[i] > 0.0f;
 
-    // Global block indices of first and last planes ray could intersect in direction i
+    // Global indices of first and last planes that segment will intersect in direction i
     int64_t n0, nf;
-    if (alignedWithPositiveNormal)
+    if (alignedWithPositiveAxis)
     {
       n0 = static_cast<int64_t>(ceil(pointA[i] / Block::Length()));
       nf = static_cast<int64_t>(ceil(pointB[i] / Block::Length()));
@@ -133,26 +130,27 @@ std::pair<float, BlockFace> World::castRay(const glm::vec3& pointA, const glm::v
       nf = static_cast<int64_t>(floor(pointB[i] / Block::Length()));
     }
 
-    for (int64_t n = n0; alignedWithPositiveNormal ? n <= nf : n >= nf; alignedWithPositiveNormal ? ++n : --n)
+    // n increases to nf if ray is aligned with positive i-axis and decreases to nf otherwise
+    for (int64_t n = n0; alignedWithPositiveAxis ? n <= nf : n >= nf; alignedWithPositiveAxis ? ++n : --n)
     {
-      float t = (n * Block::Length() - pointA[i]) / rayDirection[i];
+      const float t = (n * Block::Length() - pointA[i]) / rayDirection[i];
 
       if (t > 1.0f || !isfinite(t))
         break;
 
       if (t < tmin)
       {
-        // Relabeling coordinates
+        // Relabeling coordinate indices
         const uint8_t u = i;
         const uint8_t v = (i + 1) % 3;
         const uint8_t w = (i + 2) % 3;
 
         // Intersection point between ray and plane
-        glm::vec3 intersection = pointA + t * rayDirection;
+        const glm::vec3 intersection = pointA + t * rayDirection;
 
         // If ray hit West/South/Bottom block face, we can use n for block coordinate, otherwise, we need to step back a block
         int64_t N = n;
-        if (!alignedWithPositiveNormal)
+        if (!alignedWithPositiveAxis)
           N--;
 
         // Get index of chunk in which intersection took place
@@ -170,17 +168,17 @@ std::pair<float, BlockFace> World::castRay(const glm::vec3& pointA, const glm::v
         localIndex[w] = modulo(static_cast<int64_t>(floor(intersection[w] / Block::Length())), Chunk::Size());
 
         // Search to see if chunk is loaded
-        Chunk* chunk = m_ChunkManager.findChunk(chunkIndex);
+        const Chunk* chunk = m_ChunkManager.findChunk(chunkIndex);
         if (chunk == nullptr)
           continue;
 
-        // If block has collision, note the intersection and move on
+        // If block has collision, note the intersection and move to next spatial direction
         if (Block::HasCollision(chunk->getBlockType(localIndex)))
         {
           tmin = t;
 
-          uint8_t faceID = 2 * u + alignedWithPositiveNormal;
-          firstCollision = static_cast<BlockFace>(faceID);
+          const uint8_t faceID = 2 * u + alignedWithPositiveAxis;
+          firstIntersection = static_cast<BlockFace>(faceID);
 
           continue;
         }
@@ -188,7 +186,8 @@ std::pair<float, BlockFace> World::castRay(const glm::vec3& pointA, const glm::v
     }
   }
 
-  return std::pair(tmin, firstCollision);
+  // Return first intersection
+  return std::pair(tmin, firstIntersection);
 }
 
 void World::onEvent(Engine::Event& event)

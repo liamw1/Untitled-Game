@@ -8,15 +8,37 @@ struct AABB
   glm::vec3 max;
 };
 
+/*
+  Represents the player.
+
+  IMPORTANT: Unlike other systems, the player's update function is split into
+  two stages.  The first handles player input and should be called before any
+  external changes to the player's state, such as collision handling.  The second
+  handles camera positioning and shoud be called after such external changes
+  have been made.
+*/
 class Player
 {
 public:
   Player();
 
+  /*
+    The first stage of the player's update.  
+    Adjusts player state based on player input.
+  */
   void updateBegin(std::chrono::duration<float> timestep);
+
+  /*
+    The last stage of the player's update.  
+    Handles final camera positioning for the frame.
+  */
   void updateEnd();
+
   void onEvent(Engine::Event& event);
 
+  /*
+    \returns The player's axis-aligned bounding box (AABB).
+  */
   AABB boundingBox() const;
 
   Engine::Camera& getCamera() { return m_CameraController.getCamera(); }
@@ -32,6 +54,7 @@ public:
   static constexpr float Height() { return s_Height; }
 
 private:
+  // Time between current frame and previous frame
   std::chrono::duration<float> m_Timestep;
 
   // Hitbox dimensions

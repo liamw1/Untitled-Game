@@ -355,7 +355,9 @@ LocalIndex Chunk::blockIndexFromPos(const glm::vec3& position) const
 {
   glm::vec3 localPosition = position - anchorPoint();
 
-  EN_ASSERT(localPosition.x >= 0.0f && localPosition.y >= 0.0f && localPosition.z >= 0.0f, "Given position is not inside chunk!");
+  EN_ASSERT(localPosition.x >= 0.0f && localPosition.x <= s_ChunkLength &&
+            localPosition.y >= 0.0f && localPosition.y <= s_ChunkLength &&
+            localPosition.z >= 0.0f && localPosition.z <= s_ChunkLength, "Given position is not inside chunk!");
 
   LocalIndex blockIndex = { static_cast<uint8_t>(localPosition.x / Block::Length()),
                             static_cast<uint8_t>(localPosition.y / Block::Length()),

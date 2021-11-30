@@ -99,6 +99,10 @@ public:
   void setBlockType(uint8_t i, uint8_t j, uint8_t k, BlockType blockType);
   void setBlockType(const LocalIndex& blockIndex, BlockType blockType);
 
+  /*
+    \returns The local block index of the block that the given position
+             sits inside.  Assumes that given position is inside chunk.
+  */
   LocalIndex blockIndexFromPos(const glm::vec3& position) const;
 
   /*

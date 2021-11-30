@@ -38,7 +38,7 @@ namespace Engine
 
     float m_CameraTranslationSpeed = 5.0f;
     float m_CameraSensitivity = 0.0015f;
-    float m_CameraZoomSensitivity = 2.0f;
+    float m_CameraZoomSensitivity = 5.0f;
 
     // Mouse state
     glm::vec2 m_LastMousePosition;

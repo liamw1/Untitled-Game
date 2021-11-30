@@ -64,6 +64,8 @@ void ChunkManager::render(const Engine::Camera& playerCamera)
     frustumPlanes[planeID].w += chunkSphereRadius * planeNormalMag;
   }
 
+  // Render chunks in view frustum
+  ChunkRenderer::BeginScene(playerCamera);
   for (auto& pair : m_RenderableChunks)
   {
     Chunk* chunk = pair.second;
@@ -76,6 +78,7 @@ void ChunkManager::render(const Engine::Camera& playerCamera)
         ChunkRenderer::DrawChunk(chunk);
     }
   }
+  ChunkRenderer::EndScene();
 }
 
 bool ChunkManager::loadNewChunks(uint32_t maxNewChunks)
@@ -278,7 +281,7 @@ HeightMap ChunkManager::generateHeightMap(int64_t chunkI, int64_t chunkJ)
     for (uint8_t j = 0; j < Chunk::Size(); ++j)
     {
       glm::vec2 blockXY = glm::vec2(chunkI * Chunk::Length() + i * Block::Length(), chunkJ * Chunk::Length() + j * Block::Length());
-      float terrainHeight = 30.0f * glm::simplex(blockXY / 256.0f) + 10.0f * glm::simplex(blockXY / 64.0f) + glm::simplex(blockXY / 8.0f);
+      float terrainHeight = 150 * Block::Length() * glm::simplex(blockXY / 1280.0f / Block::Length()) + 50 * Block::Length() * glm::simplex(blockXY / 320.0f / Block::Length()) + 5 * Block::Length() * glm::simplex(blockXY / 40.0f / Block::Length());
       heightMap.terrainHeights[i][j] = terrainHeight;
     }
   return heightMap;

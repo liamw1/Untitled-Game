@@ -7,6 +7,8 @@ namespace Engine
 {
   static constexpr radians s_MinPitch = glm::radians(-89.99f);
   static constexpr radians s_MaxPitch = glm::radians(89.99f);
+  static constexpr radians s_MinFOV = glm::radians(5.0f);
+  static constexpr radians s_MaxFOV = glm::radians(80.0f);
 
   CameraController::CameraController(radians fov, float aspectRatio, float nearPlane, float farPlane)
     : m_Fov(fov),
@@ -88,8 +90,8 @@ namespace Engine
   bool CameraController::onMouseScroll(MouseScrollEvent& event)
   {
     m_Fov -= m_CameraZoomSensitivity * glm::radians(event.getYOffset());
-    m_Fov = std::max(m_Fov, glm::radians(5.0f));
-    m_Fov = std::min(m_Fov, glm::radians(60.0f));
+    m_Fov = std::max(m_Fov, s_MinFOV);
+    m_Fov = std::min(m_Fov, s_MaxFOV);
 
     m_Camera.setProjection(m_Fov, m_AspectRatio, m_NearPlane, m_FarPlane);
     return false;
