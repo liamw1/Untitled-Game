@@ -65,7 +65,7 @@ private:
   Engine::CameraController m_CameraController;
   bool m_FreeCamEnabled = false;
 
-  // Position of center of the player hitbosx
+  // Position of center of the player hitbox
   glm::vec3 m_Position;
   glm::vec3 m_Velocity;
 

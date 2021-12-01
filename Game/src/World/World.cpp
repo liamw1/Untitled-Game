@@ -8,8 +8,6 @@ static constexpr uint8_t modulo(int64_t a, uint8_t b)
   return static_cast<uint8_t>(result >= 0 ? result : result + b);
 }
 
-static constexpr int p = modulo(-32, 32);
-
 World::World(const glm::vec3& initialPosition)
 {
   m_ChunkManager.updatePlayerChunk(initialPosition);
@@ -23,64 +21,10 @@ void World::onUpdate(std::chrono::duration<float> timestep, Player& player)
 {
   EN_PROFILE_FUNCTION();
 
-  static constexpr glm::vec3 normals[6] = { { 1, 0, 0}, { -1, 0, 0}, { 0, 1, 0}, { 0, -1, 0}, { 0, 0, 1}, { 0, 0, -1} };
-                                       //      East         West        North       South         Top        Bottom
-
-  const float dt = timestep.count();  // Time between frames in seconds
   const Engine::Camera& playerCamera = player.getCamera();
 
   player.updateBegin(timestep);
-
-  /* Player collision detection */
-beginCollisionDetection:;
-
-  const glm::vec3 playerPosition = player.getPosition();
-
-  static const int playerWidth = static_cast<int>(ceil(Player::Width() / Block::Length()));
-  static const int playerHeight = static_cast<int>(ceil(Player::Height() / Block::Length()));
-  const glm::vec3 anchorPoint = playerPosition - 0.5f * glm::vec3(Player::Width(), Player::Width(), Player::Height());
-
-  float tmin = 2.0f;
-  BlockFace firstCollision = BlockFace::First;
-  for (int i = 0; i <= playerWidth; ++i)
-    for (int j = 0; j <= playerWidth; ++j)
-      for (int k = 0; k <= playerHeight; ++k)
-      {
-        glm::vec3 cornerPos = anchorPoint + Block::Length() * glm::vec3(i, j, k);
-
-        auto intersection = castRaySegment(cornerPos - player.getVelocity() * dt, cornerPos);
-        const float& t = intersection.first;
-        const BlockFace& face = intersection.second;
-
-        if (t < tmin)
-        {
-          tmin = t;
-          firstCollision = face;
-        }
-      }
-
-  if (tmin <= 1.0f)
-  {
-#if 0
-    switch (firstCollision)
-    {
-      case BlockFace::East:   EN_TRACE("Collision: East");   break;
-      case BlockFace::West:   EN_TRACE("Collision: West");   break;
-      case BlockFace::North:  EN_TRACE("Collision: North");  break;
-      case BlockFace::South:  EN_TRACE("Collision: South");  break;
-      case BlockFace::Top:    EN_TRACE("Collision: Top");    break;
-      case BlockFace::Bottom: EN_TRACE("Collision: Bottom"); break;
-      default: EN_ERROR("Unknown block face");
-    }
-#endif
-
-    const uint8_t faceID = static_cast<uint8_t>(firstCollision);
-    glm::vec3 displacement = -glm::dot(normals[faceID], player.getVelocity() * dt) * normals[faceID];
-    player.setPosition(playerPosition + displacement);
-
-    goto beginCollisionDetection;
-  }
-
+  playerCollisionHandling(timestep, player);
   player.updateEnd();
 
   /* Rendering stage */
@@ -104,15 +48,15 @@ bool World::onKeyPressEvent(Engine::KeyPressEvent& event)
   return false;
 }
 
-std::pair<float, BlockFace> World::castRaySegment(const glm::vec3& pointA, const glm::vec3& pointB) const
+Intersection World::castRaySegment(const glm::vec3& pointA, const glm::vec3& pointB) const
 {
   static constexpr glm::vec3 normals[3] = { { 1, 0, 0 }, { 0, 1, 0 }, { 0, 0, 1 } };
 
   const glm::vec3 rayDirection = pointB - pointA;
-  
+
   // Find solid block face intersections in the x,y,z directions
   float tmin = 2.0f;
-  BlockFace firstIntersection = BlockFace::First;
+  Intersection firstIntersection = { false, 0.0f, BlockFace::First, { 0, 0, 0 }, { 0, 0, 0 } };
   for (uint8_t i = 0; i < 3; ++i)
   {
     const bool alignedWithPositiveAxis = rayDirection[i] > 0.0f;
@@ -175,10 +119,13 @@ std::pair<float, BlockFace> World::castRaySegment(const glm::vec3& pointA, const
         // If block has collision, note the intersection and move to next spatial direction
         if (Block::HasCollision(chunk->getBlockType(localIndex)))
         {
+          const uint8_t faceID = 2 * u + alignedWithPositiveAxis;
           tmin = t;
 
-          const uint8_t faceID = 2 * u + alignedWithPositiveAxis;
-          firstIntersection = static_cast<BlockFace>(faceID);
+          firstIntersection.intersectionOccured = true;
+          firstIntersection.face = static_cast<BlockFace>(faceID);
+          firstIntersection.blockIndex = localIndex;
+          firstIntersection.chunkIndex = chunkIndex;
 
           continue;
         }
@@ -186,8 +133,57 @@ std::pair<float, BlockFace> World::castRaySegment(const glm::vec3& pointA, const
     }
   }
 
+  if (firstIntersection.intersectionOccured)
+    firstIntersection.distance = tmin * glm::length(rayDirection);
+
   // Return first intersection
-  return std::pair(tmin, firstIntersection);
+  return firstIntersection;
+}
+
+void World::playerCollisionHandling(std::chrono::duration<float> timestep, Player& player) const
+{
+  static constexpr glm::vec3 normals[6] = { { 1, 0, 0}, { -1, 0, 0}, { 0, 1, 0}, { 0, -1, 0}, { 0, 0, 1}, { 0, 0, -1} };
+                                       //      East         West        North       South         Top        Bottom
+
+  // Player width and height in blocks
+  static const int playerWidth = static_cast<int>(ceil(Player::Width() / Block::Length()));
+  static const int playerHeight = static_cast<int>(ceil(Player::Height() / Block::Length()));
+  const float dt = timestep.count();  // Time between frames in seconds
+
+beginCollisionDetection:;
+  const glm::vec3 playerPosition = player.getPosition();
+  const float distanceMoved = dt * glm::length(player.getVelocity());
+  const glm::vec3 anchorPoint = playerPosition - 0.5f * glm::vec3(Player::Width(), Player::Width(), Player::Height());
+
+  if (distanceMoved == 0.0f)
+    return;
+
+  Intersection firstCollision = { false, 2 * distanceMoved, BlockFace::First, { 0, 0, 0 }, { 0, 0, 0 } };
+  for (int i = 0; i <= playerWidth; ++i)
+    for (int j = 0; j <= playerWidth; ++j)
+      for (int k = 0; k <= playerHeight; ++k)
+      {
+        const glm::vec3 cornerPos = anchorPoint + Block::Length() * glm::vec3(i, j, k);
+
+        const Intersection collision = castRaySegment(cornerPos - player.getVelocity() * dt, cornerPos);
+        const float& collisionDistance = collision.distance;
+
+        if (collision.intersectionOccured && collision.distance < firstCollision.distance)
+          firstCollision = collision;
+      }
+
+  if (firstCollision.intersectionOccured)
+  {
+    const uint8_t faceID = static_cast<uint8_t>(firstCollision.face);
+    const float t = firstCollision.distance / distanceMoved;
+    const glm::vec3 intersectionPoint = playerPosition + firstCollision.distance * glm::normalize(player.getVelocity());
+
+    // Calculate distance player should be pushed out from solid block
+    const glm::vec3 collisionDisplacement = (1.0f - t + s_MinDistanceToWall / distanceMoved) * glm::dot(normals[faceID], -player.getVelocity() * dt) * normals[faceID];
+    player.setPosition(playerPosition + collisionDisplacement);
+
+    goto beginCollisionDetection;
+  }
 }
 
 void World::onEvent(Engine::Event& event)
