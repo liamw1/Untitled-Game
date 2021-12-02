@@ -3,7 +3,7 @@
 
 Sandbox3D::Sandbox3D()
   : Layer("Sandbox3D"),
-  m_CameraController(glm::radians(45.0f), 1280.0f / 720.0f, 0.1f, 100.0f)
+  m_CameraController(glm::radians(45.0), 1280.0f / 720.0f, 0.1, 100.0)
 {
   Engine::RenderCommand::Initialize();
   Engine::Renderer::Initialize();
@@ -20,7 +20,7 @@ void Sandbox3D::onDetach()
 {
 }
 
-void Sandbox3D::onUpdate(std::chrono::duration<float> timestep)
+void Sandbox3D::onUpdate(std::chrono::duration<seconds> timestep)
 {
   EN_PROFILE_FUNCTION();
 
@@ -33,7 +33,7 @@ void Sandbox3D::onUpdate(std::chrono::duration<float> timestep)
   Engine::Renderer::BeginScene(m_CameraController.getCamera());
   for (int i = 0; i < 3; ++i)
     for (int j = 0; j < 3; ++j)
-      Engine::Renderer::DrawCube({ (i - 1) * 1.25f , (j - 1) * 1.25f, -2.0f }, glm::vec3(1.0f), m_CheckerboardTexture);
+      Engine::Renderer::DrawCube(Vec3((i - 1) * 1.25, (j - 1) * 1.25, -2.0), Vec3(1.0f), m_CheckerboardTexture);
   Engine::Renderer::EndScene();
 }
 

@@ -17,6 +17,6 @@ namespace Engine
     void end();
 
   private:
-    float m_Time = 0.0f;
+    seconds m_Time = 0.0f;
   };
 }

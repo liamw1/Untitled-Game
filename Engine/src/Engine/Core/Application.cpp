@@ -15,7 +15,7 @@ namespace Engine
 
     m_Window = Unique<Window>(Window::Create());
     m_Window->setEventCallback(EN_BIND_EVENT_FN(onEvent));
-    m_Window->setVSync(true);
+    m_Window->setVSync(false);
 
     m_ImGuiLayer = new ImGuiLayer();
     pushOverlay(m_ImGuiLayer);
@@ -37,7 +37,7 @@ namespace Engine
       EN_PROFILE_SCOPE("Run Loop");
 
       auto time = std::chrono::steady_clock::now();
-      std::chrono::duration<float> timestep = time - m_LastFrameTime;
+      std::chrono::duration<seconds> timestep = time - m_LastFrameTime;
       m_LastFrameTime = time;
 
       if (!m_Minimized)

@@ -61,14 +61,14 @@ Chunk& Chunk::operator=(Chunk&& other) noexcept
 
 void Chunk::load(HeightMap heightMap)
 {
-  const float chunkHeight = anchorPoint()[2];
+  const length_t chunkHeight = anchorPoint()[2];
   m_ChunkComposition = Engine::CreateUnique<BlockType[]>(s_ChunkTotalBlocks);
 
   bool isEmpty = true;
   for (uint8_t i = 0; i < s_ChunkSize; ++i)
     for (uint8_t j = 0; j < s_ChunkSize; ++j)
     {
-      const float& terrainHeight = heightMap.terrainHeights[i][j];
+      const length_t& terrainHeight = heightMap.terrainHeights[i][j];
 
       if (terrainHeight < chunkHeight)
       {
@@ -202,7 +202,7 @@ BlockType Chunk::getBlockType(const LocalIndex& blockIndex) const
   return getBlockType(blockIndex.i, blockIndex.j, blockIndex.k);
 }
 
-BlockType Chunk::getBlockType(const glm::vec3& position) const
+BlockType Chunk::getBlockType(const Vec3& position) const
 {
   return getBlockType(blockIndexFromPos(position));
 }
@@ -338,7 +338,7 @@ bool Chunk::isBlockNeighborAir(const LocalIndex& blockIndex, BlockFace face)
   return isBlockNeighborAir(blockIndex.i, blockIndex.j, blockIndex.k, face);
 }
 
-const ChunkIndex Chunk::ChunkIndexFromPos(const glm::vec3& position)
+const ChunkIndex Chunk::ChunkIndexFromPos(const Vec3& position)
 {
   ChunkIndex chunkIndex = { static_cast<int64_t>(floor(position.x / s_ChunkLength)),
                             static_cast<int64_t>(floor(position.y / s_ChunkLength)),
@@ -458,13 +458,13 @@ void Chunk::markAsEmpty()
   m_MeshState = MeshState::NotGenerated;
 }
 
-LocalIndex Chunk::blockIndexFromPos(const glm::vec3& position) const
+LocalIndex Chunk::blockIndexFromPos(const Vec3& position) const
 {
-  glm::vec3 localPosition = position - anchorPoint();
+  Vec3 localPosition = position - anchorPoint();
 
-  EN_ASSERT(localPosition.x >= 0.0f && localPosition.x <= s_ChunkLength &&
-            localPosition.y >= 0.0f && localPosition.y <= s_ChunkLength &&
-            localPosition.z >= 0.0f && localPosition.z <= s_ChunkLength, "Given position is not inside chunk!");
+  EN_ASSERT(localPosition.x >= 0.0 && localPosition.x <= s_ChunkLength &&
+            localPosition.y >= 0.0 && localPosition.y <= s_ChunkLength &&
+            localPosition.z >= 0.0 && localPosition.z <= s_ChunkLength, "Given position is not inside chunk!");
 
   LocalIndex blockIndex = { static_cast<uint8_t>(localPosition.x / Block::Length()),
                             static_cast<uint8_t>(localPosition.y / Block::Length()),

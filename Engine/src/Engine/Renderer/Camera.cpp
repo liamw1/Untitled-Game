@@ -5,29 +5,29 @@
 
 namespace Engine
 {
-  Camera::Camera(radians fov, float aspectRatio, float nearPlane, float farPlane)
-    : m_ProjectionMatrix(glm::perspective(fov, aspectRatio, nearPlane, farPlane)),
-      m_ViewMatrix(1.0f),
+  Camera::Camera(radians fov, float aspectRatio, length_t nearPlane, length_t farPlane)
+    : m_ProjectionMatrix(glm::perspective(static_cast<length_t>(fov), static_cast<length_t>(aspectRatio), nearPlane, farPlane)),
+      m_ViewMatrix(1.0),
       m_ViewProjectionMatrix(m_ProjectionMatrix * m_ViewMatrix)
   {
   }
 
-  void Camera::setPosition(const glm::vec3& position)
+  void Camera::setPosition(const Vec3& position)
   {
     m_Position = position;
     recalculateViewMatrix();
   }
 
-  void Camera::setView(const glm::vec3& position, const glm::vec3& viewDirection)
+  void Camera::setView(const Vec3& position, const Vec3& viewDirection)
   {
     m_Position = position;
     m_ViewDirection = viewDirection;
     recalculateViewMatrix();
   }
 
-  void Camera::setProjection(radians fov, float aspectRatio, float nearPlane, float farPlane)
+  void Camera::setProjection(radians fov, float aspectRatio, length_t nearPlane, length_t farPlane)
   {
-    m_ProjectionMatrix = glm::perspective(fov, aspectRatio, nearPlane, farPlane);
+    m_ProjectionMatrix = glm::perspective(static_cast<length_t>(fov), static_cast<length_t>(aspectRatio), nearPlane, farPlane);
     m_ViewProjectionMatrix = m_ProjectionMatrix * m_ViewMatrix;
   }
 

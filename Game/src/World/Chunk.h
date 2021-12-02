@@ -5,7 +5,7 @@ struct HeightMap
 {
   int64_t chunkI;
   int64_t chunkJ;
-  std::array<std::array<float, 32>, 32> terrainHeights;
+  std::array<std::array<length_t, 32>, 32> terrainHeights;
 };
 
 template<typename intType>
@@ -60,7 +60,7 @@ public:
 
   BlockType getBlockType(uint8_t i, uint8_t j, uint8_t k) const;
   BlockType getBlockType(const LocalIndex& blockIndex) const;
-  BlockType getBlockType(const glm::vec3& position) const;
+  BlockType getBlockType(const Vec3& position) const;
 
   void removeBlock(const LocalIndex& blockIndex);
   void placeBlock(const LocalIndex& blockIndex, BlockFace face, BlockType blockType);
@@ -69,7 +69,7 @@ public:
     \returns The local block index of the block that the given position
              sits inside.  Assumes that given position is inside chunk.
   */
-  LocalIndex blockIndexFromPos(const glm::vec3& position) const;
+  LocalIndex blockIndexFromPos(const Vec3& position) const;
 
   /*
     Creates and fills composition array with blocks based on the given height map.
@@ -111,12 +111,12 @@ public:
     If the anchor point is denoted by A, then for any point
     X within the chunk, A_i <= X_i.
   */
-  glm::vec3 anchorPoint() const { return s_ChunkLength * glm::vec3(m_ChunkIndex.i, m_ChunkIndex.j, m_ChunkIndex.k); }
+  Vec3 anchorPoint() const { return s_ChunkLength * Vec3(m_ChunkIndex.i, m_ChunkIndex.j, m_ChunkIndex.k); }
 
   /*
     \returns The chunk's geometric center.
   */
-  glm::vec3 center() const { return anchorPoint() + s_ChunkLength / 2; }
+  Vec3 center() const { return anchorPoint() + s_ChunkLength / 2; }
 
   /*
     \returns A pointer to the neighboring chunk in the specified direction.
@@ -155,9 +155,9 @@ public:
   bool isBlockNeighborAir(const LocalIndex& blockIndex, BlockFace face);
 
   static constexpr uint8_t Size() { return s_ChunkSize; }
-  static constexpr float Length() { return s_ChunkLength; }
+  static constexpr length_t Length() { return s_ChunkLength; }
   static constexpr uint32_t TotalBlocks() { return s_ChunkTotalBlocks; }
-  static const ChunkIndex ChunkIndexFromPos(const glm::vec3& position);
+  static const ChunkIndex ChunkIndexFromPos(const Vec3& position);
 
   static void InitializeIndexBuffer();
 
@@ -172,7 +172,7 @@ private:
 
   // Size and dimension
   static constexpr uint8_t s_ChunkSize = 32;
-  static constexpr float s_ChunkLength = s_ChunkSize * Block::Length();
+  static constexpr length_t s_ChunkLength = s_ChunkSize * Block::Length();
   static constexpr uint32_t s_ChunkTotalBlocks = s_ChunkSize * s_ChunkSize * s_ChunkSize;
 
   // Position and composition

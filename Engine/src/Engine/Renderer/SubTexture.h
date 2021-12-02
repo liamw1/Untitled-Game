@@ -7,10 +7,10 @@ namespace Engine
   class SubTexture2D
   {
   public:
-    SubTexture2D(const Shared<Texture2D>& spriteSheet, const glm::vec2& minCoord, const glm::vec2& maxCoord);
+    SubTexture2D(const Shared<Texture2D>& spriteSheet, const Float2& minCoord, const Float2& maxCoord);
 
     const Shared<Texture2D> getSpriteSheet() const { return m_SpriteSheet; }
-    const glm::vec2* getTextureCoordinates() const { return m_TexCoords; }
+    const Float2* getTextureCoordinates() const { return m_TexCoords; }
 
     /*
       Creates a SubTexture with texture coordinates corresponding to the indices given.
@@ -24,10 +24,10 @@ namespace Engine
       \param j The y-coord of the sprite in units of cellSize.
       \param spriteSize The dimensions of the sprite in units of cellSize.
     */
-    static Shared<SubTexture2D> CreateFromIndices(const Shared<Texture2D>& spriteSheet, uint32_t cellSize, uint32_t i, uint32_t j, const glm::vec2& spriteSize = { 1.0f, 1.0f });
+    static Shared<SubTexture2D> CreateFromIndices(const Shared<Texture2D>& spriteSheet, uint32_t cellSize, uint32_t i, uint32_t j, const Float2& spriteSize = { 1.0f, 1.0f });
 
   private:
     Shared<Texture2D> m_SpriteSheet;
-    glm::vec2 m_TexCoords[4];
+    Float2 m_TexCoords[4];
   };
 }

@@ -20,7 +20,7 @@ namespace Engine
     glViewport(x, y, width, height);
   }
 
-  void OpenGLRendererAPI::clear(const glm::vec4& color) const
+  void OpenGLRendererAPI::clear(const Float4& color) const
   {
     glClearColor(color.r, color.g, color.b, color.a);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);

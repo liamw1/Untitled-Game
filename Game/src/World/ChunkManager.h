@@ -27,7 +27,7 @@ public:
   /*
     For updating the chunk manager of what chunk the player is currently inside.
   */
-  void updatePlayerChunk(const glm::vec3& playerPosition) { m_PlayerChunkIndex = Chunk::ChunkIndexFromPos(playerPosition); }
+  void updatePlayerChunk(const Vec3& playerPosition) { m_PlayerChunkIndex = Chunk::ChunkIndexFromPos(playerPosition); }
 
   /*
     \returns The Chunk at the specified chunk index.  If no such chunk can be found,
@@ -98,13 +98,13 @@ private:
              For a plane of the form Ax + By + Cz + D = 0, 
              its corresponding vector is {A, B, C, D}.
   */
-  std::array<glm::vec4, 6> calculateViewFrustumPlanes(const Engine::Camera& playerCamera) const;
+  std::array<Vec4, 6> calculateViewFrustumPlanes(const Engine::Camera& playerCamera) const;
 
   /*
     \returns True if the given point is inside the given set of frustum planes.
              Could be any frustum, not necessarily the view frustum.
   */
-  bool isInFrustum(const glm::vec3& point, const std::array<glm::vec4, 6>& frustumPlanes) const;
+  bool isInFrustum(const Vec3& point, const std::array<Vec4, 6>& frustumPlanes) const;
 
   /*
     Generates a chunk-sized section of terrain heights using simplex noise.

@@ -151,22 +151,22 @@ namespace Engine
   {
   }
 
-  void Renderer::DrawCube(const glm::vec3& position, const glm::vec3& size, Shared<Texture2D> texture)
+  void Renderer::DrawCube(const Vec3& position, const Vec3& size, Shared<Texture2D> texture)
   {
     texture == nullptr ? s_WhiteTexture->bind() : texture->bind();
 
-    glm::mat4 transform = glm::translate(glm::mat4(1.0f), position) * glm::scale(glm::mat4(1.0f), size);
+    Mat4 transform = glm::translate(Mat4(1.0), position) * glm::scale(Mat4(1.0), size);
     s_TextureShader->setMat4("u_Transform", transform);
 
     s_CubeVertexArray->bind();
     RenderCommand::DrawIndexed(s_CubeVertexArray);
   }
 
-  void Renderer::DrawCubeFrame(const glm::vec3& position, const glm::vec3& size, const glm::vec4& color)
+  void Renderer::DrawCubeFrame(const Vec3& position, const Vec3& size, const Float4& color)
   {
     s_CubeFrameShader->bind();
 
-    glm::mat4 transform = glm::translate(glm::mat4(1.0f), position) * glm::scale(glm::mat4(1.0f), size);
+    Mat4 transform = glm::translate(Mat4(1.0), position) * glm::scale(Mat4(1.0), size);
     s_CubeFrameShader->setMat4("u_Transform", transform);
     s_CubeFrameShader->setFloat4("u_Color", color);
 

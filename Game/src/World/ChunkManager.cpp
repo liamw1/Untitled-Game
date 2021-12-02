@@ -53,14 +53,14 @@ void ChunkManager::render(const Engine::Camera& playerCamera) const
 {
   EN_PROFILE_FUNCTION();
   
-  std::array<glm::vec4, 6> frustumPlanes = calculateViewFrustumPlanes(playerCamera);
+  std::array<Vec4, 6> frustumPlanes = calculateViewFrustumPlanes(playerCamera);
 
   // Shift each plane by an amount equal to radius of a sphere that contains chunk
   static constexpr float sqrt3 = 1.732050807568877f;
-  static constexpr float chunkSphereRadius = sqrt3 * Chunk::Length() / 2;
+  static constexpr length_t chunkSphereRadius = sqrt3 * Chunk::Length() / 2;
   for (int planeID = 0; planeID < 6; ++planeID)
   {
-    const float planeNormalMag = glm::length(glm::vec3(frustumPlanes[planeID]));
+    const length_t planeNormalMag = glm::length(Vec3(frustumPlanes[planeID]));
     frustumPlanes[planeID].w += chunkSphereRadius * planeNormalMag;
   }
 
@@ -285,15 +285,15 @@ bool ChunkManager::isInRenderRange(const ChunkIndex& chunkIndex) const
   return true;
 }
 
-std::array<glm::vec4, 6> ChunkManager::calculateViewFrustumPlanes(const Engine::Camera& playerCamera) const
+std::array<Vec4, 6> ChunkManager::calculateViewFrustumPlanes(const Engine::Camera& playerCamera) const
 {
-  const glm::mat4& viewProj = playerCamera.getViewProjectionMatrix();
-  const glm::vec4 row1 = glm::row(viewProj, 0);
-  const glm::vec4 row2 = glm::row(viewProj, 1);
-  const glm::vec4 row3 = glm::row(viewProj, 2);
-  const glm::vec4 row4 = glm::row(viewProj, 3);
+  const Mat4& viewProj = playerCamera.getViewProjectionMatrix();
+  const Vec4 row1 = glm::row(viewProj, 0);
+  const Vec4 row2 = glm::row(viewProj, 1);
+  const Vec4 row3 = glm::row(viewProj, 2);
+  const Vec4 row4 = glm::row(viewProj, 3);
 
-  std::array<glm::vec4, 6> frustumPlanes{};
+  std::array<Vec4, 6> frustumPlanes{};
   frustumPlanes[static_cast<uint8_t>(FrustumPlane::Left)] = row4 + row1;
   frustumPlanes[static_cast<uint8_t>(FrustumPlane::Right)] = row4 - row1;
   frustumPlanes[static_cast<uint8_t>(FrustumPlane::Bottom)] = row4 + row2;
@@ -304,10 +304,10 @@ std::array<glm::vec4, 6> ChunkManager::calculateViewFrustumPlanes(const Engine::
   return frustumPlanes;
 }
 
-bool ChunkManager::isInFrustum(const glm::vec3& point, const std::array<glm::vec4, 6>& frustumPlanes) const
+bool ChunkManager::isInFrustum(const Vec3& point, const std::array<Vec4, 6>& frustumPlanes) const
 {
   for (uint8_t planeID = 0; planeID < 5; ++planeID) // Skip far plane
-    if (glm::dot(glm::vec4(point, 1.0f), frustumPlanes[planeID]) < 0)
+    if (glm::dot(Vec4(point, 1.0), frustumPlanes[planeID]) < 0)
       return false;
 
   return true;
@@ -322,8 +322,8 @@ HeightMap ChunkManager::generateHeightMap(int64_t chunkI, int64_t chunkJ)
   for (uint8_t i = 0; i < Chunk::Size(); ++i)
     for (uint8_t j = 0; j < Chunk::Size(); ++j)
     {
-      glm::vec2 blockXY = glm::vec2(chunkI * Chunk::Length() + i * Block::Length(), chunkJ * Chunk::Length() + j * Block::Length());
-      float terrainHeight = 150 * Block::Length() * glm::simplex(blockXY / 1280.0f / Block::Length()) + 50 * Block::Length() * glm::simplex(blockXY / 320.0f / Block::Length()) + 5 * Block::Length() * glm::simplex(blockXY / 40.0f / Block::Length());
+      Vec2 blockXY = Vec2(chunkI * Chunk::Length() + i * Block::Length(), chunkJ * Chunk::Length() + j * Block::Length());
+      length_t terrainHeight = 150 * Block::Length() * glm::simplex(blockXY / 1280.0 / Block::Length()) + 50 * Block::Length() * glm::simplex(blockXY / 320.0 / Block::Length()) + 5 * Block::Length() * glm::simplex(blockXY / 40.0 / Block::Length());
       heightMap.terrainHeights[i][j] = terrainHeight;
     }
   return heightMap;

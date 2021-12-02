@@ -29,10 +29,10 @@ public:
   static bool HasTransparency(BlockType block);
   static bool HasCollision(BlockType block);
 
-  static constexpr float Length() { return s_BlockSize; }
+  static constexpr length_t Length() { return s_BlockSize; }
 
 private:
-  static constexpr float s_BlockSize = 0.2f;
+  static constexpr length_t s_BlockSize = static_cast<length_t>(0.2);
   static constexpr int s_MaxBlockTypes = std::numeric_limits<blockID>::max() + 1;
   static constexpr int s_MaxBlockTextures = 6 * s_MaxBlockTypes;
   static bool s_Initialized;

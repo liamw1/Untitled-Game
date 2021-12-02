@@ -9,7 +9,7 @@ namespace Engine
     static void Initialize() { s_RendererAPI->initialize(); }
     static void SetViewport(uint32_t x, uint32_t y, uint32_t width, uint32_t height) { s_RendererAPI->setViewport(x, y, width, height); }
     
-    static void Clear(const glm::vec4& color = { 0.0f, 0.0f, 0.0f, 1.0f }) { s_RendererAPI->clear(color); }
+    static void Clear(const Float4& color = { 0.0f, 0.0f, 0.0f, 1.0f }) { s_RendererAPI->clear(color); }
     static void WireFrameToggle(bool enableWireFrame) { s_RendererAPI->wireFrameToggle(enableWireFrame); }
     static void FaceCullToggle(bool enableFaceCulling) { s_RendererAPI->faceCullToggle(enableFaceCulling); }
     

@@ -5,7 +5,7 @@
 struct Intersection
 {
   bool intersectionOccured;
-  float distance;
+  length_t distance;
   BlockFace face;
   LocalIndex blockIndex;
   ChunkIndex chunkIndex;
@@ -14,14 +14,14 @@ struct Intersection
 class World
 {
 public:
-  World(const glm::vec3& initialPosition);
+  World(const Vec3& initialPosition);
 
-  void onUpdate(std::chrono::duration<float> timestep, Player& player);
+  void onUpdate(std::chrono::duration<seconds> timestep, Player& player);
 
   void onEvent(Engine::Event& event);
 
 private:
-  static constexpr float s_MinDistanceToWall = 0.05f * Block::Length();
+  static constexpr length_t s_MinDistanceToWall = static_cast<length_t>(0.05 * Block::Length());
 
   bool m_RenderingPaused = false;
 
@@ -32,11 +32,11 @@ private:
   /*
     \returns The first intersection between the given line segment AB and a solid Block Face.
   */
-  Intersection castRaySegment(const glm::vec3& pointA, const glm::vec3& pointB) const;
+  Intersection castRaySegment(const Vec3& pointA, const Vec3& pointB) const;
 
-  Intersection castRay(const glm::vec3& rayOrigin, const glm::vec3& rayDirection, float maxDistance) const;
+  Intersection castRay(const Vec3& rayOrigin, const Vec3& rayDirection, length_t maxDistance) const;
 
-  void playerCollisionHandling(std::chrono::duration<float> timestep, Player& player) const;
+  void playerCollisionHandling(std::chrono::duration<seconds> timestep, Player& player) const;
 
   bool onMouseButtonPressEvent(Engine::MouseButtonPressEvent& event);
   bool onKeyPressEvent(Engine::KeyPressEvent& event);

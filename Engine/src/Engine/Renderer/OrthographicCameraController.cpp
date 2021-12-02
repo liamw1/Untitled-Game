@@ -11,9 +11,9 @@ namespace Engine
   {
   }
 
-  void OrthographicCameraController::onUpdate(std::chrono::duration<float> timestep)
+  void OrthographicCameraController::onUpdate(std::chrono::duration<seconds> timestep)
   {
-    const float dt = timestep.count();  // Time between frames in seconds
+    const seconds dt = timestep.count();  // Time between frames in seconds
 
     if (Input::IsKeyPressed(Key::A))
     {

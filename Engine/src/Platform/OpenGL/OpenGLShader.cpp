@@ -75,31 +75,31 @@ namespace Engine
     glUniform1f(location, value);
   }
 
-  void OpenGLShader::setFloat2(const std::string& name, const glm::vec2& values)
+  void OpenGLShader::setFloat2(const std::string& name, const Float2& values)
   {
     GLint location = getUniformLocation(name);
     glUniform2f(location, values.x, values.y);
   }
 
-  void OpenGLShader::setFloat3(const std::string& name, const glm::vec3& values)
+  void OpenGLShader::setFloat3(const std::string& name, const Float3& values)
   {
     GLint location = getUniformLocation(name);
     glUniform3f(location, values.x, values.y, values.z);
   }
 
-  void OpenGLShader::setFloat4(const std::string& name, const glm::vec4& values)
+  void OpenGLShader::setFloat4(const std::string& name, const Float4& values)
   {
     GLint location = getUniformLocation(name);
     glUniform4f(location, values.x, values.y, values.z, values.w);
   }
 
-  void OpenGLShader::setMat3(const std::string& name, const glm::mat3& matrix)
+  void OpenGLShader::setMat3(const std::string& name, const Float3x3& matrix)
   {
     GLint location = getUniformLocation(name);
     glUniformMatrix3fv(location, 1, GL_FALSE, glm::value_ptr(matrix));
   }
 
-  void OpenGLShader::setMat4(const std::string& name, const glm::mat4& matrix)
+  void OpenGLShader::setMat4(const std::string& name, const Float4x4& matrix)
   {
     GLint location = getUniformLocation(name);
     glUniformMatrix4fv(location, 1, GL_FALSE, glm::value_ptr(matrix));

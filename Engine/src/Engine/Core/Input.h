@@ -16,7 +16,7 @@ namespace Engine
 
     static bool IsKeyPressed(Key keyCode) { return s_Instance->isKeyPressedImpl(keyCode); }
     static bool IsMouseButtonPressed(MouseButton button) { return s_Instance->isMouseButtonPressedImpl(button); }
-    static std::array<float, 2> GetMousePosition() { return s_Instance->getMousePositionImpl(); }
+    static Float2 GetMousePosition() { return s_Instance->getMousePositionImpl(); }
     static float GetMouseX() { return s_Instance->getMouseXImpl(); }
     static float GetMouseY() { return s_Instance->getMouseYImpl(); }
 
@@ -25,7 +25,7 @@ namespace Engine
 
     virtual bool isKeyPressedImpl(Key keyCode) = 0;
     virtual bool isMouseButtonPressedImpl(MouseButton button) = 0;
-    virtual std::array<float, 2> getMousePositionImpl() = 0;
+    virtual Float2 getMousePositionImpl() = 0;
     virtual float getMouseXImpl() = 0;
     virtual float getMouseYImpl() = 0;
 

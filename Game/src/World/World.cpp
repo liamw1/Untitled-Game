@@ -9,7 +9,7 @@ static constexpr uint8_t modulo(int64_t a, uint8_t b)
   return static_cast<uint8_t>(result >= 0 ? result : result + b);
 }
 
-World::World(const glm::vec3& initialPosition)
+World::World(const Vec3& initialPosition)
 {
   Block::Initialize();
 
@@ -19,7 +19,7 @@ World::World(const glm::vec3& initialPosition)
   }
 }
 
-void World::onUpdate(std::chrono::duration<float> timestep, Player& player)
+void World::onUpdate(std::chrono::duration<seconds> timestep, Player& player)
 {
   EN_PROFILE_FUNCTION();
 
@@ -29,7 +29,7 @@ void World::onUpdate(std::chrono::duration<float> timestep, Player& player)
   player.updateEnd();
 
   const Engine::Camera& playerCamera = player.getCamera();
-  const glm::vec3& viewDirection = player.getViewDirection();
+  const Float3& viewDirection = player.getViewDirection();
 
   m_PlayerRayCast = castRay(playerCamera.getPosition(), viewDirection, 1000 * Block::Length());
   if (m_PlayerRayCast.intersectionOccured)
@@ -37,8 +37,8 @@ void World::onUpdate(std::chrono::duration<float> timestep, Player& player)
     Engine::Renderer::BeginScene(player.getCamera());
     const LocalIndex& localIndex = m_PlayerRayCast.blockIndex;
     const ChunkIndex& chunkIndex = m_PlayerRayCast.chunkIndex;
-    const glm::vec3 blockCenter = Chunk::Length() * glm::vec3(chunkIndex.i, chunkIndex.j, chunkIndex.k) + Block::Length() * (glm::vec3(localIndex.i, localIndex.j, localIndex.k) + glm::vec3(0.5f));
-    Engine::Renderer::DrawCubeFrame(blockCenter, 1.01f * Block::Length() * glm::vec3(1.0f), glm::vec4(0.1f, 0.1f, 0.1f, 1.0f));
+    const Vec3 blockCenter = Chunk::Length() * Vec3(chunkIndex.i, chunkIndex.j, chunkIndex.k) + Block::Length() * (Vec3(localIndex.i, localIndex.j, localIndex.k) + Vec3(0.5));
+    Engine::Renderer::DrawCubeFrame(blockCenter, 1.01 * Block::Length() * Vec3(1.0), Float4(0.1f, 0.1f, 0.1f, 1.0f));
     Engine::Renderer::EndScene();
   }
 
@@ -67,7 +67,7 @@ void World::onUpdate(std::chrono::duration<float> timestep, Player& player)
               m_ChunkManager.sendChunkUpdate(chunk->getNeighbor(face));
           }
         }
-        else if (m_PlayerRayCast.distance > 2.5f * Block::Length())
+        else if (m_PlayerRayCast.distance > 2.5 * Block::Length())
         {
           chunk->placeBlock(blockIndex, face, BlockType::Sand);
           m_ChunkManager.sendChunkUpdate(chunk);
@@ -92,18 +92,18 @@ void World::onUpdate(std::chrono::duration<float> timestep, Player& player)
     m_ChunkManager.render(playerCamera);
 }
 
-Intersection World::castRaySegment(const glm::vec3& pointA, const glm::vec3& pointB) const
+Intersection World::castRaySegment(const Vec3& pointA, const Vec3& pointB) const
 {
-  static constexpr glm::vec3 normals[3] = { { 1, 0, 0 }, { 0, 1, 0 }, { 0, 0, 1 } };
+  static constexpr Vec3 normals[3] = { { 1, 0, 0 }, { 0, 1, 0 }, { 0, 0, 1 } };
 
-  const glm::vec3 rayDirection = pointB - pointA;
+  const Vec3 rayDirection = pointB - pointA;
 
   // Find solid block face intersections in the x,y,z directions
-  float tmin = 2.0f;
-  Intersection firstIntersection = { false, 0.0f, BlockFace::First, { 0, 0, 0 }, { 0, 0, 0 } };
+  length_t tmin = 2.0;
+  Intersection firstIntersection = { false, 0.0, BlockFace::First, { 0, 0, 0 }, { 0, 0, 0 } };
   for (uint8_t i = 0; i < 3; ++i)
   {
-    const bool alignedWithPositiveAxis = rayDirection[i] > 0.0f;
+    const bool alignedWithPositiveAxis = rayDirection[i] > 0.0;
 
     // Global indices of first and last planes that segment will intersect in direction i
     int64_t n0, nf;
@@ -121,9 +121,9 @@ Intersection World::castRaySegment(const glm::vec3& pointA, const glm::vec3& poi
     // n increases to nf if ray is aligned with positive i-axis and decreases to nf otherwise
     for (int64_t n = n0; alignedWithPositiveAxis ? n <= nf : n >= nf; alignedWithPositiveAxis ? ++n : --n)
     {
-      const float t = (n * Block::Length() - pointA[i]) / rayDirection[i];
+      const length_t t = (n * Block::Length() - pointA[i]) / rayDirection[i];
 
-      if (t > 1.0f || !isfinite(t))
+      if (t > 1.0 || !isfinite(t))
         break;
 
       if (t < tmin)
@@ -134,7 +134,7 @@ Intersection World::castRaySegment(const glm::vec3& pointA, const glm::vec3& poi
         const uint8_t w = (i + 2) % 3;
 
         // Intersection point between ray and plane
-        const glm::vec3 intersection = pointA + t * rayDirection;
+        const Vec3 intersection = pointA + t * rayDirection;
 
         // If ray hit West/South/Bottom block face, we can use n for block coordinate, otherwise, we need to step back a block
         int64_t N = n;
@@ -184,31 +184,31 @@ Intersection World::castRaySegment(const glm::vec3& pointA, const glm::vec3& poi
   return firstIntersection;
 }
 
-Intersection World::castRay(const glm::vec3& rayOrigin, const glm::vec3& rayDirection, float maxDistance) const
+Intersection World::castRay(const Vec3& rayOrigin, const Vec3& rayDirection, length_t maxDistance) const
 {
-  const glm::vec3& pointA = rayOrigin;
-  const glm::vec3  pointB = rayOrigin + maxDistance * glm::normalize(rayDirection);
+  const Vec3& pointA = rayOrigin;
+  const Vec3  pointB = rayOrigin + maxDistance * glm::normalize(rayDirection);
   return castRaySegment(pointA, pointB);
 }
 
-void World::playerCollisionHandling(std::chrono::duration<float> timestep, Player& player) const
+void World::playerCollisionHandling(std::chrono::duration<seconds> timestep, Player& player) const
 {
   EN_PROFILE_FUNCTION();
 
-  static constexpr glm::vec3 normals[6] = { { 1, 0, 0}, { -1, 0, 0}, { 0, 1, 0}, { 0, -1, 0}, { 0, 0, 1}, { 0, 0, -1} };
+  static constexpr Vec3 normals[6] = { { 1, 0, 0}, { -1, 0, 0}, { 0, 1, 0}, { 0, -1, 0}, { 0, 0, 1}, { 0, 0, -1} };
                                        //      East         West        North       South         Top        Bottom
 
   // Player width and height in blocks
   static const int playerWidth = static_cast<int>(ceil(Player::Width() / Block::Length()));
   static const int playerHeight = static_cast<int>(ceil(Player::Height() / Block::Length()));
-  const float dt = timestep.count();  // Time between frames in seconds
+  const seconds dt = timestep.count();  // Time between frames in seconds
 
 beginCollisionDetection:;
-  const glm::vec3 playerPosition = player.getPosition();
-  const float distanceMoved = dt * glm::length(player.getVelocity());
-  const glm::vec3 anchorPoint = playerPosition - 0.5f * glm::vec3(Player::Width(), Player::Width(), Player::Height());
+  const Vec3 playerPosition = player.getPosition();
+  const length_t distanceMoved = dt * glm::length(player.getVelocity());
+  const Vec3 anchorPoint = playerPosition - 0.5 * Vec3(Player::Width(), Player::Width(), Player::Height());
 
-  if (distanceMoved == 0.0f)
+  if (distanceMoved == 0.0)
     return;
 
   Intersection firstCollision = { false, 2 * distanceMoved, BlockFace::First, { 0, 0, 0 }, { 0, 0, 0 } };
@@ -216,10 +216,10 @@ beginCollisionDetection:;
     for (int j = 0; j <= playerWidth; ++j)
       for (int k = 0; k <= playerHeight; ++k)
       {
-        const glm::vec3 cornerPos = anchorPoint + Block::Length() * glm::vec3(i == playerWidth ? i - 0.2f : i, j == playerWidth ? j - 0.2f : j, k == playerHeight ? k - 0.2f : k);
+        const Vec3 cornerPos = anchorPoint + Block::Length() * Vec3(i == playerWidth ? i - 0.2 : i, j == playerWidth ? j - 0.2 : j, k == playerHeight ? k - 0.2 : k);
 
         const Intersection collision = castRaySegment(cornerPos - player.getVelocity() * dt, cornerPos);
-        const float& collisionDistance = collision.distance;
+        const length_t& collisionDistance = collision.distance;
 
         if (collision.intersectionOccured && collision.distance < firstCollision.distance)
           firstCollision = collision;
@@ -228,12 +228,14 @@ beginCollisionDetection:;
   if (firstCollision.intersectionOccured)
   {
     const uint8_t faceID = static_cast<uint8_t>(firstCollision.face);
-    const float t = firstCollision.distance / distanceMoved;
-    const glm::vec3 intersectionPoint = playerPosition + firstCollision.distance * glm::normalize(player.getVelocity());
+    const length_t t = firstCollision.distance / distanceMoved;
+    const Vec3 intersectionPoint = playerPosition + firstCollision.distance * glm::normalize(player.getVelocity());
 
     // Calculate distance player should be pushed out from solid block
-    const glm::vec3 collisionDisplacement = (1.0f - t + s_MinDistanceToWall / distanceMoved) * glm::dot(normals[faceID], -player.getVelocity() * dt) * normals[faceID];
+    const Vec3 collisionDisplacement = (1.0 - t + s_MinDistanceToWall / distanceMoved) * glm::dot(normals[faceID], -player.getVelocity() * dt) * normals[faceID];
     player.setPosition(playerPosition + collisionDisplacement);
+
+    EN_INFO("{0}, {1}, {2}", collisionDisplacement.x, collisionDisplacement.y, collisionDisplacement.z);
 
     goto beginCollisionDetection;
   }

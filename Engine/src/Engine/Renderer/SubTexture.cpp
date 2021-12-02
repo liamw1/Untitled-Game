@@ -3,7 +3,7 @@
 
 namespace Engine
 {
-  SubTexture2D::SubTexture2D(const Shared<Texture2D>& spriteSheet, const glm::vec2& minCoord, const glm::vec2& maxCoord)
+  SubTexture2D::SubTexture2D(const Shared<Texture2D>& spriteSheet, const Float2& minCoord, const Float2& maxCoord)
     : m_SpriteSheet(spriteSheet)
   {
     m_TexCoords[0] = { minCoord.x, minCoord.y };
@@ -12,7 +12,7 @@ namespace Engine
     m_TexCoords[3] = { minCoord.x, maxCoord.y };
   }
 
-  Shared<SubTexture2D> SubTexture2D::CreateFromIndices(const Shared<Texture2D>& spriteSheet, uint32_t cellSize, uint32_t i, uint32_t j, const glm::vec2& spriteSize)
+  Shared<SubTexture2D> SubTexture2D::CreateFromIndices(const Shared<Texture2D>& spriteSheet, uint32_t cellSize, uint32_t i, uint32_t j, const Float2& spriteSize)
   {
     const float dx = spriteSize.x * cellSize / spriteSheet->getWidth();
     const float dy = spriteSize.y * cellSize / spriteSheet->getHeight();
@@ -21,6 +21,6 @@ namespace Engine
 
     EN_CORE_ASSERT(x >= 0.0f && x + dx <= 1.0f && y >= 0.0f && y + dy <= 1.0f, "SubTexture coordinates are out of bounds!");
 
-    return CreateShared<SubTexture2D>(spriteSheet, glm::vec2(x, y), glm::vec2(x + dx, y + dy));
+    return CreateShared<SubTexture2D>(spriteSheet, Float2(x, y), Float2(x + dx, y + dy));
   }
 }

@@ -19,8 +19,8 @@ namespace Engine
     void BeginScene(const Camera& camera);
     void EndScene();
 
-    void DrawCube(const glm::vec3& position, const glm::vec3& size, Shared<Texture2D> texture = nullptr);
-    void DrawCubeFrame(const glm::vec3& position, const glm::vec3& size, const glm::vec4& color = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
+    void DrawCube(const Vec3& position, const Vec3& size, Shared<Texture2D> texture = nullptr);
+    void DrawCubeFrame(const Vec3& position, const Vec3& size, const Float4& color = Float4(0.0f, 0.0f, 0.0f, 1.0f));
 
     void OnWindowResize(uint32_t width, uint32_t height);
   };

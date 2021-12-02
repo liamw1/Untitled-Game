@@ -5,12 +5,12 @@
 
 namespace Engine
 {
-  static constexpr radians s_MinPitch = glm::radians(-89.99f);
-  static constexpr radians s_MaxPitch = glm::radians(89.99f);
-  static constexpr radians s_MinFOV = glm::radians(5.0f);
-  static constexpr radians s_MaxFOV = glm::radians(80.0f);
+  static constexpr radians s_MinPitch = static_cast<radians>(glm::radians(-89.99));
+  static constexpr radians s_MaxPitch = static_cast<radians>(glm::radians(89.99));
+  static constexpr radians s_MinFOV = static_cast<radians>(glm::radians(5.0));
+  static constexpr radians s_MaxFOV = static_cast<radians>(glm::radians(80.0));
 
-  CameraController::CameraController(radians fov, float aspectRatio, float nearPlane, float farPlane)
+  CameraController::CameraController(radians fov, float aspectRatio, length_t nearPlane, length_t farPlane)
     : m_Fov(fov),
       m_AspectRatio(aspectRatio),
       m_NearPlane(nearPlane),
@@ -21,31 +21,31 @@ namespace Engine
     setMouseState(m_IsMouseEnabled);
   }
 
-  void CameraController::onUpdate(std::chrono::duration<float> timestep)
+  void CameraController::onUpdate(std::chrono::duration<seconds> timestep)
   {
     if (m_FreeCamEnabled)
     {
-      const float dt = timestep.count();  // Time between frames in seconds
+      const seconds dt = timestep.count();  // Time between frames in seconds
 
       if (Input::IsKeyPressed(Key::A))
       {
-        m_CameraPosition.x += sinf(m_Yaw) * m_CameraTranslationSpeed * dt;
-        m_CameraPosition.y += cosf(m_Yaw) * m_CameraTranslationSpeed * dt;
+        m_CameraPosition.x += sin(m_Yaw) * m_CameraTranslationSpeed * dt;
+        m_CameraPosition.y += cos(m_Yaw) * m_CameraTranslationSpeed * dt;
       }
       if (Input::IsKeyPressed(Key::D))
       {
-        m_CameraPosition.x -= sinf(m_Yaw) * m_CameraTranslationSpeed * dt;
-        m_CameraPosition.y -= cosf(m_Yaw) * m_CameraTranslationSpeed * dt;
+        m_CameraPosition.x -= sin(m_Yaw) * m_CameraTranslationSpeed * dt;
+        m_CameraPosition.y -= cos(m_Yaw) * m_CameraTranslationSpeed * dt;
       }
       if (Input::IsKeyPressed(Key::W))
       {
-        m_CameraPosition.x += cosf(m_Yaw) * m_CameraTranslationSpeed * dt;
-        m_CameraPosition.y -= sinf(m_Yaw) * m_CameraTranslationSpeed * dt;
+        m_CameraPosition.x += cos(m_Yaw) * m_CameraTranslationSpeed * dt;
+        m_CameraPosition.y -= sin(m_Yaw) * m_CameraTranslationSpeed * dt;
       }
       if (Input::IsKeyPressed(Key::S))
       {
-        m_CameraPosition.x -= cosf(m_Yaw) * m_CameraTranslationSpeed * dt;
-        m_CameraPosition.y += sinf(m_Yaw) * m_CameraTranslationSpeed * dt;
+        m_CameraPosition.x -= cos(m_Yaw) * m_CameraTranslationSpeed * dt;
+        m_CameraPosition.y += sin(m_Yaw) * m_CameraTranslationSpeed * dt;
       }
       if (Input::IsKeyPressed(Key::Space))
         m_CameraPosition.z += m_CameraTranslationSpeed * dt;

@@ -12,9 +12,9 @@ namespace Engine
   {
     struct QuadParams
     {
-      glm::vec3 position = glm::vec3(0.0f);
-      glm::vec2 size = glm::vec2(1.0f);
-      glm::vec4 tintColor = glm::vec4(1.0f);
+      Vec3 position = Vec3(0.0);
+      Vec2 size = Vec2(1.0);
+      Float4 tintColor = Float4(1.0);
       float textureScalingFactor = 1.0f;
     };
 

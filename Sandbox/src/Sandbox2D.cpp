@@ -28,7 +28,7 @@ void Sandbox2D::onDetach()
 {
 }
 
-void Sandbox2D::onUpdate(std::chrono::duration<float> timestep)
+void Sandbox2D::onUpdate(std::chrono::duration<seconds> timestep)
 {
   EN_PROFILE_FUNCTION();
 
@@ -38,26 +38,26 @@ void Sandbox2D::onUpdate(std::chrono::duration<float> timestep)
 
   Engine::RenderCommand::Clear({ 0.1f, 0.1f, 0.1f, 1.0f });
 
-  static radians rotation = 0.0f;
+  static radians rotation = 0.0;
   rotation += timestep.count();
 
   Engine::Renderer2D::BeginScene(m_CameraController.getCamera());
-  Engine::Renderer2D::DrawQuad({ {0.0f, 0.0f, -0.1f}, glm::vec2(50.f), glm::vec4(1.0f), 10.0f}, m_CheckerboardTexture);
+  Engine::Renderer2D::DrawQuad({ {0.0, 0.0, -0.1}, Vec2(50.f), Float4(1.0f), 10.0f}, m_CheckerboardTexture);
   for (int i = 0; i < 5; ++i)
     for (int j = 0; j < 5; ++j)
-      Engine::Renderer2D::DrawRotatedQuad({ { static_cast<float>(i) - 2.0f, static_cast<float>(j) - 2.0f, 0.0f }, { 0.66f, 0.66f }, {0.8f, 0.2f, 0.3f, 1.0f}}, rotation, m_CheckerboardTexture);
+      Engine::Renderer2D::DrawRotatedQuad({ { static_cast<length_t>(i) - 2.0, static_cast<length_t>(j) - 2.0, 0.0 }, { 0.66, 0.66 }, {0.8f, 0.2f, 0.3f, 1.0f}}, rotation, m_CheckerboardTexture);
 
-  for (float y = -5.0f; y < 5.0f; y += 0.5f)
-    for (float x = -5.0f; x < 5.0f; x += 0.5f)
+  for (length_t y = -5.0; y < 5.0; y += 0.5)
+    for (length_t x = -5.0; x < 5.0; x += 0.5)
     {
-      glm::vec4 color = { (x + 5.0f) / 10.0f, 0.4f, (y + 5.0f) / 10.0f, 0.5f };
-      Engine::Renderer2D::DrawQuad({ { x, y, 0.0f }, glm::vec2(0.45f), color, 1.0f });
+      Float4 color = { (x + 5.0f) / 10.0f, 0.4f, (y + 5.0f) / 10.0f, 0.5f };
+      Engine::Renderer2D::DrawQuad({ { x, y, 0.0 }, Vec2(0.45), color, 1.0f });
     }
   Engine::Renderer2D::EndScene();
 
 #if 0
   Engine::Renderer2D::BeginScene(m_CameraController.getCamera());
-  Engine::Renderer2D::DrawQuad({ {0.0f, 0.0f, 0.0f}, glm::vec2(1.0f), glm::vec4(1.0f), 1.0f }, m_RockTexture);
+  Engine::Renderer2D::DrawQuad({ {0.0, 0.0, 0.0}, Vec2(1.0), Float4(1.0f), 1.0f }, m_RockTexture);
   Engine::Renderer2D::EndScene();
 #endif
 }

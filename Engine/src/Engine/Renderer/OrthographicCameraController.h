@@ -10,7 +10,7 @@ namespace Engine
   public:
     OrthographicCameraController(float aspectRatio, bool canRotate = false);
 
-    void onUpdate(std::chrono::duration<float> timestep);
+    void onUpdate(std::chrono::duration<seconds> timestep);
     void onEvent(Event& event);
 
     OrthographicCamera& getCamera() { return m_Camera; }
@@ -22,11 +22,11 @@ namespace Engine
     float m_ZoomLevel = 1.0f;
     OrthographicCamera m_Camera;
 
-    radians m_CameraRotation = 0.0f;
-    glm::vec3 m_CameraPosition = { 0.0f, 0.0f, 0.0f };
+    radians m_CameraRotation = 0.0;
+    Vec3 m_CameraPosition = { 0.0, 0.0, 0.0 };
 
     radiansPerSec m_CameraRotationSpeed = PI;
-    float m_CameraTranslationSpeed = 3.0f;
+    length_t m_CameraTranslationSpeed = 3.0;
 
     bool onMouseScroll(MouseScrollEvent& event);
     bool onWindowResize(WindowResizeEvent& event);

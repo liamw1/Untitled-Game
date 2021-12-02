@@ -3,16 +3,18 @@
 #include "World/ChunkRenderer.h"
 #include "World/World.h"
 
+static constexpr uint32_t n = std::numeric_limits<uint32_t>::max();
+
 GameSandbox::GameSandbox()
   : Layer("GameSandbox"),
     m_Player(),
-    m_World(glm::vec3(0.0f))
+    m_World(Vec3(0.0))
 {
   Engine::RenderCommand::Initialize();
   Engine::Renderer::Initialize();
   ChunkRenderer::Initialize();
 
-  m_Player.setPosition(Chunk::Length() * glm::vec3(0.0f, 0.0f, 1.0f));
+  m_Player.setPosition(Chunk::Length() * Vec3(0.0, 0.0, 3.0));// + 0.001 * static_cast<length_t>(n) * Block::Length() * Vec3(1.0, 0.0, 0.0));
 }
 
 void GameSandbox::onAttach()
@@ -23,11 +25,11 @@ void GameSandbox::onDetach()
 {
 }
 
-void GameSandbox::onUpdate(std::chrono::duration<float> timestep)
+void GameSandbox::onUpdate(std::chrono::duration<seconds> timestep)
 {
   EN_PROFILE_FUNCTION();
 
-  EN_TRACE("fps: {0}", static_cast<int>(1.0f / timestep.count()));
+  // EN_TRACE("fps: {0}", static_cast<int>(1.0f / timestep.count()));
 
 #if 0
   EN_TRACE("({0}, {1}, {2})", static_cast<int>(m_Player.getPosition()[0] / Block::Length()),
@@ -43,6 +45,8 @@ void GameSandbox::onUpdate(std::chrono::duration<float> timestep)
   Engine::RenderCommand::Clear({ 0.788f, 0.949f, 0.949f, 1.0f });
 
   m_World.onUpdate(timestep, m_Player);
+
+  // EN_INFO("{0}, {1}, {2}", m_Player.getPosition().x, m_Player.getPosition().y, m_Player.getPosition().z);
 }
 
 void GameSandbox::onImGuiRender()
