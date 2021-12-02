@@ -49,7 +49,7 @@ void ChunkManager::clean()
     m_HeightMaps.erase(heightMapsToRemove[i]);
 }
 
-void ChunkManager::render(const Engine::Camera& playerCamera)
+void ChunkManager::render(const Engine::Camera& playerCamera) const
 {
   EN_PROFILE_FUNCTION();
   
@@ -72,8 +72,6 @@ void ChunkManager::render(const Engine::Camera& playerCamera)
 
     if (isInRenderRange(chunk->getIndex()))
     {
-      chunk->update();
-
       if (isInFrustum(chunk->center(), frustumPlanes))
         ChunkRenderer::DrawChunk(chunk);
     }
@@ -98,17 +96,13 @@ bool ChunkManager::loadNewChunks(uint32_t maxNewChunks)
 
   // Find new chunks to generate
   std::vector<ChunkIndex> newChunks{};
-  std::vector<Chunk*> chunksToRecategorize{};
   for (auto& pair : m_BoundaryChunks)
   {
     Chunk* chunk = pair.second;
 
-    bool isOnBoundary = false;
     for (BlockFace face : BlockFaceIterator())
       if (chunk->getNeighbor(face) == nullptr && !chunk->isFaceOpaque(face))
       {
-        isOnBoundary = true;
-
         // Store index of potential new chunk
         ChunkIndex neighborIndex = chunk->getIndex();
         for (int i = 0; i < 3; ++i)
@@ -121,20 +115,8 @@ bool ChunkManager::loadNewChunks(uint32_t maxNewChunks)
         newChunks.push_back(neighborIndex);
       }
 
-    if (!isOnBoundary)
-      chunksToRecategorize.push_back(chunk);
-
     if (newChunks.size() >= maxNewChunks)
       break;
-  }
-
-  // Move chunk pointers out of m_BoundaryChunks when all their neighbors are accounted for
-  for (int i = 0; i < chunksToRecategorize.size(); ++i)
-  {
-    Chunk* chunk = chunksToRecategorize[i];
-
-    MapType destination = chunk->isEmpty() ? MapType::Empty : MapType::Renderable;
-    moveToMap(chunk, MapType::Boundary, destination);
   }
 
   // Added new chunks to m_BoundaryChunks
@@ -181,6 +163,10 @@ bool ChunkManager::loadNewChunks(uint32_t maxNewChunks)
           newChunk->setNeighbor(dir, adjChunk);
           adjChunk->setNeighbor(!dir, newChunk);
 
+          // Renderable chunks should receive an update if they get a new neighbor
+          if (mapType == MapType::Renderable)
+            adjChunk->update();
+
           break;
         }
       }
@@ -189,6 +175,20 @@ bool ChunkManager::loadNewChunks(uint32_t maxNewChunks)
     // If there are no open chunk slots, don't load any more
     if (m_OpenChunkSlots.size() == 0)
       break;
+  }
+
+  // Move chunk pointers out of m_BoundaryChunks when all their neighbors are accounted for
+  for (auto& pair : m_BoundaryChunks)
+  {
+    Chunk* chunk = pair.second;
+
+    if (!isOnBoundary(chunk))
+    {
+      MapType destination = chunk->isEmpty() ? MapType::Empty : MapType::Renderable;
+      moveToMap(chunk, MapType::Boundary, destination);
+
+      chunk->update();
+    }
   }
 
   return newChunks.size() > 0;
@@ -207,6 +207,48 @@ Chunk* ChunkManager::findChunk(const ChunkIndex& chunkIndex) const
       return (*pair).second;
   }
   return nullptr;
+}
+
+void ChunkManager::sendChunkUpdate(Chunk* const chunk)
+{
+  if (chunk == nullptr)
+    return;
+
+  int64_t key = createKey(chunk->getIndex());
+
+  // Find maptype of chunk
+  bool foundChunk = false;
+  MapType source = MapType::First;
+  for (MapType mapType : MapTypeIterator())
+  {
+    const uint8_t mapTypeID = static_cast<uint8_t>(mapType);
+
+    auto pair = m_Chunks[mapTypeID].find(key);
+    if (pair != m_Chunks[mapTypeID].end())
+    {
+      foundChunk = true;
+      source = mapType;
+    }
+  }
+
+  if (!foundChunk)
+    EN_ERROR("Chunk could not be found!");
+  else
+  {
+    chunk->update();
+
+    bool boundaryChunk = isOnBoundary(chunk);
+
+    // Recategorize chunk if necessary.
+    if (boundaryChunk && source != MapType::Boundary)
+      moveToMap(chunk, source, MapType::Boundary);
+    else if (!boundaryChunk && source == MapType::Boundary)
+      moveToMap(chunk, MapType::Boundary, chunk->isEmpty() ? MapType::Empty : MapType::Renderable);
+    else if (source == MapType::Renderable && chunk->isEmpty())
+      moveToMap(chunk, MapType::Renderable, MapType::Empty);
+    else if (source == MapType::Empty && !chunk->isEmpty())
+      moveToMap(chunk, MapType::Empty, MapType::Renderable);
+  }
 }
 
 int64_t ChunkManager::createKey(const ChunkIndex& chunkIndex) const
@@ -311,7 +353,7 @@ Chunk* ChunkManager::loadNewChunk(const ChunkIndex& chunkIndex)
   return newChunk;
 }
 
-void ChunkManager::unloadChunk(Chunk* chunk)
+void ChunkManager::unloadChunk(Chunk* const chunk)
 {
   EN_ASSERT(m_BoundaryChunks.find(createKey(chunk->getIndex())) != m_BoundaryChunks.end(), "Chunk is not in boundary chunk map!");
 
@@ -348,7 +390,7 @@ void ChunkManager::unloadChunk(Chunk* chunk)
   m_ChunkArray[index].reset();
 }
 
-void ChunkManager::addToMap(Chunk* chunk, MapType mapType)
+void ChunkManager::addToMap(Chunk* const chunk, MapType mapType)
 {
   const uint8_t mapTypeID = static_cast<uint8_t>(mapType);
 
@@ -358,11 +400,19 @@ void ChunkManager::addToMap(Chunk* chunk, MapType mapType)
   EN_ASSERT(insertionSuccess, "Chunk is already in map!");
 }
 
-void ChunkManager::moveToMap(Chunk* chunk, MapType source, MapType destination)
+void ChunkManager::moveToMap(Chunk* const chunk, MapType source, MapType destination)
 {
   const uint8_t sourceTypeID = static_cast<uint8_t>(source);
 
   int64_t key = createKey(chunk->getIndex());
   addToMap(chunk, destination);
   m_Chunks[sourceTypeID].erase(key);
+}
+
+bool ChunkManager::isOnBoundary(const Chunk* const chunk) const
+{
+  for (BlockFace face : BlockFaceIterator())
+    if (chunk->getNeighbor(face) == nullptr && !chunk->isFaceOpaque(face))
+      return true;
+  return false;
 }

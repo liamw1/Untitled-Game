@@ -21,17 +21,23 @@ public:
   void onEvent(Engine::Event& event);
 
 private:
-  static constexpr float s_MinDistanceToWall = 0.01f * Block::Length();
+  static constexpr float s_MinDistanceToWall = 0.05f * Block::Length();
 
   bool m_RenderingPaused = false;
+
   ChunkManager m_ChunkManager{};
 
-  bool onKeyPressEvent(Engine::KeyPressEvent& event);
+  Intersection m_PlayerRayCast{};
 
   /*
     \returns The first intersection between the given line segment AB and a solid Block Face.
   */
   Intersection castRaySegment(const glm::vec3& pointA, const glm::vec3& pointB) const;
 
+  Intersection castRay(const glm::vec3& rayOrigin, const glm::vec3& rayDirection, float maxDistance) const;
+
   void playerCollisionHandling(std::chrono::duration<float> timestep, Player& player) const;
+
+  bool onMouseButtonPressEvent(Engine::MouseButtonPressEvent& event);
+  bool onKeyPressEvent(Engine::KeyPressEvent& event);
 };

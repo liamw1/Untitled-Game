@@ -42,4 +42,10 @@ namespace Engine
     glDrawElements(GL_TRIANGLES, count, GL_UNSIGNED_INT, nullptr);
     glBindTexture(GL_TEXTURE_2D, 0);
   }
+
+  void OpenGLRendererAPI::drawIndexedLines(const Shared<VertexArray>& vertexArray, uint32_t indexCount)
+  {
+    uint32_t count = indexCount == 0 ? vertexArray->getIndexBuffer()->getCount() : indexCount;
+    glDrawElements(GL_LINES, count, GL_UNSIGNED_INT, nullptr);
+  }
 }

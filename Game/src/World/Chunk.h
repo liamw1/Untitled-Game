@@ -8,15 +8,16 @@ struct HeightMap
   std::array<std::array<float, 32>, 32> terrainHeights;
 };
 
-struct ChunkIndex
+template<typename intType>
+struct Index3D
 {
-  int64_t i;
-  int64_t j;
-  int64_t k;
+  intType i;
+  intType j;
+  intType k;
 
-  int64_t& operator[](int index)
+  intType& operator[](uint8_t index)
   {
-    EN_ASSERT(index >= 0 && index < 3, "Index is out of bounds!");
+    EN_ASSERT(index < 3, "Index is out of bounds!");
     switch (index)
     {
       default:
@@ -26,9 +27,9 @@ struct ChunkIndex
     }
   }
 
-  const int64_t& operator[](int index) const
+  const intType& operator[](uint8_t index) const
   {
-    EN_ASSERT(index >= 0 && index < 3, "Index is out of bounds!");
+    EN_ASSERT(index < 3, "Index is out of bounds!");
     switch (index)
     {
       default:
@@ -38,47 +39,11 @@ struct ChunkIndex
     }
   }
 
-  bool operator==(const ChunkIndex& other) const
-  {
-    return i == other.i && j == other.j && k == other.k;
-  }
+  bool operator==(const Index3D<intType>& other) const { return i == other.i && j == other.j && k == other.k; }
 };
 
-struct LocalIndex
-{
-  uint8_t i;
-  uint8_t j;
-  uint8_t k;
-
-  uint8_t& operator[](int index)
-  {
-    EN_ASSERT(index >= 0 && index < 3, "Index is out of bounds!");
-    switch (index)
-    {
-      default:
-      case 0: return i;
-      case 1: return j;
-      case 2: return k;
-    }
-  }
-
-  const uint8_t& operator[](int index) const
-  {
-    EN_ASSERT(index >= 0 && index < 3, "Index is out of bounds!");
-    switch (index)
-    {
-      default:
-      case 0: return i;
-      case 1: return j;
-      case 2: return k;
-    }
-  }
-
-  bool operator==(const ChunkIndex& other) const
-  {
-    return i == other.i && j == other.j && k == other.k;
-  }
-};
+using LocalIndex = Index3D<uint8_t>;
+using ChunkIndex = Index3D<int64_t>;
 
 class Chunk
 {
@@ -96,8 +61,9 @@ public:
   BlockType getBlockType(uint8_t i, uint8_t j, uint8_t k) const;
   BlockType getBlockType(const LocalIndex& blockIndex) const;
   BlockType getBlockType(const glm::vec3& position) const;
-  void setBlockType(uint8_t i, uint8_t j, uint8_t k, BlockType blockType);
-  void setBlockType(const LocalIndex& blockIndex, BlockType blockType);
+
+  void removeBlock(const LocalIndex& blockIndex);
+  void placeBlock(const LocalIndex& blockIndex, BlockFace face, BlockType blockType);
 
   /*
     \returns The local block index of the block that the given position
@@ -145,12 +111,12 @@ public:
     If the anchor point is denoted by A, then for any point
     X within the chunk, A_i <= X_i.
   */
-  glm::vec3 anchorPoint() const { return glm::vec3(m_ChunkIndex.i * Length(), m_ChunkIndex.j * Length(), m_ChunkIndex.k * Length()); }
+  glm::vec3 anchorPoint() const { return s_ChunkLength * glm::vec3(m_ChunkIndex.i, m_ChunkIndex.j, m_ChunkIndex.k); }
 
   /*
     \returns The chunk's geometric center.
   */
-  glm::vec3 center() const { return anchorPoint() + Length() / 2; }
+  glm::vec3 center() const { return anchorPoint() + s_ChunkLength / 2; }
 
   /*
     \returns A pointer to the neighboring chunk in the specified direction.
@@ -180,6 +146,13 @@ public:
 
   bool isEmpty() const { return m_ChunkComposition == nullptr; }
   bool isFaceOpaque(BlockFace face) const { return m_FaceIsOpaque[static_cast<uint8_t>(face)]; }
+
+  bool isBlockNeighborInAnotherChunk(uint8_t i, uint8_t j, uint8_t k, BlockFace face);
+  bool isBlockNeighborInAnotherChunk(const LocalIndex& blockIndex, BlockFace face);
+  bool isBlockNeighborTransparent(uint8_t i, uint8_t j, uint8_t k, BlockFace face);
+  bool isBlockNeighborTransparent(const LocalIndex& blockIndex, BlockFace face);
+  bool isBlockNeighborAir(uint8_t i, uint8_t j, uint8_t k, BlockFace face);
+  bool isBlockNeighborAir(const LocalIndex& blockIndex, BlockFace face);
 
   static constexpr uint8_t Size() { return s_ChunkSize; }
   static constexpr float Length() { return s_ChunkLength; }
@@ -219,8 +192,10 @@ private:
 
   void generateVertexArray();
 
-  bool isBlockNeighborInAnotherChunk(uint8_t i, uint8_t j, uint8_t k, BlockFace face);
-  bool isBlockNeighborTransparent(uint8_t i, uint8_t j, uint8_t k, BlockFace face);
+  void setBlockType(uint8_t i, uint8_t j, uint8_t k, BlockType blockType);
+  void setBlockType(const LocalIndex& blockIndex, BlockType blockType);
+
+  void determineOpacity();
 
   /*
     For updating neighbors if chunk moves to a different
@@ -232,4 +207,6 @@ private:
     Severs communication with neighboring chunks.
   */
   void excise();
+
+  void markAsEmpty();
 };

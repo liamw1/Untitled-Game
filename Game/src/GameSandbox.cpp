@@ -9,9 +9,10 @@ GameSandbox::GameSandbox()
     m_World(glm::vec3(0.0f))
 {
   Engine::RenderCommand::Initialize();
+  Engine::Renderer::Initialize();
   ChunkRenderer::Initialize();
 
-  m_Player.setPosition({ Chunk::Length() / 2, Chunk::Length() / 2, 2 * Chunk::Length() });
+  m_Player.setPosition(Chunk::Length() * glm::vec3(0.0f, 0.0f, 1.0f));
 }
 
 void GameSandbox::onAttach()
@@ -26,7 +27,7 @@ void GameSandbox::onUpdate(std::chrono::duration<float> timestep)
 {
   EN_PROFILE_FUNCTION();
 
-  // EN_TRACE("fps: {0}", static_cast<int>(1.0f / timestep.count()));
+  EN_TRACE("fps: {0}", static_cast<int>(1.0f / timestep.count()));
 
 #if 0
   EN_TRACE("({0}, {1}, {2})", static_cast<int>(m_Player.getPosition()[0] / Block::Length()),

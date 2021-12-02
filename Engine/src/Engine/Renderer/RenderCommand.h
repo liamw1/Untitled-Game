@@ -14,6 +14,7 @@ namespace Engine
     static void FaceCullToggle(bool enableFaceCulling) { s_RendererAPI->faceCullToggle(enableFaceCulling); }
     
     static void DrawIndexed(const Shared<VertexArray>& vertexArray, uint32_t indexCount = 0) { return s_RendererAPI->drawIndexed(vertexArray, indexCount); }
+    static void DrawIndexedLines(const Shared<VertexArray>& vertexArray, uint32_t indexCount = 0) { return s_RendererAPI->drawIndexedLines(vertexArray, indexCount); }
 
   private:
     static Unique<RendererAPI> s_RendererAPI;

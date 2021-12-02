@@ -1,6 +1,7 @@
 #include "GMpch.h"
 #include "World.h"
 #include "ChunkRenderer.h"
+#include "Engine/Renderer/Renderer.h"
 
 static constexpr uint8_t modulo(int64_t a, uint8_t b)
 {
@@ -10,8 +11,9 @@ static constexpr uint8_t modulo(int64_t a, uint8_t b)
 
 World::World(const glm::vec3& initialPosition)
 {
-  m_ChunkManager.updatePlayerChunk(initialPosition);
+  Block::Initialize();
 
+  m_ChunkManager.updatePlayerChunk(initialPosition);
   while (m_ChunkManager.loadNewChunks(10000))
   {
   }
@@ -21,31 +23,73 @@ void World::onUpdate(std::chrono::duration<float> timestep, Player& player)
 {
   EN_PROFILE_FUNCTION();
 
-  const Engine::Camera& playerCamera = player.getCamera();
-
+  /* Player update stage */
   player.updateBegin(timestep);
   playerCollisionHandling(timestep, player);
   player.updateEnd();
 
+  const Engine::Camera& playerCamera = player.getCamera();
+  const glm::vec3& viewDirection = player.getViewDirection();
+
+  m_PlayerRayCast = castRay(playerCamera.getPosition(), viewDirection, 1000 * Block::Length());
+  if (m_PlayerRayCast.intersectionOccured)
+  {
+    Engine::Renderer::BeginScene(player.getCamera());
+    const LocalIndex& localIndex = m_PlayerRayCast.blockIndex;
+    const ChunkIndex& chunkIndex = m_PlayerRayCast.chunkIndex;
+    const glm::vec3 blockCenter = Chunk::Length() * glm::vec3(chunkIndex.i, chunkIndex.j, chunkIndex.k) + Block::Length() * (glm::vec3(localIndex.i, localIndex.j, localIndex.k) + glm::vec3(0.5f));
+    Engine::Renderer::DrawCubeFrame(blockCenter, 1.01f * Block::Length() * glm::vec3(1.0f), glm::vec4(0.1f, 0.1f, 0.1f, 1.0f));
+    Engine::Renderer::EndScene();
+  }
+
+  if (Engine::Input::IsMouseButtonPressed(MouseButton::Button0) || Engine::Input::IsMouseButtonPressed(MouseButton::Button1))
+  {
+    if (m_PlayerRayCast.intersectionOccured)
+    {
+      const ChunkIndex& chunkIndex = m_PlayerRayCast.chunkIndex;
+      const LocalIndex& blockIndex = m_PlayerRayCast.blockIndex;
+      const BlockFace& face = m_PlayerRayCast.face;
+      Chunk* const chunk = m_ChunkManager.findChunk(chunkIndex);
+
+      if (chunk != nullptr)
+      {
+        if (Engine::Input::IsMouseButtonPressed(MouseButton::Button0))
+        {
+          chunk->removeBlock(blockIndex);
+          m_ChunkManager.sendChunkUpdate(chunk);
+
+          for (BlockFace face : BlockFaceIterator())
+          {
+            const uint8_t faceID = static_cast<uint8_t>(face);
+            const uint8_t coordID = faceID / 2;
+
+            if (blockIndex[coordID] == (faceID % 2 == 0 ? Chunk::Size() - 1 : 0))
+              m_ChunkManager.sendChunkUpdate(chunk->getNeighbor(face));
+          }
+        }
+        else if (m_PlayerRayCast.distance > 2.5f * Block::Length())
+        {
+          chunk->placeBlock(blockIndex, face, BlockType::Sand);
+          m_ChunkManager.sendChunkUpdate(chunk);
+
+          if (chunk->isBlockNeighborInAnotherChunk(blockIndex, face))
+            m_ChunkManager.sendChunkUpdate(chunk->getNeighbor(face));
+        }
+      }
+    }
+  }
+
   /* Rendering stage */
   if (!m_RenderingPaused)
   {
-    m_ChunkManager.updatePlayerChunk(playerCamera.getPosition());
+    m_ChunkManager.updatePlayerChunk(player.getPosition());
 
-    m_ChunkManager.clean();
-    m_ChunkManager.render(playerCamera);
     m_ChunkManager.loadNewChunks(200);
+    m_ChunkManager.render(playerCamera);
+    m_ChunkManager.clean();
   }
   else
     m_ChunkManager.render(playerCamera);
-}
-
-bool World::onKeyPressEvent(Engine::KeyPressEvent& event)
-{
-  if (event.getKeyCode() == Key::F3)
-    m_RenderingPaused = !m_RenderingPaused;
-
-  return false;
 }
 
 Intersection World::castRaySegment(const glm::vec3& pointA, const glm::vec3& pointB) const
@@ -140,8 +184,17 @@ Intersection World::castRaySegment(const glm::vec3& pointA, const glm::vec3& poi
   return firstIntersection;
 }
 
+Intersection World::castRay(const glm::vec3& rayOrigin, const glm::vec3& rayDirection, float maxDistance) const
+{
+  const glm::vec3& pointA = rayOrigin;
+  const glm::vec3  pointB = rayOrigin + maxDistance * glm::normalize(rayDirection);
+  return castRaySegment(pointA, pointB);
+}
+
 void World::playerCollisionHandling(std::chrono::duration<float> timestep, Player& player) const
 {
+  EN_PROFILE_FUNCTION();
+
   static constexpr glm::vec3 normals[6] = { { 1, 0, 0}, { -1, 0, 0}, { 0, 1, 0}, { 0, -1, 0}, { 0, 0, 1}, { 0, 0, -1} };
                                        //      East         West        North       South         Top        Bottom
 
@@ -163,7 +216,7 @@ beginCollisionDetection:;
     for (int j = 0; j <= playerWidth; ++j)
       for (int k = 0; k <= playerHeight; ++k)
       {
-        const glm::vec3 cornerPos = anchorPoint + Block::Length() * glm::vec3(i, j, k);
+        const glm::vec3 cornerPos = anchorPoint + Block::Length() * glm::vec3(i == playerWidth ? i - 0.2f : i, j == playerWidth ? j - 0.2f : j, k == playerHeight ? k - 0.2f : k);
 
         const Intersection collision = castRaySegment(cornerPos - player.getVelocity() * dt, cornerPos);
         const float& collisionDistance = collision.distance;
@@ -189,5 +242,55 @@ beginCollisionDetection:;
 void World::onEvent(Engine::Event& event)
 {
   Engine::EventDispatcher dispatcher(event);
+  dispatcher.dispatch<Engine::MouseButtonPressEvent>(EN_BIND_EVENT_FN(onMouseButtonPressEvent));
   dispatcher.dispatch<Engine::KeyPressEvent>(EN_BIND_EVENT_FN(onKeyPressEvent));
+}
+
+bool World::onMouseButtonPressEvent(Engine::MouseButtonPressEvent& event)
+{
+#if 0
+  if (m_PlayerRayCast.intersectionOccured)
+  {
+    const ChunkIndex& chunkIndex = m_PlayerRayCast.chunkIndex;
+    const LocalIndex& blockIndex = m_PlayerRayCast.blockIndex;
+    const BlockFace&  face = m_PlayerRayCast.face;
+    Chunk* const chunk = m_ChunkManager.findChunk(chunkIndex);
+
+    if (chunk != nullptr)
+    {
+      if (event.getMouseButton() == MouseButton::Button0)
+      {
+        chunk->removeBlock(blockIndex);
+        m_ChunkManager.sendChunkUpdate(chunk);
+
+        for (BlockFace face : BlockFaceIterator())
+        {
+          const uint8_t faceID = static_cast<uint8_t>(face);
+          const uint8_t coordID = faceID / 2;
+
+          if (blockIndex[coordID] == (faceID % 2 == 0 ? Chunk::Size() - 1 : 0))
+            m_ChunkManager.sendChunkUpdate(chunk->getNeighbor(face));
+        }
+      }
+      else if (event.getMouseButton() == MouseButton::Button1)
+      {
+        chunk->placeBlock(blockIndex, face, BlockType::Sand);
+        m_ChunkManager.sendChunkUpdate(chunk);
+
+        if (chunk->isBlockNeighborInAnotherChunk(blockIndex, face))
+          m_ChunkManager.sendChunkUpdate(chunk->getNeighbor(face));
+      }
+    }
+  }
+#endif
+
+  return false;
+}
+
+bool World::onKeyPressEvent(Engine::KeyPressEvent& event)
+{
+  if (event.getKeyCode() == Key::F3)
+    m_RenderingPaused = !m_RenderingPaused;
+
+  return false;
 }

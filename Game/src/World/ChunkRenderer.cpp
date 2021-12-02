@@ -21,17 +21,16 @@ void ChunkRenderer::Initialize()
   s_BlockFaceShader->setInt("u_TextureArray", s_TextureSlot);
 
   s_TextureArray = Engine::TextureArray::Create(16, 128);
-  Block::Initialize();
   for (BlockTexture texture : BlockTextureIterator())
     s_TextureArray->addTexture(Block::GetTexturePath(texture));
 }
 
 void ChunkRenderer::BeginScene(const Engine::Camera& camera)
 {
+  s_BlockFaceShader->bind();
   s_BlockFaceShader->setFloat("u_BlockLength", Block::Length());
   s_BlockFaceShader->setMat4("u_ViewProjection", camera.getViewProjectionMatrix());
   s_TextureArray->bind(s_TextureSlot);
-  s_BlockFaceShader->bind();
 }
 
 void ChunkRenderer::EndScene()

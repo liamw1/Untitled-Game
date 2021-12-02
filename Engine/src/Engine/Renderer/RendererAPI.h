@@ -25,6 +25,7 @@ namespace Engine
     virtual void faceCullToggle(bool enableFaceCulling) const = 0;
     
     virtual void drawIndexed(const Shared<VertexArray>& vertexArray, uint32_t indexCount = 0) = 0;
+    virtual void drawIndexedLines(const Shared<VertexArray>& vertexArray, uint32_t indexCount = 0) = 0;
 
     static API GetAPI() { return s_API; }
 

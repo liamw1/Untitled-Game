@@ -41,7 +41,7 @@ public:
   */
   AABB boundingBox() const;
 
-  Engine::Camera& getCamera() { return m_CameraController.getCamera(); }
+  const glm::vec3& getViewDirection() const { return m_CameraController.getViewDirection(); }
   const Engine::Camera& getCamera() const { return m_CameraController.getCamera(); }
 
   const glm::vec3& getPosition() const { return m_Position; }
@@ -69,5 +69,5 @@ private:
   glm::vec3 m_Position;
   glm::vec3 m_Velocity;
 
-  float m_TranslationSpeed = 16 * Block::Length();
+  float m_TranslationSpeed = 64 * Block::Length();
 };

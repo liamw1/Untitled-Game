@@ -15,7 +15,7 @@ public:
   /*
     Decides which chunks to submit for rendering.
   */
-  void render(const Engine::Camera& playerCamera);
+  void render(const Engine::Camera& playerCamera) const;
 
   /*
     Loads new chunks inside load range.
@@ -29,7 +29,17 @@ public:
   */
   void updatePlayerChunk(const glm::vec3& playerPosition) { m_PlayerChunkIndex = Chunk::ChunkIndexFromPos(playerPosition); }
 
+  /*
+    \returns The Chunk at the specified chunk index.  If no such chunk can be found,
+             returns nullptr.
+  */
   Chunk* findChunk(const ChunkIndex& chunkIndex) const;
+
+  /*
+    Sends message to chunk manager that chunk has been modified.
+    IMPORTANT: Should be called after chunk modifications.
+  */
+  void sendChunkUpdate(Chunk* const chunk);
 
 private:
   enum class MapType : uint8_t
@@ -116,13 +126,13 @@ private:
 
     The neighbors of the removed chunk are re-categorized as boundary chunks.
   */
-  void unloadChunk(Chunk* chunk);
+  void unloadChunk(Chunk* const chunk);
 
   /*
     Adds chunk pointer to the specified map.
     Chunk should be in any other map before calling this function.
   */
-  void addToMap(Chunk* chunk, MapType mapType);
+  void addToMap(Chunk* const chunk, MapType mapType);
 
   /*
     Moves chunk pointer from one map to another.
@@ -130,5 +140,7 @@ private:
     \param source      The map the chunk is currently inside.
     \param destination The map the chunk will placed into.
   */
-  void moveToMap(Chunk* chunk, MapType source, MapType destination);
+  void moveToMap(Chunk* const chunk, MapType source, MapType destination);
+
+  bool isOnBoundary(const Chunk* const chunk) const;
 };
