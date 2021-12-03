@@ -16,6 +16,10 @@ struct AABB
   external changes to the player's state, such as collision handling.  The second
   handles camera positioning and shoud be called after such external changes
   have been made.
+
+  Note: To fix precision issues, the chunk the player is in should be stored,
+  and the player's position is the local position inside that chunk.  All mesh
+  geometry and camera positioning should then be relative to this local position.
 */
 class Player
 {
