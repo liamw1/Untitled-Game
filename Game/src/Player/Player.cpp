@@ -4,7 +4,7 @@
 
 static constexpr radians s_FOV = static_cast<radians>(glm::radians(80.0));
 static constexpr float s_AspectRatio = 1280.0f / 720.0f;
-static constexpr length_t s_NearPlaneDistance = static_cast<length_t>(0.15 * Block::Length());
+static constexpr length_t s_NearPlaneDistance = static_cast<length_t>(0.125 * Block::Length());
 static constexpr length_t s_FarPlaneDistance = static_cast<length_t>(1000 * Block::Length());
 
 Player::Player()

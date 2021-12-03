@@ -3,8 +3,6 @@
 #include "World/ChunkRenderer.h"
 #include "World/World.h"
 
-static constexpr uint32_t n = std::numeric_limits<uint32_t>::max();
-
 GameSandbox::GameSandbox()
   : Layer("GameSandbox"),
     m_Player(),
@@ -14,7 +12,7 @@ GameSandbox::GameSandbox()
   Engine::Renderer::Initialize();
   ChunkRenderer::Initialize();
 
-  m_Player.setPosition(Chunk::Length() * Vec3(0.0, 0.0, 3.0));// + 0.001 * static_cast<length_t>(n) * Block::Length() * Vec3(1.0, 0.0, 0.0));
+  m_Player.setPosition(Chunk::Length() * Vec3(0.0, 0.0, 3.0));
 }
 
 void GameSandbox::onAttach()

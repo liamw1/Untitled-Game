@@ -39,9 +39,9 @@ namespace Engine
     if (m_CanRotate)
     {
       if (Input::IsKeyPressed(Key::Q))
-        m_CameraRotation += m_CameraRotationSpeed * dt;
+        m_CameraRotation += static_cast<radians>(m_CameraRotationSpeed * dt);
       if (Input::IsKeyPressed(Key::E))
-        m_CameraRotation -= m_CameraRotationSpeed * dt;
+        m_CameraRotation -= static_cast<radians>(m_CameraRotationSpeed * dt);
 
       if (m_CameraRotation > PI)
         m_CameraRotation -= 2 * PI;

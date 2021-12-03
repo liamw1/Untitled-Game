@@ -29,8 +29,8 @@ void World::onUpdate(std::chrono::duration<seconds> timestep, Player& player)
   player.updateEnd();
 
   const Engine::Camera& playerCamera = player.getCamera();
-  const Float3& viewDirection = player.getViewDirection();
-
+  const Vec3& viewDirection = player.getViewDirection();
+  
   m_PlayerRayCast = castRay(playerCamera.getPosition(), viewDirection, 1000 * Block::Length());
   if (m_PlayerRayCast.intersectionOccured)
   {
@@ -100,7 +100,7 @@ Intersection World::castRaySegment(const Vec3& pointA, const Vec3& pointB) const
 
   // Find solid block face intersections in the x,y,z directions
   length_t tmin = 2.0;
-  Intersection firstIntersection = { false, 0.0, BlockFace::First, { 0, 0, 0 }, { 0, 0, 0 } };
+  Intersection firstIntersection{};
   for (uint8_t i = 0; i < 3; ++i)
   {
     const bool alignedWithPositiveAxis = rayDirection[i] > 0.0;
@@ -211,6 +211,7 @@ beginCollisionDetection:;
   if (distanceMoved == 0.0)
     return;
 
+  glm::vec3 correctCorner{};
   Intersection firstCollision = { false, 2 * distanceMoved, BlockFace::First, { 0, 0, 0 }, { 0, 0, 0 } };
   for (int i = 0; i <= playerWidth; ++i)
     for (int j = 0; j <= playerWidth; ++j)
@@ -222,20 +223,20 @@ beginCollisionDetection:;
         const length_t& collisionDistance = collision.distance;
 
         if (collision.intersectionOccured && collision.distance < firstCollision.distance)
+        {
           firstCollision = collision;
+          correctCorner = cornerPos;
+        }
       }
 
   if (firstCollision.intersectionOccured)
   {
     const uint8_t faceID = static_cast<uint8_t>(firstCollision.face);
     const length_t t = firstCollision.distance / distanceMoved;
-    const Vec3 intersectionPoint = playerPosition + firstCollision.distance * glm::normalize(player.getVelocity());
 
     // Calculate distance player should be pushed out from solid block
-    const Vec3 collisionDisplacement = (1.0 - t + s_MinDistanceToWall / distanceMoved) * glm::dot(normals[faceID], -player.getVelocity() * dt) * normals[faceID];
+    const Vec3 collisionDisplacement = ((1.0 - t) * glm::dot(normals[faceID], -player.getVelocity() * dt) + s_MinDistanceToWall) * normals[faceID];
     player.setPosition(playerPosition + collisionDisplacement);
-
-    EN_INFO("{0}, {1}, {2}", collisionDisplacement.x, collisionDisplacement.y, collisionDisplacement.z);
 
     goto beginCollisionDetection;
   }

@@ -21,7 +21,7 @@ public:
   void onEvent(Engine::Event& event);
 
 private:
-  static constexpr length_t s_MinDistanceToWall = static_cast<length_t>(0.05 * Block::Length());
+  static constexpr length_t s_MinDistanceToWall = static_cast<length_t>(0.001 * Block::Length());
 
   bool m_RenderingPaused = false;
 
