@@ -1,7 +1,7 @@
 #include "GMpch.h"
 #include "Chunk.h"
+#include "Player/Player.h"
 
-GlobalIndex Chunk::s_OriginIndex{};
 Engine::Shared<Engine::IndexBuffer> Chunk::s_MeshIndexBuffer = nullptr;
 
 Chunk::Chunk()
@@ -189,6 +189,11 @@ void Chunk::reset()
   // Ensure no further communication between other chunks
   excise();
   m_Neighbors = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
+}
+
+LocalIndex Chunk::getLocalIndex() const
+{
+  return CalcRelativeIndex(m_GlobalIndex, Player::OriginIndex());
 }
 
 Vec3 Chunk::anchorPoint() const

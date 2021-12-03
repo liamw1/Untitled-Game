@@ -1,6 +1,7 @@
 #include "GMpch.h"
 #include "ChunkManager.h"
 #include "ChunkRenderer.h"
+#include "Player/Player.h"
 #include <glm/gtc/matrix_access.hpp>
 
 ChunkManager::ChunkManager()
@@ -42,18 +43,18 @@ void ChunkManager::clean()
   {
     const HeightMap& heightMap = pair.second;
 
-    if (isOutOfRange(GlobalIndex({ heightMap.chunkI, heightMap.chunkJ, Chunk::GetOrigin().k })))
+    if (isOutOfRange(GlobalIndex({ heightMap.chunkI, heightMap.chunkJ, Player::OriginIndex().k })))
       heightMapsToRemove.push_back(createHeightMapKey(heightMap.chunkI, heightMap.chunkJ));
   }
   for (int i = 0; i < heightMapsToRemove.size(); ++i)
     m_HeightMaps.erase(heightMapsToRemove[i]);
 }
 
-void ChunkManager::render(const Engine::Camera& playerCamera) const
+void ChunkManager::render() const
 {
   EN_PROFILE_FUNCTION();
   
-  std::array<Vec4, 6> frustumPlanes = calculateViewFrustumPlanes(playerCamera);
+  std::array<Vec4, 6> frustumPlanes = calculateViewFrustumPlanes(Player::Camera());
 
   // Shift each plane by an amount equal to radius of a sphere that contains chunk
   static constexpr float sqrt3 = 1.732050807568877f;
@@ -65,7 +66,7 @@ void ChunkManager::render(const Engine::Camera& playerCamera) const
   }
 
   // Render chunks in view frustum
-  ChunkRenderer::BeginScene(playerCamera);
+  ChunkRenderer::BeginScene(Player::Camera());
   for (auto& pair : m_RenderableChunks)
   {
     Chunk* chunk = pair.second;
@@ -92,7 +93,7 @@ bool ChunkManager::loadNewChunks(uint32_t maxNewChunks)
 
   // Load First chunk if none exist
   if (m_OpenChunkSlots.size() == s_TotalPossibleChunks)
-    loadNewChunk(Chunk::GetOrigin());
+    loadNewChunk(Player::OriginIndex());
 
   // Find new chunks to generate
   std::vector<GlobalIndex> newChunks{};
@@ -196,7 +197,7 @@ bool ChunkManager::loadNewChunks(uint32_t maxNewChunks)
 
 Chunk* ChunkManager::findChunk(const LocalIndex& chunkIndex) const
 {
-  GlobalIndex originChunk = Chunk::GetOrigin();
+  GlobalIndex originChunk = Player::OriginIndex();
   return findChunk(GlobalIndex({ originChunk.i + chunkIndex.i, originChunk.j + chunkIndex.j, originChunk.k + chunkIndex.k }));
 }
 
@@ -262,7 +263,7 @@ bool ChunkManager::isOutOfRange(const LocalIndex& chunkIndex) const
 
 bool ChunkManager::isOutOfRange(const GlobalIndex& chunkIndex) const
 {
-  LocalIndex relativeIndex = Chunk::CalcRelativeIndex(chunkIndex, Chunk::GetOrigin());
+  LocalIndex relativeIndex = Chunk::CalcRelativeIndex(chunkIndex, Player::OriginIndex());
 
   for (int i = 0; i < 3; ++i)
     if (abs(relativeIndex[i]) > s_UnloadDistance)
@@ -280,7 +281,7 @@ bool ChunkManager::isInLoadRange(const LocalIndex& chunkIndex) const
 
 bool ChunkManager::isInLoadRange(const GlobalIndex& chunkIndex) const
 {
-  LocalIndex relativeIndex = Chunk::CalcRelativeIndex(chunkIndex, Chunk::GetOrigin());
+  LocalIndex relativeIndex = Chunk::CalcRelativeIndex(chunkIndex, Player::OriginIndex());
 
   for (int i = 0; i < 3; ++i)
     if (abs(relativeIndex[i]) > s_LoadDistance)

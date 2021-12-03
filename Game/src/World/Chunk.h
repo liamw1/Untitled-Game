@@ -1,6 +1,9 @@
 #pragma once
 #include "Block/Block.h"
 
+/*
+  Structs for indexing of blocks and chunks.
+*/
 template<typename intType>
 struct Index3D
 {
@@ -59,6 +62,13 @@ constexpr LocalIndex operator-(const GlobalIndex& globalIndex, const LocalIndex&
            static_cast<localIndex_t>(globalIndex.k - localIndex.k) };
 }
 
+/*
+  A large cube of blocks.
+
+  Block indices refer to the positioning of blocks within a chunk.
+  Local indices refer to the positioning of a chunk relative to the origin chunk.
+  Global indices refer to the positioning of a chunk relative to the absolute origin of the world.
+*/
 class Chunk
 {
 public:
@@ -116,7 +126,7 @@ public:
   /*
     \returns The chunk's index relative to the origin chunk.
   */
-  LocalIndex getLocalIndex() const { return CalcRelativeIndex(m_GlobalIndex, s_OriginIndex); }
+  LocalIndex getLocalIndex() const;
 
   /*
     \returns The chunk's global index, which identifies it uniquely.
@@ -180,9 +190,6 @@ public:
 
   static void InitializeIndexBuffer();
 
-  static const GlobalIndex& GetOrigin() { return s_OriginIndex; }
-  static void UpdateOrigin(const GlobalIndex& originIndex) { s_OriginIndex = originIndex; }
-
   static constexpr LocalIndex CalcRelativeIndex(const GlobalIndex& indexA, const GlobalIndex& indexB)
   {
     return { static_cast<localIndex_t>(indexA.i - indexB.i),
@@ -203,9 +210,6 @@ private:
   static constexpr uint8_t s_ChunkSize = 32;
   static constexpr length_t s_ChunkLength = s_ChunkSize * Block::Length();
   static constexpr uint32_t s_ChunkTotalBlocks = s_ChunkSize * s_ChunkSize * s_ChunkSize;
-
-  // Origin
-  static GlobalIndex s_OriginIndex;
 
   // Position and composition
   GlobalIndex m_GlobalIndex;

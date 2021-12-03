@@ -10,6 +10,16 @@ namespace Engine
   static constexpr radians s_MinFOV = static_cast<radians>(glm::radians(5.0));
   static constexpr radians s_MaxFOV = static_cast<radians>(glm::radians(80.0));
 
+  CameraController::CameraController()
+    : m_Fov(0.0),
+      m_AspectRatio(0.0),
+      m_NearPlane(0.0),
+      m_FarPlane(0.0),
+      m_Camera(m_Fov, m_AspectRatio, m_NearPlane, m_FarPlane),
+      m_LastMousePosition(0.0, 0.0)
+  {
+  }
+
   CameraController::CameraController(radians fov, float aspectRatio, length_t nearPlane, length_t farPlane)
     : m_Fov(fov),
       m_AspectRatio(aspectRatio),

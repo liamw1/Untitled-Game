@@ -9,68 +9,50 @@ struct AABB
 };
 
 /*
-  Represents the player.
+  Represents the player.  The player's position (all the positions of all other
+  geometry) is stored relative to an "origin chunk", which is the chunk the player
+  is currently inside.
 
   IMPORTANT: Unlike other systems, the player's update function is split into
   two stages.  The first handles player input and should be called before any
   external changes to the player's state, such as collision handling.  The second
   handles camera positioning and shoud be called after such external changes
   have been made.
-
-  Note: Should probably make this a namespace but too lazy to do it now.
 */
-class Player
+namespace Player
 {
-public:
-  Player(const GlobalIndex& initialChunkIndex, const Vec3& initialLocalPosition);
+  void Initialize(const GlobalIndex& initialChunkIndex, const Vec3& initialLocalPosition);
 
   /*
-    The first stage of the player's update.  
+    The first stage of the player's update.
     Adjusts player state based on player input.
   */
-  void updateBegin(std::chrono::duration<seconds> timestep);
+  void UpdateBegin(std::chrono::duration<seconds> timestep);
 
   /*
-    The last stage of the player's update.  
+    The last stage of the player's update.
     Handles final camera positioning for the frame.
   */
-  void updateEnd();
+  void UpdateEnd();
 
-  void onEvent(Engine::Event& event);
+  void OnEvent(Engine::Event& event);
 
   /*
     \returns The player's axis-aligned bounding box (AABB).
   */
-  AABB boundingBox() const;
+  AABB BoundingBox();
 
-  const Vec3& getViewDirection() const { return m_CameraController.getViewDirection(); }
-  const Engine::Camera& getCamera() const { return m_CameraController.getCamera(); }
+  const Vec3& ViewDirection();
+  const Engine::Camera& Camera();
 
-  const Vec3& getPosition() const { return m_LocalPosition; }
-  void setPosition(const Vec3& position) { m_LocalPosition = position; }
+  const Vec3& Position();
+  void SetPosition(const Vec3& position);
 
-  const Vec3& getVelocity() const { return m_Velocity; }
-  void setVelocity(const Vec3& velocity) { m_Velocity = velocity; }
+  const Vec3& Velocity();
+  void SetVelocity(const Vec3& velocity);
 
-  static constexpr length_t Width() { return s_Width; }
-  static constexpr length_t Height() { return s_Height; }
+  const GlobalIndex& OriginIndex();
 
-private:
-  // Time between current frame and previous frame
-  std::chrono::duration<seconds> m_Timestep;
-
-  // Hitbox dimensions
-  static constexpr length_t s_Width = 1 * Block::Length();
-  static constexpr length_t s_Height = 2 * Block::Length();
-
-  // Controller for player camera, which is placed at the eyes
-  Engine::CameraController m_CameraController;
-  bool m_FreeCamEnabled = false;
-
-  GlobalIndex m_OriginIndex;
-  // Position of center of the player hitbox
-  Vec3 m_LocalPosition;
-  Vec3 m_Velocity;
-
-  length_t m_TranslationSpeed = 32 * Block::Length();
+  length_t Width();
+  length_t Height();
 };

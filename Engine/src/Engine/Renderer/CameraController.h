@@ -9,6 +9,7 @@ namespace Engine
   class CameraController
   {
   public:
+    CameraController();
     CameraController(radians fov, float aspectRatio, length_t nearPlane, length_t farPlane);
 
     void onUpdate(std::chrono::duration<seconds> timestep);

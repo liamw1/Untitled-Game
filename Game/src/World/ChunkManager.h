@@ -15,7 +15,7 @@ public:
   /*
     Decides which chunks to submit for rendering.
   */
-  void render(const Engine::Camera& playerCamera) const;
+  void render() const;
 
   /*
     Loads new chunks inside load range.

@@ -9,31 +9,26 @@ static constexpr uint8_t modulo(int64_t a, uint8_t b)
   return static_cast<uint8_t>(result >= 0 ? result : result + b);
 }
 
-World::World(const Vec3& initialPosition)
+void World::initialize()
 {
-  Block::Initialize();
-
   while (m_ChunkManager.loadNewChunks(10000))
   {
   }
 }
 
-void World::onUpdate(std::chrono::duration<seconds> timestep, Player& player)
+void World::onUpdate(std::chrono::duration<seconds> timestep)
 {
   EN_PROFILE_FUNCTION();
 
   /* Player update stage */
-  player.updateBegin(timestep);
-  playerCollisionHandling(timestep, player);
-  player.updateEnd();
-
-  const Engine::Camera& playerCamera = player.getCamera();
-  const Vec3& viewDirection = player.getViewDirection();
+  Player::UpdateBegin(timestep);
+  playerCollisionHandling(timestep);
+  Player::UpdateEnd();
   
-  m_PlayerRayCast = castRay(playerCamera.getPosition(), viewDirection, 1000 * Block::Length());
+  m_PlayerRayCast = castRay(Player::Camera().getPosition(), Player::ViewDirection(), 1000 * Block::Length());
   if (m_PlayerRayCast.intersectionOccured)
   {
-    Engine::Renderer::BeginScene(player.getCamera());
+    Engine::Renderer::BeginScene(Player::Camera());
     const BlockIndex& blockIndex = m_PlayerRayCast.blockIndex;
     const LocalIndex& chunkIndex = m_PlayerRayCast.chunkIndex;
     const Vec3 blockCenter = Chunk::Length() * Vec3(chunkIndex.i, chunkIndex.j, chunkIndex.k) + Block::Length() * (Vec3(blockIndex.i, blockIndex.j, blockIndex.k) + Vec3(0.5));
@@ -82,11 +77,11 @@ void World::onUpdate(std::chrono::duration<seconds> timestep, Player& player)
   if (!m_RenderingPaused)
   {
     m_ChunkManager.loadNewChunks(200);
-    m_ChunkManager.render(playerCamera);
+    m_ChunkManager.render();
     m_ChunkManager.clean();
   }
   else
-    m_ChunkManager.render(playerCamera);
+    m_ChunkManager.render();
 }
 
 Intersection World::castRaySegment(const Vec3& pointA, const Vec3& pointB) const
@@ -188,7 +183,7 @@ Intersection World::castRay(const Vec3& rayOrigin, const Vec3& rayDirection, len
   return castRaySegment(pointA, pointB);
 }
 
-void World::playerCollisionHandling(std::chrono::duration<seconds> timestep, Player& player) const
+void World::playerCollisionHandling(std::chrono::duration<seconds> timestep) const
 {
   EN_PROFILE_FUNCTION();
 
@@ -201,8 +196,8 @@ void World::playerCollisionHandling(std::chrono::duration<seconds> timestep, Pla
   const seconds dt = timestep.count();  // Time between frames in seconds
 
 beginCollisionDetection:;
-  const Vec3 playerPosition = player.getPosition();
-  const length_t distanceMoved = dt * glm::length(player.getVelocity());
+  const Vec3 playerPosition = Player::Position();
+  const length_t distanceMoved = dt * glm::length(Player::Velocity());
   const Vec3 anchorPoint = playerPosition - 0.5 * Vec3(Player::Width(), Player::Width(), Player::Height());
 
   if (distanceMoved == 0.0)
@@ -216,7 +211,7 @@ beginCollisionDetection:;
       {
         const Vec3 cornerPos = anchorPoint + Block::Length() * Vec3(i == playerWidth ? i - 0.2 : i, j == playerWidth ? j - 0.2 : j, k == playerHeight ? k - 0.2 : k);
 
-        const Intersection collision = castRaySegment(cornerPos - player.getVelocity() * dt, cornerPos);
+        const Intersection collision = castRaySegment(cornerPos - Player::Velocity() * dt, cornerPos);
         const length_t& collisionDistance = collision.distance;
 
         if (collision.intersectionOccured && collision.distance < firstCollision.distance)
@@ -232,8 +227,8 @@ beginCollisionDetection:;
     const length_t t = firstCollision.distance / distanceMoved;
 
     // Calculate distance player should be pushed out from solid block
-    const Vec3 collisionDisplacement = ((1.0 - t) * glm::dot(normals[faceID], -player.getVelocity() * dt) + s_MinDistanceToWall) * normals[faceID];
-    player.setPosition(playerPosition + collisionDisplacement);
+    const Vec3 collisionDisplacement = ((1.0 - t) * glm::dot(normals[faceID], -Player::Velocity() * dt) + s_MinDistanceToWall) * normals[faceID];
+    Player::SetPosition(playerPosition + collisionDisplacement);
 
     goto beginCollisionDetection;
   }

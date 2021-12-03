@@ -4,13 +4,14 @@
 #include "World/World.h"
 
 GameSandbox::GameSandbox()
-  : Layer("GameSandbox"),
-    m_Player({ 0, 0, 1 }, Block::Length() * Vec3(16.0)),
-    m_World(Vec3(0.0))
+  : Layer("GameSandbox")
 {
+  Block::Initialize();
+  Player::Initialize({ 0, 0, 1 }, Block::Length() * Vec3(16.0));
   Engine::RenderCommand::Initialize();
   Engine::Renderer::Initialize();
   ChunkRenderer::Initialize();
+  m_World.initialize();
 }
 
 void GameSandbox::onAttach()
@@ -40,7 +41,7 @@ void GameSandbox::onUpdate(std::chrono::duration<seconds> timestep)
 
   Engine::RenderCommand::Clear({ 0.788f, 0.949f, 0.949f, 1.0f });
 
-  m_World.onUpdate(timestep, m_Player);
+  m_World.onUpdate(timestep);
 
   // EN_INFO("{0}, {1}, {2}", m_Player.getPosition().x, m_Player.getPosition().y, m_Player.getPosition().z);
 }
@@ -54,7 +55,7 @@ void GameSandbox::onEvent(Engine::Event& event)
   Engine::EventDispatcher dispatcher(event);
   dispatcher.dispatch<Engine::KeyPressEvent>(EN_BIND_EVENT_FN(onKeyPressEvent));
 
-  m_Player.onEvent(event);
+  Player::OnEvent(event);
   m_World.onEvent(event);
 }
 

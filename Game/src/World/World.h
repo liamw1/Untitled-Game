@@ -14,9 +14,9 @@ struct Intersection
 class World
 {
 public:
-  World(const Vec3& initialPosition);
+  void initialize();
 
-  void onUpdate(std::chrono::duration<seconds> timestep, Player& player);
+  void onUpdate(std::chrono::duration<seconds> timestep);
 
   void onEvent(Engine::Event& event);
 
@@ -36,7 +36,7 @@ private:
 
   Intersection castRay(const Vec3& rayOrigin, const Vec3& rayDirection, length_t maxDistance) const;
 
-  void playerCollisionHandling(std::chrono::duration<seconds> timestep, Player& player) const;
+  void playerCollisionHandling(std::chrono::duration<seconds> timestep) const;
 
   bool onMouseButtonPressEvent(Engine::MouseButtonPressEvent& event);
   bool onKeyPressEvent(Engine::KeyPressEvent& event);

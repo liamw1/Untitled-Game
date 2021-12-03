@@ -17,7 +17,6 @@ public:
 private:
   Engine::Shared<Engine::Texture2D> m_CheckerboardTexture;
   World m_World;
-  Player m_Player;
 
   bool onKeyPressEvent(Engine::KeyPressEvent& event);
 };
