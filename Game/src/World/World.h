@@ -4,8 +4,7 @@
 
 struct Intersection
 {
-  bool intersectionOccured;
-  length_t distance;
+  length_t distance = std::numeric_limits<length_t>::infinity();
   BlockFace face;
   BlockIndex blockIndex;
   LocalIndex chunkIndex;

@@ -25,8 +25,10 @@ void World::onUpdate(std::chrono::duration<seconds> timestep)
   playerCollisionHandling(timestep);
   Player::UpdateEnd();
   
-  m_PlayerRayCast = castRay(Player::Camera().getPosition(), Player::ViewDirection(), 1000 * Block::Length());
-  if (m_PlayerRayCast.intersectionOccured)
+  static constexpr length_t maxInteractionDistance = 1000 * Block::Length();
+
+  m_PlayerRayCast = castRay(Player::Camera().getPosition(), Player::ViewDirection(), maxInteractionDistance);
+  if (m_PlayerRayCast.distance <= maxInteractionDistance)
   {
     Engine::Renderer::BeginScene(Player::Camera());
     const BlockIndex& blockIndex = m_PlayerRayCast.blockIndex;
@@ -38,7 +40,7 @@ void World::onUpdate(std::chrono::duration<seconds> timestep)
 
   if (Engine::Input::IsMouseButtonPressed(MouseButton::Button0) || Engine::Input::IsMouseButtonPressed(MouseButton::Button1))
   {
-    if (m_PlayerRayCast.intersectionOccured)
+    if (m_PlayerRayCast.distance <= maxInteractionDistance)
     {
       const LocalIndex& chunkIndex = m_PlayerRayCast.chunkIndex;
       const BlockIndex& blockIndex = m_PlayerRayCast.blockIndex;
@@ -158,7 +160,6 @@ Intersection World::castRaySegment(const Vec3& pointA, const Vec3& pointB) const
           const uint8_t faceID = 2 * u + alignedWithPositiveAxis;
           tmin = t;
 
-          firstIntersection.intersectionOccured = true;
           firstIntersection.face = static_cast<BlockFace>(faceID);
           firstIntersection.blockIndex = blockIndex;
           firstIntersection.chunkIndex = chunkIndex;
@@ -169,7 +170,7 @@ Intersection World::castRaySegment(const Vec3& pointA, const Vec3& pointB) const
     }
   }
 
-  if (firstIntersection.intersectionOccured)
+  if (tmin <= 1.0)
     firstIntersection.distance = tmin * glm::length(rayDirection);
 
   // Return first intersection
@@ -204,7 +205,7 @@ beginCollisionDetection:;
     return;
 
   glm::vec3 correctCorner{};
-  Intersection firstCollision = { false, 2 * distanceMoved, BlockFace::First, { 0, 0, 0 }, { 0, 0, 0 } };
+  Intersection firstCollision{};
   for (int i = 0; i <= playerWidth; ++i)
     for (int j = 0; j <= playerWidth; ++j)
       for (int k = 0; k <= playerHeight; ++k)
@@ -214,14 +215,14 @@ beginCollisionDetection:;
         const Intersection collision = castRaySegment(cornerPos - Player::Velocity() * dt, cornerPos);
         const length_t& collisionDistance = collision.distance;
 
-        if (collision.intersectionOccured && collision.distance < firstCollision.distance)
+        if (collision.distance < firstCollision.distance)
         {
           firstCollision = collision;
           correctCorner = cornerPos;
         }
       }
 
-  if (firstCollision.intersectionOccured)
+  if (firstCollision.distance <= distanceMoved)
   {
     const uint8_t faceID = static_cast<uint8_t>(firstCollision.face);
     const length_t t = firstCollision.distance / distanceMoved;
