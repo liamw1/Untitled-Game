@@ -90,7 +90,7 @@ Intersection World::castRaySegment(const Vec3& pointA, const Vec3& pointB) const
 
   const Vec3 rayDirection = pointB - pointA;
 
-  // Find solid block face intersections in the x,y,z directions
+  // Look for solid block face intersections in the x,y,z directions
   length_t tmin = 2.0;
   Intersection firstIntersection{};
   for (uint8_t i = 0; i < 3; ++i)

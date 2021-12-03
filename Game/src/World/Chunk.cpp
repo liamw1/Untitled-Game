@@ -30,11 +30,12 @@ Chunk::Chunk(Chunk&& other) noexcept
     m_MeshVertexArray(std::move(other.m_MeshVertexArray)),
     m_MeshVertexBuffer(std::move(other.m_MeshVertexBuffer))
 {
+  // Transfer neighbor pointers
   m_Neighbors = other.m_Neighbors;
   for (BlockFace face : BlockFaceIterator())
     other.m_Neighbors[static_cast<uint8_t>(face)] = nullptr;
 
-  // Since the address of 'other' has moved, we must update its neighbors
+  // Since the address of 'other' has moved, we must update its neighbors about the change
   sendAddressUpdate();
 }
 
@@ -50,11 +51,12 @@ Chunk& Chunk::operator=(Chunk&& other) noexcept
     m_MeshVertexArray = std::move(other.m_MeshVertexArray);
     m_MeshVertexBuffer = std::move(other.m_MeshVertexBuffer);
    
+    // Transfer neighbor pointers
     m_Neighbors = other.m_Neighbors;
     for (BlockFace face : BlockFaceIterator())
       other.m_Neighbors[static_cast<uint8_t>(face)] = nullptr;
 
-    // Since the address of 'other' has moved, we must update its neighbors
+    // Since the address of 'other' has moved, we must update its neighbors about the change
     sendAddressUpdate();
   }
   return *this;
@@ -350,7 +352,7 @@ bool Chunk::isBlockNeighborAir(const BlockIndex& blockIndex, BlockFace face)
   return isBlockNeighborAir(blockIndex.i, blockIndex.j, blockIndex.k, face);
 }
 
-const LocalIndex Chunk::ChunkIndexFromPos(const Vec3& position)   
+const LocalIndex Chunk::LocalIndexFromPos(const Vec3& position)   
 {
   return { static_cast<localIndex_t>(floor(position.x / s_ChunkLength)),
            static_cast<localIndex_t>(floor(position.y / s_ChunkLength)),

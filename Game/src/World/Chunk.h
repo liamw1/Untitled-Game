@@ -138,7 +138,7 @@ public:
 
     Useful property:
     If the anchor point is denoted by A, then for any point
-    X within the chunk, A_i <= X_i.
+    X within the chunk, X_i >= X_i.
   */
   Vec3 anchorPoint() const;
 
@@ -186,7 +186,7 @@ public:
   static constexpr uint8_t Size() { return s_ChunkSize; }
   static constexpr length_t Length() { return s_ChunkLength; }
   static constexpr uint32_t TotalBlocks() { return s_ChunkTotalBlocks; }
-  static const LocalIndex ChunkIndexFromPos(const Vec3& position);
+  static const LocalIndex LocalIndexFromPos(const Vec3& position);
 
   static void InitializeIndexBuffer();
 

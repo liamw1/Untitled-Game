@@ -6,10 +6,10 @@
 
 ChunkManager::ChunkManager()
 {
-  m_ChunkArray = Engine::CreateUnique<Chunk[]>(s_TotalPossibleChunks);
+  m_ChunkArray = Engine::CreateUnique<Chunk[]>(s_MaxChunks);
 
-  m_OpenChunkSlots.reserve(s_TotalPossibleChunks);
-  for (int i = 0; i < s_TotalPossibleChunks; ++i)
+  m_OpenChunkSlots.reserve(s_MaxChunks);
+  for (int i = 0; i < s_MaxChunks; ++i)
     m_OpenChunkSlots.push_back(i);
 }
 
@@ -56,7 +56,7 @@ void ChunkManager::render() const
   
   std::array<Vec4, 6> frustumPlanes = calculateViewFrustumPlanes(Player::Camera());
 
-  // Shift each plane by an amount equal to radius of a sphere that contains chunk
+  // Shift each plane by distance equal to radius of a sphere that contains chunk
   static constexpr float sqrt3 = 1.732050807568877f;
   static constexpr length_t chunkSphereRadius = sqrt3 * Chunk::Length() / 2;
   for (int planeID = 0; planeID < 6; ++planeID)
@@ -92,7 +92,7 @@ bool ChunkManager::loadNewChunks(uint32_t maxNewChunks)
     return false;
 
   // Load First chunk if none exist
-  if (m_OpenChunkSlots.size() == s_TotalPossibleChunks)
+  if (m_OpenChunkSlots.size() == s_MaxChunks)
     loadNewChunk(Player::OriginIndex());
 
   // Find new chunks to generate
@@ -120,7 +120,7 @@ bool ChunkManager::loadNewChunks(uint32_t maxNewChunks)
       break;
   }
 
-  // Added new chunks to m_BoundaryChunks
+  // Load new chunks
   for (int i = 0; i < newChunks.size(); ++i)
   {
     const GlobalIndex newChunkIndex = newChunks[i];
@@ -152,7 +152,7 @@ bool ChunkManager::loadNewChunks(uint32_t maxNewChunks)
       for (int i = 0; i < 3; ++i)
         adjIndex[i] += normals[static_cast<uint8_t>(dir)][i];
 
-      // Find and add neighbors (if they exist) to new chunk
+      // Find and add any existing neighbors to new chunk
       int64_t adjKey = createKey(adjIndex);
       for (MapType mapType : MapTypeIterator())
       {

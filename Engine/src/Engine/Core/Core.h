@@ -1,5 +1,9 @@
-#pragma once
+﻿#pragma once
 #include "PlatformDetection.h"
+
+/*
+  *:･ﾟ✧*:･ﾟ✧ ~~ Macro/Template Magic Zone ~~ ✧･ﾟ: *✧･ﾟ:*
+*/
 
 // ======================== Debug Macros ======================== //
 #ifdef EN_DEBUG
@@ -83,6 +87,8 @@ operator|(Enum enumA, Enum enumB)
   return static_cast<Enum>(static_cast<std::underlying_type<Enum>::type>(enumA) |
     static_cast<std::underlying_type<Enum>::type>(enumB));
 }
+
+
 
 // ==================== Enabling Iteration for Enum Classes ==================== //
 // Code borrowed from: https://stackoverflow.com/questions/261963/how-can-i-iterate-over-an-enum
