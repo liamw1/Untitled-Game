@@ -1,15 +1,16 @@
 #include "GMpch.h"
 #include "Chunk.h"
 
+GlobalIndex Chunk::s_OriginIndex{};
 Engine::Shared<Engine::IndexBuffer> Chunk::s_MeshIndexBuffer = nullptr;
 
 Chunk::Chunk()
-  : m_ChunkIndex({0, 0, 0})
+  : m_GlobalIndex({0, 0, 0})
 {
 }
 
-Chunk::Chunk(const ChunkIndex& chunkIndex)
-  : m_ChunkIndex(chunkIndex)
+Chunk::Chunk(const GlobalIndex& chunkIndex)
+  : m_GlobalIndex(chunkIndex)
 {
   if (s_MeshIndexBuffer == nullptr)
     InitializeIndexBuffer();
@@ -21,7 +22,7 @@ Chunk::~Chunk()
 }
 
 Chunk::Chunk(Chunk&& other) noexcept
-  : m_ChunkIndex(std::move(other.m_ChunkIndex)),
+  : m_GlobalIndex(std::move(other.m_GlobalIndex)),
     m_ChunkComposition(std::move(other.m_ChunkComposition)),
     m_FaceIsOpaque(std::move(other.m_FaceIsOpaque)),
     m_MeshState(std::move(other.m_MeshState)),
@@ -41,7 +42,7 @@ Chunk& Chunk::operator=(Chunk&& other) noexcept
 {
   if (this != &other)
   {
-    m_ChunkIndex = std::move(other.m_ChunkIndex);
+    m_GlobalIndex = std::move(other.m_GlobalIndex);
     m_ChunkComposition = std::move(other.m_ChunkComposition);
     m_FaceIsOpaque = std::move(other.m_FaceIsOpaque);
     m_MeshState = std::move(other.m_MeshState);
@@ -61,7 +62,7 @@ Chunk& Chunk::operator=(Chunk&& other) noexcept
 
 void Chunk::load(HeightMap heightMap)
 {
-  const length_t chunkHeight = anchorPoint()[2];
+  const length_t chunkHeight = s_ChunkLength * getGlobalIndex().k;
   m_ChunkComposition = Engine::CreateUnique<BlockType[]>(s_ChunkTotalBlocks);
 
   bool isEmpty = true;
@@ -190,6 +191,12 @@ void Chunk::reset()
   m_Neighbors = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
 }
 
+Vec3 Chunk::anchorPoint() const
+{
+  const LocalIndex localIndex = getLocalIndex();
+  return s_ChunkLength * Vec3(localIndex.i, localIndex.j, localIndex.k);
+}
+
 BlockType Chunk::getBlockType(uint8_t i, uint8_t j, uint8_t k) const
 {
   static constexpr uint64_t chunkSize = static_cast<uint64_t>(s_ChunkSize);
@@ -197,7 +204,7 @@ BlockType Chunk::getBlockType(uint8_t i, uint8_t j, uint8_t k) const
   return isEmpty() ? BlockType::Air : m_ChunkComposition[i * chunkSize * chunkSize + j * chunkSize + k];
 }
 
-BlockType Chunk::getBlockType(const LocalIndex& blockIndex) const
+BlockType Chunk::getBlockType(const BlockIndex& blockIndex) const
 {
   return getBlockType(blockIndex.i, blockIndex.j, blockIndex.k);
 }
@@ -207,7 +214,7 @@ BlockType Chunk::getBlockType(const Vec3& position) const
   return getBlockType(blockIndexFromPos(position));
 }
 
-void Chunk::removeBlock(const LocalIndex& blockIndex)
+void Chunk::removeBlock(const BlockIndex& blockIndex)
 {
   setBlockType(blockIndex, BlockType::Air);
 
@@ -221,7 +228,7 @@ void Chunk::removeBlock(const LocalIndex& blockIndex)
   }
 }
 
-void Chunk::placeBlock(const LocalIndex& blockIndex, BlockFace face, BlockType blockType)
+void Chunk::placeBlock(const BlockIndex& blockIndex, BlockFace face, BlockType blockType)
 {
   static constexpr int8_t normals[6][3] = { { 1, 0, 0}, { -1, 0, 0}, { 0, 1, 0}, { 0, -1, 0}, { 0, 0, 1}, { 0, 0, -1} };
                                        //      East         West        North       South         Top        Bottom
@@ -273,7 +280,7 @@ bool Chunk::isBlockNeighborInAnotherChunk(uint8_t i, uint8_t j, uint8_t k, Block
   return isOnChunkSide[static_cast<uint8_t>(face)](i, j, k);
 }
 
-bool Chunk::isBlockNeighborInAnotherChunk(const LocalIndex& blockIndex, BlockFace face)
+bool Chunk::isBlockNeighborInAnotherChunk(const BlockIndex& blockIndex, BlockFace face)
 {
   return isBlockNeighborInAnotherChunk(blockIndex.i, blockIndex.j, blockIndex.k, face);
 }
@@ -303,7 +310,7 @@ bool Chunk::isBlockNeighborTransparent(uint8_t i, uint8_t j, uint8_t k, BlockFac
   }
 }
 
-bool Chunk::isBlockNeighborTransparent(const LocalIndex& blockIndex, BlockFace face)
+bool Chunk::isBlockNeighborTransparent(const BlockIndex& blockIndex, BlockFace face)
 {
   return isBlockNeighborTransparent(blockIndex.i, blockIndex.j, blockIndex.k, face);
 }
@@ -333,18 +340,16 @@ bool Chunk::isBlockNeighborAir(uint8_t i, uint8_t j, uint8_t k, BlockFace face)
   }
 }
 
-bool Chunk::isBlockNeighborAir(const LocalIndex& blockIndex, BlockFace face)
+bool Chunk::isBlockNeighborAir(const BlockIndex& blockIndex, BlockFace face)
 {
   return isBlockNeighborAir(blockIndex.i, blockIndex.j, blockIndex.k, face);
 }
 
-const ChunkIndex Chunk::ChunkIndexFromPos(const Vec3& position)
+const LocalIndex Chunk::ChunkIndexFromPos(const Vec3& position)   
 {
-  ChunkIndex chunkIndex = { static_cast<int64_t>(floor(position.x / s_ChunkLength)),
-                            static_cast<int64_t>(floor(position.y / s_ChunkLength)),
-                            static_cast<int64_t>(floor(position.z / s_ChunkLength)) };
-
-  return chunkIndex;
+  return { static_cast<localIndex_t>(floor(position.x / s_ChunkLength)),
+           static_cast<localIndex_t>(floor(position.y / s_ChunkLength)),
+           static_cast<localIndex_t>(floor(position.z / s_ChunkLength)) };
 }
 
 void Chunk::InitializeIndexBuffer()
@@ -396,7 +401,7 @@ void Chunk::setBlockType(uint8_t i, uint8_t j, uint8_t k, BlockType blockType)
   m_ChunkComposition[i * chunkSize * chunkSize + j * chunkSize + k] = blockType;
 }
 
-void Chunk::setBlockType(const LocalIndex& blockIndex, BlockType blockType)
+void Chunk::setBlockType(const BlockIndex& blockIndex, BlockType blockType)
 {
   setBlockType(blockIndex.i, blockIndex.j, blockIndex.k, blockType);
 }
@@ -414,7 +419,7 @@ void Chunk::determineOpacity()
         const uint8_t v = (u + 1) % 3;
         const uint8_t w = (u + 2) % 3;
 
-        LocalIndex blockIndex{};
+        BlockIndex blockIndex{};
         blockIndex[u] = faceID % 2 == 0 ? s_ChunkSize - 1 : 0;
         blockIndex[v] = i;
         blockIndex[w] = j;
@@ -458,7 +463,7 @@ void Chunk::markAsEmpty()
   m_MeshState = MeshState::NotGenerated;
 }
 
-LocalIndex Chunk::blockIndexFromPos(const Vec3& position) const
+BlockIndex Chunk::blockIndexFromPos(const Vec3& position) const
 {
   Vec3 localPosition = position - anchorPoint();
 
@@ -466,8 +471,8 @@ LocalIndex Chunk::blockIndexFromPos(const Vec3& position) const
             localPosition.y >= 0.0 && localPosition.y <= s_ChunkLength &&
             localPosition.z >= 0.0 && localPosition.z <= s_ChunkLength, "Given position is not inside chunk!");
 
-  LocalIndex blockIndex = { static_cast<uint8_t>(localPosition.x / Block::Length()),
-                            static_cast<uint8_t>(localPosition.y / Block::Length()),
-                            static_cast<uint8_t>(localPosition.z / Block::Length()) };
+  BlockIndex blockIndex = { static_cast<blockIndex_t>(localPosition.x / Block::Length()),
+                            static_cast<blockIndex_t>(localPosition.y / Block::Length()),
+                            static_cast<blockIndex_t>(localPosition.z / Block::Length()) };
   return blockIndex;
 }

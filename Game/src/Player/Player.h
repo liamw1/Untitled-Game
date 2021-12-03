@@ -1,6 +1,6 @@
 #pragma once
 #include "Engine/Renderer/CameraController.h"
-#include "Block/Block.h"
+#include "World/Chunk.h"
 
 struct AABB
 {
@@ -17,14 +17,12 @@ struct AABB
   handles camera positioning and shoud be called after such external changes
   have been made.
 
-  Note: To fix precision issues, the chunk the player is in should be stored,
-  and the player's position is the local position inside that chunk.  All mesh
-  geometry and camera positioning should then be relative to this local position.
+  Note: Should probably make this a namespace but too lazy to do it now.
 */
 class Player
 {
 public:
-  Player();
+  Player(const GlobalIndex& initialChunkIndex, const Vec3& initialLocalPosition);
 
   /*
     The first stage of the player's update.  
@@ -48,8 +46,8 @@ public:
   const Vec3& getViewDirection() const { return m_CameraController.getViewDirection(); }
   const Engine::Camera& getCamera() const { return m_CameraController.getCamera(); }
 
-  const Vec3& getPosition() const { return m_Position; }
-  void setPosition(const Vec3& position) { m_Position = position; }
+  const Vec3& getPosition() const { return m_LocalPosition; }
+  void setPosition(const Vec3& position) { m_LocalPosition = position; }
 
   const Vec3& getVelocity() const { return m_Velocity; }
   void setVelocity(const Vec3& velocity) { m_Velocity = velocity; }
@@ -69,8 +67,9 @@ private:
   Engine::CameraController m_CameraController;
   bool m_FreeCamEnabled = false;
 
+  GlobalIndex m_OriginIndex;
   // Position of center of the player hitbox
-  Vec3 m_Position;
+  Vec3 m_LocalPosition;
   Vec3 m_Velocity;
 
   length_t m_TranslationSpeed = 32 * Block::Length();

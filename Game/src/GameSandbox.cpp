@@ -5,14 +5,12 @@
 
 GameSandbox::GameSandbox()
   : Layer("GameSandbox"),
-    m_Player(),
+    m_Player({ 0, 0, 1 }, Block::Length() * Vec3(16.0)),
     m_World(Vec3(0.0))
 {
   Engine::RenderCommand::Initialize();
   Engine::Renderer::Initialize();
   ChunkRenderer::Initialize();
-
-  m_Player.setPosition(Chunk::Length() * Vec3(0.0, 0.0, 3.0));
 }
 
 void GameSandbox::onAttach()
@@ -36,7 +34,7 @@ void GameSandbox::onUpdate(std::chrono::duration<seconds> timestep)
 #endif
 
 #if 0
-  ChunkIndex chunk = Chunk::ChunkIndexFromPos(m_Player.getPosition());
+  LocalIndex chunk = Chunk::ChunkIndexFromPos(m_Player.getPosition());
   EN_TRACE("({0}, {1}, {2})", chunk.i, chunk.j, chunk.k);
 #endif
 

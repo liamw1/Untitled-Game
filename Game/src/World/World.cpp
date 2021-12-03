@@ -13,7 +13,6 @@ World::World(const Vec3& initialPosition)
 {
   Block::Initialize();
 
-  m_ChunkManager.updatePlayerChunk(initialPosition);
   while (m_ChunkManager.loadNewChunks(10000))
   {
   }
@@ -35,9 +34,9 @@ void World::onUpdate(std::chrono::duration<seconds> timestep, Player& player)
   if (m_PlayerRayCast.intersectionOccured)
   {
     Engine::Renderer::BeginScene(player.getCamera());
-    const LocalIndex& localIndex = m_PlayerRayCast.blockIndex;
-    const ChunkIndex& chunkIndex = m_PlayerRayCast.chunkIndex;
-    const Vec3 blockCenter = Chunk::Length() * Vec3(chunkIndex.i, chunkIndex.j, chunkIndex.k) + Block::Length() * (Vec3(localIndex.i, localIndex.j, localIndex.k) + Vec3(0.5));
+    const BlockIndex& blockIndex = m_PlayerRayCast.blockIndex;
+    const LocalIndex& chunkIndex = m_PlayerRayCast.chunkIndex;
+    const Vec3 blockCenter = Chunk::Length() * Vec3(chunkIndex.i, chunkIndex.j, chunkIndex.k) + Block::Length() * (Vec3(blockIndex.i, blockIndex.j, blockIndex.k) + Vec3(0.5));
     Engine::Renderer::DrawCubeFrame(blockCenter, 1.01 * Block::Length() * Vec3(1.0), Float4(0.1f, 0.1f, 0.1f, 1.0f));
     Engine::Renderer::EndScene();
   }
@@ -46,8 +45,8 @@ void World::onUpdate(std::chrono::duration<seconds> timestep, Player& player)
   {
     if (m_PlayerRayCast.intersectionOccured)
     {
-      const ChunkIndex& chunkIndex = m_PlayerRayCast.chunkIndex;
-      const LocalIndex& blockIndex = m_PlayerRayCast.blockIndex;
+      const LocalIndex& chunkIndex = m_PlayerRayCast.chunkIndex;
+      const BlockIndex& blockIndex = m_PlayerRayCast.blockIndex;
       const BlockFace& face = m_PlayerRayCast.face;
       Chunk* const chunk = m_ChunkManager.findChunk(chunkIndex);
 
@@ -82,8 +81,6 @@ void World::onUpdate(std::chrono::duration<seconds> timestep, Player& player)
   /* Rendering stage */
   if (!m_RenderingPaused)
   {
-    m_ChunkManager.updatePlayerChunk(player.getPosition());
-
     m_ChunkManager.loadNewChunks(200);
     m_ChunkManager.render(playerCamera);
     m_ChunkManager.clean();
@@ -142,18 +139,18 @@ Intersection World::castRaySegment(const Vec3& pointA, const Vec3& pointB) const
           N--;
 
         // Get index of chunk in which intersection took place
-        ChunkIndex chunkIndex{};
-        chunkIndex[u] = N / Chunk::Size();
-        chunkIndex[v] = static_cast<int64_t>(floor(intersection[v] / Chunk::Length()));
-        chunkIndex[w] = static_cast<int64_t>(floor(intersection[w] / Chunk::Length()));
+        LocalIndex chunkIndex{};
+        chunkIndex[u] = static_cast<localIndex_t>(N / Chunk::Size());
+        chunkIndex[v] = static_cast<localIndex_t>(floor(intersection[v] / Chunk::Length()));
+        chunkIndex[w] = static_cast<localIndex_t>(floor(intersection[w] / Chunk::Length()));
         if (N < 0 && N % Chunk::Size() != 0)
           chunkIndex[u]--;
 
         // Get local index of block that was hit by ray
-        LocalIndex localIndex{};
-        localIndex[u] = modulo(N, Chunk::Size());
-        localIndex[v] = modulo(static_cast<int64_t>(floor(intersection[v] / Block::Length())), Chunk::Size());
-        localIndex[w] = modulo(static_cast<int64_t>(floor(intersection[w] / Block::Length())), Chunk::Size());
+        BlockIndex blockIndex{};
+        blockIndex[u] = modulo(N, Chunk::Size());
+        blockIndex[v] = modulo(static_cast<int64_t>(floor(intersection[v] / Block::Length())), Chunk::Size());
+        blockIndex[w] = modulo(static_cast<int64_t>(floor(intersection[w] / Block::Length())), Chunk::Size());
 
         // Search to see if chunk is loaded
         const Chunk* chunk = m_ChunkManager.findChunk(chunkIndex);
@@ -161,14 +158,14 @@ Intersection World::castRaySegment(const Vec3& pointA, const Vec3& pointB) const
           continue;
 
         // If block has collision, note the intersection and move to next spatial direction
-        if (Block::HasCollision(chunk->getBlockType(localIndex)))
+        if (Block::HasCollision(chunk->getBlockType(blockIndex)))
         {
           const uint8_t faceID = 2 * u + alignedWithPositiveAxis;
           tmin = t;
 
           firstIntersection.intersectionOccured = true;
           firstIntersection.face = static_cast<BlockFace>(faceID);
-          firstIntersection.blockIndex = localIndex;
+          firstIntersection.blockIndex = blockIndex;
           firstIntersection.chunkIndex = chunkIndex;
 
           continue;
@@ -254,8 +251,8 @@ bool World::onMouseButtonPressEvent(Engine::MouseButtonPressEvent& event)
 #if 0
   if (m_PlayerRayCast.intersectionOccured)
   {
-    const ChunkIndex& chunkIndex = m_PlayerRayCast.chunkIndex;
-    const LocalIndex& blockIndex = m_PlayerRayCast.blockIndex;
+    const LocalIndex& chunkIndex = m_PlayerRayCast.chunkIndex;
+    const BlockIndex& blockIndex = m_PlayerRayCast.blockIndex;
     const BlockFace&  face = m_PlayerRayCast.face;
     Chunk* const chunk = m_ChunkManager.findChunk(chunkIndex);
 

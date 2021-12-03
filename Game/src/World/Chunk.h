@@ -1,13 +1,6 @@
 #pragma once
 #include "Block/Block.h"
 
-struct HeightMap
-{
-  int64_t chunkI;
-  int64_t chunkJ;
-  std::array<std::array<length_t, 32>, 32> terrainHeights;
-};
-
 template<typename intType>
 struct Index3D
 {
@@ -39,17 +32,38 @@ struct Index3D
     }
   }
 
-  bool operator==(const Index3D<intType>& other) const { return i == other.i && j == other.j && k == other.k; }
+  constexpr bool operator==(const Index3D<intType>& other) const { return i == other.i && j == other.j && k == other.k; }
+  constexpr Index3D<intType> operator+(const Index3D<intType>& other) const { return { i + other.i, j + other.j, k + other.k } };
+  constexpr Index3D<intType> operator-(const Index3D<intType>& other) const { return { i - other.i, j - other.j, k - other.k } };
 };
 
-using LocalIndex = Index3D<uint8_t>;
-using ChunkIndex = Index3D<int64_t>;
+using blockIndex_t = uint8_t;
+using localIndex_t = int16_t;
+using globalIndex_t = int64_t;
+
+using BlockIndex = Index3D<blockIndex_t>;
+using LocalIndex = Index3D<localIndex_t>;
+using GlobalIndex = Index3D<globalIndex_t>;
+
+struct HeightMap
+{
+  globalIndex_t chunkI;
+  globalIndex_t chunkJ;
+  std::array<std::array<length_t, 32>, 32> terrainHeights;
+};
+
+constexpr LocalIndex operator-(const GlobalIndex& globalIndex, const LocalIndex& localIndex)
+{
+  return { static_cast<localIndex_t>(globalIndex.i - localIndex.i),
+           static_cast<localIndex_t>(globalIndex.j - localIndex.j),
+           static_cast<localIndex_t>(globalIndex.k - localIndex.k) };
+}
 
 class Chunk
 {
 public:
   Chunk();
-  Chunk(const ChunkIndex& chunkIndex);
+  Chunk(const GlobalIndex& chunkIndex);
   ~Chunk();
 
   Chunk(const Chunk& other) = delete;
@@ -59,17 +73,17 @@ public:
   Chunk& operator=(Chunk&& other) noexcept;
 
   BlockType getBlockType(uint8_t i, uint8_t j, uint8_t k) const;
-  BlockType getBlockType(const LocalIndex& blockIndex) const;
+  BlockType getBlockType(const BlockIndex& blockIndex) const;
   BlockType getBlockType(const Vec3& position) const;
 
-  void removeBlock(const LocalIndex& blockIndex);
-  void placeBlock(const LocalIndex& blockIndex, BlockFace face, BlockType blockType);
+  void removeBlock(const BlockIndex& blockIndex);
+  void placeBlock(const BlockIndex& blockIndex, BlockFace face, BlockType blockType);
 
   /*
     \returns The local block index of the block that the given position
              sits inside.  Assumes that given position is inside chunk.
   */
-  LocalIndex blockIndexFromPos(const Vec3& position) const;
+  BlockIndex blockIndexFromPos(const Vec3& position) const;
 
   /*
     Creates and fills composition array with blocks based on the given height map.
@@ -100,21 +114,26 @@ public:
   void reset();
 
   /*
-    \returns The chunk's index, which identifies it uniquely.
+    \returns The chunk's index relative to the origin chunk.
   */
-  const ChunkIndex& getIndex() const { return m_ChunkIndex; }
+  LocalIndex getLocalIndex() const { return CalcRelativeIndex(m_GlobalIndex, s_OriginIndex); }
 
   /*
-    A chunk's anchor point is its bottom southeast vertex.
+    \returns The chunk's global index, which identifies it uniquely.
+  */
+  const GlobalIndex& getGlobalIndex() const { return m_GlobalIndex; }
+
+  /*
+    A chunk's (local) anchor point is its bottom southeast vertex.
 
     Useful property:
     If the anchor point is denoted by A, then for any point
     X within the chunk, A_i <= X_i.
   */
-  Vec3 anchorPoint() const { return s_ChunkLength * Vec3(m_ChunkIndex.i, m_ChunkIndex.j, m_ChunkIndex.k); }
+  Vec3 anchorPoint() const;
 
   /*
-    \returns The chunk's geometric center.
+    \returns The chunk's (local) geometric center.
   */
   Vec3 center() const { return anchorPoint() + s_ChunkLength / 2; }
 
@@ -148,18 +167,28 @@ public:
   bool isFaceOpaque(BlockFace face) const { return m_FaceIsOpaque[static_cast<uint8_t>(face)]; }
 
   bool isBlockNeighborInAnotherChunk(uint8_t i, uint8_t j, uint8_t k, BlockFace face);
-  bool isBlockNeighborInAnotherChunk(const LocalIndex& blockIndex, BlockFace face);
+  bool isBlockNeighborInAnotherChunk(const BlockIndex& blockIndex, BlockFace face);
   bool isBlockNeighborTransparent(uint8_t i, uint8_t j, uint8_t k, BlockFace face);
-  bool isBlockNeighborTransparent(const LocalIndex& blockIndex, BlockFace face);
+  bool isBlockNeighborTransparent(const BlockIndex& blockIndex, BlockFace face);
   bool isBlockNeighborAir(uint8_t i, uint8_t j, uint8_t k, BlockFace face);
-  bool isBlockNeighborAir(const LocalIndex& blockIndex, BlockFace face);
+  bool isBlockNeighborAir(const BlockIndex& blockIndex, BlockFace face);
 
   static constexpr uint8_t Size() { return s_ChunkSize; }
   static constexpr length_t Length() { return s_ChunkLength; }
   static constexpr uint32_t TotalBlocks() { return s_ChunkTotalBlocks; }
-  static const ChunkIndex ChunkIndexFromPos(const Vec3& position);
+  static const LocalIndex ChunkIndexFromPos(const Vec3& position);
 
   static void InitializeIndexBuffer();
+
+  static const GlobalIndex& GetOrigin() { return s_OriginIndex; }
+  static void UpdateOrigin(const GlobalIndex& originIndex) { s_OriginIndex = originIndex; }
+
+  static constexpr LocalIndex CalcRelativeIndex(const GlobalIndex& indexA, const GlobalIndex& indexB)
+  {
+    return { static_cast<localIndex_t>(indexA.i - indexB.i),
+             static_cast<localIndex_t>(indexA.j - indexB.j),
+             static_cast<localIndex_t>(indexA.k - indexB.k) };
+  }
 
 private:
   enum class MeshState : uint8_t
@@ -175,8 +204,11 @@ private:
   static constexpr length_t s_ChunkLength = s_ChunkSize * Block::Length();
   static constexpr uint32_t s_ChunkTotalBlocks = s_ChunkSize * s_ChunkSize * s_ChunkSize;
 
+  // Origin
+  static GlobalIndex s_OriginIndex;
+
   // Position and composition
-  ChunkIndex m_ChunkIndex;
+  GlobalIndex m_GlobalIndex;
   Engine::Unique<BlockType[]> m_ChunkComposition = nullptr;
   std::array<bool, 6> m_FaceIsOpaque = { true, true, true, true, true, true };
 
@@ -193,7 +225,7 @@ private:
   void generateVertexArray();
 
   void setBlockType(uint8_t i, uint8_t j, uint8_t k, BlockType blockType);
-  void setBlockType(const LocalIndex& blockIndex, BlockType blockType);
+  void setBlockType(const BlockIndex& blockIndex, BlockType blockType);
 
   void determineOpacity();
 

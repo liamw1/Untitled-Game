@@ -25,15 +25,10 @@ public:
   bool loadNewChunks(uint32_t maxNewChunks);
 
   /*
-    For updating the chunk manager of what chunk the player is currently inside.
-  */
-  void updatePlayerChunk(const Vec3& playerPosition) { m_PlayerChunkIndex = Chunk::ChunkIndexFromPos(playerPosition); }
-
-  /*
     \returns The Chunk at the specified chunk index.  If no such chunk can be found,
              returns nullptr.
   */
-  Chunk* findChunk(const ChunkIndex& chunkIndex) const;
+  Chunk* findChunk(const LocalIndex& chunkIndex) const;
 
   /*
     Sends message to chunk manager that chunk has been modified.
@@ -77,18 +72,17 @@ private:
   // Terrain data
   llvm::DenseMap<int64_t, HeightMap> m_HeightMaps{};
 
-  // Player data
-  ChunkIndex m_PlayerChunkIndex{};
-
   /*
     Generates a (nearly) unique key for chunk hash maps.
   */
-  int64_t createKey(const ChunkIndex& chunkIndex) const;
-  int64_t createHeightMapKey(int64_t chunkI, int64_t chunkJ) const;
+  int64_t createKey(const GlobalIndex& chunkIndex) const;
+  int64_t createHeightMapKey(globalIndex_t chunkI, globalIndex_t chunkJ) const;
 
-  bool isOutOfRange(const ChunkIndex& chunkIndex) const;
-  bool isInLoadRange(const ChunkIndex& chunkIndex) const;
-  bool isInRenderRange(const ChunkIndex& chunkIndex) const;
+  bool isOutOfRange(const LocalIndex& chunkIndex) const;
+  bool isOutOfRange(const GlobalIndex& chunkIndex) const;
+  bool isInLoadRange(const LocalIndex& chunkIndex) const;
+  bool isInLoadRange(const GlobalIndex& chunkIndex) const;
+  bool isInRenderRange(const LocalIndex& chunkIndex) const;
 
   /*
     Uses algorithm described in 
@@ -109,7 +103,7 @@ private:
   /*
     Generates a chunk-sized section of terrain heights using simplex noise.
   */
-  HeightMap generateHeightMap(int64_t chunkI, int64_t chunkJ);
+  HeightMap generateHeightMap(globalIndex_t chunkI, globalIndex_t chunkJ);
 
   /*
     Searches for open chunk slot and loads chunk at the given index.
@@ -117,7 +111,7 @@ private:
 
     \returns A pointer to the newly created chunk.
   */
-  Chunk* loadNewChunk(const ChunkIndex& chunkIndex);
+  Chunk* loadNewChunk(const GlobalIndex& chunkIndex);
 
   /*
     Searches for chunk, removes it from whatever map it is currently in,
@@ -127,6 +121,12 @@ private:
     The neighbors of the removed chunk are re-categorized as boundary chunks.
   */
   void unloadChunk(Chunk* const chunk);
+
+  /*
+    \returns The Chunk at the specified chunk index.  If no such chunk can be found,
+             returns nullptr.
+  */
+  Chunk* findChunk(const GlobalIndex& chunkIndex) const;
 
   /*
     Adds chunk pointer to the specified map.

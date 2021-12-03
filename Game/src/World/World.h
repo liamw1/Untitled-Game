@@ -7,8 +7,8 @@ struct Intersection
   bool intersectionOccured;
   length_t distance;
   BlockFace face;
-  LocalIndex blockIndex;
-  ChunkIndex chunkIndex;
+  BlockIndex blockIndex;
+  LocalIndex chunkIndex;
 };
 
 class World
