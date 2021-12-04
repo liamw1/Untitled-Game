@@ -86,7 +86,7 @@ void World::onUpdate(std::chrono::duration<seconds> timestep)
     m_ChunkManager.render();
 }
 
-Intersection World::castRaySegment(const Vec3& pointA, const Vec3& pointB) const
+RayIntersection World::castRaySegment(const Vec3& pointA, const Vec3& pointB) const
 {
   static constexpr Vec3 normals[3] = { { 1, 0, 0 }, { 0, 1, 0 }, { 0, 0, 1 } };
 
@@ -94,7 +94,7 @@ Intersection World::castRaySegment(const Vec3& pointA, const Vec3& pointB) const
 
   // Look for solid block face intersections in the x,y,z directions
   length_t tmin = 2.0;
-  Intersection firstIntersection{};
+  RayIntersection firstIntersection{};
   for (uint8_t i = 0; i < 3; ++i)
   {
     const bool alignedWithPositiveAxis = rayDirection[i] > 0.0;
@@ -177,7 +177,7 @@ Intersection World::castRaySegment(const Vec3& pointA, const Vec3& pointB) const
   return firstIntersection;
 }
 
-Intersection World::castRay(const Vec3& rayOrigin, const Vec3& rayDirection, length_t maxDistance) const
+RayIntersection World::castRay(const Vec3& rayOrigin, const Vec3& rayDirection, length_t maxDistance) const
 {
   const Vec3& pointA = rayOrigin;
   const Vec3  pointB = rayOrigin + maxDistance * glm::normalize(rayDirection);
@@ -197,22 +197,21 @@ void World::playerCollisionHandling(std::chrono::duration<seconds> timestep) con
   const seconds dt = timestep.count();  // Time between frames in seconds
 
 beginCollisionDetection:;
-  const Vec3 playerPosition = Player::Position();
   const length_t distanceMoved = dt * glm::length(Player::Velocity());
-  const Vec3 anchorPoint = playerPosition - 0.5 * Vec3(Player::Width(), Player::Width(), Player::Height());
+  const Vec3 anchorPoint = Player::Position() - 0.5 * Vec3(Player::Width(), Player::Width(), Player::Height());
 
   if (distanceMoved == 0.0)
     return;
 
   glm::vec3 correctCorner{};
-  Intersection firstCollision{};
+  RayIntersection firstCollision{};
   for (int i = 0; i <= playerWidth; ++i)
     for (int j = 0; j <= playerWidth; ++j)
       for (int k = 0; k <= playerHeight; ++k)
       {
         const Vec3 cornerPos = anchorPoint + Block::Length() * Vec3(i == playerWidth ? i - 0.2 : i, j == playerWidth ? j - 0.2 : j, k == playerHeight ? k - 0.2 : k);
 
-        const Intersection collision = castRaySegment(cornerPos - Player::Velocity() * dt, cornerPos);
+        const RayIntersection collision = castRaySegment(cornerPos - dt * Player::Velocity(), cornerPos);
         const length_t& collisionDistance = collision.distance;
 
         if (collision.distance < firstCollision.distance)
@@ -228,8 +227,12 @@ beginCollisionDetection:;
     const length_t t = firstCollision.distance / distanceMoved;
 
     // Calculate distance player should be pushed out from solid block
-    const Vec3 collisionDisplacement = ((1.0 - t) * glm::dot(normals[faceID], -Player::Velocity() * dt) + s_MinDistanceToWall) * normals[faceID];
-    Player::SetPosition(playerPosition + collisionDisplacement);
+    const Vec3 collisionDisplacement = ((1.0 - t) * dt *  glm::dot(normals[faceID], -Player::Velocity()) + s_MinDistanceToWall) * normals[faceID];
+
+    Player::SetPosition(Player::Position() + collisionDisplacement);
+
+    // Velocity becomes (prevPlayerPosition - positionAfterCollision) / dt
+    Player::SetVelocity((Player::Velocity() + collisionDisplacement / dt));
 
     goto beginCollisionDetection;
   }

@@ -2,7 +2,7 @@
 #include "ChunkManager.h"
 #include "Player/Player.h"
 
-struct Intersection
+struct RayIntersection
 {
   length_t distance = std::numeric_limits<length_t>::infinity();
   BlockFace face;
@@ -26,14 +26,14 @@ private:
 
   ChunkManager m_ChunkManager{};
 
-  Intersection m_PlayerRayCast{};
+  RayIntersection m_PlayerRayCast{};
 
   /*
     \returns The first intersection between the given line segment AB and a solid Block Face.
   */
-  Intersection castRaySegment(const Vec3& pointA, const Vec3& pointB) const;
+  RayIntersection castRaySegment(const Vec3& pointA, const Vec3& pointB) const;
 
-  Intersection castRay(const Vec3& rayOrigin, const Vec3& rayDirection, length_t maxDistance) const;
+  RayIntersection castRay(const Vec3& rayOrigin, const Vec3& rayDirection, length_t maxDistance) const;
 
   void playerCollisionHandling(std::chrono::duration<seconds> timestep) const;
 
