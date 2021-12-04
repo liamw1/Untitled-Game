@@ -36,9 +36,27 @@ struct Index3D
   }
 
   constexpr bool operator==(const Index3D<intType>& other) const { return i == other.i && j == other.j && k == other.k; }
-  constexpr Index3D<intType> operator+(const Index3D<intType>& other) const { return { i + other.i, j + other.j, k + other.k } };
-  constexpr Index3D<intType> operator-(const Index3D<intType>& other) const { return { i - other.i, j - other.j, k - other.k } };
+  constexpr Index3D<intType> operator+(const Index3D<intType>& other) const 
+  { 
+    return { static_cast<intType>(i + other.i), 
+             static_cast<intType>(j + other.j), 
+             static_cast<intType>(k + other.k) }; 
+  }
+  constexpr Index3D<intType> operator-(const Index3D<intType>& other) const 
+  { 
+    return { static_cast<intType>(i - other.i), 
+             static_cast<intType>(j - other.j), 
+             static_cast<intType>(k - other.k) }; 
+  }
 };
+
+template<typename intType>
+constexpr Index3D<intType> operator*(intType n, const Index3D<intType>& index) 
+{ 
+  return { static_cast<intType>(n * index.i), 
+           static_cast<intType>(n * index.j), 
+           static_cast<intType>(n * index.k) }; 
+}
 
 using blockIndex_t = uint8_t;
 using localIndex_t = int16_t;
@@ -54,13 +72,6 @@ struct HeightMap
   globalIndex_t chunkJ;
   std::array<std::array<length_t, 32>, 32> terrainHeights;
 };
-
-constexpr LocalIndex operator-(const GlobalIndex& globalIndex, const LocalIndex& localIndex)
-{
-  return { static_cast<localIndex_t>(globalIndex.i - localIndex.i),
-           static_cast<localIndex_t>(globalIndex.j - localIndex.j),
-           static_cast<localIndex_t>(globalIndex.k - localIndex.k) };
-}
 
 /*
   A large cube of blocks.
@@ -82,7 +93,7 @@ public:
   Chunk(Chunk&& other) noexcept;
   Chunk& operator=(Chunk&& other) noexcept;
 
-  BlockType getBlockType(uint8_t i, uint8_t j, uint8_t k) const;
+  BlockType getBlockType(blockIndex_t i, blockIndex_t j, blockIndex_t k) const;
   BlockType getBlockType(const BlockIndex& blockIndex) const;
   BlockType getBlockType(const Vec3& position) const;
 
@@ -176,11 +187,11 @@ public:
   bool isEmpty() const { return m_ChunkComposition == nullptr; }
   bool isFaceOpaque(BlockFace face) const { return m_FaceIsOpaque[static_cast<uint8_t>(face)]; }
 
-  bool isBlockNeighborInAnotherChunk(uint8_t i, uint8_t j, uint8_t k, BlockFace face);
+  bool isBlockNeighborInAnotherChunk(blockIndex_t i, blockIndex_t j, blockIndex_t k, BlockFace face);
   bool isBlockNeighborInAnotherChunk(const BlockIndex& blockIndex, BlockFace face);
-  bool isBlockNeighborTransparent(uint8_t i, uint8_t j, uint8_t k, BlockFace face);
+  bool isBlockNeighborTransparent(blockIndex_t i, blockIndex_t j, blockIndex_t k, BlockFace face);
   bool isBlockNeighborTransparent(const BlockIndex& blockIndex, BlockFace face);
-  bool isBlockNeighborAir(uint8_t i, uint8_t j, uint8_t k, BlockFace face);
+  bool isBlockNeighborAir(blockIndex_t i, blockIndex_t j, blockIndex_t k, BlockFace face);
   bool isBlockNeighborAir(const BlockIndex& blockIndex, BlockFace face);
 
   static constexpr uint8_t Size() { return s_ChunkSize; }
@@ -207,7 +218,7 @@ private:
   };
 
   // Size and dimension
-  static constexpr uint8_t s_ChunkSize = 32;
+  static constexpr blockIndex_t s_ChunkSize = 32;
   static constexpr length_t s_ChunkLength = s_ChunkSize * Block::Length();
   static constexpr uint32_t s_ChunkTotalBlocks = s_ChunkSize * s_ChunkSize * s_ChunkSize;
 
@@ -228,7 +239,7 @@ private:
 
   void generateVertexArray();
 
-  void setBlockType(uint8_t i, uint8_t j, uint8_t k, BlockType blockType);
+  void setBlockType(blockIndex_t i, blockIndex_t j, blockIndex_t k, BlockType blockType);
   void setBlockType(const BlockIndex& blockIndex, BlockType blockType);
 
   void determineOpacity();
