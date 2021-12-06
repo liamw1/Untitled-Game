@@ -330,6 +330,7 @@ HeightMap ChunkManager::generateHeightMap(globalIndex_t chunkI, globalIndex_t ch
   HeightMap heightMap{};
   heightMap.chunkI = chunkI;
   heightMap.chunkJ = chunkJ;
+  heightMap.maxHeight = -std::numeric_limits<length_t>::infinity();
 
   for (uint8_t i = 0; i < Chunk::Size(); ++i)
     for (uint8_t j = 0; j < Chunk::Size(); ++j)
@@ -337,6 +338,9 @@ HeightMap ChunkManager::generateHeightMap(globalIndex_t chunkI, globalIndex_t ch
       Vec2 blockXY = Vec2(chunkI * Chunk::Length() + i * Block::Length(), chunkJ * Chunk::Length() + j * Block::Length());
       length_t terrainHeight = 150 * Block::Length() * glm::simplex(blockXY / 1280.0 / Block::Length()) + 50 * Block::Length() * glm::simplex(blockXY / 320.0 / Block::Length()) + 5 * Block::Length() * glm::simplex(blockXY / 40.0 / Block::Length());
       heightMap.terrainHeights[i][j] = terrainHeight;
+
+      if (terrainHeight > heightMap.maxHeight)
+        heightMap.maxHeight = terrainHeight;
     }
   return heightMap;
 }

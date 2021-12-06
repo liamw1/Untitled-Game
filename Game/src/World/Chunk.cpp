@@ -65,6 +65,13 @@ Chunk& Chunk::operator=(Chunk&& other) noexcept
 void Chunk::load(HeightMap heightMap)
 {
   const length_t chunkHeight = s_ChunkLength * getGlobalIndex().k;
+
+  if (heightMap.maxHeight < chunkHeight)
+  {
+    markAsEmpty();
+    return;
+  }
+
   m_ChunkComposition = Engine::CreateUnique<BlockType[]>(s_ChunkTotalBlocks);
 
   bool isEmpty = true;

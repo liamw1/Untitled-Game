@@ -71,6 +71,8 @@ struct HeightMap
   globalIndex_t chunkI;
   globalIndex_t chunkJ;
   std::array<std::array<length_t, 32>, 32> terrainHeights;
+
+  length_t maxHeight;
 };
 
 /*
