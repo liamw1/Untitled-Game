@@ -187,11 +187,9 @@ public:
   bool isEmpty() const { return m_ChunkComposition == nullptr; }
   bool isFaceOpaque(BlockFace face) const { return m_FaceIsOpaque[static_cast<uint8_t>(face)]; }
 
-  bool isBlockNeighborInAnotherChunk(blockIndex_t i, blockIndex_t j, blockIndex_t k, BlockFace face);
   bool isBlockNeighborInAnotherChunk(const BlockIndex& blockIndex, BlockFace face);
   bool isBlockNeighborTransparent(blockIndex_t i, blockIndex_t j, blockIndex_t k, BlockFace face);
   bool isBlockNeighborTransparent(const BlockIndex& blockIndex, BlockFace face);
-  bool isBlockNeighborAir(blockIndex_t i, blockIndex_t j, blockIndex_t k, BlockFace face);
   bool isBlockNeighborAir(const BlockIndex& blockIndex, BlockFace face);
 
   static constexpr uint8_t Size() { return s_ChunkSize; }

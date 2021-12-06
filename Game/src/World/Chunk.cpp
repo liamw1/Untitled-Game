@@ -5,7 +5,7 @@
 Engine::Shared<Engine::IndexBuffer> Chunk::s_MeshIndexBuffer = nullptr;
 
 Chunk::Chunk()
-  : m_GlobalIndex({0, 0, 0})
+  : m_GlobalIndex({ 0, 0, 0 })
 {
 }
 
@@ -23,12 +23,12 @@ Chunk::~Chunk()
 
 Chunk::Chunk(Chunk&& other) noexcept
   : m_GlobalIndex(std::move(other.m_GlobalIndex)),
-    m_ChunkComposition(std::move(other.m_ChunkComposition)),
-    m_FaceIsOpaque(std::move(other.m_FaceIsOpaque)),
-    m_MeshState(std::move(other.m_MeshState)),
-    m_Mesh(std::move(other.m_Mesh)),
-    m_MeshVertexArray(std::move(other.m_MeshVertexArray)),
-    m_MeshVertexBuffer(std::move(other.m_MeshVertexBuffer))
+  m_ChunkComposition(std::move(other.m_ChunkComposition)),
+  m_FaceIsOpaque(std::move(other.m_FaceIsOpaque)),
+  m_MeshState(std::move(other.m_MeshState)),
+  m_Mesh(std::move(other.m_Mesh)),
+  m_MeshVertexArray(std::move(other.m_MeshVertexArray)),
+  m_MeshVertexBuffer(std::move(other.m_MeshVertexBuffer))
 {
   // Transfer neighbor pointers
   m_Neighbors = other.m_Neighbors;
@@ -50,7 +50,7 @@ Chunk& Chunk::operator=(Chunk&& other) noexcept
     m_Mesh = std::move(other.m_Mesh);
     m_MeshVertexArray = std::move(other.m_MeshVertexArray);
     m_MeshVertexBuffer = std::move(other.m_MeshVertexBuffer);
-   
+
     // Transfer neighbor pointers
     m_Neighbors = other.m_Neighbors;
     for (BlockFace face : BlockFaceIterator())
@@ -207,7 +207,7 @@ Vec3 Chunk::anchorPoint() const
 BlockType Chunk::getBlockType(blockIndex_t i, blockIndex_t j, blockIndex_t k) const
 {
   static constexpr uint64_t chunkSize = static_cast<uint64_t>(s_ChunkSize);
-  EN_ASSERT(i < chunkSize && j < chunkSize && k < chunkSize, "Index is out of bounds!");
+  EN_ASSERT(i < chunkSize&& j < chunkSize&& k < chunkSize, "Index is out of bounds!");
   return isEmpty() ? BlockType::Air : m_ChunkComposition[i * chunkSize * chunkSize + j * chunkSize + k];
 }
 
@@ -230,7 +230,7 @@ void Chunk::removeBlock(const BlockIndex& blockIndex)
   {
     const uint8_t faceID = static_cast<uint8_t>(face);
 
-    if (isBlockNeighborInAnotherChunk(blockIndex, face) && m_Neighbors[faceID] != nullptr)
+    if (isBlockNeighborInAnotherChunk(blockIndex, face) && m_Neighbors[faceID] != nullptr) [[unlikely]]
       m_Neighbors[faceID]->m_MeshState = MeshState::NeedsUpdate;
   }
 }
@@ -238,7 +238,7 @@ void Chunk::removeBlock(const BlockIndex& blockIndex)
 void Chunk::placeBlock(const BlockIndex& blockIndex, BlockFace face, BlockType blockType)
 {
   static constexpr BlockIndex normals[6] = { { 1, 0, 0}, { -1, 0, 0}, { 0, 1, 0}, { 0, -1, 0}, { 0, 0, 1}, { 0, 0, -1} };
-                                        //      East         West        North       South         Top        Bottom
+  //      East         West        North       South         Top        Bottom
 
   EN_ASSERT(!isEmpty(), "Place block cannot be called on an empty chunk!");
 
@@ -247,7 +247,7 @@ void Chunk::placeBlock(const BlockIndex& blockIndex, BlockFace face, BlockType b
     return;
 
   const uint8_t faceID = static_cast<uint8_t>(face);
-  if (isBlockNeighborInAnotherChunk(blockIndex, face))
+  if (isBlockNeighborInAnotherChunk(blockIndex, face)) [[unlikely]]
   {
     if (m_Neighbors[faceID] == nullptr)
       return;
@@ -257,7 +257,7 @@ void Chunk::placeBlock(const BlockIndex& blockIndex, BlockFace face, BlockType b
     m_Neighbors[faceID]->setBlockType(blockIndex - static_cast<blockIndex_t>(s_ChunkSize - 1) * normals[faceID], blockType);
     m_Neighbors[faceID]->m_MeshState = MeshState::NeedsUpdate;
   }
-  else
+  else [[likely]]
     setBlockType(blockIndex + normals[faceID], blockType);
   m_MeshState = MeshState::NeedsUpdate;
 }
@@ -268,22 +268,13 @@ void Chunk::setNeighbor(BlockFace face, Chunk* chunk)
   m_MeshState = MeshState::NeedsUpdate;
 }
 
-bool Chunk::isBlockNeighborInAnotherChunk(blockIndex_t i, blockIndex_t j, blockIndex_t k, BlockFace face)
-{
-  using func = bool(*)(blockIndex_t, blockIndex_t, blockIndex_t);
-  static const func isOnChunkSide[6] = { [](blockIndex_t i, blockIndex_t j, blockIndex_t k) { return i == s_ChunkSize - 1; },
-                                         [](blockIndex_t i, blockIndex_t j, blockIndex_t k) { return i == 0; },
-                                         [](blockIndex_t i, blockIndex_t j, blockIndex_t k) { return j == s_ChunkSize - 1; },
-                                         [](blockIndex_t i, blockIndex_t j, blockIndex_t k) { return j == 0; },
-                                         [](blockIndex_t i, blockIndex_t j, blockIndex_t k) { return k == s_ChunkSize - 1; },
-                                         [](blockIndex_t i, blockIndex_t j, blockIndex_t k) { return k == 0; } };
-
-  return isOnChunkSide[static_cast<uint8_t>(face)](i, j, k);
-}
-
 bool Chunk::isBlockNeighborInAnotherChunk(const BlockIndex& blockIndex, BlockFace face)
 {
-  return isBlockNeighborInAnotherChunk(blockIndex.i, blockIndex.j, blockIndex.k, face);
+  static constexpr blockIndex_t chunkLimits[2] = { s_ChunkSize - 1, 0 };
+  const uint8_t faceID = static_cast<uint8_t>(face);
+  const uint8_t coordID = faceID / 2;
+
+  return blockIndex[coordID] == chunkLimits[faceID % 2];
 }
 
 bool Chunk::isBlockNeighborTransparent(blockIndex_t i, blockIndex_t j, blockIndex_t k, BlockFace face)
@@ -294,10 +285,10 @@ bool Chunk::isBlockNeighborTransparent(blockIndex_t i, blockIndex_t j, blockInde
 bool Chunk::isBlockNeighborTransparent(const BlockIndex& blockIndex, BlockFace face)
 {
   static constexpr BlockIndex normals[6] = { { 1, 0, 0}, { -1, 0, 0}, { 0, 1, 0}, { 0, -1, 0}, { 0, 0, 1}, { 0, 0, -1} };
-                                        //      East         West        North       South         Top        Bottom
+  //      East         West        North       South         Top        Bottom
 
   const uint8_t faceID = static_cast<uint8_t>(face);
-  if (isBlockNeighborInAnotherChunk(blockIndex, face))
+  if (isBlockNeighborInAnotherChunk(blockIndex, face)) [[unlikely]]
   {
     if (m_Neighbors[faceID] == nullptr)
       return false;
@@ -306,22 +297,17 @@ bool Chunk::isBlockNeighborTransparent(const BlockIndex& blockIndex, BlockFace f
 
     return Block::HasTransparency(m_Neighbors[faceID]->getBlockType(blockIndex - static_cast<blockIndex_t>(s_ChunkSize - 1) * normals[faceID]));
   }
-  else
+  else [[likely]]
     return Block::HasTransparency(getBlockType(blockIndex + normals[faceID]));
-}
-
-bool Chunk::isBlockNeighborAir(blockIndex_t i, blockIndex_t j, blockIndex_t k, BlockFace face)
-{
-  return isBlockNeighborAir({ i, j, k }, face);
 }
 
 bool Chunk::isBlockNeighborAir(const BlockIndex& blockIndex, BlockFace face)
 {
   static constexpr BlockIndex normals[6] = { { 1, 0, 0}, { -1, 0, 0}, { 0, 1, 0}, { 0, -1, 0}, { 0, 0, 1}, { 0, 0, -1} };
-                                        //      East         West        North       South         Top        Bottom
+  //      East         West        North       South         Top        Bottom
 
   const uint8_t faceID = static_cast<uint8_t>(face);
-  if (isBlockNeighborInAnotherChunk(blockIndex, face))
+  if (isBlockNeighborInAnotherChunk(blockIndex, face)) [[unlikely]]
   {
     if (m_Neighbors[faceID] == nullptr)
       return false;
@@ -330,11 +316,11 @@ bool Chunk::isBlockNeighborAir(const BlockIndex& blockIndex, BlockFace face)
 
     return m_Neighbors[faceID]->getBlockType(blockIndex - static_cast<blockIndex_t>(s_ChunkSize - 1) * normals[faceID]) == BlockType::Air;
   }
-  else
+  else [[likely]]
     return getBlockType(blockIndex + normals[faceID]) == BlockType::Air;
 }
 
-const LocalIndex Chunk::LocalIndexFromPos(const Vec3& position)   
+const LocalIndex Chunk::LocalIndexFromPos(const Vec3& position)
 {
   return { static_cast<localIndex_t>(floor(position.x / s_ChunkLength)),
            static_cast<localIndex_t>(floor(position.y / s_ChunkLength)),
@@ -397,25 +383,31 @@ void Chunk::setBlockType(const BlockIndex& blockIndex, BlockType blockType)
 
 void Chunk::determineOpacity()
 {
-  for (blockIndex_t i = 0; i < s_ChunkSize; ++i)
-    for (blockIndex_t j = 0; j < s_ChunkSize; ++j)
-      for (BlockFace face : BlockFaceIterator())
+  for (BlockFace face : BlockFaceIterator())
+  {
+    const uint8_t faceID = static_cast<uint8_t>(face);
+
+    // Relabel coordinates
+    const uint8_t u = faceID / 2;
+    const uint8_t v = (u + 1) % 3;
+    const uint8_t w = (u + 2) % 3;
+
+    for (blockIndex_t i = 0; i < s_ChunkSize; ++i)
+      for (blockIndex_t j = 0; j < s_ChunkSize; ++j)
       {
-        const uint8_t faceID = static_cast<uint8_t>(face);
-
-        // Relabel coordinates
-        const uint8_t u = faceID / 2;
-        const uint8_t v = (u + 1) % 3;
-        const uint8_t w = (u + 2) % 3;
-
         BlockIndex blockIndex{};
         blockIndex[u] = faceID % 2 == 0 ? s_ChunkSize - 1 : 0;
         blockIndex[v] = i;
         blockIndex[w] = j;
 
         if (Block::HasTransparency(getBlockType(blockIndex)))
+        {
           m_FaceIsOpaque[faceID] = false;
+          goto nextFace;
+        }
       }
+  nextFace:;
+  }
 }
 
 void Chunk::sendAddressUpdate()
@@ -457,8 +449,8 @@ BlockIndex Chunk::blockIndexFromPos(const Vec3& position) const
   Vec3 localPosition = position - anchorPoint();
 
   EN_ASSERT(localPosition.x >= 0.0 && localPosition.x <= s_ChunkLength &&
-            localPosition.y >= 0.0 && localPosition.y <= s_ChunkLength &&
-            localPosition.z >= 0.0 && localPosition.z <= s_ChunkLength, "Given position is not inside chunk!");
+    localPosition.y >= 0.0 && localPosition.y <= s_ChunkLength &&
+    localPosition.z >= 0.0 && localPosition.z <= s_ChunkLength, "Given position is not inside chunk!");
 
   BlockIndex blockIndex = { static_cast<blockIndex_t>(localPosition.x / Block::Length()),
                             static_cast<blockIndex_t>(localPosition.y / Block::Length()),
