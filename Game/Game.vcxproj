@@ -159,6 +159,7 @@
     <ClInclude Include="src\GMpch.h" />
     <ClInclude Include="src\GameSandbox.h" />
     <ClInclude Include="src\Player\Player.h" />
+    <ClInclude Include="src\Util\MarchingCubes.h" />
     <ClInclude Include="src\World\Chunk.h" />
     <ClInclude Include="src\World\ChunkManager.h" />
     <ClInclude Include="src\World\ChunkRenderer.h" />

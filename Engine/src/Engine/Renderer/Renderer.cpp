@@ -72,31 +72,9 @@ namespace Engine
     cubeFrameVB->setLayout({ { ShaderDataType::Float3, "a_Position" } });
     s_CubeFrameVertexArray->addVertexBuffer(cubeFrameVB);
 
-    uint32_t cubeFrameIndices[24]{};
-    cubeFrameIndices[0] = 0;
-    cubeFrameIndices[1] = 1;
-    cubeFrameIndices[2] = 1;
-    cubeFrameIndices[3] = 2;
-    cubeFrameIndices[4] = 2;
-    cubeFrameIndices[5] = 3;
-    cubeFrameIndices[6] = 3;
-    cubeFrameIndices[7] = 0;
-    cubeFrameIndices[8] = 4;
-    cubeFrameIndices[9] = 5;
-    cubeFrameIndices[10] = 5;
-    cubeFrameIndices[11] = 6;
-    cubeFrameIndices[12] = 6;
-    cubeFrameIndices[13] = 7;
-    cubeFrameIndices[14] = 7;
-    cubeFrameIndices[15] = 4;
-    cubeFrameIndices[16] = 1;
-    cubeFrameIndices[17] = 4;
-    cubeFrameIndices[18] = 2;
-    cubeFrameIndices[19] = 7;
-    cubeFrameIndices[20] = 0;
-    cubeFrameIndices[21] = 5;
-    cubeFrameIndices[22] = 3;
-    cubeFrameIndices[23] = 6;
+    uint32_t cubeFrameIndices[24]{ 0, 1, 1, 2, 2, 3, 3, 0,
+                                   4, 5, 5, 6, 6, 7, 7, 4,
+                                   1, 4, 2, 7, 0, 5, 3, 6 };
     Shared<IndexBuffer> cubeFrameIB = IndexBuffer::Create(cubeFrameIndices, sizeof(cubeFrameIndices) / sizeof(uint32_t));
     s_CubeFrameVertexArray->setIndexBuffer(cubeFrameIB);
 

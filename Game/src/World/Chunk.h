@@ -1,6 +1,11 @@
 #pragma once
 #include "Block/Block.h"
 
+struct Vertex
+{
+  Float3 position;
+};
+
 /*
   Structs for indexing of blocks and chunks.
 */
@@ -113,12 +118,6 @@ public:
     Deletes composition array if all blocks are air.
   */
   void load(HeightMap heightMap);
-
-  /*
-    Generates simplistic mesh based on chunk compostion.
-    Block faces covered by opaque blocks will not be added to mesh.
-  */
-  void generateMesh();
 
   /*
     Applies necessary updates to chunk.  
@@ -236,6 +235,12 @@ private:
 
   // Chunk neighbor data
   std::array<Chunk*, 6> m_Neighbors{};
+
+  /*
+    Generates simplistic mesh based on chunk compostion.
+    Block faces covered by opaque blocks will not be added to mesh.
+  */
+  void generateMesh();
 
   void generateVertexArray();
 

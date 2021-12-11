@@ -102,6 +102,7 @@
     <ClInclude Include="src\World\World.h">
       <Filter>src\World</Filter>
     </ClInclude>
+    <ClInclude Include="src\Util\MarchingCubes.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="lib\llvm\include\llvm\Support\MemAlloc.cpp">

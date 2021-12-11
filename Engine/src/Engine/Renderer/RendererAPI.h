@@ -24,6 +24,7 @@ namespace Engine
     virtual void wireFrameToggle(bool enableWireFrame) const = 0;
     virtual void faceCullToggle(bool enableFaceCulling) const = 0;
     
+    virtual void drawVertices(const Shared<VertexArray>& vertexArray, uint32_t vertexCount) = 0;
     virtual void drawIndexed(const Shared<VertexArray>& vertexArray, uint32_t indexCount = 0) = 0;
     virtual void drawIndexedLines(const Shared<VertexArray>& vertexArray, uint32_t indexCount = 0) = 0;
 

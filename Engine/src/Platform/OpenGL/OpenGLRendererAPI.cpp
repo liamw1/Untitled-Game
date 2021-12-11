@@ -36,6 +36,12 @@ namespace Engine
     enableFaceCulling ? glEnable(GL_CULL_FACE) : glDisable(GL_CULL_FACE);
   }
 
+  void OpenGLRendererAPI::drawVertices(const Shared<VertexArray>& vertexArray, uint32_t vertexCount)
+  {
+    glDrawArrays(GL_TRIANGLES, 0, vertexCount);
+    glBindTexture(GL_TEXTURE_2D, 0);
+  }
+
   void OpenGLRendererAPI::drawIndexed(const Shared<VertexArray>& vertexArray, uint32_t indexCount)
   {
     uint32_t count = indexCount == 0 ? vertexArray->getIndexBuffer()->getCount() : indexCount;

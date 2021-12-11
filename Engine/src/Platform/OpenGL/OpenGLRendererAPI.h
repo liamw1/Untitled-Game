@@ -13,6 +13,7 @@ namespace Engine
     void wireFrameToggle(bool enableWireFrame) const override;
     void faceCullToggle(bool enableFaceCulling) const override;
 
+    void drawVertices(const Shared<VertexArray>& vertexArray, uint32_t vertexCount) override;
     void drawIndexed(const Shared<VertexArray>& vertexArray, uint32_t indexCount = 0) override;
     void drawIndexedLines(const Shared<VertexArray>& vertexArray, uint32_t indexCount = 0) override;
   };

@@ -31,7 +31,7 @@ void main()
   const uint layer = (a_VertexData & 0xFF800000u) >> 23u;
   v_TexCoord = vec3(s_TexCoords[quadIndex], float(layer));
 
-  gl_Position = u_ViewProjection * vec4(relPos + u_ChunkPosition, 1.0f);
+  gl_Position = u_ViewProjection * vec4(u_ChunkPosition + relPos, 1.0f);
 }
 
 

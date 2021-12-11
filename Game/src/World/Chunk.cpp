@@ -1,6 +1,7 @@
 #include "GMpch.h"
 #include "Chunk.h"
 #include "Player/Player.h"
+#include "Util/MarchingCubes.h"
 
 Engine::Shared<Engine::IndexBuffer> Chunk::s_MeshIndexBuffer = nullptr;
 
@@ -116,54 +117,6 @@ void Chunk::load(HeightMap heightMap)
     markAsEmpty();
   else
     determineOpacity();
-}
-
-void Chunk::generateMesh()
-{
-  // If chunk is empty, no need to generate mesh
-  if (isEmpty())
-    return;
-
-  m_Mesh.clear();
-
-  static constexpr int8_t offsets[6][4][3]
-    = { { {1, 0, 0}, {1, 1, 0}, {1, 1, 1}, {1, 0, 1} },    /* East Face   */
-        { {0, 1, 0}, {0, 0, 0}, {0, 0, 1}, {0, 1, 1} },    /* West Face   */
-        { {1, 1, 0}, {0, 1, 0}, {0, 1, 1}, {1, 1, 1} },    /* North Face  */
-        { {0, 0, 0}, {1, 0, 0}, {1, 0, 1}, {0, 0, 1} },    /* South Face  */
-        { {0, 0, 1}, {1, 0, 1}, {1, 1, 1}, {0, 1, 1} },    /* Top Face    */
-        { {0, 1, 0}, {1, 1, 0}, {1, 0, 0}, {0, 0, 0} } };  /* Bottom Face */
-
-  for (blockIndex_t i = 0; i < s_ChunkSize; ++i)
-    for (blockIndex_t j = 0; j < s_ChunkSize; ++j)
-      for (blockIndex_t k = 0; k < s_ChunkSize; ++k)
-        if (getBlockType(i, j, k) != BlockType::Air)
-          for (BlockFace face : BlockFaceIterator())
-            if (isBlockNeighborTransparent(i, j, k, face))
-            {
-              const uint8_t faceID = static_cast<uint8_t>(face);
-              const blockTexID textureID = static_cast<blockTexID>(Block::GetTexture(getBlockType(i, j, k), face));
-
-              for (uint8_t v = 0; v < 4; ++v)
-              {
-                // Add offsets to convert from block index to vertex index
-                const uint8_t vI = i + offsets[faceID][v][0];
-                const uint8_t vJ = j + offsets[faceID][v][1];
-                const uint8_t vK = k + offsets[faceID][v][2];
-
-                uint32_t vertexData = vI + (vJ << 6) + (vK << 12);  // Local vertex coordinates
-                vertexData += faceID << 18;                         // Face index
-                vertexData += v << 21;                              // Quad vertex index
-                vertexData += textureID << 23;                      // TextureID
-
-                m_Mesh.push_back(vertexData);
-              }
-            }
-  m_MeshState = MeshState::Simple;
-
-  // NOTE: Potential optimization by using reserve() for mesh vector
-
-  generateVertexArray();
 }
 
 void Chunk::update()
@@ -360,15 +313,63 @@ void Chunk::InitializeIndexBuffer()
   delete[] meshIndices;
 }
 
+void Chunk::generateMesh()
+{
+  // If chunk is empty, no need to generate mesh
+  if (isEmpty())
+    return;
+
+  m_Mesh.clear();
+
+  static constexpr int8_t offsets[6][4][3]
+    = { { {1, 0, 0}, {1, 1, 0}, {1, 1, 1}, {1, 0, 1} },    /* East Face   */
+        { {0, 1, 0}, {0, 0, 0}, {0, 0, 1}, {0, 1, 1} },    /* West Face   */
+        { {1, 1, 0}, {0, 1, 0}, {0, 1, 1}, {1, 1, 1} },    /* North Face  */
+        { {0, 0, 0}, {1, 0, 0}, {1, 0, 1}, {0, 0, 1} },    /* South Face  */
+        { {0, 0, 1}, {1, 0, 1}, {1, 1, 1}, {0, 1, 1} },    /* Top Face    */
+        { {0, 1, 0}, {1, 1, 0}, {1, 0, 0}, {0, 0, 0} } };  /* Bottom Face */
+
+  for (blockIndex_t i = 0; i < s_ChunkSize; ++i)
+    for (blockIndex_t j = 0; j < s_ChunkSize; ++j)
+      for (blockIndex_t k = 0; k < s_ChunkSize; ++k)
+        if (getBlockType(i, j, k) != BlockType::Air)
+          for (BlockFace face : BlockFaceIterator())
+            if (isBlockNeighborTransparent(i, j, k, face))
+            {
+              const uint8_t faceID = static_cast<uint8_t>(face);
+              const blockTexID textureID = static_cast<blockTexID>(Block::GetTexture(getBlockType(i, j, k), face));
+
+              for (uint8_t v = 0; v < 4; ++v)
+              {
+                // Add offsets to convert from block index to vertex index
+                const uint8_t vI = i + offsets[faceID][v][0];
+                const uint8_t vJ = j + offsets[faceID][v][1];
+                const uint8_t vK = k + offsets[faceID][v][2];
+
+                uint32_t vertexData = vI + (vJ << 6) + (vK << 12);  // Local vertex coordinates
+                vertexData |= faceID << 18;                         // Face index
+                vertexData |= v << 21;                              // Quad vertex index
+                vertexData |= textureID << 23;                      // TextureID
+
+                m_Mesh.push_back(vertexData);
+              }
+            }
+  m_MeshState = MeshState::Simple;
+
+  // NOTE: Potential optimization by using reserve() for mesh vector
+
+  generateVertexArray();
+}
+
 void Chunk::generateVertexArray()
 {
   m_MeshVertexArray = Engine::VertexArray::Create();
   m_MeshVertexBuffer = Engine::VertexBuffer::Create(static_cast<uint32_t>(m_Mesh.size()) * sizeof(uint32_t));
   m_MeshVertexBuffer->setLayout({ { ShaderDataType::Uint32, "a_VertexData" } });
   m_MeshVertexArray->addVertexBuffer(m_MeshVertexBuffer);
-
+  
   m_MeshVertexArray->setIndexBuffer(s_MeshIndexBuffer);
-
+  
   uintptr_t dataSize = sizeof(uint32_t) * m_Mesh.size();
   m_MeshVertexBuffer->setData(m_Mesh.data(), dataSize);
 }
