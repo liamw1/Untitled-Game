@@ -36,6 +36,7 @@ private:
   RayIntersection castRay(const Vec3& rayOrigin, const Vec3& rayDirection, length_t maxDistance) const;
 
   void playerCollisionHandling(std::chrono::duration<seconds> timestep) const;
+  void playerWorldInteraction();
 
   bool onMouseButtonPressEvent(Engine::MouseButtonPressEvent& event);
   bool onKeyPressEvent(Engine::KeyPressEvent& event);

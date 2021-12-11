@@ -24,56 +24,8 @@ void World::onUpdate(std::chrono::duration<seconds> timestep)
   Player::UpdateBegin(timestep);
   playerCollisionHandling(timestep);
   Player::UpdateEnd();
-  
-  static constexpr length_t maxInteractionDistance = 1000 * Block::Length();
 
-  m_PlayerRayCast = castRay(Player::Camera().getPosition(), Player::ViewDirection(), maxInteractionDistance);
-  if (m_PlayerRayCast.distance <= maxInteractionDistance)
-  {
-    Engine::Renderer::BeginScene(Player::Camera());
-    const BlockIndex& blockIndex = m_PlayerRayCast.blockIndex;
-    const LocalIndex& chunkIndex = m_PlayerRayCast.chunkIndex;
-    const Vec3 blockCenter = Chunk::Length() * Vec3(chunkIndex.i, chunkIndex.j, chunkIndex.k) + Block::Length() * (Vec3(blockIndex.i, blockIndex.j, blockIndex.k) + Vec3(0.5));
-    Engine::Renderer::DrawCubeFrame(blockCenter, 1.01 * Block::Length() * Vec3(1.0), Float4(0.1f, 0.1f, 0.1f, 1.0f));
-    Engine::Renderer::EndScene();
-  }
-
-  if (Engine::Input::IsMouseButtonPressed(MouseButton::Button0) || Engine::Input::IsMouseButtonPressed(MouseButton::Button1))
-  {
-    if (m_PlayerRayCast.distance <= maxInteractionDistance)
-    {
-      const LocalIndex& chunkIndex = m_PlayerRayCast.chunkIndex;
-      const BlockIndex& blockIndex = m_PlayerRayCast.blockIndex;
-      const BlockFace& face = m_PlayerRayCast.face;
-      Chunk* const chunk = m_ChunkManager.findChunk(chunkIndex);
-
-      if (chunk != nullptr)
-      {
-        if (Engine::Input::IsMouseButtonPressed(MouseButton::Button0))
-        {
-          chunk->removeBlock(blockIndex);
-          m_ChunkManager.sendChunkUpdate(chunk);
-
-          for (BlockFace face : BlockFaceIterator())
-          {
-            const uint8_t faceID = static_cast<uint8_t>(face);
-            const uint8_t coordID = faceID / 2;
-
-            if (blockIndex[coordID] == (faceID % 2 == 0 ? Chunk::Size() - 1 : 0))
-              m_ChunkManager.sendChunkUpdate(chunk->getNeighbor(face));
-          }
-        }
-        else if (m_PlayerRayCast.distance > 2.5 * Block::Length())
-        {
-          chunk->placeBlock(blockIndex, face, BlockType::Sand);
-          m_ChunkManager.sendChunkUpdate(chunk);
-
-          if (chunk->isBlockNeighborInAnotherChunk(blockIndex, face))
-            m_ChunkManager.sendChunkUpdate(chunk->getNeighbor(face));
-        }
-      }
-    }
-  }
+  playerWorldInteraction();
 
   /* Rendering stage */
   if (!m_RenderingPaused)
@@ -235,6 +187,59 @@ beginCollisionDetection:;
     Player::SetVelocity((Player::Velocity() + collisionDisplacement / dt));
 
     goto beginCollisionDetection;
+  }
+}
+
+void World::playerWorldInteraction()
+{
+  static constexpr length_t maxInteractionDistance = 1000 * Block::Length();
+
+  m_PlayerRayCast = castRay(Player::Camera().getPosition(), Player::ViewDirection(), maxInteractionDistance);
+  if (m_PlayerRayCast.distance <= maxInteractionDistance)
+  {
+    Engine::Renderer::BeginScene(Player::Camera());
+    const BlockIndex& blockIndex = m_PlayerRayCast.blockIndex;
+    const LocalIndex& chunkIndex = m_PlayerRayCast.chunkIndex;
+    const Vec3 blockCenter = Chunk::Length() * Vec3(chunkIndex.i, chunkIndex.j, chunkIndex.k) + Block::Length() * (Vec3(blockIndex.i, blockIndex.j, blockIndex.k) + Vec3(0.5));
+    Engine::Renderer::DrawCubeFrame(blockCenter, 1.01 * Block::Length() * Vec3(1.0), Float4(0.1f, 0.1f, 0.1f, 1.0f));
+    Engine::Renderer::EndScene();
+  }
+
+  if (Engine::Input::IsMouseButtonPressed(MouseButton::Button0) || Engine::Input::IsMouseButtonPressed(MouseButton::Button1))
+  {
+    if (m_PlayerRayCast.distance <= maxInteractionDistance)
+    {
+      const LocalIndex& chunkIndex = m_PlayerRayCast.chunkIndex;
+      const BlockIndex& blockIndex = m_PlayerRayCast.blockIndex;
+      const BlockFace& face = m_PlayerRayCast.face;
+      Chunk* const chunk = m_ChunkManager.findChunk(chunkIndex);
+
+      if (chunk != nullptr)
+      {
+        if (Engine::Input::IsMouseButtonPressed(MouseButton::Button0))
+        {
+          chunk->removeBlock(blockIndex);
+          m_ChunkManager.sendChunkUpdate(chunk);
+
+          for (BlockFace face : BlockFaceIterator())
+          {
+            const uint8_t faceID = static_cast<uint8_t>(face);
+            const uint8_t coordID = faceID / 2;
+
+            if (blockIndex[coordID] == (faceID % 2 == 0 ? Chunk::Size() - 1 : 0))
+              m_ChunkManager.sendChunkUpdate(chunk->getNeighbor(face));
+          }
+        }
+        else if (m_PlayerRayCast.distance > 2.5 * Block::Length())
+        {
+          chunk->placeBlock(blockIndex, face, BlockType::Sand);
+          m_ChunkManager.sendChunkUpdate(chunk);
+
+          if (chunk->isBlockNeighborInAnotherChunk(blockIndex, face))
+            m_ChunkManager.sendChunkUpdate(chunk->getNeighbor(face));
+        }
+      }
+    }
   }
 }
 

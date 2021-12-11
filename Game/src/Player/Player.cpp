@@ -87,7 +87,7 @@ void Player::UpdateEnd()
   Vec2 planarViewDirection = glm::normalize(Vec2(viewDirection));
 
   // Update camera position
-  Vec3 eyesPosition = Vec3(0.05 * s_Width * planarViewDirection + Vec2(s_LocalPosition), s_LocalPosition.z + 0.25 * s_Height);
+  Vec3 eyesPosition = Vec3(0.025 * s_Width * planarViewDirection + Vec2(s_LocalPosition), s_LocalPosition.z + 0.25 * s_Height);
   s_CameraController.setPosition(eyesPosition);
 
   s_CameraController.onUpdate(s_Timestep);
