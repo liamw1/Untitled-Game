@@ -190,7 +190,7 @@ void Chunk::removeBlock(const BlockIndex& blockIndex)
   {
     const uint8_t faceID = static_cast<uint8_t>(face);
 
-    if (isBlockNeighborInAnotherChunk(blockIndex, face) && m_Neighbors[faceID] != nullptr) [[unlikely]]
+    if (isBlockNeighborInAnotherChunk(blockIndex, face) && m_Neighbors[faceID] != nullptr)
       m_Neighbors[faceID]->m_MeshState = MeshState::NeedsUpdate;
   }
 }
@@ -207,7 +207,7 @@ void Chunk::placeBlock(const BlockIndex& blockIndex, BlockFace face, BlockType b
     return;
 
   const uint8_t faceID = static_cast<uint8_t>(face);
-  if (isBlockNeighborInAnotherChunk(blockIndex, face)) [[unlikely]]
+  if (isBlockNeighborInAnotherChunk(blockIndex, face))
   {
     if (m_Neighbors[faceID] == nullptr)
       return;
@@ -217,7 +217,7 @@ void Chunk::placeBlock(const BlockIndex& blockIndex, BlockFace face, BlockType b
     m_Neighbors[faceID]->setBlockType(blockIndex - static_cast<blockIndex_t>(s_ChunkSize - 1) * normals[faceID], blockType);
     m_Neighbors[faceID]->m_MeshState = MeshState::NeedsUpdate;
   }
-  else [[likely]]
+  else
     setBlockType(blockIndex + normals[faceID], blockType);
   m_MeshState = MeshState::NeedsUpdate;
 }
@@ -248,7 +248,7 @@ bool Chunk::isBlockNeighborTransparent(const BlockIndex& blockIndex, BlockFace f
   //      East         West        North       South         Top        Bottom
 
   const uint8_t faceID = static_cast<uint8_t>(face);
-  if (isBlockNeighborInAnotherChunk(blockIndex, face)) [[unlikely]]
+  if (isBlockNeighborInAnotherChunk(blockIndex, face))
   {
     if (m_Neighbors[faceID] == nullptr)
       return false;
@@ -257,7 +257,7 @@ bool Chunk::isBlockNeighborTransparent(const BlockIndex& blockIndex, BlockFace f
 
     return Block::HasTransparency(m_Neighbors[faceID]->getBlockType(blockIndex - static_cast<blockIndex_t>(s_ChunkSize - 1) * normals[faceID]));
   }
-  else [[likely]]
+  else
     return Block::HasTransparency(getBlockType(blockIndex + normals[faceID]));
 }
 
@@ -267,7 +267,7 @@ bool Chunk::isBlockNeighborAir(const BlockIndex& blockIndex, BlockFace face)
   //      East         West        North       South         Top        Bottom
 
   const uint8_t faceID = static_cast<uint8_t>(face);
-  if (isBlockNeighborInAnotherChunk(blockIndex, face)) [[unlikely]]
+  if (isBlockNeighborInAnotherChunk(blockIndex, face))
   {
     if (m_Neighbors[faceID] == nullptr)
       return false;
@@ -276,7 +276,7 @@ bool Chunk::isBlockNeighborAir(const BlockIndex& blockIndex, BlockFace face)
 
     return m_Neighbors[faceID]->getBlockType(blockIndex - static_cast<blockIndex_t>(s_ChunkSize - 1) * normals[faceID]) == BlockType::Air;
   }
-  else [[likely]]
+  else
     return getBlockType(blockIndex + normals[faceID]) == BlockType::Air;
 }
 

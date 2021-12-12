@@ -34,6 +34,17 @@ private:
 
     Node(const GlobalIndex& anchorIndex, uint8_t nodeDepth)
       : anchor(anchorIndex), depth(nodeDepth) {}
+
+    ~Node()
+    {
+      delete leaf;
+      leaf = nullptr;
+      for (int i = 0; i < 8; ++i)
+      {
+        delete children[i];
+        children[i] = nullptr;
+      }
+    }
   };
 
   static constexpr uint8_t s_MaxNodeDepth = 10;
