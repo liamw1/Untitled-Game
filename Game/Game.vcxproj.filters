@@ -103,6 +103,7 @@
       <Filter>src\World</Filter>
     </ClInclude>
     <ClInclude Include="src\Util\MarchingCubes.h" />
+    <ClInclude Include="src\World\LOD.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="lib\llvm\include\llvm\Support\MemAlloc.cpp">
@@ -135,5 +136,6 @@
     <ClCompile Include="src\World\World.cpp">
       <Filter>src\World</Filter>
     </ClCompile>
+    <ClCompile Include="src\World\LOD.cpp" />
   </ItemGroup>
 </Project>

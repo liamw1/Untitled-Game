@@ -2,6 +2,7 @@
 #include "GameSandbox.h"
 #include "World/ChunkRenderer.h"
 #include "World/World.h"
+#include "World/LOD.h"
 
 GameSandbox::GameSandbox()
   : Layer("GameSandbox")
@@ -12,6 +13,17 @@ GameSandbox::GameSandbox()
   Engine::Renderer::Initialize();
   ChunkRenderer::Initialize();
   m_World.initialize();
+
+  Octree tree{};
+  std::vector<LOD*> leaves{};
+  for (int n = 0; n < 7; ++n)
+  {
+    leaves = tree.getLeaves();
+    for (int i = 0; i < leaves.size(); ++i)
+      tree.splitNode(*leaves[i]);
+
+    EN_INFO("{0}", tree.getLeaves().size());
+  }
 }
 
 void GameSandbox::onAttach()
