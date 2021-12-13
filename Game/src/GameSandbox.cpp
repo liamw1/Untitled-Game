@@ -63,21 +63,24 @@ void GameSandbox::onUpdate(std::chrono::duration<seconds> timestep)
     LocalIndex lodCenterLoc = Chunk::CalcRelativeIndex(lodCenter, Player::OriginIndex());
 
     Vec3 lodDimensions = lodSize * Chunk::Length() * Vec3(1.0);
-    Vec3 lodCenterPos = Chunk::Length() * Vec3(lodCenterLoc.i, lodCenterLoc.j, lodCenterLoc.k);
+    Vec3 lodCenterLocPos = Chunk::Length() * Vec3(lodCenterLoc.i, lodCenterLoc.j, lodCenterLoc.k);
     if (lodSize == 1)
-      lodCenterPos += Chunk::Length() / 2 * Vec3(1.0);
+      lodCenterLocPos += Chunk::Length() / 2 * Vec3(1.0);
 
-    Engine::Renderer::DrawCubeFrame(lodCenterPos, lodDimensions, { 0.1, 0.1, 0.1, 1.0 });
+    Engine::Renderer::DrawCubeFrame(lodCenterLocPos, lodDimensions, { 0.1, 0.1, 0.1, 1.0 });
+
+    // Player global position in units of chunks
+    Vec3 playerGlobalPos = Vec3(Player::OriginIndex().i, Player::OriginIndex().j, Player::OriginIndex().k) + Player::Position() / Chunk::Length();
 
     // Split nodes
     if (leaf->LODLevel() > 0)
     {
-      bool nodeNeedsSplitting = true;
-      for (int i = 0; i < 3; ++i)
-        if (Player::OriginIndex()[i] < leaf->anchor[i] || Player::OriginIndex()[i] > static_cast<int64_t>(leaf->anchor[i] + lodSize))
-          nodeNeedsSplitting = false;
+      // All lengths in units of chunks
+      Vec3 lodCenterPos = Vec3(lodCenter.i, lodCenter.j, lodCenter.k);
+      Vec3 chunksFromCenter = lodCenterPos - playerGlobalPos;
+      length_t lodLength = static_cast<length_t>(lodSize);
 
-      if (nodeNeedsSplitting)
+      if (glm::dot(chunksFromCenter, chunksFromCenter) < 1.0001 * 0.75 * lodLength * lodLength)
       {
         tree.splitNode(leaves[n]);
         continue;
@@ -86,12 +89,20 @@ void GameSandbox::onUpdate(std::chrono::duration<seconds> timestep)
 
     // Combine nodes
     if (leaf->depth != 0)
-      for (int i = 0; i < 3; ++i)
-        if (Player::OriginIndex()[i] < leaf->parent->anchor[i] || Player::OriginIndex()[i] > static_cast<int64_t>(leaf->parent->anchor[i] + 2 * lodSize))
-        {
-          tree.combineChildren(leaf->parent);
-          goto endLOD;
-        }
+    {
+      GlobalIndex parentCenter = leaf->parent->anchor + static_cast<globalIndex_t>(lodSize) * GlobalIndex({ 1, 1, 1 });
+
+      // All lengths in units of chunks
+      Vec3 parentCenterPos = Vec3(parentCenter.i, parentCenter.j, parentCenter.k);
+      Vec3 chunksFromCenter = parentCenterPos - playerGlobalPos;
+      length_t lodLength = static_cast<length_t>(2.0) * static_cast<length_t>(lodSize);
+
+      if (glm::dot(chunksFromCenter, chunksFromCenter) > 1.0001 * 0.75 * lodLength * lodLength)
+      {
+        tree.combineChildren(leaf->parent);
+        goto endLOD;
+      }
+    }
   }
   Engine::Renderer::EndScene();
 

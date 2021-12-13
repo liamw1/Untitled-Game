@@ -50,7 +50,7 @@ namespace LOD
     static constexpr int8_t MaxNodeDepth() { return s_MaxNodeDepth; }
 
   private:
-    static constexpr int8_t s_MaxNodeDepth = 8;
+    static constexpr int8_t s_MaxNodeDepth = 10;
     static constexpr uint64_t s_RootNodeSize = bit(s_MaxNodeDepth);
     static constexpr GlobalIndex s_RootNodeAnchor = -static_cast<globalIndex_t>(s_RootNodeSize / 2) * GlobalIndex({ 1, 1, 1 });
 
