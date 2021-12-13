@@ -1,60 +1,62 @@
 #pragma once
 #include "Chunk.h"
 
-struct LOD
+namespace LOD
 {
-  const GlobalIndex anchor;
-  const uint8_t level;
+  struct Data {};
 
-  LOD(const GlobalIndex& anchorIndex, uint8_t LODLevel)
-    : anchor(anchorIndex), level(LODLevel) {}
-};
-
-class Octree
-{
-public:
-  Octree();
-
-  void splitNode(const LOD& leaf);
-
-  std::vector<LOD*> getLeaves() const;
-
-private:
-  /*
-    A representation of an octree node.
-    The node has children if and only if leaf is nullptr.
-  */
-  struct Node
+  class Octree
   {
-    const GlobalIndex anchor;
-    const uint8_t depth;
-
-    LOD* leaf = nullptr;
-    std::array<Node*, 8> children{};
-
-    Node(const GlobalIndex& anchorIndex, uint8_t nodeDepth)
-      : anchor(anchorIndex), depth(nodeDepth) {}
-
-    ~Node()
+  public:
+    /*
+      A representation of an octree node.
+      The node has children if and only if data is nullptr.
+      The node is the root node if and only if parent is nullptr.
+    */
+    struct Node
     {
-      delete leaf;
-      leaf = nullptr;
-      for (int i = 0; i < 8; ++i)
+      Node* const parent;
+      std::array<Node*, 8> children{};
+      const int8_t depth;
+
+      const GlobalIndex anchor;
+      Data* data = nullptr;
+
+      Node(Node* parentNode, int8_t nodeDepth, const GlobalIndex& anchorIndex)
+        : parent(parentNode), depth(nodeDepth), anchor(anchorIndex) {}
+
+      ~Node()
       {
-        delete children[i];
-        children[i] = nullptr;
+        delete data;
+        data = nullptr;
+        for (int i = 0; i < 8; ++i)
+        {
+          delete children[i];
+          children[i] = nullptr;
+        }
       }
-    }
+
+      int8_t LODLevel() { return s_MaxNodeDepth - depth; }
+    };
+
+  public:
+    Octree();
+
+    void splitNode(Node* node);
+    void combineChildren(Node* node);
+
+    std::vector<Node*> getLeaves();
+
+    static constexpr int8_t MaxNodeDepth() { return s_MaxNodeDepth; }
+
+  private:
+    static constexpr int8_t s_MaxNodeDepth = 8;
+    static constexpr uint64_t s_RootNodeSize = bit(s_MaxNodeDepth);
+    static constexpr GlobalIndex s_RootNodeAnchor = -static_cast<globalIndex_t>(s_RootNodeSize / 2) * GlobalIndex({ 1, 1, 1 });
+
+    // Root node of the tree
+    Node m_Root;
+
+    void getLeavesPriv(Node* branch, std::vector<Node*>& leaves);
   };
-
-  static constexpr uint8_t s_MaxNodeDepth = 10;
-  static constexpr uint64_t s_RootNodeSize = bit(s_MaxNodeDepth);
-  static constexpr GlobalIndex s_RootNodeAnchor = -static_cast<int64_t>(s_RootNodeSize / 2) * GlobalIndex({ 1, 1, 1 });
-
-  Node m_Root;
-
-  Node& findNode(const LOD& leaf);
-  Node& findNode(Node& node, const LOD& leaf);
-
-  void getLeaf(const Node& node, std::vector<LOD*>& leaves) const;
-};
+}

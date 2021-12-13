@@ -163,6 +163,7 @@
     <ClInclude Include="src\World\Chunk.h" />
     <ClInclude Include="src\World\ChunkManager.h" />
     <ClInclude Include="src\World\ChunkRenderer.h" />
+    <ClInclude Include="src\World\Indexing.h" />
     <ClInclude Include="src\World\LOD.h" />
     <ClInclude Include="src\World\World.h" />
   </ItemGroup>

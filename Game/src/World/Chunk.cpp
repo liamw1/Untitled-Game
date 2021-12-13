@@ -170,7 +170,7 @@ BlockType Chunk::getBlockType(blockIndex_t i, blockIndex_t j, blockIndex_t k) co
   EN_ASSERT(i < chunkSize&& j < chunkSize&& k < chunkSize, "Index is out of bounds!");
   return isEmpty() ? BlockType::Air : m_ChunkComposition[i * chunkSize * chunkSize + j * chunkSize + k];
 }
-
+  
 BlockType Chunk::getBlockType(const BlockIndex& blockIndex) const
 {
   return getBlockType(blockIndex.i, blockIndex.j, blockIndex.k);
@@ -198,7 +198,7 @@ void Chunk::removeBlock(const BlockIndex& blockIndex)
 void Chunk::placeBlock(const BlockIndex& blockIndex, BlockFace face, BlockType blockType)
 {
   static constexpr BlockIndex normals[6] = { { 1, 0, 0}, { -1, 0, 0}, { 0, 1, 0}, { 0, -1, 0}, { 0, 0, 1}, { 0, 0, -1} };
-  //      East         West        North       South         Top        Bottom
+                                        //      East         West        North       South         Top        Bottom
 
   EN_ASSERT(!isEmpty(), "Place block cannot be called on an empty chunk!");
 
@@ -245,7 +245,7 @@ bool Chunk::isBlockNeighborTransparent(blockIndex_t i, blockIndex_t j, blockInde
 bool Chunk::isBlockNeighborTransparent(const BlockIndex& blockIndex, BlockFace face)
 {
   static constexpr BlockIndex normals[6] = { { 1, 0, 0}, { -1, 0, 0}, { 0, 1, 0}, { 0, -1, 0}, { 0, 0, 1}, { 0, 0, -1} };
-  //      East         West        North       South         Top        Bottom
+                                        //      East         West        North       South         Top        Bottom
 
   const uint8_t faceID = static_cast<uint8_t>(face);
   if (isBlockNeighborInAnotherChunk(blockIndex, face))
@@ -264,7 +264,7 @@ bool Chunk::isBlockNeighborTransparent(const BlockIndex& blockIndex, BlockFace f
 bool Chunk::isBlockNeighborAir(const BlockIndex& blockIndex, BlockFace face)
 {
   static constexpr BlockIndex normals[6] = { { 1, 0, 0}, { -1, 0, 0}, { 0, 1, 0}, { 0, -1, 0}, { 0, 0, 1}, { 0, 0, -1} };
-  //      East         West        North       South         Top        Bottom
+                                        //      East         West        North       South         Top        Bottom
 
   const uint8_t faceID = static_cast<uint8_t>(face);
   if (isBlockNeighborInAnotherChunk(blockIndex, face))
@@ -312,6 +312,8 @@ void Chunk::InitializeIndexBuffer()
 
   delete[] meshIndices;
 }
+
+
 
 void Chunk::generateMesh()
 {
@@ -457,8 +459,8 @@ BlockIndex Chunk::blockIndexFromPos(const Vec3& position) const
   Vec3 localPosition = position - anchorPoint();
 
   EN_ASSERT(localPosition.x >= 0.0 && localPosition.x <= s_ChunkLength &&
-    localPosition.y >= 0.0 && localPosition.y <= s_ChunkLength &&
-    localPosition.z >= 0.0 && localPosition.z <= s_ChunkLength, "Given position is not inside chunk!");
+            localPosition.y >= 0.0 && localPosition.y <= s_ChunkLength &&
+            localPosition.z >= 0.0 && localPosition.z <= s_ChunkLength, "Given position is not inside chunk!");
 
   BlockIndex blockIndex = { static_cast<blockIndex_t>(localPosition.x / Block::Length()),
                             static_cast<blockIndex_t>(localPosition.y / Block::Length()),

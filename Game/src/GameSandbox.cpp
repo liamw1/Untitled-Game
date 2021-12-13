@@ -13,17 +13,6 @@ GameSandbox::GameSandbox()
   Engine::Renderer::Initialize();
   ChunkRenderer::Initialize();
   m_World.initialize();
-
-  Octree tree{};
-  std::vector<LOD*> leaves{};
-  for (int n = 0; n < 7; ++n)
-  {
-    leaves = tree.getLeaves();
-    for (int i = 0; i < leaves.size(); ++i)
-      tree.splitNode(*leaves[i]);
-
-    EN_INFO("{0}", tree.getLeaves().size());
-  }
 }
 
 void GameSandbox::onAttach()
@@ -56,6 +45,60 @@ void GameSandbox::onUpdate(std::chrono::duration<seconds> timestep)
   m_World.onUpdate(timestep);
 
   // EN_INFO("{0}, {1}, {2}", m_Player.getPosition().x, m_Player.getPosition().y, m_Player.getPosition().z);
+
+  static LOD::Octree tree{};
+
+  const GlobalIndex& origin = Player::OriginIndex();
+
+  Engine::Renderer::BeginScene(Player::Camera());
+  std::vector<LOD::Octree::Node*> leaves = tree.getLeaves();
+  for (int n = 0; n < leaves.size(); ++n)
+  {
+    LOD::Octree::Node* leaf = leaves[n];
+    const uint64_t lodSize = bit(leaf->LODLevel());
+
+    // EN_INFO("Depth: {0}, Anchor: {1}, {2}, {3}", leaf->depth, leaf->anchor.i, leaf->anchor.j, leaf->anchor.k);
+
+    GlobalIndex lodCenter = leaf->anchor + static_cast<globalIndex_t>(lodSize / 2) * GlobalIndex({ 1, 1, 1 });
+    LocalIndex lodCenterLoc = Chunk::CalcRelativeIndex(lodCenter, Player::OriginIndex());
+
+    Vec3 lodDimensions = lodSize * Chunk::Length() * Vec3(1.0);
+    Vec3 lodCenterPos = Chunk::Length() * Vec3(lodCenterLoc.i, lodCenterLoc.j, lodCenterLoc.k);
+    if (lodSize == 1)
+      lodCenterPos += Chunk::Length() / 2 * Vec3(1.0);
+
+    Engine::Renderer::DrawCubeFrame(lodCenterPos, lodDimensions, { 0.1, 0.1, 0.1, 1.0 });
+
+    // Split nodes
+    if (leaf->LODLevel() > 0)
+    {
+      bool nodeNeedsSplitting = true;
+      for (int i = 0; i < 3; ++i)
+        if (Player::OriginIndex()[i] < leaf->anchor[i] || Player::OriginIndex()[i] > static_cast<int64_t>(leaf->anchor[i] + lodSize))
+          nodeNeedsSplitting = false;
+
+      if (nodeNeedsSplitting)
+      {
+        tree.splitNode(leaves[n]);
+        continue;
+      }
+    }
+
+    // Combine nodes
+    if (leaf->depth != 0)
+      for (int i = 0; i < 3; ++i)
+        if (Player::OriginIndex()[i] < leaf->parent->anchor[i] || Player::OriginIndex()[i] > static_cast<int64_t>(leaf->parent->anchor[i] + 2 * lodSize))
+        {
+          tree.combineChildren(leaf->parent);
+          goto endLOD;
+        }
+  }
+  Engine::Renderer::EndScene();
+
+endLOD:;
+
+  // EN_WARN("Frame end");
+  EN_INFO("{0}", leaves.size());
 }
 
 void GameSandbox::onImGuiRender()
