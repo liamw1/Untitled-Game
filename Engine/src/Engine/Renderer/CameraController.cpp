@@ -11,21 +11,21 @@ namespace Engine
   static constexpr radians s_MaxFOV = static_cast<radians>(glm::radians(80.0));
 
   CameraController::CameraController()
-    : m_Fov(0.0),
+    : m_FOV(0.0),
       m_AspectRatio(0.0),
       m_NearPlane(0.0),
       m_FarPlane(0.0),
-      m_Camera(m_Fov, m_AspectRatio, m_NearPlane, m_FarPlane),
+      m_Camera(m_FOV, m_AspectRatio, m_NearPlane, m_FarPlane),
       m_LastMousePosition(0.0, 0.0)
   {
   }
 
-  CameraController::CameraController(radians fov, float aspectRatio, length_t nearPlane, length_t farPlane)
-    : m_Fov(fov),
+  CameraController::CameraController(radians FOV, float aspectRatio, length_t nearPlane, length_t farPlane)
+    : m_FOV(FOV),
       m_AspectRatio(aspectRatio),
       m_NearPlane(nearPlane),
       m_FarPlane(farPlane),
-      m_Camera(m_Fov, m_AspectRatio, m_NearPlane, m_FarPlane),
+      m_Camera(m_FOV, m_AspectRatio, m_NearPlane, m_FarPlane),
       m_LastMousePosition(Application::Get().getWindow().getWidth() / 2, Application::Get().getWindow().getHeight() / 2)
   {
     setMouseState(m_IsMouseEnabled);
@@ -99,18 +99,18 @@ namespace Engine
 
   bool CameraController::onMouseScroll(MouseScrollEvent& event)
   {
-    m_Fov -= m_CameraZoomSensitivity * glm::radians(event.getYOffset());
-    m_Fov = std::max(m_Fov, s_MinFOV);
-    m_Fov = std::min(m_Fov, s_MaxFOV);
+    m_FOV -= m_CameraZoomSensitivity * glm::radians(event.getYOffset());
+    m_FOV = std::max(m_FOV, s_MinFOV);
+    m_FOV = std::min(m_FOV, s_MaxFOV);
 
-    m_Camera.setProjection(m_Fov, m_AspectRatio, m_NearPlane, m_FarPlane);
+    m_Camera.setProjection(m_FOV, m_AspectRatio, m_NearPlane, m_FarPlane);
     return false;
   }
 
   bool CameraController::onWindowResize(WindowResizeEvent& event)
   {
     m_AspectRatio = event.getHeight() == 0 ? 0.0f : static_cast<float>(event.getWidth()) / event.getHeight();
-    m_Camera.setProjection(m_Fov, m_AspectRatio, m_NearPlane, m_FarPlane);
+    m_Camera.setProjection(m_FOV, m_AspectRatio, m_NearPlane, m_FarPlane);
     return false;
   }
 

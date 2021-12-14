@@ -28,8 +28,7 @@ Chunk::Chunk(Chunk&& other) noexcept
   m_FaceIsOpaque(std::move(other.m_FaceIsOpaque)),
   m_MeshState(std::move(other.m_MeshState)),
   m_Mesh(std::move(other.m_Mesh)),
-  m_MeshVertexArray(std::move(other.m_MeshVertexArray)),
-  m_MeshVertexBuffer(std::move(other.m_MeshVertexBuffer))
+  m_MeshVertexArray(std::move(other.m_MeshVertexArray))
 {
   // Transfer neighbor pointers
   m_Neighbors = other.m_Neighbors;
@@ -50,7 +49,6 @@ Chunk& Chunk::operator=(Chunk&& other) noexcept
     m_MeshState = std::move(other.m_MeshState);
     m_Mesh = std::move(other.m_Mesh);
     m_MeshVertexArray = std::move(other.m_MeshVertexArray);
-    m_MeshVertexBuffer = std::move(other.m_MeshVertexBuffer);
 
     // Transfer neighbor pointers
     m_Neighbors = other.m_Neighbors;
@@ -146,7 +144,6 @@ void Chunk::reset()
   m_MeshState = MeshState::NotGenerated;
   m_Mesh.clear();
   m_MeshVertexArray.reset();
-  m_MeshVertexBuffer.reset();
 
   // Ensure no further communication between other chunks
   excise();
@@ -377,14 +374,14 @@ void Chunk::generateMesh()
 void Chunk::generateVertexArray()
 {
   m_MeshVertexArray = Engine::VertexArray::Create();
-  m_MeshVertexBuffer = Engine::VertexBuffer::Create(static_cast<uint32_t>(m_Mesh.size()) * sizeof(uint32_t));
-  m_MeshVertexBuffer->setLayout({ { ShaderDataType::Uint32, "a_VertexData" } });
-  m_MeshVertexArray->addVertexBuffer(m_MeshVertexBuffer);
+  auto meshVertexBuffer = Engine::VertexBuffer::Create(static_cast<uint32_t>(m_Mesh.size()) * sizeof(uint32_t));
+  meshVertexBuffer->setLayout({ { ShaderDataType::Uint32, "a_VertexData" } });
+  m_MeshVertexArray->addVertexBuffer(meshVertexBuffer);
   
   m_MeshVertexArray->setIndexBuffer(s_MeshIndexBuffer);
   
   uintptr_t dataSize = sizeof(uint32_t) * m_Mesh.size();
-  m_MeshVertexBuffer->setData(m_Mesh.data(), dataSize);
+  meshVertexBuffer->setData(m_Mesh.data(), dataSize);
 }
 
 void Chunk::setBlockType(blockIndex_t i, blockIndex_t j, blockIndex_t k, BlockType blockType)

@@ -10,7 +10,7 @@ namespace Engine
   {
   public:
     CameraController();
-    CameraController(radians fov, float aspectRatio, length_t nearPlane, length_t farPlane);
+    CameraController(radians FOV, float aspectRatio, length_t nearPlane, length_t farPlane);
 
     void onUpdate(std::chrono::duration<seconds> timestep);
     void onEvent(Event& event);
@@ -21,11 +21,14 @@ namespace Engine
     const Camera& getCamera() const { return m_Camera; }
     const Vec3& getViewDirection() const { return m_CameraViewDirection; }
 
+    radians getFOV() const { return m_FOV; }
+    float getAspectRatio() const { return m_AspectRatio; }
+
   private:
     // Camera state
     bool m_IsMouseEnabled = false;
     bool m_FreeCamEnabled = false;
-    radians m_Fov;
+    radians m_FOV;
     float m_AspectRatio;
     length_t m_NearPlane;
     length_t m_FarPlane;

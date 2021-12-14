@@ -44,6 +44,7 @@ namespace Player
 
   const Vec3& ViewDirection();
   const Engine::Camera& Camera();
+  const Engine::CameraController& CameraController();
 
   const Vec3& Position();
   void SetPosition(const Vec3& position);

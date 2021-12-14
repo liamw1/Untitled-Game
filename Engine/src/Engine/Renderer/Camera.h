@@ -10,6 +10,7 @@ namespace Engine
   {
   public:
     Camera(radians fov, float aspectRatio, length_t nearPlane, length_t farPlane);
+    Camera(const Camera& camera, radians fov, float aspectRatio, length_t nearPlane, length_t farPlane);
 
     void setPosition(const Vec3& position);
     void setView(const Vec3& position, const Vec3& viewDirection);

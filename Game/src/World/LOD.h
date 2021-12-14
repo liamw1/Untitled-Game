@@ -3,7 +3,11 @@
 
 namespace LOD
 {
-  struct Data {};
+  struct Data 
+  {
+    Engine::Shared<Engine::VertexArray> vertexArray;
+    uint32_t meshSize;
+  };
 
   class Octree
   {
@@ -36,7 +40,7 @@ namespace LOD
         }
       }
 
-      int8_t LODLevel() { return s_MaxNodeDepth - depth; }
+      int8_t LODLevel() const { return s_MaxNodeDepth - depth; }
     };
 
   public:

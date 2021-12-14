@@ -108,6 +108,7 @@ AABB Player::BoundingBox()
 
 const Vec3& Player::ViewDirection() { return s_CameraController.getViewDirection(); }
 const Engine::Camera& Player::Camera() { return s_CameraController.getCamera(); }
+const Engine::CameraController& Player::CameraController() { return s_CameraController; }
 
 const Vec3& Player::Position() { return s_LocalPosition; }
 void Player::SetPosition(const Vec3& position) { s_LocalPosition = position; }

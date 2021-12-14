@@ -120,6 +120,9 @@ private:
   */
   Chunk* loadNewChunk(const GlobalIndex& chunkIndex);
 
+  void loadNewLOD(LOD::Octree::Node* node);
+  void loadNewLODs(LOD::Octree::Node* node);
+
   /*
     Searches for chunk, removes it from whatever map it is currently in,
     unloads it, and frees the slot it was occupying.  Only bondary chunks

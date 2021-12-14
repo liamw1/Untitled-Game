@@ -161,7 +161,6 @@ private:
   MeshState m_MeshState = MeshState::NotGenerated;
   std::vector<uint32_t> m_Mesh;
   Engine::Shared<Engine::VertexArray> m_MeshVertexArray;
-  Engine::Shared<Engine::VertexBuffer> m_MeshVertexBuffer;
   static Engine::Shared<Engine::IndexBuffer> s_MeshIndexBuffer;
 
   // Chunk neighbor data

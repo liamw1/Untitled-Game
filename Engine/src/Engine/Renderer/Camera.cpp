@@ -12,6 +12,13 @@ namespace Engine
   {
   }
 
+  Camera::Camera(const Camera& camera, radians fov, float aspectRatio, length_t nearPlane, length_t farPlane)
+    : m_ProjectionMatrix(glm::perspective(static_cast<length_t>(fov), static_cast<length_t>(aspectRatio), nearPlane, farPlane)),
+      m_ViewMatrix(camera.m_ViewMatrix),
+      m_ViewProjectionMatrix(m_ProjectionMatrix * m_ViewMatrix)
+  {
+  }
+
   void Camera::setPosition(const Vec3& position)
   {
     m_Position = position;

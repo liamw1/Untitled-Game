@@ -1,5 +1,6 @@
 #pragma once
 #include "Block/Block.h"
+#include "World/LOD.h"
 
 class Chunk;
 
@@ -23,4 +24,6 @@ namespace ChunkRenderer
     Draws mesh of given chunk.
   */
   void DrawChunk(const Chunk* chunk);
+
+  void DrawLOD(const LOD::Octree::Node* node);
 };
