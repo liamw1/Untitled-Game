@@ -51,6 +51,8 @@ struct Index3D
              static_cast<intType>(j - other.j),
              static_cast<intType>(k - other.k) };
   }
+
+  constexpr operator Vec3() const { return { i, j, k }; }
 };
 
 template<typename intType>

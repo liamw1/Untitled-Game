@@ -132,16 +132,11 @@ public:
   static constexpr uint8_t Size() { return s_ChunkSize; }
   static constexpr length_t Length() { return s_ChunkLength; }
   static constexpr uint32_t TotalBlocks() { return s_ChunkTotalBlocks; }
-  static const LocalIndex LocalIndexFromPos(const Vec3& position);
+  static LocalIndex LocalIndexFromPos(const Vec3& position);
 
   static void InitializeIndexBuffer();
 
-  static constexpr LocalIndex CalcRelativeIndex(const GlobalIndex& indexA, const GlobalIndex& indexB)
-  {
-    return { static_cast<localIndex_t>(indexA.i - indexB.i),
-             static_cast<localIndex_t>(indexA.j - indexB.j),
-             static_cast<localIndex_t>(indexA.k - indexB.k) };
-  }
+  static LocalIndex CalcRelativeIndex(const GlobalIndex& indexA, const GlobalIndex& indexB);
 
 private:
   enum class MeshState : uint8_t

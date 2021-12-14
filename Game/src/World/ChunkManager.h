@@ -1,11 +1,13 @@
 #pragma once
 #include "Chunk.h"
+#include "LOD.h"
 #include <llvm/ADT/DenseMap.h>
 
 class ChunkManager
 {
 public:
   ChunkManager();
+  ~ChunkManager();
 
   /*
     Unloads chunks on boundary as they go out of unload range.
@@ -22,7 +24,9 @@ public:
 
     \returns True if at least one chunk has been loaded.
   */
-  bool loadNewChunks(uint32_t maxNewChunks);
+  bool loadNewChunks(int maxNewChunks);
+
+  void manageLODs();
 
   /*
     \returns The Chunk at the specified chunk index.  If no such chunk can be found,
@@ -42,7 +46,7 @@ private:
     Boundary = 0,
     Empty,
     Renderable,
-
+    
     First = Boundary, Last = Renderable
   };
   using MapTypeIterator = Iterator<MapType, MapType::First, MapType::Last>;
@@ -60,7 +64,7 @@ private:
   static constexpr int s_MaxChunks = (2 * s_UnloadDistance + 1) * (2 * s_UnloadDistance + 1) * (2 * s_UnloadDistance + 1);
 
   // Chunk data
-  Engine::Unique<Chunk[]> m_ChunkArray;
+  Chunk* m_ChunkArray;
   std::vector<int> m_OpenChunkSlots;
 
   // Chunk pointers
@@ -68,6 +72,9 @@ private:
   llvm::DenseMap<int64_t, Chunk*>& m_EmptyChunks = m_Chunks[static_cast<uint8_t>(MapType::Empty)];
   llvm::DenseMap<int64_t, Chunk*>& m_BoundaryChunks = m_Chunks[static_cast<uint8_t>(MapType::Boundary)];
   llvm::DenseMap<int64_t, Chunk*>& m_RenderableChunks = m_Chunks[static_cast<uint8_t>(MapType::Renderable)];
+
+  // LOD data
+  LOD::Octree m_LODTree{};
 
   // Terrain data
   llvm::DenseMap<int64_t, HeightMap> m_HeightMaps{};

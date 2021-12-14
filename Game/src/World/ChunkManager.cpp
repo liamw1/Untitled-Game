@@ -6,11 +6,17 @@
 
 ChunkManager::ChunkManager()
 {
-  m_ChunkArray = Engine::CreateUnique<Chunk[]>(s_MaxChunks);
+  m_ChunkArray = new Chunk[s_MaxChunks];
 
   m_OpenChunkSlots.reserve(s_MaxChunks);
   for (int i = 0; i < s_MaxChunks; ++i)
     m_OpenChunkSlots.push_back(i);
+}
+
+ChunkManager::~ChunkManager()
+{
+  delete[] m_ChunkArray;
+  m_ChunkArray = nullptr;
 }
 
 void ChunkManager::clean()
@@ -56,7 +62,7 @@ void ChunkManager::render() const
   
   std::array<Vec4, 6> frustumPlanes = calculateViewFrustumPlanes(Player::Camera());
 
-  // Shift each plane by distance equal to radius of a sphere that contains chunk
+  // Shift each plane by distance equal to radius of sphere that circumscribes chunk
   static constexpr float sqrt3 = 1.732050807568877f;
   static constexpr length_t chunkSphereRadius = sqrt3 * Chunk::Length() / 2;
   for (int planeID = 0; planeID < 6; ++planeID)
@@ -80,7 +86,7 @@ void ChunkManager::render() const
   ChunkRenderer::EndScene();
 }
 
-bool ChunkManager::loadNewChunks(uint32_t maxNewChunks)
+bool ChunkManager::loadNewChunks(int maxNewChunks)
 {
   EN_PROFILE_FUNCTION();
 
@@ -195,6 +201,96 @@ bool ChunkManager::loadNewChunks(uint32_t maxNewChunks)
   return newChunks.size() > 0;
 }
 
+void ChunkManager::manageLODs()
+{
+  EN_PROFILE_FUNCTION();
+
+  // Controls how close player must be to LOD for it to split.  Must be > 1!
+  static constexpr float scaling = 1.0001f;
+
+  // Node will always split if player is less than this many chunks away from node center in any direction
+  static constexpr length_t baseSplittingDistance = s_RenderDistance;
+
+  // Player position in units of chunks to prevent float overflow
+  const Vec3& playerGlobalPosition = static_cast<Vec3>(Player::OriginIndex()) + Player::Position() / Chunk::Length();
+  
+  std::vector<LOD::Octree::Node*> leaves = m_LODTree.getLeaves();
+
+#if 0
+  Engine::Renderer::BeginScene(Player::Camera());
+  for (int n = 0; n < leaves.size(); ++n)
+  {
+    LOD::Octree::Node* node = leaves[n];
+
+    length_t lodLength = static_cast<length_t>(bit(node->LODLevel()));
+    Vec3 lodCenter = static_cast<Vec3>(node->anchor) + lodLength / 2 * Vec3(1.0);
+    Vec3 lodCenterLocalPos = Chunk::Length() * (lodCenter - static_cast<Vec3>(Player::OriginIndex()));
+    Vec3 lodDimensions = Vec3(lodLength * Chunk::Length());
+
+    Engine::Renderer::DrawCubeFrame(lodCenterLocalPos, lodDimensions, { 0.1, 0.1, 0.1, 1.0 });
+  }
+  Engine::Renderer::EndScene();
+#endif
+
+  // Split close nodes and load children
+  for (int n = 0; n < leaves.size(); ++n)
+  {
+    LOD::Octree::Node* node = leaves[n];
+
+    if (node->LODLevel() > 0)
+    {
+      // Physical lengths here are in units of chunks to prevent float overflow
+      length_t lodLength = static_cast<length_t>(bit(node->LODLevel()));
+      Vec3 lodCenter = static_cast<Vec3>(node->anchor) + lodLength / 2 * Vec3(1.0);
+      Vec3 chunksFromLODCenter = lodCenter - playerGlobalPosition;
+
+      Vec3 lodCenterLocalPos = Chunk::Length() * (lodCenter - static_cast<Vec3>(Player::OriginIndex()));
+      Vec3 lodDimensions = Vec3(lodLength * Chunk::Length());
+
+      // Radius of sphere that circumscribes lod + baseSplittingDistance, squared, in units of chunks
+      length_t r2 = 0.75f * (lodLength + baseSplittingDistance) * (lodLength + baseSplittingDistance);
+
+      if (glm::dot(chunksFromLODCenter, chunksFromLODCenter) < scaling * r2)
+      {
+        m_LODTree.splitNode(node);
+
+        // Load children
+        for (int i = 0; i < 8; ++i)
+        {
+          // TODO
+        }
+      }
+    }
+  }
+
+  // Search for nodes to combine
+  std::vector<LOD::Octree::Node*> cannibalNodes{};
+  for (int n = 0; n < leaves.size(); ++n)
+  {
+    LOD::Octree::Node* node = leaves[n];
+
+    if (node->depth != 0)
+    {
+      // Physical lengths here are in units of chunks to prevent float overflow
+      length_t lodLength = static_cast<length_t>(bit(node->LODLevel()));
+      Vec3 parentCenter = static_cast<Vec3>(node->parent->anchor) + lodLength * Vec3(1.0);
+      Vec3 chunksFromParentCenter = parentCenter - playerGlobalPosition;
+
+      // Radius of sphere that circumscribes parent + baseSplittingDistance, squared, in units of chunks
+      length_t r2 = 3.0f * (lodLength + baseSplittingDistance) * (lodLength + baseSplittingDistance);
+
+      if (glm::dot(chunksFromParentCenter, chunksFromParentCenter) > scaling * r2)
+        cannibalNodes.push_back(node->parent);
+    }
+  }
+
+  // Combine nodes
+  for (int i = 0; i < cannibalNodes.size(); ++i)
+    m_LODTree.combineChildren(cannibalNodes[i]);
+
+  EN_INFO("{0}", leaves.size());
+}
+
 Chunk* ChunkManager::findChunk(const LocalIndex& chunkIndex) const
 {
   GlobalIndex originChunk = Player::OriginIndex();
@@ -263,12 +359,7 @@ bool ChunkManager::isOutOfRange(const LocalIndex& chunkIndex) const
 
 bool ChunkManager::isOutOfRange(const GlobalIndex& chunkIndex) const
 {
-  LocalIndex relativeIndex = Chunk::CalcRelativeIndex(chunkIndex, Player::OriginIndex());
-
-  for (int i = 0; i < 3; ++i)
-    if (abs(relativeIndex[i]) > s_UnloadDistance)
-      return true;
-  return false;
+  return isOutOfRange(Chunk::CalcRelativeIndex(chunkIndex, Player::OriginIndex()));
 }
 
 bool ChunkManager::isInLoadRange(const LocalIndex& chunkIndex) const
@@ -281,12 +372,7 @@ bool ChunkManager::isInLoadRange(const LocalIndex& chunkIndex) const
 
 bool ChunkManager::isInLoadRange(const GlobalIndex& chunkIndex) const
 {
-  LocalIndex relativeIndex = Chunk::CalcRelativeIndex(chunkIndex, Player::OriginIndex());
-
-  for (int i = 0; i < 3; ++i)
-    if (abs(relativeIndex[i]) > s_LoadDistance)
-      return false;
-  return true;
+  return isInLoadRange(Chunk::CalcRelativeIndex(chunkIndex, Player::OriginIndex()));
 }
 
 bool ChunkManager::isInRenderRange(const LocalIndex& chunkIndex) const

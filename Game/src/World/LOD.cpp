@@ -38,7 +38,10 @@ namespace LOD
   void Octree::combineChildren(Node* node)
   {
     EN_ASSERT(node != nullptr, "Node can't be nullptr!");
-    EN_ASSERT(node->data == nullptr, "Node must be a parent node!");
+
+    // If data is nullptr, node is already a leaf node
+    if (node->data != nullptr)
+      return;
 
     // Delete child nodes
     for (int i = 0; i < 8; ++i)

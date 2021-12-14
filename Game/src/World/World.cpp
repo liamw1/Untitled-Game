@@ -30,6 +30,7 @@ void World::onUpdate(std::chrono::duration<seconds> timestep)
   /* Rendering stage */
   if (!m_RenderingPaused)
   {
+    m_ChunkManager.manageLODs();
     m_ChunkManager.loadNewChunks(200);
     m_ChunkManager.render();
     m_ChunkManager.clean();

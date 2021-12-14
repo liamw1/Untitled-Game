@@ -1,5 +1,5 @@
 #pragma once
-#include "Chunk.h"
+#include "Indexing.h"
 
 namespace LOD
 {

@@ -280,7 +280,7 @@ bool Chunk::isBlockNeighborAir(const BlockIndex& blockIndex, BlockFace face)
     return getBlockType(blockIndex + normals[faceID]) == BlockType::Air;
 }
 
-const LocalIndex Chunk::LocalIndexFromPos(const Vec3& position)
+LocalIndex Chunk::LocalIndexFromPos(const Vec3& position)
 {
   return { static_cast<localIndex_t>(floor(position.x / s_ChunkLength)),
            static_cast<localIndex_t>(floor(position.y / s_ChunkLength)),
@@ -311,6 +311,17 @@ void Chunk::InitializeIndexBuffer()
   s_MeshIndexBuffer = Engine::IndexBuffer::Create(meshIndices, maxIndices);
 
   delete[] meshIndices;
+}
+
+LocalIndex Chunk::CalcRelativeIndex(const GlobalIndex& indexA, const GlobalIndex& indexB)
+{
+  EN_ASSERT(abs(indexA.i - indexB.i) < std::numeric_limits<localIndex_t>::max() &&
+            abs(indexA.i - indexB.i) < std::numeric_limits<localIndex_t>::max() &&
+            abs(indexA.i - indexB.i) < std::numeric_limits<localIndex_t>::max(), "Difference between global indices is too large, will cause overflow!");
+
+  return { static_cast<localIndex_t>(indexA.i - indexB.i),
+           static_cast<localIndex_t>(indexA.j - indexB.j),
+           static_cast<localIndex_t>(indexA.k - indexB.k) };
 }
 
 
