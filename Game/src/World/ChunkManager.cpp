@@ -474,6 +474,7 @@ void ChunkManager::loadNewLOD(LOD::Octree::Node* node)
   {
     Vec3 position;
     int quadIndex;
+    float lightValue;
   };
 
   static constexpr int subDivisions = Chunk::Size();
@@ -527,16 +528,24 @@ void ChunkManager::loadNewLOD(LOD::Octree::Node* node)
         if (terrainHeights[i + 1][j + 1] > subDivisionHeight + subDivisionLength)
           cubeIndex |= bit(5);
 
-        const std::array<int8_t, 16> edgeIndices = a2iTriangleConnectionTable[cubeIndex];
-        for (int e = 0; e < edgeIndices.size(); ++e)
+        for (int tri = 0; tri < 5; ++tri)
         {
-          int8_t edgeIndex = edgeIndices[e];
-          if (edgeIndex < 0)
+          const std::array<int8_t, 3> edgeIndices = a2iTriangleConnectionTable[cubeIndex][tri];
+
+          if (edgeIndices[0] < 0)
             break;
 
           // Local position of vertex within LOD
-          const Vec3 vertexPosition = subDivisionLength * Vec3(i, j, k) + subDivisionLength * edgeOffsets[edgeIndex];
-          LODMesh.push_back({ vertexPosition, e % 3 });
+          std::array<Vec3, 3> vertexPositions{};
+          for (int v = 0; v < 3; ++v)
+            vertexPositions[v] = subDivisionLength * Vec3(i, j, k) + subDivisionLength * edgeOffsets[edgeIndices[v]];
+
+          // Calculate vertex normal
+          Vec3 normal = glm::normalize(glm::cross(vertexPositions[1] - vertexPositions[0], vertexPositions[2] - vertexPositions[0]));
+          float lightValue = static_cast<float>((2.0 + normal.z) / 3);
+
+          for (int v = 0; v < 3; ++v)
+            LODMesh.push_back({ vertexPositions[v], v, lightValue });
         }
       }
 
@@ -544,7 +553,8 @@ void ChunkManager::loadNewLOD(LOD::Octree::Node* node)
   Engine::Shared<Engine::VertexArray> LODVertexArray = Engine::VertexArray::Create();
   auto LODVertexBuffer = Engine::VertexBuffer::Create(static_cast<uint32_t>(LODMesh.size()) * sizeof(Vertex));
   LODVertexBuffer->setLayout({ { ShaderDataType::Float3, "a_Position" },
-                               { ShaderDataType::Int,    "a_QuadIndex"} });
+                               { ShaderDataType::Int,    "a_QuadIndex"},
+                               { ShaderDataType::Float,  "s_LightValue"} });
   LODVertexArray->addVertexBuffer(LODVertexBuffer);
 
   uintptr_t dataSize = sizeof(Vertex) * LODMesh.size();
@@ -562,6 +572,7 @@ void ChunkManager::loadNewLODs(LOD::Octree::Node* node)
   {
     Vec3 position;
     int quadIndex;
+    float lightValue;
   };
 
   static constexpr int subDivisions = 2 * Chunk::Size();
@@ -621,16 +632,24 @@ void ChunkManager::loadNewLODs(LOD::Octree::Node* node)
           if (terrainHeights[i + 1][j + 1] > subDivisionHeight + subDivisionLength)
             cubeIndex |= bit(5);
 
-          const std::array<int8_t, 16> edgeIndices = a2iTriangleConnectionTable[cubeIndex];
-          for (int e = 0; e < edgeIndices.size(); ++e)
+          for (int tri = 0; tri < 5; ++tri)
           {
-            int8_t edgeIndex = edgeIndices[e];
-            if (edgeIndex < 0)
+            const std::array<int8_t, 3> edgeIndices = a2iTriangleConnectionTable[cubeIndex][tri];
+
+            if (edgeIndices[0] < 0)
               break;
 
             // Local position of vertex within LOD
-            const Vec3 vertexPosition = subDivisionLength * Vec3(i - i0, j - j0, k - k0) + subDivisionLength * edgeOffsets[edgeIndex];
-            LODMesh.push_back({ vertexPosition, e % 3 });
+            std::array<Vec3, 3> vertexPositions{};
+            for (int v = 0; v < 3; ++v)
+              vertexPositions[v] = subDivisionLength * Vec3(i - i0, j - j0, k - k0) + subDivisionLength * edgeOffsets[edgeIndices[v]];
+
+            // Calculate vertex normal
+            Vec3 normal = glm::normalize(glm::cross(vertexPositions[1] - vertexPositions[0], vertexPositions[2] - vertexPositions[0]));
+            float lightValue = static_cast<float>((2.0 + normal.z) / 3);
+
+            for (int v = 0; v < 3; ++v)
+              LODMesh.push_back({ vertexPositions[v], v, lightValue });
           }
         }
 
@@ -638,7 +657,8 @@ void ChunkManager::loadNewLODs(LOD::Octree::Node* node)
     Engine::Shared<Engine::VertexArray> LODVertexArray = Engine::VertexArray::Create();
     auto LODVertexBuffer = Engine::VertexBuffer::Create(static_cast<uint32_t>(LODMesh.size()) * sizeof(Vertex));
     LODVertexBuffer->setLayout({ { ShaderDataType::Float3, "a_Position" },
-                                 { ShaderDataType::Int,    "a_QuadIndex"} });
+                                 { ShaderDataType::Int,    "a_QuadIndex"},
+                                 { ShaderDataType::Float,  "s_LightValue"} });
     LODVertexArray->addVertexBuffer(LODVertexBuffer);
 
     uintptr_t dataSize = sizeof(Vertex) * LODMesh.size();
