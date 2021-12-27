@@ -33,7 +33,7 @@ Chunk::Chunk(Chunk&& other) noexcept
   // Transfer neighbor pointers
   m_Neighbors = other.m_Neighbors;
   for (BlockFace face : BlockFaceIterator())
-    other.m_Neighbors[static_cast<uint8_t>(face)] = nullptr;
+    other.m_Neighbors[static_cast<int>(face)] = nullptr;
 
   // Since the address of 'other' has moved, we must update its neighbors about the change
   sendAddressUpdate();
@@ -53,7 +53,7 @@ Chunk& Chunk::operator=(Chunk&& other) noexcept
     // Transfer neighbor pointers
     m_Neighbors = other.m_Neighbors;
     for (BlockFace face : BlockFaceIterator())
-      other.m_Neighbors[static_cast<uint8_t>(face)] = nullptr;
+      other.m_Neighbors[static_cast<int>(face)] = nullptr;
 
     // Since the address of 'other' has moved, we must update its neighbors about the change
     sendAddressUpdate();
@@ -185,7 +185,7 @@ void Chunk::removeBlock(const BlockIndex& blockIndex)
   m_MeshState = MeshState::NeedsUpdate;
   for (BlockFace face : BlockFaceIterator())
   {
-    const uint8_t faceID = static_cast<uint8_t>(face);
+    const int faceID = static_cast<int>(face);
 
     if (isBlockNeighborInAnotherChunk(blockIndex, face) && m_Neighbors[faceID] != nullptr)
       m_Neighbors[faceID]->m_MeshState = MeshState::NeedsUpdate;
@@ -203,7 +203,7 @@ void Chunk::placeBlock(const BlockIndex& blockIndex, BlockFace face, BlockType b
   if (blockType == BlockType::Air || !isBlockNeighborAir(blockIndex, face))
     return;
 
-  const uint8_t faceID = static_cast<uint8_t>(face);
+  const int faceID = static_cast<int>(face);
   if (isBlockNeighborInAnotherChunk(blockIndex, face))
   {
     if (m_Neighbors[faceID] == nullptr)
@@ -221,15 +221,15 @@ void Chunk::placeBlock(const BlockIndex& blockIndex, BlockFace face, BlockType b
 
 void Chunk::setNeighbor(BlockFace face, Chunk* chunk)
 {
-  m_Neighbors[static_cast<uint8_t>(face)] = chunk;
+  m_Neighbors[static_cast<int>(face)] = chunk;
   m_MeshState = MeshState::NeedsUpdate;
 }
 
 bool Chunk::isBlockNeighborInAnotherChunk(const BlockIndex& blockIndex, BlockFace face)
 {
   static constexpr blockIndex_t chunkLimits[2] = { s_ChunkSize - 1, 0 };
-  const uint8_t faceID = static_cast<uint8_t>(face);
-  const uint8_t coordID = faceID / 2;
+  const int faceID = static_cast<int>(face);
+  const int coordID = faceID / 2;
 
   return blockIndex[coordID] == chunkLimits[faceID % 2];
 }
@@ -244,7 +244,7 @@ bool Chunk::isBlockNeighborTransparent(const BlockIndex& blockIndex, BlockFace f
   static constexpr BlockIndex normals[6] = { { 1, 0, 0}, { -1, 0, 0}, { 0, 1, 0}, { 0, -1, 0}, { 0, 0, 1}, { 0, 0, -1} };
                                         //      East         West        North       South         Top        Bottom
 
-  const uint8_t faceID = static_cast<uint8_t>(face);
+  const int faceID = static_cast<int>(face);
   if (isBlockNeighborInAnotherChunk(blockIndex, face))
   {
     if (m_Neighbors[faceID] == nullptr)
@@ -263,7 +263,7 @@ bool Chunk::isBlockNeighborAir(const BlockIndex& blockIndex, BlockFace face)
   static constexpr BlockIndex normals[6] = { { 1, 0, 0}, { -1, 0, 0}, { 0, 1, 0}, { 0, -1, 0}, { 0, 0, 1}, { 0, 0, -1} };
                                         //      East         West        North       South         Top        Bottom
 
-  const uint8_t faceID = static_cast<uint8_t>(face);
+  const int faceID = static_cast<int>(face);
   if (isBlockNeighborInAnotherChunk(blockIndex, face))
   {
     if (m_Neighbors[faceID] == nullptr)
@@ -346,7 +346,7 @@ void Chunk::generateMesh()
           for (BlockFace face : BlockFaceIterator())
             if (isBlockNeighborTransparent(i, j, k, face))
             {
-              const uint8_t faceID = static_cast<uint8_t>(face);
+              const int faceID = static_cast<int>(face);
               const blockTexID textureID = static_cast<blockTexID>(Block::GetTexture(getBlockType(i, j, k), face));
 
               for (uint8_t v = 0; v < 4; ++v)
@@ -403,12 +403,12 @@ void Chunk::determineOpacity()
 {
   for (BlockFace face : BlockFaceIterator())
   {
-    const uint8_t faceID = static_cast<uint8_t>(face);
+    const int faceID = static_cast<int>(face);
 
     // Relabel coordinates
-    const uint8_t u = faceID / 2;
-    const uint8_t v = (u + 1) % 3;
-    const uint8_t w = (u + 2) % 3;
+    const int u = faceID / 2;
+    const int v = (u + 1) % 3;
+    const int w = (u + 2) % 3;
 
     for (blockIndex_t i = 0; i < s_ChunkSize; ++i)
       for (blockIndex_t j = 0; j < s_ChunkSize; ++j)
@@ -432,10 +432,10 @@ void Chunk::sendAddressUpdate()
 {
   for (BlockFace face : BlockFaceIterator())
   {
-    uint8_t faceID = static_cast<uint8_t>(face);
+    int faceID = static_cast<int>(face);
     if (m_Neighbors[faceID] != nullptr)
     {
-      uint8_t oppFaceID = static_cast<uint8_t>(!face);
+      int oppFaceID = static_cast<int>(!face);
       m_Neighbors[faceID]->m_Neighbors[oppFaceID] = this; // Avoid using setNeighbor() to prevent re-meshing
     }
   }
@@ -445,7 +445,7 @@ void Chunk::excise()
 {
   for (BlockFace face : BlockFaceIterator())
   {
-    uint8_t faceID = static_cast<uint8_t>(face);
+    int faceID = static_cast<int>(face);
     if (m_Neighbors[faceID] != nullptr)
     {
       EN_ASSERT(m_Neighbors[faceID]->getNeighbor(!face) == this, "Incorrect neighbor!");
@@ -458,7 +458,7 @@ void Chunk::markAsEmpty()
 {
   m_ChunkComposition.reset();
   for (BlockFace face : BlockFaceIterator())
-    m_FaceIsOpaque[static_cast<uint8_t>(face)] = false;
+    m_FaceIsOpaque[static_cast<int>(face)] = false;
   m_MeshState = MeshState::NotGenerated;
 }
 

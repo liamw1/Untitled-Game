@@ -1,7 +1,7 @@
 #pragma once
 #include "BlockIDs.h"
 
-enum class BlockFace : uint8_t
+enum class BlockFace : int
 {
   East, West, North, South, Top, Bottom,
   First = East, Last = Bottom
@@ -13,8 +13,8 @@ using BlockFaceIterator = Iterator<BlockFace, BlockFace::First, BlockFace::Last>
 */
 inline BlockFace operator!(const BlockFace& face)
 {
-  const uint8_t faceVal = static_cast<uint8_t>(face);
-  BlockFace oppFace = static_cast<BlockFace>(faceVal % 2 == 0 ? faceVal + 1 : faceVal - 1);
+  const int faceID = static_cast<int>(face);
+  BlockFace oppFace = static_cast<BlockFace>(faceID % 2 == 0 ? faceID + 1 : faceID - 1);
   return oppFace;
 }
 

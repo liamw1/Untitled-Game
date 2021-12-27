@@ -9,7 +9,7 @@ bool Block::s_Initialized = false;
 void Block::Initialize()
 {
   s_TexturePaths[static_cast<blockTexID>(BlockTexture::GrassTop)] = "assets/textures/voxel-pack/PNG/Tiles/grass_top.png";
-  s_TexturePaths[static_cast<blockTexID>(BlockTexture::GrassSide)] = "assets/textures/voxel-pack/PNG/Tiles/dirt_grass.png";
+  s_TexturePaths[static_cast<blockTexID>(BlockTexture::GrassSide)] = "assets/textures/voxel-pack/PNG/Tiles/grass_top.png";
   s_TexturePaths[static_cast<blockTexID>(BlockTexture::Dirt)] = "assets/textures/voxel-pack/PNG/Tiles/dirt.png";
   s_TexturePaths[static_cast<blockTexID>(BlockTexture::Clay)] = "assets/textures/voxel-pack/PNG/Tiles/greysand.png";
   s_TexturePaths[static_cast<blockTexID>(BlockTexture::Gravel)] = "assets/textures/voxel-pack/PNG/Tiles/gravel_stone.png";
@@ -35,7 +35,7 @@ void Block::Initialize()
 BlockTexture Block::GetTexture(BlockType block, BlockFace face)
 {
   EN_ASSERT(s_Initialized, "Block class has not been initialized!");
-  return s_TexIDs[static_cast<blockID>(block)][static_cast<uint8_t>(face)];
+  return s_TexIDs[static_cast<blockID>(block)][static_cast<int>(face)];
 }
 
 std::string Block::GetTexturePath(BlockTexture texture)
@@ -59,7 +59,7 @@ bool Block::HasCollision(BlockType block)
 void Block::assignTextures(BlockType block, BlockTexture faceTextures)
 {
   for (BlockFace face : BlockFaceIterator())
-    s_TexIDs[static_cast<blockID>(block)][static_cast<uint8_t>(face)] = faceTextures;
+    s_TexIDs[static_cast<blockID>(block)][static_cast<int>(face)] = faceTextures;
 }
 
 void Block::assignTextures(BlockType block, BlockTexture topBotTextures, BlockTexture sideTextures)
@@ -73,7 +73,7 @@ void Block::assignTextures(BlockType block, BlockTexture topTexture, BlockTextur
 
   for (BlockFace face : BlockFaceIterator())
   {
-    const uint8_t faceID = static_cast<uint8_t>(face);
+    const int faceID = static_cast<int>(face);
     switch (face)
     {
       case BlockFace::Top:    s_TexIDs[blckID][faceID] = topTexture;      break;

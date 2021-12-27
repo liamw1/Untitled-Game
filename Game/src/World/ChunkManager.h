@@ -41,7 +41,7 @@ public:
   void sendChunkUpdate(Chunk* const chunk);
 
 private:
-  enum class MapType : uint8_t
+  enum class MapType : int
   {
     Boundary = 0,
     Empty,
@@ -51,7 +51,7 @@ private:
   };
   using MapTypeIterator = Iterator<MapType, MapType::First, MapType::Last>;
 
-  enum class FrustumPlane : uint8_t
+  enum class FrustumPlane : int
   {
     Left, Right,
     Bottom, Top,
@@ -69,9 +69,9 @@ private:
 
   // Chunk pointers
   std::array<llvm::DenseMap<int64_t, Chunk*>, 3> m_Chunks;
-  llvm::DenseMap<int64_t, Chunk*>& m_EmptyChunks = m_Chunks[static_cast<uint8_t>(MapType::Empty)];
-  llvm::DenseMap<int64_t, Chunk*>& m_BoundaryChunks = m_Chunks[static_cast<uint8_t>(MapType::Boundary)];
-  llvm::DenseMap<int64_t, Chunk*>& m_RenderableChunks = m_Chunks[static_cast<uint8_t>(MapType::Renderable)];
+  llvm::DenseMap<int64_t, Chunk*>& m_EmptyChunks = m_Chunks[static_cast<int>(MapType::Empty)];
+  llvm::DenseMap<int64_t, Chunk*>& m_BoundaryChunks = m_Chunks[static_cast<int>(MapType::Boundary)];
+  llvm::DenseMap<int64_t, Chunk*>& m_RenderableChunks = m_Chunks[static_cast<int>(MapType::Renderable)];
 
   // LOD data
   LOD::Octree m_LODTree{};
@@ -85,11 +85,7 @@ private:
   int64_t createKey(const GlobalIndex& chunkIndex) const;
   int64_t createHeightMapKey(globalIndex_t chunkI, globalIndex_t chunkJ) const;
 
-  bool isOutOfRange(const LocalIndex& chunkIndex) const;
-  bool isOutOfRange(const GlobalIndex& chunkIndex) const;
-  bool isInLoadRange(const LocalIndex& chunkIndex) const;
-  bool isInLoadRange(const GlobalIndex& chunkIndex) const;
-  bool isInRenderRange(const LocalIndex& chunkIndex) const;
+  bool isInRange(const GlobalIndex& chunkIndex, globalIndex_t range) const;
 
   /*
     Uses algorithm described in 

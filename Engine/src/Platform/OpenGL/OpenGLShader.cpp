@@ -5,7 +5,7 @@
 
 namespace Engine
 {
-  static constexpr uint8_t s_MaxShaders = 2;
+  static constexpr int s_MaxShaders = 2;
 
   static GLenum shaderTypeFromString(const std::string& type)
   {

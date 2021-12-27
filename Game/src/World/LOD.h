@@ -3,6 +3,12 @@
 
 namespace LOD
 {
+  struct AABB
+  {
+    GlobalIndex min;
+    GlobalIndex max;
+  };
+
   struct Data 
   {
     Engine::Shared<Engine::VertexArray> vertexArray;
@@ -41,6 +47,9 @@ namespace LOD
       }
 
       int8_t LODLevel() const { return s_MaxNodeDepth - depth; }
+      int64_t size() const { return bit(LODLevel()); }
+
+      AABB boundingBox() const { return { anchor, anchor + size() }; }
     };
 
   public:
@@ -63,4 +72,6 @@ namespace LOD
 
     void getLeavesPriv(Node* branch, std::vector<Node*>& leaves);
   };
+
+  bool Intersection(AABB boxA, AABB boxB);
 }

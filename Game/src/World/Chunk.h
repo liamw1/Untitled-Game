@@ -101,7 +101,7 @@ public:
     
     Neighbor is allowed to be modified, use this power responsibly!
   */
-  Chunk* const getNeighbor(BlockFace face) const { return m_Neighbors[static_cast<uint8_t>(face)]; }
+  Chunk* const getNeighbor(BlockFace face) const { return m_Neighbors[static_cast<int>(face)]; }
 
   /*
     Sets neighboring chunk in the specified direction.
@@ -122,14 +122,14 @@ public:
   const Engine::Shared<Engine::VertexArray>& getVertexArray() const { return m_MeshVertexArray; }
 
   bool isEmpty() const { return m_ChunkComposition == nullptr; }
-  bool isFaceOpaque(BlockFace face) const { return m_FaceIsOpaque[static_cast<uint8_t>(face)]; }
+  bool isFaceOpaque(BlockFace face) const { return m_FaceIsOpaque[static_cast<int>(face)]; }
 
   bool isBlockNeighborInAnotherChunk(const BlockIndex& blockIndex, BlockFace face);
   bool isBlockNeighborTransparent(blockIndex_t i, blockIndex_t j, blockIndex_t k, BlockFace face);
   bool isBlockNeighborTransparent(const BlockIndex& blockIndex, BlockFace face);
   bool isBlockNeighborAir(const BlockIndex& blockIndex, BlockFace face);
 
-  static constexpr uint8_t Size() { return s_ChunkSize; }
+  static constexpr blockIndex_t Size() { return s_ChunkSize; }
   static constexpr length_t Length() { return s_ChunkLength; }
   static constexpr uint32_t TotalBlocks() { return s_ChunkTotalBlocks; }
   static LocalIndex LocalIndexFromPos(const Vec3& position);
@@ -139,7 +139,7 @@ public:
   static LocalIndex CalcRelativeIndex(const GlobalIndex& indexA, const GlobalIndex& indexB);
 
 private:
-  enum class MeshState : uint8_t
+  enum class MeshState : int
   {
     NotGenerated = 0,
     NeedsUpdate,

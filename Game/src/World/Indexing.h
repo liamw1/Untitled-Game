@@ -14,7 +14,7 @@ struct Index3D
   intType j;
   intType k;
 
-  intType& operator[](uint8_t index)
+  intType& operator[](int index)
   {
     EN_ASSERT(index < 3, "Index is out of bounds!");
     switch (index)
@@ -26,7 +26,7 @@ struct Index3D
     }
   }
 
-  const intType& operator[](uint8_t index) const
+  const intType& operator[](int index) const
   {
     EN_ASSERT(index < 3, "Index is out of bounds!");
     switch (index)
@@ -39,6 +39,7 @@ struct Index3D
   }
 
   constexpr bool operator==(const Index3D<intType>& other) const { return i == other.i && j == other.j && k == other.k; }
+
   constexpr Index3D<intType> operator+(const Index3D<intType>& other) const
   {
     return { static_cast<intType>(i + other.i),
@@ -50,6 +51,13 @@ struct Index3D
     return { static_cast<intType>(i - other.i),
              static_cast<intType>(j - other.j),
              static_cast<intType>(k - other.k) };
+  }
+
+  constexpr Index3D<intType> operator+(intType n) const
+  {
+    return { static_cast<intType>(i + n),
+             static_cast<intType>(j + n),
+             static_cast<intType>(k + n) };
   }
 
   constexpr operator Vec2() const { return { i, j }; }

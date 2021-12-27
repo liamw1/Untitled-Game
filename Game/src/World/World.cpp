@@ -48,7 +48,7 @@ RayIntersection World::castRaySegment(const Vec3& pointA, const Vec3& pointB) co
   // Look for solid block face intersections in the x,y,z directions
   length_t tmin = 2.0;
   RayIntersection firstIntersection{};
-  for (uint8_t i = 0; i < 3; ++i)
+  for (int i = 0; i < 3; ++i)
   {
     const bool alignedWithPositiveAxis = rayDirection[i] > 0.0;
 
@@ -76,9 +76,9 @@ RayIntersection World::castRaySegment(const Vec3& pointA, const Vec3& pointB) co
       if (t < tmin)
       {
         // Relabeling coordinate indices
-        const uint8_t u = i;
-        const uint8_t v = (i + 1) % 3;
-        const uint8_t w = (i + 2) % 3;
+        const int u = i;
+        const int v = (i + 1) % 3;
+        const int w = (i + 2) % 3;
 
         // Intersection point between ray and plane
         const Vec3 intersection = pointA + t * rayDirection;
@@ -110,7 +110,7 @@ RayIntersection World::castRaySegment(const Vec3& pointA, const Vec3& pointB) co
         // If block has collision, note the intersection and move to next spatial direction
         if (Block::HasCollision(chunk->getBlockType(blockIndex)))
         {
-          const uint8_t faceID = 2 * u + alignedWithPositiveAxis;
+          const int faceID = 2 * u + alignedWithPositiveAxis;
           tmin = t;
 
           firstIntersection.face = static_cast<BlockFace>(faceID);
@@ -176,7 +176,7 @@ beginCollisionDetection:;
 
   if (firstCollision.distance <= distanceMoved)
   {
-    const uint8_t faceID = static_cast<uint8_t>(firstCollision.face);
+    const int faceID = static_cast<int>(firstCollision.face);
     const length_t t = firstCollision.distance / distanceMoved;
 
     // Calculate distance player should be pushed out from solid block
@@ -224,8 +224,8 @@ void World::playerWorldInteraction()
 
           for (BlockFace face : BlockFaceIterator())
           {
-            const uint8_t faceID = static_cast<uint8_t>(face);
-            const uint8_t coordID = faceID / 2;
+            const int faceID = static_cast<int>(face);
+            const int coordID = faceID / 2;
 
             if (blockIndex[coordID] == (faceID % 2 == 0 ? Chunk::Size() - 1 : 0))
               m_ChunkManager.sendChunkUpdate(chunk->getNeighbor(face));
@@ -270,8 +270,8 @@ bool World::onMouseButtonPressEvent(Engine::MouseButtonPressEvent& event)
 
         for (BlockFace face : BlockFaceIterator())
         {
-          const uint8_t faceID = static_cast<uint8_t>(face);
-          const uint8_t coordID = faceID / 2;
+          const int faceID = static_cast<int>(face);
+          const int coordID = faceID / 2;
 
           if (blockIndex[coordID] == (faceID % 2 == 0 ? Chunk::Size() - 1 : 0))
             m_ChunkManager.sendChunkUpdate(chunk->getNeighbor(face));

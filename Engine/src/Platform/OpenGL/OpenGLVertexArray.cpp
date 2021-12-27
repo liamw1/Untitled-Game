@@ -54,9 +54,9 @@ namespace Engine
     const auto& layout = vertexBuffer->getLayout();
     for (const auto& element : layout)
     {
-      const uint8_t dataTypeID = static_cast<uint8_t>(element.type);
+      const int dataTypeID = static_cast<int>(element.type);
 
-      if (dataTypeID >= static_cast<uint8_t>(ShaderDataType::FloatTypeBegin) && dataTypeID <= static_cast<uint8_t>(ShaderDataType::FloatTypeEnd))
+      if (dataTypeID >= static_cast<int>(ShaderDataType::FloatTypeBegin) && dataTypeID <= static_cast<int>(ShaderDataType::FloatTypeEnd))
       {
         glEnableVertexAttribArray(m_VertexBufferIndex);
         glVertexAttribPointer(m_VertexBufferIndex,
@@ -67,7 +67,7 @@ namespace Engine
           (const void*)(const size_t)element.offset);
         m_VertexBufferIndex++;
       }
-      else if (dataTypeID >= static_cast<uint8_t>(ShaderDataType::IntTypeBegin) && dataTypeID <= static_cast<uint8_t>(ShaderDataType::IntTypeEnd))
+      else if (dataTypeID >= static_cast<int>(ShaderDataType::IntTypeBegin) && dataTypeID <= static_cast<int>(ShaderDataType::IntTypeEnd))
       {
         glEnableVertexAttribArray(m_VertexBufferIndex);
         glVertexAttribIPointer(m_VertexBufferIndex,
@@ -77,10 +77,10 @@ namespace Engine
           (const void*)(const size_t)element.offset);
         m_VertexBufferIndex++;
       }
-      else if (dataTypeID >= static_cast<uint8_t>(ShaderDataType::MatTypeBegin) && dataTypeID <= static_cast<uint8_t>(ShaderDataType::MatTypeEnd))
+      else if (dataTypeID >= static_cast<int>(ShaderDataType::MatTypeBegin) && dataTypeID <= static_cast<int>(ShaderDataType::MatTypeEnd))
       {
-        uint8_t count = element.getComponentCount();
-        for (uint8_t i = 0; i < count; ++i)
+        int count = element.getComponentCount();
+        for (int i = 0; i < count; ++i)
         {
           glEnableVertexAttribArray(m_VertexBufferIndex);
           glVertexAttribPointer(m_VertexBufferIndex,

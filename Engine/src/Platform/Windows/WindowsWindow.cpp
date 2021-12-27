@@ -8,7 +8,7 @@
 
 namespace Engine
 {
-  static uint8_t GLFWWindowCount = 0;
+  static int GLFWWindowCount = 0;
 
   static void GLFWErrorCallback(int errorCode, const char* description)
   {

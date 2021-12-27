@@ -10,7 +10,7 @@
 static Engine::Shared<Engine::Shader> s_BlockFaceShader;
 static Engine::Shared<Engine::Shader> s_LODShader;
 static Engine::Shared<Engine::TextureArray> s_TextureArray;
-static constexpr uint8_t s_TextureSlot = 0;
+static constexpr int s_TextureSlot = 0;
 
 
 

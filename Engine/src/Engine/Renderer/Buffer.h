@@ -11,7 +11,7 @@
   The beginning and ending of these groups are given their own identifier,
   which is used in the vertex array for differentiating between these types.
 */
-enum class ShaderDataType : uint8_t
+enum class ShaderDataType : int
 {
   None,
   Bool,
@@ -65,7 +65,7 @@ namespace Engine
       Note that for mats, the underlying component is a float vector, so
       the component count of a mat4 is 4, not 16.
     */
-    uint32_t getComponentCount() const
+    int getComponentCount() const
     {
       switch (type)
       {

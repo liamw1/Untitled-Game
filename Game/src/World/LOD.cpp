@@ -75,4 +75,11 @@ namespace LOD
         if (branch->children[i] != nullptr)
           getLeavesPriv(branch->children[i], leaves);
   }
+
+  bool Intersection(AABB boxA, AABB boxB)
+  {
+    return boxA.min.i < boxB.max.i&& boxA.max.i > boxB.min.i &&
+           boxA.min.j < boxB.max.j&& boxA.max.j > boxB.min.j &&
+           boxA.min.k < boxB.max.k&& boxA.max.k > boxB.min.k;
+  }
 }

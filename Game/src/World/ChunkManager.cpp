@@ -38,7 +38,7 @@ void ChunkManager::clean()
   {
     Chunk* chunk = pair.second;
 
-    if (isOutOfRange(chunk->getLocalIndex()))
+    if (!isInRange(chunk->getGlobalIndex(), s_UnloadDistance))
       chunksToRemove.push_back(chunk);
   }
   for (int i = 0; i < chunksToRemove.size(); ++i)
@@ -50,7 +50,7 @@ void ChunkManager::clean()
   {
     const HeightMap& heightMap = pair.second;
 
-    if (isOutOfRange(GlobalIndex({ heightMap.chunkI, heightMap.chunkJ, Player::OriginIndex().k })))
+    if (!isInRange(GlobalIndex({ heightMap.chunkI, heightMap.chunkJ, Player::OriginIndex().k }), s_UnloadDistance))
       heightMapsToRemove.push_back(createHeightMapKey(heightMap.chunkI, heightMap.chunkJ));
   }
   for (int i = 0; i < heightMapsToRemove.size(); ++i)
@@ -78,7 +78,7 @@ void ChunkManager::render() const
   {
     Chunk* chunk = pair.second;
 
-    if (isInRenderRange(chunk->getLocalIndex()))
+    if (isInRange(chunk->getGlobalIndex(), s_RenderDistance))
     {
       if (isInFrustum(chunk->center(), frustumPlanes))
         ChunkRenderer::DrawChunk(chunk);
@@ -114,10 +114,10 @@ bool ChunkManager::loadNewChunks(int maxNewChunks)
         // Store index of potential new chunk
         GlobalIndex neighborIndex = chunk->getGlobalIndex();
         for (int i = 0; i < 3; ++i)
-          neighborIndex[i] += normals[static_cast<uint8_t>(face)][i];
+          neighborIndex[i] += normals[static_cast<int>(face)][i];
 
         // If potential chunk is out of load range, skip it
-        if (!isInLoadRange(neighborIndex))
+        if (!isInRange(neighborIndex, s_LoadDistance))
           continue;
 
         newChunks.push_back(neighborIndex);
@@ -137,7 +137,7 @@ bool ChunkManager::loadNewChunks(int maxNewChunks)
     bool isInMap = false;
     for (MapType mapType : MapTypeIterator())
     {
-      const uint8_t mapTypeID = static_cast<uint8_t>(mapType);
+      const int mapTypeID = static_cast<int>(mapType);
 
       if (m_Chunks[mapTypeID].find(key) != m_Chunks[mapTypeID].end())
       {
@@ -157,13 +157,13 @@ bool ChunkManager::loadNewChunks(int maxNewChunks)
       // Store index of chunk adjacent to new chunk in direction "dir"
       GlobalIndex adjIndex = newChunkIndex;
       for (int i = 0; i < 3; ++i)
-        adjIndex[i] += normals[static_cast<uint8_t>(dir)][i];
+        adjIndex[i] += normals[static_cast<int>(dir)][i];
 
       // Find and add any existing neighbors to new chunk
       int64_t adjKey = createKey(adjIndex);
       for (MapType mapType : MapTypeIterator())
       {
-        const uint8_t mapTypeID = static_cast<uint8_t>(mapType);
+        const int mapTypeID = static_cast<int>(mapType);
 
         if (m_Chunks[mapTypeID].find(adjKey) != m_Chunks[mapTypeID].end())
         {
@@ -320,7 +320,7 @@ void ChunkManager::sendChunkUpdate(Chunk* const chunk)
   MapType source = MapType::First;
   for (MapType mapType : MapTypeIterator())
   {
-    const uint8_t mapTypeID = static_cast<uint8_t>(mapType);
+    const int mapTypeID = static_cast<int>(mapType);
 
     auto pair = m_Chunks[mapTypeID].find(key);
     if (pair != m_Chunks[mapTypeID].end())
@@ -360,36 +360,10 @@ int64_t ChunkManager::createHeightMapKey(globalIndex_t chunkI, globalIndex_t chu
   return chunkI % bit(10) + bit(10) * (chunkJ % bit(10));
 }
 
-bool ChunkManager::isOutOfRange(const LocalIndex& chunkIndex) const
+bool ChunkManager::isInRange(const GlobalIndex& chunkIndex, globalIndex_t range) const
 {
   for (int i = 0; i < 3; ++i)
-    if (abs(chunkIndex[i]) > s_UnloadDistance)
-      return true;
-  return false;
-}
-
-bool ChunkManager::isOutOfRange(const GlobalIndex& chunkIndex) const
-{
-  return isOutOfRange(Chunk::CalcRelativeIndex(chunkIndex, Player::OriginIndex()));
-}
-
-bool ChunkManager::isInLoadRange(const LocalIndex& chunkIndex) const
-{
-  for (int i = 0; i < 3; ++i)
-    if (abs(chunkIndex[i]) > s_LoadDistance)
-      return false;
-  return true;
-}
-
-bool ChunkManager::isInLoadRange(const GlobalIndex& chunkIndex) const
-{
-  return isInLoadRange(Chunk::CalcRelativeIndex(chunkIndex, Player::OriginIndex()));
-}
-
-bool ChunkManager::isInRenderRange(const LocalIndex& chunkIndex) const
-{
-  for (int i = 0; i < 3; ++i)
-    if (abs(chunkIndex[i]) > s_RenderDistance)
+    if (abs(chunkIndex[i] - Player::OriginIndex()[i]) > range)
       return false;
   return true;
 }
@@ -403,19 +377,19 @@ std::array<Vec4, 6> ChunkManager::calculateViewFrustumPlanes(const Engine::Camer
   const Vec4 row4 = glm::row(viewProj, 3);
 
   std::array<Vec4, 6> frustumPlanes{};
-  frustumPlanes[static_cast<uint8_t>(FrustumPlane::Left)] = row4 + row1;
-  frustumPlanes[static_cast<uint8_t>(FrustumPlane::Right)] = row4 - row1;
-  frustumPlanes[static_cast<uint8_t>(FrustumPlane::Bottom)] = row4 + row2;
-  frustumPlanes[static_cast<uint8_t>(FrustumPlane::Top)] = row4 - row2;
-  frustumPlanes[static_cast<uint8_t>(FrustumPlane::Near)] = row4 + row3;
-  frustumPlanes[static_cast<uint8_t>(FrustumPlane::Far)] = row4 - row3;
+  frustumPlanes[static_cast<int>(FrustumPlane::Left)] = row4 + row1;
+  frustumPlanes[static_cast<int>(FrustumPlane::Right)] = row4 - row1;
+  frustumPlanes[static_cast<int>(FrustumPlane::Bottom)] = row4 + row2;
+  frustumPlanes[static_cast<int>(FrustumPlane::Top)] = row4 - row2;
+  frustumPlanes[static_cast<int>(FrustumPlane::Near)] = row4 + row3;
+  frustumPlanes[static_cast<int>(FrustumPlane::Far)] = row4 - row3;
 
   return frustumPlanes;
 }
 
 bool ChunkManager::isInFrustum(const Vec3& point, const std::array<Vec4, 6>& frustumPlanes) const
 {
-  for (uint8_t planeID = 0; planeID < 5; ++planeID) // Skip far plane
+  for (int planeID = 0; planeID < 5; ++planeID) // Skip far plane
     if (glm::dot(Vec4(point, 1.0), frustumPlanes[planeID]) < 0)
       return false;
 
@@ -429,8 +403,8 @@ HeightMap ChunkManager::generateHeightMap(globalIndex_t chunkI, globalIndex_t ch
   heightMap.chunkJ = chunkJ;
   heightMap.maxHeight = -std::numeric_limits<length_t>::infinity();
 
-  for (uint8_t i = 0; i < Chunk::Size(); ++i)
-    for (uint8_t j = 0; j < Chunk::Size(); ++j)
+  for (int i = 0; i < Chunk::Size(); ++i)
+    for (int j = 0; j < Chunk::Size(); ++j)
     {
       Vec2 blockXY = Chunk::Length() * Vec2(chunkI, chunkJ) + Block::Length() * (Vec2(i, j) + Vec2(0.5));
       length_t terrainHeight = 150 * Block::Length() * glm::simplex(blockXY / 1280.0 / Block::Length()) + 50 * Block::Length() * glm::simplex(blockXY / 320.0 / Block::Length()) + 5 * Block::Length() * glm::simplex(blockXY / 40.0 / Block::Length());
@@ -513,19 +487,19 @@ void ChunkManager::loadNewLOD(LOD::Octree::Node* node)
         uint8_t cubeIndex = 0;
         if (terrainHeights[i][j] > subDivisionHeight)
           cubeIndex |= bit(3);
-        if (terrainHeights[i][j + 1] > subDivisionHeight)
+        if (terrainHeights[i][static_cast<int64_t>(j) + 1] > subDivisionHeight)
           cubeIndex |= bit(0);
-        if (terrainHeights[i + 1][j] > subDivisionHeight)
+        if (terrainHeights[static_cast<int64_t>(i) + 1][j] > subDivisionHeight)
           cubeIndex |= bit(2);
-        if (terrainHeights[i + 1][j + 1] > subDivisionHeight)
+        if (terrainHeights[static_cast<int64_t>(i) + 1][static_cast<int64_t>(j) + 1] > subDivisionHeight)
           cubeIndex |= bit(1);
         if (terrainHeights[i][j] > subDivisionHeight + subDivisionLength)
           cubeIndex |= bit(7);
-        if (terrainHeights[i][j + 1] > subDivisionHeight + subDivisionLength)
+        if (terrainHeights[i][static_cast<int64_t>(j) + 1] > subDivisionHeight + subDivisionLength)
           cubeIndex |= bit(4);
-        if (terrainHeights[i + 1][j] > subDivisionHeight + subDivisionLength)
+        if (terrainHeights[static_cast<int64_t>(i) + 1][j] > subDivisionHeight + subDivisionLength)
           cubeIndex |= bit(6);
-        if (terrainHeights[i + 1][j + 1] > subDivisionHeight + subDivisionLength)
+        if (terrainHeights[static_cast<int64_t>(i) + 1][static_cast<int64_t>(j) + 1] > subDivisionHeight + subDivisionLength)
           cubeIndex |= bit(5);
 
         for (int tri = 0; tri < 5; ++tri)
@@ -617,19 +591,19 @@ void ChunkManager::loadNewLODs(LOD::Octree::Node* node)
           uint8_t cubeIndex = 0;
           if (terrainHeights[i][j] > subDivisionHeight)
             cubeIndex |= bit(3);
-          if (terrainHeights[i][j + 1] > subDivisionHeight)
+          if (terrainHeights[i][static_cast<int64_t>(j) + 1] > subDivisionHeight)
             cubeIndex |= bit(0);
-          if (terrainHeights[i + 1][j] > subDivisionHeight)
+          if (terrainHeights[static_cast<int64_t>(i) + 1][j] > subDivisionHeight)
             cubeIndex |= bit(2);
-          if (terrainHeights[i + 1][j + 1] > subDivisionHeight)
+          if (terrainHeights[static_cast<int64_t>(i) + 1][static_cast<int64_t>(j) + 1] > subDivisionHeight)
             cubeIndex |= bit(1);
           if (terrainHeights[i][j] > subDivisionHeight + subDivisionLength)
             cubeIndex |= bit(7);
-          if (terrainHeights[i][j + 1] > subDivisionHeight + subDivisionLength)
+          if (terrainHeights[i][static_cast<int64_t>(j) + 1] > subDivisionHeight + subDivisionLength)
             cubeIndex |= bit(4);
-          if (terrainHeights[i + 1][j] > subDivisionHeight + subDivisionLength)
+          if (terrainHeights[static_cast<int64_t>(i) + 1][j] > subDivisionHeight + subDivisionLength)
             cubeIndex |= bit(6);
-          if (terrainHeights[i + 1][j + 1] > subDivisionHeight + subDivisionLength)
+          if (terrainHeights[static_cast<int64_t>(i) + 1][static_cast<int64_t>(j) + 1] > subDivisionHeight + subDivisionLength)
             cubeIndex |= bit(5);
 
           for (int tri = 0; tri < 5; ++tri)
@@ -688,7 +662,7 @@ void ChunkManager::unloadChunk(Chunk* const chunk)
 
     // Move chunk pointer to m_BoundaryChunks
     MapType source = chunkNeighbor->isEmpty() ? MapType::Empty : MapType::Renderable;
-    EN_ASSERT(m_Chunks[static_cast<uint8_t>(source)].find(createKey(chunkNeighbor->getGlobalIndex())) != m_Chunks[static_cast<uint8_t>(source)].end(), "Chunk is not in correct map!");
+    EN_ASSERT(m_Chunks[static_cast<int>(source)].find(createKey(chunkNeighbor->getGlobalIndex())) != m_Chunks[static_cast<int>(source)].end(), "Chunk is not in correct map!");
     moveToMap(chunkNeighbor, source, MapType::Boundary);
   }
 
@@ -712,7 +686,7 @@ Chunk* ChunkManager::findChunk(const GlobalIndex& globalIndex) const
 
   for (MapType mapType : MapTypeIterator())
   {
-    const uint8_t mapTypeID = static_cast<uint8_t>(mapType);
+    const int mapTypeID = static_cast<int>(mapType);
 
     auto pair = m_Chunks[mapTypeID].find(key);
     if (pair != m_Chunks[mapTypeID].end())
@@ -723,7 +697,7 @@ Chunk* ChunkManager::findChunk(const GlobalIndex& globalIndex) const
 
 void ChunkManager::addToMap(Chunk* const chunk, MapType mapType)
 {
-  const uint8_t mapTypeID = static_cast<uint8_t>(mapType);
+  const int mapTypeID = static_cast<int>(mapType);
 
   int64_t key = createKey(chunk->getGlobalIndex());
   auto insertionResult = m_Chunks[mapTypeID].insert({ key, chunk });
@@ -733,7 +707,7 @@ void ChunkManager::addToMap(Chunk* const chunk, MapType mapType)
 
 void ChunkManager::moveToMap(Chunk* const chunk, MapType source, MapType destination)
 {
-  const uint8_t sourceTypeID = static_cast<uint8_t>(source);
+  const int sourceTypeID = static_cast<int>(source);
 
   int64_t key = createKey(chunk->getGlobalIndex());
   addToMap(chunk, destination);
