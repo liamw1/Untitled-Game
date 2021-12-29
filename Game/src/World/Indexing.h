@@ -59,6 +59,12 @@ struct Index3D
              static_cast<intType>(j + n),
              static_cast<intType>(k + n) };
   }
+  constexpr Index3D<intType> operator-(intType n) const
+  {
+    return { static_cast<intType>(i - n),
+             static_cast<intType>(j - n),
+             static_cast<intType>(k - n) };
+  }
 
   constexpr operator Vec2() const { return { i, j }; }
   constexpr operator Vec3() const { return { i, j, k }; }

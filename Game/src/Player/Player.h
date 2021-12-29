@@ -2,12 +2,6 @@
 #include "Engine/Renderer/CameraController.h"
 #include "World/Chunk.h"
 
-struct AABB
-{
-  Vec3 min;
-  Vec3 max;
-};
-
 /*
   Represents the player.  The player's position (all the positions of all other
   geometry) is stored relative to an "origin chunk", which is the chunk the player
@@ -36,11 +30,6 @@ namespace Player
   void UpdateEnd();
 
   void OnEvent(Engine::Event& event);
-
-  /*
-    \returns The player's axis-aligned bounding box (AABB).
-  */
-  AABB BoundingBox();
 
   const Vec3& ViewDirection();
   const Engine::Camera& Camera();

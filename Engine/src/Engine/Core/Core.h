@@ -33,7 +33,8 @@ constexpr radians PI = static_cast<radians>(3.1415926535897932384626433832795028
 
 
 // ======================== Common Utilities ======================== //
-inline constexpr uint64_t bit(int n) { return 1Ui64 << n; }
+constexpr uint64_t bit(int n) { return 1Ui64 << n; }
+constexpr uint64_t pow2(int n) { return 1Ui64 << n; }
 #define EN_BIND_EVENT_FN(fn) [this](auto&&... args) -> decltype(auto) { return this->fn(std::forward<decltype(args)>(args)...); }
 
 namespace Engine

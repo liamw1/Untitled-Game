@@ -114,6 +114,8 @@
     <ClInclude Include="src\World\World.h">
       <Filter>src\World</Filter>
     </ClInclude>
+    <ClInclude Include="src\Util\Array2D.h" />
+    <ClInclude Include="src\Util\Container.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="lib\llvm\include\llvm\Support\MemAlloc.cpp">

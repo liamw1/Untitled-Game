@@ -3,6 +3,7 @@
 #include "ChunkRenderer.h"
 #include "Player/Player.h"
 #include "Util/MarchingCubes.h"
+#include "Util/Array2D.h"
 #include <glm/gtc/matrix_access.hpp>
 
 ChunkManager::ChunkManager()
@@ -205,33 +206,8 @@ bool ChunkManager::loadNewChunks(int maxNewChunks)
 void ChunkManager::manageLODs()
 {
   EN_PROFILE_FUNCTION();
-
-  // Controls how close player must be to LOD for it to split.  Must be > 1!
-  static constexpr float scaling = 2.0f;
-
-  // Node will always split if player is less than this many chunks away from node center in any direction
-  static constexpr length_t baseSplittingDistance = s_RenderDistance;
-
-  // Player position in units of chunks to prevent float overflow
-  const Vec3& playerGlobalPosition = static_cast<Vec3>(Player::OriginIndex()) + Player::Position() / Chunk::Length();
   
   std::vector<LOD::Octree::Node*> leaves = m_LODTree.getLeaves();
-
-#if 0
-  Engine::Renderer::BeginScene(Player::Camera());
-  for (int n = 0; n < leaves.size(); ++n)
-  {
-    LOD::Octree::Node* node = leaves[n];
-
-    length_t lodLength = static_cast<length_t>(bit(node->LODLevel()));
-    Vec3 lodCenter = static_cast<Vec3>(node->anchor) + lodLength / 2 * Vec3(1.0);
-    Vec3 lodCenterLocalPos = Chunk::Length() * (lodCenter - static_cast<Vec3>(Player::OriginIndex()));
-    Vec3 lodDimensions = Vec3(lodLength * Chunk::Length());
-
-    Engine::Renderer::DrawCubeFrame(lodCenterLocalPos, lodDimensions, { 0.1, 0.1, 0.1, 1.0 });
-  }
-  Engine::Renderer::EndScene();
-#endif
 
   // Render LODs
   ChunkRenderer::BeginScene(Player::Camera());
@@ -244,50 +220,41 @@ void ChunkManager::manageLODs()
   ChunkRenderer::EndScene();
 
   // Split close nodes and load children
-  for (int n = 0; n < leaves.size(); ++n)
+  for (auto it = leaves.begin(); it != leaves.end(); ++it)
   {
-    LOD::Octree::Node* node = leaves[n];
+    LOD::Octree::Node* node = *it;
+    int lodLevel = node->LODLevel();
 
-    if (node->LODLevel() > 0)
+    if (lodLevel > 0)
     {
-      // Physical lengths here are in units of chunks to prevent float overflow
-      length_t lodLength = static_cast<length_t>(bit(node->LODLevel()));
-      Vec3 lodCenter = static_cast<Vec3>(node->anchor) + lodLength / 2 * Vec3(1.0);
-      Vec3 chunksFromLODCenter = lodCenter - playerGlobalPosition;
+      int64_t splitRange = pow2(lodLevel + 1) - 1 + s_RenderDistance;
+      LOD::AABB splitRangeBoundingBox = { Player::OriginIndex() - splitRange, Player::OriginIndex() + splitRange };
 
-      Vec3 lodCenterLocalPos = Chunk::Length() * (lodCenter - static_cast<Vec3>(Player::OriginIndex()));
-      Vec3 lodDimensions = Vec3(lodLength * Chunk::Length());
-
-      // Radius of sphere that circumscribes lod + baseSplittingDistance, squared, in units of chunks
-      length_t r2 = 0.75f * (lodLength + baseSplittingDistance) * (lodLength + baseSplittingDistance);
-
-      if (glm::dot(chunksFromLODCenter, chunksFromLODCenter) < scaling * r2)
+      if (LOD::Intersection(splitRangeBoundingBox, node->boundingBox()))
       {
         m_LODTree.splitNode(node);
 
-        // Load children
-        loadNewLODs(node);
+          // Load children
+        loadNewLODs(node, false);
+
+        it = leaves.erase(it);
+        it--;
       }
     }
   }
 
   // Search for nodes to combine
   std::vector<LOD::Octree::Node*> cannibalNodes{};
-  for (int n = 0; n < leaves.size(); ++n)
+  for (auto it = leaves.begin(); it != leaves.end(); ++it)
   {
-    LOD::Octree::Node* node = leaves[n];
+    LOD::Octree::Node* node = *it;
 
-    if (node->depth != 0)
+    if (node->depth > 0)
     {
-      // Physical lengths here are in units of chunks to prevent float overflow
-      length_t lodLength = static_cast<length_t>(bit(node->LODLevel()));
-      Vec3 parentCenter = static_cast<Vec3>(node->parent->anchor) + lodLength * Vec3(1.0);
-      Vec3 chunksFromParentCenter = parentCenter - playerGlobalPosition;
+      int64_t combineRange = pow2(node->LODLevel() + 2) - 1 + s_RenderDistance;
+      LOD::AABB rangeBoundingBox = { Player::OriginIndex() - combineRange, Player::OriginIndex() + combineRange };
 
-      // Radius of sphere that circumscribes parent + baseSplittingDistance, squared, in units of chunks
-      length_t r2 = 3.0f * (lodLength + baseSplittingDistance) * (lodLength + baseSplittingDistance);
-
-      if (glm::dot(chunksFromParentCenter, chunksFromParentCenter) > scaling * r2)
+      if (!LOD::Intersection(rangeBoundingBox, node->parent->boundingBox()))
         cannibalNodes.push_back(node->parent);
     }
   }
@@ -296,10 +263,10 @@ void ChunkManager::manageLODs()
   for (int i = 0; i < cannibalNodes.size(); ++i)
   {
     m_LODTree.combineChildren(cannibalNodes[i]);
-    loadNewLOD(cannibalNodes[i]);
+    loadNewLODs(cannibalNodes[i], true);
   }
 
-  // EN_INFO("{0}", leaves.size());
+  EN_INFO("{0}", leaves.size());
 }
 
 Chunk* ChunkManager::findChunk(const LocalIndex& chunkIndex) const
@@ -440,7 +407,7 @@ Chunk* ChunkManager::loadNewChunk(const GlobalIndex& chunkIndex)
   return newChunk;
 }
 
-void ChunkManager::loadNewLOD(LOD::Octree::Node* node)
+void ChunkManager::loadNewLODs(LOD::Octree::Node* node, bool combineMode)
 {
   EN_ASSERT(node->LODLevel() > 0, "LOD level cannot be 0!");
 
@@ -451,15 +418,15 @@ void ChunkManager::loadNewLOD(LOD::Octree::Node* node)
     float lightValue;
   };
 
-  static constexpr int subDivisions = Chunk::Size();
+  const int subDivisions = combineMode ? Chunk::Size() : 2 * Chunk::Size();
 
-  const length_t lodLength = bit(node->LODLevel()) * Chunk::Length();
+  const length_t lodLength = pow2(node->LODLevel()) * Chunk::Length();
   const length_t subDivisionLength = lodLength / subDivisions;
 
   // Generate heightmap
   length_t minHeight = std::numeric_limits<length_t>::max();
   length_t maxHeight = -std::numeric_limits<length_t>::max();
-  std::array<std::array<length_t, subDivisions + 1>, subDivisions + 1> terrainHeights{};
+  Array2D<length_t> terrainHeights = Array2D<length_t>(subDivisions + 1, subDivisions + 1);
   for (int i = 0; i < subDivisions + 1; ++i)
     for (int j = 0; j < subDivisions + 1; ++j)
     {
@@ -477,105 +444,8 @@ void ChunkManager::loadNewLOD(LOD::Octree::Node* node)
     return;
 
   // Generate meshes
-  std::vector<Vertex> LODMesh{};
-  for (int i = 0; i < Chunk::Size(); ++i)
-    for (int j = 0; j < Chunk::Size(); ++j)
-      for (int k = 0; k < Chunk::Size(); ++k)
-      {
-        const length_t subDivisionHeight = node->anchor.k * Chunk::Length() + k * subDivisionLength;
-
-        uint8_t cubeIndex = 0;
-        if (terrainHeights[i][j] > subDivisionHeight)
-          cubeIndex |= bit(3);
-        if (terrainHeights[i][static_cast<int64_t>(j) + 1] > subDivisionHeight)
-          cubeIndex |= bit(0);
-        if (terrainHeights[static_cast<int64_t>(i) + 1][j] > subDivisionHeight)
-          cubeIndex |= bit(2);
-        if (terrainHeights[static_cast<int64_t>(i) + 1][static_cast<int64_t>(j) + 1] > subDivisionHeight)
-          cubeIndex |= bit(1);
-        if (terrainHeights[i][j] > subDivisionHeight + subDivisionLength)
-          cubeIndex |= bit(7);
-        if (terrainHeights[i][static_cast<int64_t>(j) + 1] > subDivisionHeight + subDivisionLength)
-          cubeIndex |= bit(4);
-        if (terrainHeights[static_cast<int64_t>(i) + 1][j] > subDivisionHeight + subDivisionLength)
-          cubeIndex |= bit(6);
-        if (terrainHeights[static_cast<int64_t>(i) + 1][static_cast<int64_t>(j) + 1] > subDivisionHeight + subDivisionLength)
-          cubeIndex |= bit(5);
-
-        for (int tri = 0; tri < 5; ++tri)
-        {
-          const std::array<int8_t, 3> edgeIndices = a2iTriangleConnectionTable[cubeIndex][tri];
-
-          if (edgeIndices[0] < 0)
-            break;
-
-          // Local position of vertex within LOD
-          std::array<Vec3, 3> vertexPositions{};
-          for (int v = 0; v < 3; ++v)
-            vertexPositions[v] = subDivisionLength * Vec3(i, j, k) + subDivisionLength * edgeOffsets[edgeIndices[v]];
-
-          // Calculate vertex normal
-          Vec3 normal = glm::normalize(glm::cross(vertexPositions[1] - vertexPositions[0], vertexPositions[2] - vertexPositions[0]));
-          float lightValue = static_cast<float>((2.0 + normal.z) / 3);
-
-          for (int v = 0; v < 3; ++v)
-            LODMesh.push_back({ vertexPositions[v], v, lightValue });
-        }
-      }
-
-  // Generate vertex array
-  Engine::Shared<Engine::VertexArray> LODVertexArray = Engine::VertexArray::Create();
-  auto LODVertexBuffer = Engine::VertexBuffer::Create(static_cast<uint32_t>(LODMesh.size()) * sizeof(Vertex));
-  LODVertexBuffer->setLayout({ { ShaderDataType::Float3, "a_Position" },
-                               { ShaderDataType::Int,    "a_QuadIndex"},
-                               { ShaderDataType::Float,  "s_LightValue"} });
-  LODVertexArray->addVertexBuffer(LODVertexBuffer);
-
-  uintptr_t dataSize = sizeof(Vertex) * LODMesh.size();
-  LODVertexBuffer->setData(LODMesh.data(), dataSize);
-
-  node->data->vertexArray = LODVertexArray;
-  node->data->meshSize = static_cast<uint32_t>(LODMesh.size());
-}
-
-void ChunkManager::loadNewLODs(LOD::Octree::Node* node)
-{
-  EN_ASSERT(node->LODLevel() > 0, "LOD level cannot be 0!");
-
-  struct Vertex
-  {
-    Vec3 position;
-    int quadIndex;
-    float lightValue;
-  };
-
-  static constexpr int subDivisions = 2 * Chunk::Size();
-
-  const length_t lodLength = bit(node->LODLevel()) * Chunk::Length();
-  const length_t subDivisionLength = lodLength / subDivisions;
-
-  // Generate heightmap
-  length_t minHeight = std::numeric_limits<length_t>::max();
-  length_t maxHeight = -std::numeric_limits<length_t>::max();
-  std::array<std::array<length_t, subDivisions + 1>, subDivisions + 1> terrainHeights{};
-  for (int i = 0; i < subDivisions + 1; ++i)
-    for (int j = 0; j < subDivisions + 1; ++j)
-    {
-      Vec2 pointXY = Chunk::Length() * static_cast<Vec2>(node->anchor) + subDivisionLength * Vec2(i, j);
-      length_t terrainHeight = 150 * Block::Length() * glm::simplex(pointXY / 1280.0 / Block::Length()) + 50 * Block::Length() * glm::simplex(pointXY / 320.0 / Block::Length()) + 5 * Block::Length() * glm::simplex(pointXY / 40.0 / Block::Length());
-      terrainHeights[i][j] = terrainHeight;
-
-      if (terrainHeight > maxHeight)
-        maxHeight = terrainHeight;
-      if (terrainHeight < minHeight)
-        minHeight = terrainHeight;
-    }
-
-  if (node->anchor.k * Chunk::Length() > maxHeight || node->anchor.k * Chunk::Length() + lodLength < minHeight)
-    return;
-
-  // Generate meshes
-  for (int n = 0; n < 8; ++n)
+  const int N = combineMode ? 1 : 8;
+  for (int n = 0; n < N; ++n)
   {
     int i0 = n & bit(2) ? Chunk::Size() : 0;
     int j0 = n & bit(1) ? Chunk::Size() : 0;
@@ -638,8 +508,9 @@ void ChunkManager::loadNewLODs(LOD::Octree::Node* node)
     uintptr_t dataSize = sizeof(Vertex) * LODMesh.size();
     LODVertexBuffer->setData(LODMesh.data(), dataSize);
 
-    node->children[n]->data->vertexArray = LODVertexArray;
-    node->children[n]->data->meshSize = static_cast<uint32_t>(LODMesh.size());
+    LOD::Octree::Node* meshNode = combineMode ? node : node->children[n];
+    meshNode->data->vertexArray = LODVertexArray;
+    meshNode->data->meshSize = static_cast<uint32_t>(LODMesh.size());
   }
 }
 

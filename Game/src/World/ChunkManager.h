@@ -58,6 +58,13 @@ private:
     Near, Far
   };
 
+  struct LODVertex
+  {
+    Vec3 position;
+    int quadIndex;
+    float lightValue;
+  };
+
   static constexpr int s_RenderDistance = 4;
   static constexpr int s_LoadDistance = s_RenderDistance + 2;
   static constexpr int s_UnloadDistance = s_LoadDistance;
@@ -116,8 +123,7 @@ private:
   */
   Chunk* loadNewChunk(const GlobalIndex& chunkIndex);
 
-  void loadNewLOD(LOD::Octree::Node* node);
-  void loadNewLODs(LOD::Octree::Node* node);
+  void loadNewLODs(LOD::Octree::Node* node, bool combineMode);
 
   /*
     Searches for chunk, removes it from whatever map it is currently in,

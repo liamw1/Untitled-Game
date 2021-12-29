@@ -98,14 +98,6 @@ void Player::OnEvent(Engine::Event& event)
   s_CameraController.onEvent(event);
 }
 
-AABB Player::BoundingBox()
-{
-  Vec3 boundingBoxMin = s_LocalPosition - 0.5 * Vec3(s_Width, s_Width, s_Height);
-  Vec3 boundingBoxMax = s_LocalPosition + 0.5 * Vec3(s_Width, s_Width, s_Height);
-
-  return { boundingBoxMin, boundingBoxMax };
-}
-
 const Vec3& Player::ViewDirection() { return s_CameraController.getViewDirection(); }
 const Engine::Camera& Player::Camera() { return s_CameraController.getCamera(); }
 const Engine::CameraController& Player::CameraController() { return s_CameraController; }

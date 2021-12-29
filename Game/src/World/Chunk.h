@@ -139,7 +139,7 @@ public:
   static LocalIndex CalcRelativeIndex(const GlobalIndex& indexA, const GlobalIndex& indexB);
 
 private:
-  enum class MeshState : int
+  enum class MeshState : uint8_t
   {
     NotGenerated = 0,
     NeedsUpdate,

@@ -27,12 +27,12 @@ namespace LOD
     {
       Node* const parent;
       std::array<Node*, 8> children{};
-      const int8_t depth;
+      const int depth;
 
       const GlobalIndex anchor;
       Data* data = nullptr;
 
-      Node(Node* parentNode, int8_t nodeDepth, const GlobalIndex& anchorIndex)
+      Node(Node* parentNode, int nodeDepth, const GlobalIndex& anchorIndex)
         : parent(parentNode), depth(nodeDepth), anchor(anchorIndex) {}
 
       ~Node()
@@ -46,8 +46,8 @@ namespace LOD
         }
       }
 
-      int8_t LODLevel() const { return s_MaxNodeDepth - depth; }
-      int64_t size() const { return bit(LODLevel()); }
+      int LODLevel() const { return s_MaxNodeDepth - depth; }
+      int64_t size() const { return pow2(LODLevel()); }
 
       AABB boundingBox() const { return { anchor, anchor + size() }; }
     };
@@ -60,11 +60,11 @@ namespace LOD
 
     std::vector<Node*> getLeaves();
 
-    static constexpr int8_t MaxNodeDepth() { return s_MaxNodeDepth; }
+    static constexpr int MaxNodeDepth() { return s_MaxNodeDepth; }
 
   private:
-    static constexpr int8_t s_MaxNodeDepth = 10;
-    static constexpr uint64_t s_RootNodeSize = bit(s_MaxNodeDepth);
+    static constexpr int s_MaxNodeDepth = 10;
+    static constexpr uint64_t s_RootNodeSize = pow2(s_MaxNodeDepth);
     static constexpr GlobalIndex s_RootNodeAnchor = -static_cast<globalIndex_t>(s_RootNodeSize / 2) * GlobalIndex({ 1, 1, 1 });
 
     // Root node of the tree
