@@ -116,6 +116,7 @@
     </ClInclude>
     <ClInclude Include="src\Util\Array2D.h" />
     <ClInclude Include="src\Util\Container.h" />
+    <ClInclude Include="src\Util\TransVoxel.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="lib\llvm\include\llvm\Support\MemAlloc.cpp">
