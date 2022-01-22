@@ -211,14 +211,17 @@ void ChunkManager::manageLODs()
   std::vector<LOD::Octree::Node*> leaves = m_LODTree.getLeaves();
 
   // Render LODs
-  ChunkRenderer::BeginScene(Player::Camera());
-  for (int n = 0; n < leaves.size(); ++n)
   {
-    LOD::Octree::Node* node = leaves[n];
-    if (node->data->vertexArray != nullptr && !isInRange(node->anchor, s_RenderDistance))
-      ChunkRenderer::DrawLOD(node);
+    EN_PROFILE_SCOPE("LOD Rendering");
+    ChunkRenderer::BeginScene(Player::Camera());
+    for (int n = 0; n < leaves.size(); ++n)
+    {
+      LOD::Octree::Node* node = leaves[n];
+      if (node->data->vertexArray != nullptr && !isInRange(node->anchor, s_RenderDistance))
+        ChunkRenderer::DrawLOD(node);
+    }
+    ChunkRenderer::EndScene();
   }
-  ChunkRenderer::EndScene();
 
   // Split close nodes and load children
   for (auto it = leaves.begin(); it != leaves.end();)
@@ -431,6 +434,13 @@ void ChunkManager::loadNewLODs(LOD::Octree::Node* node, bool combineMode)
     float lightValue;
   };
 
+  // LOD smoothness parameter, must be in the range [0.0, 1.0]
+#if 1
+  const float S = std::min(0.2f * node->LODLevel(), 1.0f);
+#else
+  const float S = 1.0f;
+#endif
+
   // Number of cells in each direction
   const int cells = combineMode ? Chunk::Size() : 2 * Chunk::Size();
 
@@ -466,7 +476,7 @@ void ChunkManager::loadNewLODs(LOD::Octree::Node* node, bool combineMode)
     int k0 = n & bit(0) ? Chunk::Size() : 0;
 
     std::vector<Vertex> LODMesh{};
-    for (int i = i0; i < i0 + Chunk::Size(); ++i)
+    for (int i = i0; i < i0 + Chunk::Size(); ++i) 
       for (int j = j0; j < j0 + Chunk::Size(); ++j)
         for (int k = k0; k < k0 + Chunk::Size(); ++k)
         {
@@ -486,7 +496,7 @@ void ChunkManager::loadNewLODs(LOD::Octree::Node* node, bool combineMode)
 
           uint8_t cubeEquivClass = regularCellClass[cellCase];
           RegularCellData cellData = regularCellData[cubeEquivClass];
-          int triangleCount = cellData.geometryCounts & 0x0F;
+          int triangleCount = cellData.getTriangleCount();
 
           for (int tri = 0; tri < triangleCount; ++tri)
           {
@@ -498,9 +508,13 @@ void ChunkManager::loadNewLODs(LOD::Octree::Node* node, bool combineMode)
               int vertexIndex = cellData.vertexIndex[3 * tri + v];
               uint16_t vertexData = regularVertexData[cellCase][vertexIndex];
               uint8_t indexA = vertexData & 0x000F;
-              uint8_t indexB = vertexData & 0x00F0 >> 4;
+              uint8_t indexB = (vertexData & 0x00F0) >> 4;
 
-              Vec3 edgeOffset = (cellVertexOffsets[indexA] + cellVertexOffsets[indexB]) / 2;
+              float tA = (terrainHeights[i + ((indexA & bit(0)) != 0)][j + ((indexA & bit(1)) != 0)] - cellAnchorZPos - cellLength * ((indexA & bit(2)) != 0)) / cellLength;
+              float tB = (terrainHeights[i + ((indexB & bit(0)) != 0)][j + ((indexB & bit(1)) != 0)] - cellAnchorZPos - cellLength * ((indexB & bit(2)) != 0)) / cellLength;
+              float t = tA / (tA - tB);
+
+              Vec3 edgeOffset = cellVertexOffsets[indexA] + (0.5 * (1 - S) + t * S) * (cellVertexOffsets[indexB] - cellVertexOffsets[indexA]);
               vertexPositions[v] = cellLength * Vec3(i - i0, j - j0, k - k0) + cellLength * edgeOffset;
             }
 
@@ -511,28 +525,6 @@ void ChunkManager::loadNewLODs(LOD::Octree::Node* node, bool combineMode)
             for (int v = 0; v < 3; ++v)
               LODMesh.push_back({ vertexPositions[v], v, lightValue });
           }
-
-#if 0
-          for (int tri = 0; tri < 5; ++tri)
-          {
-            const std::array<int8_t, 3> edgeIndices = a2iTriangleConnectionTable[cellCase][tri];
-
-            if (edgeIndices[0] < 0)
-              break;
-
-            // Local position of vertex within LOD
-            std::array<Vec3, 3> vertexPositions{};
-            for (int v = 0; v < 3; ++v)
-              vertexPositions[v] = cellLength * Vec3(i - i0, j - j0, k - k0) + cellLength * edgeOffsets[edgeIndices[v]];
-
-            // Calculate vertex normal
-            Vec3 normal = glm::normalize(glm::cross(vertexPositions[1] - vertexPositions[0], vertexPositions[2] - vertexPositions[0]));
-            float lightValue = static_cast<float>((2.0 + normal.z) / 3);
-
-            for (int v = 0; v < 3; ++v)
-              LODMesh.push_back({ vertexPositions[v], v, lightValue });
-          }
-#endif
         }
 
     // Generate vertex array

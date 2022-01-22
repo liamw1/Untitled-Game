@@ -11,8 +11,8 @@ struct RegularCellData
 	uint8_t	geometryCounts;		// High nibble is vertex count, low nibble is triangle count.
 	uint8_t	vertexIndex[15];	// Groups of 3 indexes giving the triangulation.
 
-	int64_t GetVertexCount(void) const { return (geometryCounts >> 4); }
-	int64_t GetTriangleCount(void) const { return (geometryCounts & 0x0F); }
+	int getVertexCount(void) const { return (geometryCounts >> 4); }
+	int getTriangleCount(void) const { return (geometryCounts & 0x0F); }
 };
 
 /*

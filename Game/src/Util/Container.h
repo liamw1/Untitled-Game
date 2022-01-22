@@ -14,7 +14,7 @@ public:
   Container(const int size1, const int size2)
     : M(size2), index1(0)
   {
-    data = new T[size1 * size2];
+    data = new T[size1 * static_cast<int64_t>(size2)];
   }
 
   Container(const Container& other) = delete;
