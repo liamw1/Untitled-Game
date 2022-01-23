@@ -1,7 +1,6 @@
 #include "GMpch.h"
 #include "Chunk.h"
 #include "Player/Player.h"
-#include "Util/MarchingCubes.h"
 
 Engine::Shared<Engine::IndexBuffer> Chunk::s_MeshIndexBuffer = nullptr;
 
@@ -152,13 +151,13 @@ void Chunk::reset()
 
 LocalIndex Chunk::getLocalIndex() const
 {
-  return CalcRelativeIndex(m_GlobalIndex, Player::OriginIndex());
-}
+  EN_ASSERT(abs(m_GlobalIndex.i - Player::OriginIndex().i) < std::numeric_limits<localIndex_t>::max() &&
+            abs(m_GlobalIndex.j - Player::OriginIndex().j) < std::numeric_limits<localIndex_t>::max() &&
+            abs(m_GlobalIndex.k - Player::OriginIndex().k) < std::numeric_limits<localIndex_t>::max(), "Difference between global indices is too large, will cause overflow!");
 
-Vec3 Chunk::anchorPoint() const
-{
-  const LocalIndex localIndex = getLocalIndex();
-  return s_ChunkLength * Vec3(localIndex.i, localIndex.j, localIndex.k);
+  return { static_cast<localIndex_t>(m_GlobalIndex.i - Player::OriginIndex().i),
+           static_cast<localIndex_t>(m_GlobalIndex.j - Player::OriginIndex().j),
+           static_cast<localIndex_t>(m_GlobalIndex.k - Player::OriginIndex().k) };
 }
 
 BlockType Chunk::getBlockType(blockIndex_t i, blockIndex_t j, blockIndex_t k) const
@@ -310,17 +309,6 @@ void Chunk::InitializeIndexBuffer()
   delete[] meshIndices;
 }
 
-LocalIndex Chunk::CalcRelativeIndex(const GlobalIndex& indexA, const GlobalIndex& indexB)
-{
-  EN_ASSERT(abs(indexA.i - indexB.i) < std::numeric_limits<localIndex_t>::max() &&
-            abs(indexA.i - indexB.i) < std::numeric_limits<localIndex_t>::max() &&
-            abs(indexA.i - indexB.i) < std::numeric_limits<localIndex_t>::max(), "Difference between global indices is too large, will cause overflow!");
-
-  return { static_cast<localIndex_t>(indexA.i - indexB.i),
-           static_cast<localIndex_t>(indexA.j - indexB.j),
-           static_cast<localIndex_t>(indexA.k - indexB.k) };
-}
-
 
 
 void Chunk::generateMesh()
@@ -464,7 +452,7 @@ void Chunk::markAsEmpty()
 
 BlockIndex Chunk::blockIndexFromPos(const Vec3& position) const
 {
-  Vec3 localPosition = position - anchorPoint();
+  Vec3 localPosition = position - anchorPosition();
 
   EN_ASSERT(localPosition.x >= 0.0 && localPosition.x <= s_ChunkLength &&
             localPosition.y >= 0.0 && localPosition.y <= s_ChunkLength &&

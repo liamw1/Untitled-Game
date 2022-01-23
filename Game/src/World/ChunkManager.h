@@ -1,6 +1,7 @@
 #pragma once
 #include "Chunk.h"
 #include "LOD.h"
+#include "Util/Array2D.h"
 #include <llvm/ADT/DenseMap.h>
 
 class ChunkManager
@@ -123,7 +124,7 @@ private:
   */
   Chunk* loadNewChunk(const GlobalIndex& chunkIndex);
 
-  void loadNewLODs(LOD::Octree::Node* node, bool combineMode);
+  void generateLODMesh(LOD::Octree::Node* node);
 
   /*
     Searches for chunk, removes it from whatever map it is currently in,
@@ -155,4 +156,7 @@ private:
   void moveToMap(Chunk* const chunk, MapType source, MapType destination);
 
   bool isOnBoundary(const Chunk* const chunk) const;
+
+  // NOTE: Replace this with more robust biome/terrain system
+  length_t terrainFunction(const Vec2& pointXY) const;
 };

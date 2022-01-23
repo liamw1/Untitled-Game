@@ -2,11 +2,6 @@
 #include "Block/Block.h"
 #include "Indexing.h"
 
-struct Vertex
-{
-  Float3 position;
-};
-
 struct HeightMap
 {
   globalIndex_t chunkI;
@@ -82,18 +77,19 @@ public:
   const GlobalIndex& getGlobalIndex() const { return m_GlobalIndex; }
 
   /*
-    A chunk's (local) anchor point is its bottom southeast vertex.
+    A chunk's anchor point is its bottom southeast vertex.
+    Position given relative to the anchor of the origin chunk.
 
     Useful property:
     If the anchor point is denoted by A, then for any point
     X within the chunk, X_i >= X_i.
   */
-  Vec3 anchorPoint() const;
+  Vec3 anchorPosition() const { return s_ChunkLength * static_cast<Vec3>(getLocalIndex()); }
 
   /*
-    \returns The chunk's (local) geometric center.
+    \returns The chunk's geometric center relative to origin chunk.
   */
-  Vec3 center() const { return anchorPoint() + s_ChunkLength / 2; }
+  Vec3 center() const { return anchorPosition() + s_ChunkLength / 2; }
 
   /*
     \returns A pointer to the neighboring chunk in the specified direction.
@@ -136,8 +132,6 @@ public:
 
   static void InitializeIndexBuffer();
 
-  static LocalIndex CalcRelativeIndex(const GlobalIndex& indexA, const GlobalIndex& indexB);
-
 private:
   enum class MeshState : uint8_t
   {
@@ -145,6 +139,11 @@ private:
     NeedsUpdate,
     Simple,
     Optimized
+  };
+
+  struct Vertex
+  {
+    Float3 position;
   };
 
   // Size and dimension

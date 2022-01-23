@@ -1,5 +1,4 @@
-#pragma once
-#include <cstdint>
+#include "GMpch.h"
 
 /*
   The RegularCellData structure holds information about the triangulation
@@ -11,8 +10,23 @@ struct RegularCellData
 	uint8_t	geometryCounts;		// High nibble is vertex count, low nibble is triangle count.
 	uint8_t	vertexIndex[15];	// Groups of 3 indexes giving the triangulation.
 
-	int getVertexCount(void) const { return (geometryCounts >> 4); }
-	int getTriangleCount(void) const { return (geometryCounts & 0x0F); }
+	int getVertexCount() const { return (geometryCounts >> 4); }
+	int getTriangleCount() const { return (geometryCounts & 0x0F); }
+};
+
+/*
+	Normalized offsets of cell corners.  Offset measured from cell anchor.
+*/
+static constexpr Vec3 cellVertexOffsets[8] =
+{
+	Vec3(0.0, 0.0, 0.0),
+	Vec3(1.0, 0.0, 0.0),
+	Vec3(0.0, 1.0, 0.0),
+	Vec3(1.0, 1.0, 0.0),
+	Vec3(0.0, 0.0, 1.0),
+	Vec3(1.0, 0.0, 1.0),
+	Vec3(0.0, 1.0, 1.0),
+	Vec3(1.0, 1.0, 1.0)
 };
 
 /*
@@ -22,7 +36,7 @@ struct RegularCellData
   just with different vertex locations. We combined those classes for this table so
   that the class index ranges from 0 to 15.
 */
-constexpr uint8_t regularCellClass[256] =
+static constexpr uint8_t regularCellClass[256] =
 {
 	0x00, 0x01, 0x01, 0x03, 0x01, 0x03, 0x02, 0x04, 0x01, 0x02, 0x03, 0x04, 0x03, 0x04, 0x04, 0x03,
 	0x01, 0x03, 0x02, 0x04, 0x02, 0x04, 0x06, 0x0C, 0x02, 0x05, 0x05, 0x0B, 0x05, 0x0A, 0x07, 0x04,
@@ -46,7 +60,7 @@ constexpr uint8_t regularCellClass[256] =
   The regularCellData table holds the triangulation data for all 16 distinct classes to
   which a case can be mapped by the regularCellClass table.
 */
-constexpr RegularCellData regularCellData[16] =
+static constexpr RegularCellData regularCellData[16] =
 {
 	{0x00, {}},
 	{0x31, {0, 1, 2}},
@@ -73,7 +87,7 @@ constexpr RegularCellData regularCellData[16] =
   The low byte contains the indexes for the two endpoints of the edge on which the vertex lies,
   as numbered in Figure 3.7. The high byte contains the vertex reuse data shown in Figure 3.8.
 */
-constexpr uint16_t regularVertexData[256][12] =
+static constexpr uint16_t regularVertexData[256][12] =
 {
 	{},
 	{0x6201, 0x5102, 0x3304},

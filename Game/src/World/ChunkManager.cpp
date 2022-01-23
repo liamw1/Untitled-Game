@@ -2,9 +2,7 @@
 #include "ChunkManager.h"
 #include "ChunkRenderer.h"
 #include "Player/Player.h"
-#include "Util/MarchingCubes.h"
-#include "Util/TransVoxel.h"
-#include "Util/Array2D.h"
+#include "Util/TransVoxel.cpp"
 #include <glm/gtc/matrix_access.hpp>
 
 ChunkManager::ChunkManager()
@@ -213,12 +211,32 @@ void ChunkManager::manageLODs()
   // Render LODs
   {
     EN_PROFILE_SCOPE("LOD Rendering");
+
+    std::array<Vec4, 6> frustumPlanes = calculateViewFrustumPlanes(Player::Camera());
+    std::array<Vec4, 6> shiftedFrustumPlanes = frustumPlanes;
+    std::array<length_t, 6> planeNormalMags = { glm::length(Vec3(frustumPlanes[static_cast<int>(FrustumPlane::Left)])),
+                                                glm::length(Vec3(frustumPlanes[static_cast<int>(FrustumPlane::Right)])),
+                                                glm::length(Vec3(frustumPlanes[static_cast<int>(FrustumPlane::Bottom)])),
+                                                glm::length(Vec3(frustumPlanes[static_cast<int>(FrustumPlane::Top)])),
+                                                glm::length(Vec3(frustumPlanes[static_cast<int>(FrustumPlane::Near)])),
+                                                glm::length(Vec3(frustumPlanes[static_cast<int>(FrustumPlane::Far)])), };
+
     ChunkRenderer::BeginScene(Player::Camera());
     for (int n = 0; n < leaves.size(); ++n)
     {
       LOD::Octree::Node* node = leaves[n];
+
       if (node->data->vertexArray != nullptr && !isInRange(node->anchor, s_RenderDistance))
-        ChunkRenderer::DrawLOD(node);
+      {
+        // Shift each plane by distance equal to radius of sphere that circumscribes LOD
+        static constexpr float sqrt3 = 1.732050807568877f;
+        const length_t LODSphereRadius = sqrt3 * node->length() / 2;
+        for (int planeID = 0; planeID < 6; ++planeID)
+          shiftedFrustumPlanes[planeID].w = frustumPlanes[planeID].w + LODSphereRadius * planeNormalMags[planeID];
+
+        if (isInFrustum(node->center(), shiftedFrustumPlanes))
+          ChunkRenderer::DrawLOD(node);
+      }
     }
     ChunkRenderer::EndScene();
   }
@@ -238,8 +256,8 @@ void ChunkManager::manageLODs()
       {
         m_LODTree.splitNode(node);
 
-          // Load children
-        loadNewLODs(node, false);
+        for (int i = 0; i < 8; ++i)
+          generateLODMesh(node->children[i]);
 
         it = leaves.erase(it);
         continue;
@@ -269,7 +287,7 @@ void ChunkManager::manageLODs()
   for (int i = 0; i < cannibalNodes.size(); ++i)
   {
     m_LODTree.combineChildren(cannibalNodes[i]);
-    loadNewLODs(cannibalNodes[i], true);
+    generateLODMesh(cannibalNodes[i]);
   }
 }
 
@@ -378,7 +396,7 @@ HeightMap ChunkManager::generateHeightMap(globalIndex_t chunkI, globalIndex_t ch
     for (int j = 0; j < Chunk::Size(); ++j)
     {
       Vec2 blockXY = Chunk::Length() * Vec2(chunkI, chunkJ) + Block::Length() * (Vec2(i, j) + Vec2(0.5));
-      length_t terrainHeight = 150 * Block::Length() * glm::simplex(blockXY / 1280.0 / Block::Length()) + 50 * Block::Length() * glm::simplex(blockXY / 320.0 / Block::Length()) + 5 * Block::Length() * glm::simplex(blockXY / 40.0 / Block::Length());
+      length_t terrainHeight = terrainFunction(blockXY);
       heightMap.terrainHeights[i][j] = terrainHeight;
 
       if (terrainHeight > heightMap.maxHeight)
@@ -411,29 +429,8 @@ Chunk* ChunkManager::loadNewChunk(const GlobalIndex& chunkIndex)
   return newChunk;
 }
 
-void ChunkManager::loadNewLODs(LOD::Octree::Node* node, bool combineMode)
+void ChunkManager::generateLODMesh(LOD::Octree::Node* node)
 {
-  EN_ASSERT(node->LODLevel() > 0, "LOD level cannot be 0!");
-
-  static constexpr Vec3 cellVertexOffsets[8] =
-  {
-    Vec3(0.0, 0.0, 0.0),
-    Vec3(1.0, 0.0, 0.0),
-    Vec3(0.0, 1.0, 0.0),
-    Vec3(1.0, 1.0, 0.0),
-    Vec3(0.0, 0.0, 1.0),
-    Vec3(1.0, 0.0, 1.0),
-    Vec3(0.0, 1.0, 1.0),
-    Vec3(1.0, 1.0, 1.0)
-  };
-
-  struct Vertex
-  {
-    Vec3 position;
-    int quadIndex;
-    float lightValue;
-  };
-
   // LOD smoothness parameter, must be in the range [0.0, 1.0]
 #if 1
   const float S = std::min(0.2f * node->LODLevel(), 1.0f);
@@ -441,107 +438,125 @@ void ChunkManager::loadNewLODs(LOD::Octree::Node* node, bool combineMode)
   const float S = 1.0f;
 #endif
 
+  // NOTE: These values should come from biome system when implemented
+  static constexpr length_t globalMinTerrainHeight = -255 * Block::Length();
+  static constexpr length_t globalMaxTerrainHeight = 255 * Block::Length();
+
   // Number of cells in each direction
-  const int cells = combineMode ? Chunk::Size() : 2 * Chunk::Size();
+  constexpr int cells = Chunk::Size();
 
   const length_t lodLength = pow2(node->LODLevel()) * Chunk::Length();
   const length_t cellLength = lodLength / cells;
 
+  if (node->anchor.k * Chunk::Length() > globalMaxTerrainHeight || node->anchor.k * Chunk::Length() + lodLength < globalMinTerrainHeight)
+    return;
+
   // Generate heightmap
-  length_t minHeight = std::numeric_limits<length_t>::max();
-  length_t maxHeight = -std::numeric_limits<length_t>::max();
-  Array2D<length_t> terrainHeights = Array2D<length_t>(cells + 1, cells + 1);
+  length_t minTerrainHeight = std::numeric_limits<length_t>::max();
+  length_t maxTerrainHeight = -std::numeric_limits<length_t>::max();
+  std::array<std::array<length_t, cells + 1>, cells + 1> terrainHeights{};
   for (int i = 0; i < cells + 1; ++i)
     for (int j = 0; j < cells + 1; ++j)
     {
       Vec2 pointXY = Chunk::Length() * static_cast<Vec2>(node->anchor) + cellLength * Vec2(i, j);
-      length_t terrainHeight = 150 * Block::Length() * glm::simplex(pointXY / 1280.0 / Block::Length()) + 50 * Block::Length() * glm::simplex(pointXY / 320.0 / Block::Length()) + 5 * Block::Length() * glm::simplex(pointXY / 40.0 / Block::Length());
+      length_t terrainHeight = terrainFunction(pointXY);
       terrainHeights[i][j] = terrainHeight;
 
-      if (terrainHeight > maxHeight)
-        maxHeight = terrainHeight;
-      if (terrainHeight < minHeight)
-        minHeight = terrainHeight;
+      if (terrainHeight > maxTerrainHeight)
+        maxTerrainHeight = terrainHeight;
+      if (terrainHeight < minTerrainHeight)
+        minTerrainHeight = terrainHeight;
     }
 
-  if (node->anchor.k * Chunk::Length() > maxHeight || node->anchor.k * Chunk::Length() + lodLength < minHeight)
+  if (node->anchor.k * Chunk::Length() > maxTerrainHeight || node->anchor.k * Chunk::Length() + lodLength < minTerrainHeight)
     return;
 
-  // Generate meshes
-  const int N = combineMode ? 1 : 8;
-  for (int n = 0; n < N; ++n)
-  {
-    int i0 = n & bit(2) ? Chunk::Size() : 0;
-    int j0 = n & bit(1) ? Chunk::Size() : 0;
-    int k0 = n & bit(0) ? Chunk::Size() : 0;
+  // Generate mesh
+  std::vector<LOD::Vertex> LODMesh{};
+  for (int i = 0; i < cells; ++i)
+    for (int j = 0; j < cells; ++j)
+      for (int k = 0; k < cells; ++k)
+      {
+        const length_t cellAnchorZPos = node->anchor.k * Chunk::Length() + k * cellLength;
 
-    std::vector<Vertex> LODMesh{};
-    for (int i = i0; i < i0 + Chunk::Size(); ++i) 
-      for (int j = j0; j < j0 + Chunk::Size(); ++j)
-        for (int k = k0; k < k0 + Chunk::Size(); ++k)
+        // Determine which of the 256 cases the cell belongs to
+        uint8_t cellCase = 0;
+        for (int v = 0; v < 8; ++v)
         {
-          const length_t cellAnchorZPos = node->anchor.k * Chunk::Length() + k * cellLength;
+          // Cell vertex indices and z-position
+          int I = v & bit(0) ? i + 1 : i;
+          int J = v & bit(1) ? j + 1 : j;
+          length_t Z = v & bit(2) ? cellAnchorZPos + cellLength : cellAnchorZPos;
 
-          uint8_t cellCase = 0;
-          for (int v = 0; v < 8; ++v)
-          {
-            // Cell vertex indices and z-position
-            int vI = v & bit(0) ? i + 1 : i;
-            int vJ = v & bit(1) ? j + 1 : j;
-            length_t vZ = v & bit(2) ? cellAnchorZPos + cellLength : cellAnchorZPos;
-
-            if (terrainHeights[vI][vJ] > vZ)
-              cellCase |= bit(v);
-          }
-
-          uint8_t cubeEquivClass = regularCellClass[cellCase];
-          RegularCellData cellData = regularCellData[cubeEquivClass];
-          int triangleCount = cellData.getTriangleCount();
-
-          for (int tri = 0; tri < triangleCount; ++tri)
-          {
-            // Local positions of vertices within LOD
-            std::array<Vec3, 3> vertexPositions{};
-
-            for (int v = 0; v < 3; ++v)
-            {
-              int vertexIndex = cellData.vertexIndex[3 * tri + v];
-              uint16_t vertexData = regularVertexData[cellCase][vertexIndex];
-              uint8_t indexA = vertexData & 0x000F;
-              uint8_t indexB = (vertexData & 0x00F0) >> 4;
-
-              float tA = (terrainHeights[i + ((indexA & bit(0)) != 0)][j + ((indexA & bit(1)) != 0)] - cellAnchorZPos - cellLength * ((indexA & bit(2)) != 0)) / cellLength;
-              float tB = (terrainHeights[i + ((indexB & bit(0)) != 0)][j + ((indexB & bit(1)) != 0)] - cellAnchorZPos - cellLength * ((indexB & bit(2)) != 0)) / cellLength;
-              float t = tA / (tA - tB);
-
-              Vec3 edgeOffset = cellVertexOffsets[indexA] + (0.5 * (1 - S) + t * S) * (cellVertexOffsets[indexB] - cellVertexOffsets[indexA]);
-              vertexPositions[v] = cellLength * Vec3(i - i0, j - j0, k - k0) + cellLength * edgeOffset;
-            }
-
-            // Calculate vertex normal
-            Vec3 normal = glm::normalize(glm::cross(vertexPositions[1] - vertexPositions[0], vertexPositions[2] - vertexPositions[0]));
-            float lightValue = static_cast<float>((2.0 + normal.z) / 3);
-
-            for (int v = 0; v < 3; ++v)
-              LODMesh.push_back({ vertexPositions[v], v, lightValue });
-          }
+          if (terrainHeights[I][J] > Z)
+            cellCase |= bit(v);
         }
 
-    // Generate vertex array
-    Engine::Shared<Engine::VertexArray> LODVertexArray = Engine::VertexArray::Create();
-    auto LODVertexBuffer = Engine::VertexBuffer::Create(static_cast<uint32_t>(LODMesh.size()) * sizeof(Vertex));
-    LODVertexBuffer->setLayout({ { ShaderDataType::Float3, "a_Position" },
-                                 { ShaderDataType::Int,    "a_QuadIndex"},
-                                 { ShaderDataType::Float,  "s_LightValue"} });
-    LODVertexArray->addVertexBuffer(LODVertexBuffer);
+        // Use lookup table to determine which of 16 equivalence classes the cell belongs to
+        uint8_t cubeEquivClass = regularCellClass[cellCase];
+        RegularCellData cellData = regularCellData[cubeEquivClass];
+        int triangleCount = cellData.getTriangleCount();
 
-    uintptr_t dataSize = sizeof(Vertex) * LODMesh.size();
-    LODVertexBuffer->setData(LODMesh.data(), dataSize);
+        // Loop over all triangles in cell
+        for (int tri = 0; tri < triangleCount; ++tri)
+        {
+          // Local positions of vertices within LOD
+          std::array<Vec3, 3> vertexPositions{};
 
-    LOD::Octree::Node* meshNode = combineMode ? node : node->children[n];
-    meshNode->data->vertexArray = LODVertexArray;
-    meshNode->data->meshSize = static_cast<uint32_t>(LODMesh.size());
-  }
+          for (int v = 0; v < 3; ++v)
+          {
+            // Lookup indices of vertices A,B of the cell edge that vertex v lies on
+            int cellEdgeIndex = cellData.vertexIndex[3 * tri + v];
+            uint16_t vertexData = regularVertexData[cellCase][cellEdgeIndex];
+            uint8_t indexA = vertexData & 0x000F;
+            uint8_t indexB = (vertexData & 0x00F0) >> 4;
+
+            // Normalized vertex positions
+            Vec3 vertA = cellVertexOffsets[indexA];
+            Vec3 vertB = cellVertexOffsets[indexB];
+
+            // Cell vertex indices and z-positions
+            int iA = indexA & bit(0) ? i + 1 : i;
+            int iB = indexB & bit(0) ? i + 1 : i;
+            int jA = indexA & bit(1) ? j + 1 : j;
+            int jB = indexB & bit(1) ? j + 1 : j;
+            length_t zA = indexA & bit(2) ? cellAnchorZPos + cellLength : cellAnchorZPos;
+            length_t zB = indexB & bit(2) ? cellAnchorZPos + cellLength : cellAnchorZPos;
+
+            // Isovalues of vertices A and B
+            float tA = terrainHeights[iA][jA] - zA;
+            float tB = terrainHeights[iB][jB] - zB;
+
+            float t = tA / (tA - tB);
+
+            // Calculate the position of the vertex on the cell edge.  The smoothness parameter S is used to interpolate between 
+            // roughest iso-surface (vertex is always chosen at edge midpoint) and the smooth iso-surface interpolation used by Paul Bourke.
+            Vec3 edgeOffset = vertA + (0.5 * (1 - S) + t * S) * (vertB - vertA);
+            vertexPositions[v] = cellLength * Vec3(i, j, k) + cellLength * edgeOffset;
+          }
+
+          // Calculate vertex normal
+          Vec3 normal = glm::normalize(glm::cross(vertexPositions[1] - vertexPositions[0], vertexPositions[2] - vertexPositions[0]));
+          float lightValue = static_cast<float>((2.0 + normal.z) / 3);
+
+          for (int v = 0; v < 3; ++v)
+            LODMesh.push_back({ vertexPositions[v], v, lightValue });
+        }
+      }
+
+  // Generate vertex array
+  Engine::Shared<Engine::VertexArray> LODVertexArray = Engine::VertexArray::Create();
+  auto LODVertexBuffer = Engine::VertexBuffer::Create(static_cast<uint32_t>(LODMesh.size()) * sizeof(LOD::Vertex));
+  LODVertexBuffer->setLayout({ { ShaderDataType::Float3, "a_Position" },
+                               { ShaderDataType::Int,    "a_QuadIndex"},
+                               { ShaderDataType::Float,  "s_LightValue"} });
+  LODVertexArray->addVertexBuffer(LODVertexBuffer);
+
+  uintptr_t dataSize = sizeof(LOD::Vertex) * LODMesh.size();
+  LODVertexBuffer->setData(LODMesh.data(), dataSize);
+
+  node->data->vertexArray = LODVertexArray;
+  node->data->meshSize = static_cast<uint32_t>(LODMesh.size());
 }
 
 void ChunkManager::unloadChunk(Chunk* const chunk)
@@ -621,4 +636,13 @@ bool ChunkManager::isOnBoundary(const Chunk* const chunk) const
     if (chunk->getNeighbor(face) == nullptr && !chunk->isFaceOpaque(face))
       return true;
   return false;
+}
+
+length_t ChunkManager::terrainFunction(const Vec2& pointXY) const
+{
+  length_t Octave1 = 150 * Block::Length() * glm::simplex(pointXY / 1280.0 / Block::Length());
+  length_t Octave2 = 50 * Block::Length() * glm::simplex(pointXY / 320.0 / Block::Length());
+  length_t Octave3 = 5 * Block::Length() * glm::simplex(pointXY / 40.0 / Block::Length());
+
+  return Octave1 + Octave2 + Octave3;
 }

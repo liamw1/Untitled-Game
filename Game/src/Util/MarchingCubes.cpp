@@ -1,5 +1,4 @@
-#pragma once
-#include <cstdint>
+#include "GMpch.h"
 
 constexpr uint8_t blockOffset2CubeIndex[3][3][3] =
 {

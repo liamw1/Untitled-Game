@@ -59,11 +59,16 @@ using Vec4 = typename vec4Selector<std::is_same<double, length_t>::value>::type;
 using Mat3 = typename mat3Selector<std::is_same<double, length_t>::value>::type;
 using Mat4 = typename mat4Selector<std::is_same<double, length_t>::value>::type;
 
-using Float2 = glm::vec2;  using Double2 = glm::dvec2;
-using Float3 = glm::vec3;  using Double3 = glm::dvec3;
-using Float4 = glm::vec4;  using Double4 = glm::dvec4;
-using Float3x3 = glm::mat3;  using Double3x3 = glm::dmat3;
-using Float4x4 = glm::mat4;  using Double4x4 = glm::dmat4;
+using Float2 = glm::vec2;  
+using Float3 = glm::vec3;  
+using Float4 = glm::vec4;  
+using Float3x3 = glm::mat3;
+using Float4x4 = glm::mat4;
+using Double2 = glm::dvec2;
+using Double3 = glm::dvec3;
+using Double4 = glm::dvec4;
+using Double3x3 = glm::dmat3;
+using Double4x4 = glm::dmat4;
 
 // Missing operators for glm vectors
 constexpr glm::vec2 operator*(double x, glm::vec2 vec) { return vec *= x; }

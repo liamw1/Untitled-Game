@@ -59,7 +59,7 @@ void ChunkRenderer::DrawChunk(const Chunk* chunk)
 
   chunk->bindBuffers();
   s_BlockFaceShader->bind();
-  s_BlockFaceShader->setFloat3("u_ChunkPosition", chunk->anchorPoint());
+  s_BlockFaceShader->setFloat3("u_ChunkPosition", chunk->anchorPosition());
   Engine::RenderCommand::DrawIndexed(chunk->getVertexArray(), meshIndexCount);
 }
 
