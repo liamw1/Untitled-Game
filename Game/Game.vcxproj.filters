@@ -93,7 +93,7 @@
     <ClInclude Include="src\Player\Player.h">
       <Filter>src\Player</Filter>
     </ClInclude>
-    <ClInclude Include="src\Util\MarchingCubes.cpp">
+    <ClInclude Include="src\Util\MarchingCubes.h">
       <Filter>src\Util</Filter>
     </ClInclude>
     <ClInclude Include="src\World\Chunk.h">
@@ -116,7 +116,8 @@
     </ClInclude>
     <ClInclude Include="src\Util\Array2D.h" />
     <ClInclude Include="src\Util\Container.h" />
-    <ClInclude Include="src\Util\TransVoxel.cpp" />
+    <ClInclude Include="src\Util\TransVoxel.h" />
+    <ClInclude Include="src\Util\Noise.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="lib\llvm\include\llvm\Support\MemAlloc.cpp">
@@ -152,5 +153,6 @@
     <ClCompile Include="src\World\World.cpp">
       <Filter>src\World</Filter>
     </ClCompile>
+    <ClCompile Include="src\Util\Noise.cpp" />
   </ItemGroup>
 </Project>

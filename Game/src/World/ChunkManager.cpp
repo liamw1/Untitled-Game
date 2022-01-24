@@ -2,7 +2,8 @@
 #include "ChunkManager.h"
 #include "ChunkRenderer.h"
 #include "Player/Player.h"
-#include "Util/TransVoxel.cpp"
+#include "Util/TransVoxel.h"
+#include "Util/Noise.h"
 #include <glm/gtc/matrix_access.hpp>
 
 ChunkManager::ChunkManager()

@@ -1,4 +1,6 @@
-#include "GMpch.h"
+#pragma once
+#include <cstdint>
+#include <VecTypes.h>
 
 constexpr uint8_t blockOffset2CubeIndex[3][3][3] =
 {

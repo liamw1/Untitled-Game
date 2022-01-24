@@ -1,4 +1,6 @@
-#include "GMpch.h"
+#pragma once
+#include <cstdint>
+#include <VecTypes.h>
 
 /*
   The RegularCellData structure holds information about the triangulation
