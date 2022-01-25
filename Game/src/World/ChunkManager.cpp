@@ -641,9 +641,9 @@ bool ChunkManager::isOnBoundary(const Chunk* const chunk) const
 
 length_t ChunkManager::terrainFunction(const Vec2& pointXY) const
 {
-  length_t Octave1 = 150 * Block::Length() * glm::simplex(pointXY / 1280.0 / Block::Length());
-  length_t Octave2 = 50 * Block::Length() * glm::simplex(pointXY / 320.0 / Block::Length());
-  length_t Octave3 = 5 * Block::Length() * glm::simplex(pointXY / 40.0 / Block::Length());
+  length_t Octave1 = 150 * Block::Length() * Noise::FastSimplex2D(pointXY / 1280.0 / Block::Length());
+  length_t Octave2 = 50 * Block::Length() *  Noise::FastSimplex2D(pointXY / 320.0 / Block::Length());
+  length_t Octave3 = 5 * Block::Length() *   Noise::FastSimplex2D(pointXY / 40.0 / Block::Length());
 
   return Octave1 + Octave2 + Octave3;
 }

@@ -46,6 +46,10 @@ constexpr glm::vec3 operator*(double x, glm::vec3 v) { return v *= x; }
 constexpr glm::vec3 operator*(glm::vec3 v, double x) { return v *= x; }
 constexpr glm::vec3 operator/(glm::vec3 v, double x) { return v /= x; }
 
+constexpr glm::vec4 operator*(double x, glm::vec4 v) { return v *= x; }
+constexpr glm::vec4 operator*(glm::vec4 v, double x) { return v *= x; }
+constexpr glm::vec4 operator/(glm::vec4 v, double x) { return v /= x; }
+
 constexpr glm::dvec2 operator*(float x, glm::dvec2 v) { return v *= x; }
 constexpr glm::dvec2 operator*(glm::dvec2 v, float x) { return v *= x; }
 constexpr glm::dvec2 operator/(glm::dvec2 v, float x) { return v /= x; }
@@ -54,7 +58,6 @@ constexpr glm::dvec3 operator*(float x, glm::dvec3 v) { return v *= x; }
 constexpr glm::dvec3 operator*(glm::dvec3 v, float x) { return v *= x; }
 constexpr glm::dvec3 operator/(glm::dvec3 v, float x) { return v /= x; }
 
-constexpr glm::vec2 operator*(glm::vec2 v, glm::vec2 u) { return { v.x * u.x, v.y * u.y }; }
-constexpr glm::vec3 operator*(glm::vec3 v, glm::vec3 u) { return { v.x * u.x, v.y * u.y, v.z * u.z }; }
-constexpr glm::dvec2 operator*(glm::dvec2 v, glm::dvec2 u) { return { v.x * u.x, v.y * u.y }; }
-constexpr glm::dvec3 operator*(glm::dvec3 v, glm::dvec3 u) { return { v.x * u.x, v.y * u.y, v.z * u.z }; }
+constexpr glm::dvec4 operator*(float x, glm::dvec4 v) { return v *= x; }
+constexpr glm::dvec4 operator*(glm::dvec4 v, float x) { return v *= x; }
+constexpr glm::dvec4 operator/(glm::dvec4 v, float x) { return v /= x; }
