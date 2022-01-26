@@ -252,18 +252,11 @@ length_t Noise::FastTerrainNoise2D(const Vec2& pointXY)
   return octave1 + octave2 + octave3;
 }
 
-Vec4 Noise::TerrainNoise2D(const Vec2& pointXY)
+Vec3 Noise::TerrainNoise2D(const Vec2& pointXY)
 {
   Vec3 octave1 = 150 * Block::Length() * Simplex2D(pointXY / 1280.0 / Block::Length());
 
-  Vec3 noise = octave1;
-  Vec2 gradient = Vec2(noise);
-  length_t value = noise.z;
-
-  // Calculate surface normal
-  Vec3 normal = glm::normalize(Vec3(-gradient, 1));
-
-  return Vec4(normal, value);
+  return octave1;
 }
 
 Vec4 Noise::TerrainNoise3D(const Vec3& position)
