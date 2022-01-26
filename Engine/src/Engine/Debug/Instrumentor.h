@@ -69,7 +69,7 @@ namespace Engine
       json << "\"ph\":\"X\",";
       json << "\"pid\":0,";
       json << "\"tid\":" << threadID << ",";
-      json << "\"ts\":" << startTimeInNanoseconds / 1e3;
+      json << "\"ts\":" << static_cast<double>(startTimeInNanoseconds) / 1e3;
       json << "}";
 
       std::lock_guard lock(m_Mutex);

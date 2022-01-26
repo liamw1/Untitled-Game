@@ -36,7 +36,7 @@ Vec4 taylorInvSqrt(const Vec4& r)
 Vec2 hash(const Vec2& v)
 {
   Vec2 p = Vec2(glm::dot(v, Vec2(127.1, 311.7)), glm::dot(v, Vec2(269.5, 183.3)));
-  return 2 * glm::fract(43758.5453123 * glm::sin(p)) - Vec2(1.0);
+  return 2 * glm::fract(43758.5453123 * sin(p)) - Vec2(1.0);
 }
 
 /*
@@ -55,6 +55,22 @@ static Vec2 rgrad2(Vec2 v, radians rot)
   u = 2 * PI * fract(u);
   return Vec2(cos(u), sin(u));
 #endif
+}
+
+length_t Noise::FastSimplex2D(const Vec2& v)
+{
+  static constexpr length_t K1 = static_cast<length_t>(0.366025404); // (sqrt(3)-1)/2;
+  static constexpr length_t K2 = static_cast<length_t>(0.211324865); // (3-sqrt(3))/6;
+
+  Vec2 i = glm::floor(v + (v.x + v.y) * K1);
+  Vec2 a = v - i + Vec2((i.x + i.y) * K2);
+  length_t m = glm::step(a.y, a.x);
+  Vec2 o = Vec2(m, 1.0 - m);
+  Vec2 b = a - o + Vec2(K2);
+  Vec2 c = a + Vec2(2 * K2 - 1);
+  Vec3 h = glm::max(Vec3(0.5) - Vec3(glm::dot(a, a), glm::dot(b, b), glm::dot(c, c)), Vec3(0.0));
+  Vec3 n = h * h * h * h * Vec3(glm::dot(a, hash(i)), glm::dot(b, hash(i + o)), glm::dot(c, hash(i + Vec2(1.0))));
+  return glm::dot(n, Vec3(70.0));
 }
 
 Vec3 Noise::Simplex2D(const Vec2& v)
@@ -227,34 +243,18 @@ Vec4 Noise::Simplex3D(const Vec3& v)
   return 42 * Vec4(grad, dot(m4, px));
 }
 
-length_t Noise::FastSimplex2D(const Vec2& v)
-{
-  static constexpr length_t K1 = static_cast<length_t>(0.366025404); // (sqrt(3)-1)/2;
-  static constexpr length_t K2 = static_cast<length_t>(0.211324865); // (3-sqrt(3))/6;
-
-  Vec2 i = glm::floor(v + (v.x + v.y) * K1);
-  Vec2 a = v - i + Vec2((i.x + i.y) * K2);
-  length_t m = glm::step(a.y, a.x);
-  Vec2 o = Vec2(m, 1.0 - m);
-  Vec2 b = a - o + Vec2(K2);
-  Vec2 c = a + Vec2(2 * K2 - 1);
-  Vec3 h = glm::max(Vec3(0.5) - Vec3(glm::dot(a, a), glm::dot(b, b), glm::dot(c, c)), Vec3(0.0));
-  Vec3 n = h * h * h * h * Vec3(glm::dot(a, hash(i)), glm::dot(b, hash(i + o)), glm::dot(c, hash(i + Vec2(1.0))));
-  return glm::dot(n, Vec3(70.0));
-}
-
 length_t Noise::FastTerrainNoise2D(const Vec2& pointXY)
 {
-  length_t octave1 = 150 * Block::Length() * Noise::FastSimplex2D(pointXY / 1280.0 / Block::Length());
-  length_t octave2 = 75 * Block::Length() * Noise::FastSimplex2D(pointXY / 320.0 / Block::Length());
-  length_t octave3 = 5 * Block::Length() * Noise::FastSimplex2D(pointXY / 40.0 / Block::Length());
+  length_t octave1 = 150 * Block::Length() * glm::simplex(pointXY / 1280.0 / Block::Length());
+  length_t octave2 = 50 * Block::Length() * glm::simplex(pointXY / 320.0 / Block::Length());
+  length_t octave3 = 5 * Block::Length() * glm::simplex(pointXY / 40.0 / Block::Length());
 
   return octave1 + octave2 + octave3;
 }
 
 Vec4 Noise::TerrainNoise2D(const Vec2& pointXY)
 {
-  Vec3 octave1 = 150 * Block::Length() * Noise::Simplex2D(pointXY / 1280.0 / Block::Length());
+  Vec3 octave1 = 150 * Block::Length() * Simplex2D(pointXY / 1280.0 / Block::Length());
 
   Vec3 noise = octave1;
   Vec2 gradient = Vec2(noise);
@@ -268,7 +268,7 @@ Vec4 Noise::TerrainNoise2D(const Vec2& pointXY)
 
 Vec4 Noise::TerrainNoise3D(const Vec3& position)
 {
-  Vec4 octave1 = 150 * Block::Length() * Noise::Simplex3D(position / 1280.0 / Block::Length());
+  Vec4 octave1 = 150 * Block::Length() * Simplex3D(position / 1280.0 / Block::Length());
 
   return octave1;
 }
