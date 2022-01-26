@@ -4,6 +4,7 @@
 #include "Player/Player.h"
 #include "Util/TransVoxel.h"
 #include "Util/Noise.h"
+#include "Util/QEF.h"
 #include <glm/gtc/matrix_access.hpp>
 
 ChunkManager::ChunkManager()
@@ -397,7 +398,7 @@ HeightMap ChunkManager::generateHeightMap(globalIndex_t chunkI, globalIndex_t ch
     for (int j = 0; j < Chunk::Size(); ++j)
     {
       Vec2 blockXY = Chunk::Length() * Vec2(chunkI, chunkJ) + Block::Length() * (Vec2(i, j) + Vec2(0.5));
-      length_t terrainHeight = terrainFunction(blockXY);
+      length_t terrainHeight = Noise::FastTerrainNoise2D(blockXY);
       heightMap.terrainHeights[i][j] = terrainHeight;
 
       if (terrainHeight > heightMap.maxHeight)
@@ -460,7 +461,7 @@ void ChunkManager::generateLODMesh(LOD::Octree::Node* node)
     for (int j = 0; j < cells + 1; ++j)
     {
       Vec2 pointXY = Chunk::Length() * static_cast<Vec2>(node->anchor) + cellLength * Vec2(i, j);
-      length_t terrainHeight = terrainFunction(pointXY);
+      length_t terrainHeight = Noise::FastTerrainNoise2D(pointXY);
       terrainHeights[i][j] = terrainHeight;
 
       if (terrainHeight > maxTerrainHeight)
@@ -560,6 +561,133 @@ void ChunkManager::generateLODMesh(LOD::Octree::Node* node)
   node->data->meshSize = static_cast<uint32_t>(LODMesh.size());
 }
 
+// NOTE: Replace with Newton's method or similar root-finder
+static constexpr Vec3 approximateZeroCrossingPosition2D(const Vec3& p0, const Vec3& p1)
+{
+  constexpr int maxSteps = 8;
+  constexpr float increment = 1.0f / maxSteps;
+
+  // Approximate the zero crossing by finding the min value along edge
+  float minValue = std::numeric_limits<float>::max();
+  float t = 0.0f;
+  float currentT = 0.0f;
+  while (currentT <= 1.0f)
+  {
+    const Vec3 p = p0 + currentT * (p1 - p0);
+    const length_t density = glm::abs(p.z - Noise::TerrainNoise2D(Vec2(p)).z);
+    if (density < minValue)
+    {
+      minValue = density;
+      t = currentT;
+    }
+
+    currentT += increment;
+  }
+
+  return p0 + ((p1 - p0) * t);
+}
+
+void ChunkManager::generateDCLODMesh(LOD::Octree::Node* node)
+{
+  // NOTE: These values should come from biome system when implemented
+  static constexpr length_t globalMinTerrainHeight = -255 * Block::Length();
+  static constexpr length_t globalMaxTerrainHeight = 255 * Block::Length();
+
+  // Number of cells in each direction
+  constexpr int cells = Chunk::Size();
+
+  const length_t lodLength = pow2(node->LODLevel()) * Chunk::Length();
+  const length_t cellLength = lodLength / cells;
+
+  if (Chunk::Length() * node->anchor.k > globalMaxTerrainHeight || Chunk::Length() * node->anchor.k + lodLength < globalMinTerrainHeight)
+    return;
+
+  // Generate heightmap
+  length_t minTerrainHeight = std::numeric_limits<length_t>::max();
+  length_t maxTerrainHeight = -std::numeric_limits<length_t>::max();
+  std::array<std::array<length_t, cells + 1>, cells + 1> terrainHeights{};
+  for (int i = 0; i < cells + 1; ++i)
+    for (int j = 0; j < cells + 1; ++j)
+    {
+      Vec2 pointXY = Chunk::Length() * static_cast<Vec2>(node->anchor) + cellLength * Vec2(i, j);
+      length_t terrainHeight = Noise::TerrainNoise2D(pointXY).w;
+      terrainHeights[i][j] = terrainHeight;
+
+      if (terrainHeight > maxTerrainHeight)
+        maxTerrainHeight = terrainHeight;
+      if (terrainHeight < minTerrainHeight)
+        minTerrainHeight = terrainHeight;
+    }
+
+  if (node->anchor.k * Chunk::Length() > maxTerrainHeight || node->anchor.k * Chunk::Length() + lodLength < minTerrainHeight)
+    return;
+
+  // data from the original DC impl, drives the contouring process
+  static constexpr int edgevmap[12][2] =
+  {
+    {0,4}, {1,5}, {2,6}, {3,7},	  // x-axis 
+    {0,2}, {1,3}, {4,6}, {5,7},	  // y-axis
+    {0,1}, {2,3}, {4,5}, {6,7}	  // z-axis
+  };
+
+  // Generate mesh
+  std::vector<LOD::Vertex> LODMesh{};
+  for (int i = 0; i < cells; ++i)
+    for (int j = 0; j < cells; ++j)
+      for (int k = 0; k < cells; ++k)
+      {
+        const Vec3 cellAnchorPos = Chunk::Length() * static_cast<Vec3>(node->anchor) + cellLength * Vec3(i, j, k);
+
+        // Determine which of the 256 cases the cell belongs to
+        uint8_t cellCase = 0;
+        for (int v = 0; v < 8; ++v)
+        {
+          // Cell vertex indices and z-position
+          int I = v & bit(0) ? i + 1 : i;
+          int J = v & bit(1) ? j + 1 : j;
+          length_t Z = v & bit(2) ? cellAnchorPos.z + cellLength : cellAnchorPos.z;
+
+          length_t terrainHeight = terrainHeights[i][j];
+          if (terrainHeight > Z)
+            cellCase |= bit(v);
+        }
+        if (cellCase == 0 || cellCase == 255)
+          continue;
+
+        static constexpr int maxCrossings = 6;
+        static constexpr int air = 0;
+        static constexpr int solid = 1;
+        Vec3 averageNormal = Vec3(0.0);
+        QEFSolver qef;
+
+        int edgeCount = 0;
+        for (int e = 0; e < 12 && edgeCount < maxCrossings; ++e)
+        {
+          const int c1 = edgevmap[e][0];
+          const int c2 = edgevmap[e][1];
+
+          const int m1 = (cellCase >> c1) & 1;
+          const int m2 = (cellCase >> c2) & 1;
+
+          // Skip if zero crossing on this edge
+          if (m1 == air && m2 == air || m1 == solid && m2 == solid)
+            continue;
+
+          const Vec3 p1 = cellAnchorPos + cellLength * cellVertexOffsets[c1];
+          const Vec3 p2 = cellAnchorPos + cellLength * cellVertexOffsets[c2];
+          const Vec3 p = approximateZeroCrossingPosition2D(p1, p2);
+          const Vec3 n = Vec3(Noise::TerrainNoise2D(Vec2(p)));
+          qef.add(p, n);
+
+          averageNormal += n;
+
+          edgeCount++;
+        }
+
+
+      }
+}
+
 void ChunkManager::unloadChunk(Chunk* const chunk)
 {
   EN_ASSERT(m_BoundaryChunks.find(createKey(chunk->getGlobalIndex())) != m_BoundaryChunks.end(), "Chunk is not in boundary chunk map!");
@@ -637,13 +765,4 @@ bool ChunkManager::isOnBoundary(const Chunk* const chunk) const
     if (chunk->getNeighbor(face) == nullptr && !chunk->isFaceOpaque(face))
       return true;
   return false;
-}
-
-length_t ChunkManager::terrainFunction(const Vec2& pointXY) const
-{
-  length_t Octave1 = 150 * Block::Length() * Noise::FastSimplex2D(pointXY / 1280.0 / Block::Length());
-  length_t Octave2 = 50 * Block::Length() *  Noise::FastSimplex2D(pointXY / 320.0 / Block::Length());
-  length_t Octave3 = 5 * Block::Length() *   Noise::FastSimplex2D(pointXY / 40.0 / Block::Length());
-
-  return Octave1 + Octave2 + Octave3;
 }

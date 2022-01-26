@@ -1,5 +1,6 @@
 #include "GMpch.h"
 #include "Noise.h"
+#include "Block/Block.h"
 
 // Operators for element-wise vector-vector multiplication
 constexpr glm::vec2 operator*(glm::vec2 v, glm::vec2 u) { return { v.x * u.x, v.y * u.y }; }
@@ -236,4 +237,34 @@ length_t Noise::FastSimplex2D(const Vec2& v)
   Vec3 h = glm::max(Vec3(0.5) - Vec3(glm::dot(a, a), glm::dot(b, b), glm::dot(c, c)), Vec3(0.0));
   Vec3 n = h * h * h * h * Vec3(glm::dot(a, hash(i)), glm::dot(b, hash(i + o)), glm::dot(c, hash(i + Vec2(1.0))));
   return glm::dot(n, Vec3(70.0));
+}
+
+length_t Noise::FastTerrainNoise2D(const Vec2& pointXY)
+{
+  length_t octave1 = 150 * Block::Length() * Noise::FastSimplex2D(pointXY / 1280.0 / Block::Length());
+  length_t octave2 = 50 * Block::Length() * Noise::FastSimplex2D(pointXY / 320.0 / Block::Length());
+  length_t octave3 = 5 * Block::Length() * Noise::FastSimplex2D(pointXY / 40.0 / Block::Length());
+
+  return octave1 + octave2 + octave3;
+}
+
+Vec4 Noise::TerrainNoise2D(const Vec2& pointXY)
+{
+  Vec3 octave1 = 150 * Block::Length() * Noise::Simplex2D(pointXY / 1280.0 / Block::Length());
+
+  Vec3 noise = octave1;
+  Vec2 gradient = Vec2(noise);
+  length_t value = noise.z;
+
+  // Calculate surface normal
+  Vec3 normal = glm::normalize(Vec3(-gradient, 1));
+
+  return Vec4(normal, value);
+}
+
+Vec4 Noise::TerrainNoise3D(const Vec3& position)
+{
+  Vec4 octave1 = 150 * Block::Length() * Noise::Simplex3D(position / 1280.0 / Block::Length());
+
+  return octave1;
 }

@@ -163,6 +163,7 @@
     <ClInclude Include="src\Util\Container.h" />
     <ClInclude Include="src\Util\MarchingCubes.h" />
     <ClInclude Include="src\Util\Noise.h" />
+    <ClInclude Include="src\Util\QEF.h" />
     <ClInclude Include="src\Util\TransVoxel.h" />
     <ClInclude Include="src\World\Chunk.h" />
     <ClInclude Include="src\World\ChunkManager.h" />
@@ -181,6 +182,7 @@
     <ClCompile Include="src\GameSandbox.cpp" />
     <ClCompile Include="src\Player\Player.cpp" />
     <ClCompile Include="src\Util\Noise.cpp" />
+    <ClCompile Include="src\Util\QEF.cpp" />
     <ClCompile Include="src\World\Chunk.cpp" />
     <ClCompile Include="src\World\ChunkManager.cpp" />
     <ClCompile Include="src\World\ChunkRenderer.cpp" />

@@ -118,6 +118,7 @@
     <ClInclude Include="src\Util\Container.h" />
     <ClInclude Include="src\Util\TransVoxel.h" />
     <ClInclude Include="src\Util\Noise.h" />
+    <ClInclude Include="src\Util\QEF.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="lib\llvm\include\llvm\Support\MemAlloc.cpp">
@@ -154,5 +155,6 @@
       <Filter>src\World</Filter>
     </ClCompile>
     <ClCompile Include="src\Util\Noise.cpp" />
+    <ClCompile Include="src\Util\QEF.cpp" />
   </ItemGroup>
 </Project>

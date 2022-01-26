@@ -27,7 +27,7 @@ namespace LOD
   {
   public:
     /*
-      A representation of an octree node.
+      A representation of an octree-based LOD node.
       The node has children if and only if data is nullptr.
       The node is the root node if and only if parent is nullptr.
     */

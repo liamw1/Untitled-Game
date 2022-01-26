@@ -125,6 +125,7 @@ private:
   Chunk* loadNewChunk(const GlobalIndex& chunkIndex);
 
   void generateLODMesh(LOD::Octree::Node* node);
+  void generateDCLODMesh(LOD::Octree::Node* node);
 
   /*
     Searches for chunk, removes it from whatever map it is currently in,
@@ -156,7 +157,4 @@ private:
   void moveToMap(Chunk* const chunk, MapType source, MapType destination);
 
   bool isOnBoundary(const Chunk* const chunk) const;
-
-  // NOTE: Replace this with more robust biome/terrain system
-  length_t terrainFunction(const Vec2& pointXY) const;
 };
