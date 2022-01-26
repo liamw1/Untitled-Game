@@ -78,7 +78,7 @@ constexpr Index3D<intType> operator*(intType n, const Index3D<intType>& index)
            static_cast<intType>(n * index.k) };
 }
 
-using blockIndex_t = uint8_t;
+using blockIndex_t = int8_t;
 using localIndex_t = int16_t;
 using globalIndex_t = int64_t;
 

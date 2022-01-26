@@ -1,11 +1,12 @@
 #include "GMpch.h"
 #include "Noise.h"
 #include "Block/Block.h"
+#include <glm/gtc/noise.hpp>
 
 // Operators for element-wise vector-vector multiplication
-constexpr glm::vec2 operator*(glm::vec2 v, glm::vec2 u) { return { v.x * u.x, v.y * u.y }; }
-constexpr glm::vec3 operator*(glm::vec3 v, glm::vec3 u) { return { v.x * u.x, v.y * u.y, v.z * u.z }; }
-constexpr glm::vec4 operator*(glm::vec4 v, glm::vec4 u) { return { v.x * u.x, v.y * u.y, v.z * u.z, v.w * u.w }; }
+constexpr Vec2 operator*(Vec2 v, Vec2 u) { return { v.x * u.x, v.y * u.y }; }
+constexpr Vec3 operator*(Vec3 v, Vec3 u) { return { v.x * u.x, v.y * u.y, v.z * u.z }; }
+constexpr Vec4 operator*(Vec4 v, Vec4 u) { return { v.x * u.x, v.y * u.y, v.z * u.z, v.w * u.w }; }
 
 /*
   Gives the fractional part of x
@@ -16,7 +17,6 @@ static length_t fract(length_t x) { return x - floor(x); }
   Modulo 289, optimizes to code without divisions
 */
 static length_t mod289(length_t x) { return x - 289 * floor(x / 289); }
-static Vec2 mod289(const Vec2& v) { return v - 289 * glm::floor(v / 289); }
 static Vec3 mod289(const Vec3& v) { return v - 289 * glm::floor(v / 289); }
 static Vec4 mod289(const Vec4& v) { return v - 289 * glm::floor(v / 289); }
 
@@ -24,10 +24,14 @@ static Vec4 mod289(const Vec4& v) { return v - 289 * glm::floor(v / 289); }
   Permutation polynomial(ring size 289 = 17 ^ 2)
 */
 static length_t permute(length_t x) { return mod289(x * ((34 * x) + static_cast<length_t>(10.0))); }
-static Vec3 permute(const Vec3& v) { return mod289(v * ((34 * v) + Vec3(10.0))); }
 static Vec4 permute(const Vec4& v) { return mod289(v * ((34 * v) + Vec4(10.0))); }
 
-Vec4 taylorInvSqrt(const Vec4& r) { return Vec4(1.79284291400159) - 0.85373472095314 * r; }
+Vec4 taylorInvSqrt(const Vec4& r) 
+{ 
+  static constexpr length_t c1 = static_cast<length_t>(1.79284291400159);
+  static constexpr length_t c2 = static_cast<length_t>(0.85373472095314);
+  return Vec4(c1) - c2 * r; 
+}
 
 Vec2 hash(const Vec2& v)
 {
@@ -105,7 +109,7 @@ Vec3 Noise::Simplex2D(const Vec2& v)
   // Radial weights from corners
   // 0.8 is the square of 2/sqrt(5), the distance from
   // a grid point to the nearest simplex boundary
-  Vec3 t = Vec3(0.8) - Vec3(glm::dot(d0, d0), glm::dot(d1, d1), glm::dot(d2, d2));
+  Vec3 t = Vec3(static_cast<length_t>(0.8)) - Vec3(glm::dot(d0, d0), glm::dot(d1, d1), glm::dot(d2, d2));
 
   // Partial derivatives for analytical gradient computation
   Vec3 dtdx = -2 * Vec3(d0.x, d1.x, d2.x);
@@ -210,7 +214,7 @@ Vec4 Noise::Simplex3D(const Vec3& v)
   g3 *= norm.w;
 
   // Compute noise and gradient at P
-  Vec4 m = glm::max(Vec4(0.6) - Vec4(glm::dot(x0, x0), glm::dot(x1, x1), glm::dot(x2, x2), glm::dot(x3, x3)), Vec4(0.0));
+  Vec4 m = glm::max(Vec4(static_cast<length_t>(0.6)) - Vec4(glm::dot(x0, x0), glm::dot(x1, x1), glm::dot(x2, x2), glm::dot(x3, x3)), Vec4(0.0));
   Vec4 m2 = m * m;
   Vec4 m3 = m2 * m;
   Vec4 m4 = m2 * m2;
@@ -242,7 +246,7 @@ length_t Noise::FastSimplex2D(const Vec2& v)
 length_t Noise::FastTerrainNoise2D(const Vec2& pointXY)
 {
   length_t octave1 = 150 * Block::Length() * Noise::FastSimplex2D(pointXY / 1280.0 / Block::Length());
-  length_t octave2 = 50 * Block::Length() * Noise::FastSimplex2D(pointXY / 320.0 / Block::Length());
+  length_t octave2 = 75 * Block::Length() * Noise::FastSimplex2D(pointXY / 320.0 / Block::Length());
   length_t octave3 = 5 * Block::Length() * Noise::FastSimplex2D(pointXY / 40.0 / Block::Length());
 
   return octave1 + octave2 + octave3;

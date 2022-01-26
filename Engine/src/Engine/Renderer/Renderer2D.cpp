@@ -3,7 +3,6 @@
 #include "VertexArray.h"
 #include "Shader.h"
 #include "RenderCommand.h"
-
 #include <glm/gtc/matrix_transform.hpp>
 
 namespace Engine
@@ -71,7 +70,7 @@ namespace Engine
 
       if (textureIndex == 0)
       {
-        if (s_TextureSlotIndex >= s_MaxTextureSlots)
+        if (s_TextureSlotIndex > s_MaxTextureSlots - 1)
           flushAndReset();
 
         textureIndex = s_TextureSlotIndex;

@@ -42,7 +42,7 @@ void Sandbox2D::onUpdate(std::chrono::duration<seconds> timestep)
   rotation += timestep.count();
 
   Engine::Renderer2D::BeginScene(m_CameraController.getCamera());
-  Engine::Renderer2D::DrawQuad({ {0.0, 0.0, -0.1}, Vec2(50.f), Float4(1.0f), 10.0f}, m_CheckerboardTexture);
+  Engine::Renderer2D::DrawQuad({ {0.0, 0.0, -0.1}, Vec2(50.0), Float4(1.0f), 10.0f}, m_CheckerboardTexture);
   for (int i = 0; i < 5; ++i)
     for (int j = 0; j < 5; ++j)
       Engine::Renderer2D::DrawRotatedQuad({ { static_cast<length_t>(i) - 2.0, static_cast<length_t>(j) - 2.0, 0.0 }, { 0.66, 0.66 }, {0.8f, 0.2f, 0.3f, 1.0f}}, rotation, m_CheckerboardTexture);
@@ -51,7 +51,7 @@ void Sandbox2D::onUpdate(std::chrono::duration<seconds> timestep)
     for (length_t x = -5.0; x < 5.0; x += 0.5)
     {
       Float4 color = { (x + 5.0f) / 10.0f, 0.4f, (y + 5.0f) / 10.0f, 0.5f };
-      Engine::Renderer2D::DrawQuad({ { x, y, 0.0 }, Vec2(0.45), color, 1.0f });
+      Engine::Renderer2D::DrawQuad({ { x, y, 0.0 }, Vec2(static_cast<length_t>(0.45)), color, 1.0f });
     }
   Engine::Renderer2D::EndScene();
 

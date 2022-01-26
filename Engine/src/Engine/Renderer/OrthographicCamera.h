@@ -1,5 +1,4 @@
 #pragma once
-#include <glm/glm.hpp>
 
 /*
   A 2D camera with orthographic proejection.

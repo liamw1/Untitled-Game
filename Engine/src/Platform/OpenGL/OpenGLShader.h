@@ -1,6 +1,5 @@
 #pragma once
 #include "Engine/Renderer/Shader.h"
-#include <glm/glm.hpp>
 
 // TEMPORARY
 typedef unsigned int GLenum;

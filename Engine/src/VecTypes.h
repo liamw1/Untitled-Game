@@ -38,26 +38,26 @@ using Double3x3 = glm::dmat3;
 using Double4x4 = glm::dmat4;
 
 // Missing operators for glm vectors
-constexpr glm::vec2 operator*(double x, glm::vec2 v) { return v *= x; }
-constexpr glm::vec2 operator*(glm::vec2 v, double x) { return v *= x; }
-constexpr glm::vec2 operator/(glm::vec2 v, double x) { return v /= x; }
+constexpr glm::vec2 operator*(double x, glm::vec2 v) { return v *= static_cast<float>(x); }
+constexpr glm::vec2 operator*(glm::vec2 v, double x) { return v *= static_cast<float>(x); }
+constexpr glm::vec2 operator/(glm::vec2 v, double x) { return v /= static_cast<float>(x); }
 
-constexpr glm::vec3 operator*(double x, glm::vec3 v) { return v *= x; }
-constexpr glm::vec3 operator*(glm::vec3 v, double x) { return v *= x; }
-constexpr glm::vec3 operator/(glm::vec3 v, double x) { return v /= x; }
+constexpr glm::vec3 operator*(double x, glm::vec3 v) { return v *= static_cast<float>(x); }
+constexpr glm::vec3 operator*(glm::vec3 v, double x) { return v *= static_cast<float>(x); }
+constexpr glm::vec3 operator/(glm::vec3 v, double x) { return v /= static_cast<float>(x); }
 
-constexpr glm::vec4 operator*(double x, glm::vec4 v) { return v *= x; }
-constexpr glm::vec4 operator*(glm::vec4 v, double x) { return v *= x; }
-constexpr glm::vec4 operator/(glm::vec4 v, double x) { return v /= x; }
+constexpr glm::vec4 operator*(double x, glm::vec4 v) { return v *= static_cast<float>(x); }
+constexpr glm::vec4 operator*(glm::vec4 v, double x) { return v *= static_cast<float>(x); }
+constexpr glm::vec4 operator/(glm::vec4 v, double x) { return v /= static_cast<float>(x); }
 
-constexpr glm::dvec2 operator*(float x, glm::dvec2 v) { return v *= x; }
-constexpr glm::dvec2 operator*(glm::dvec2 v, float x) { return v *= x; }
-constexpr glm::dvec2 operator/(glm::dvec2 v, float x) { return v /= x; }
+constexpr glm::dvec2 operator*(float x, glm::dvec2 v) { return v *= static_cast<double>(x); }
+constexpr glm::dvec2 operator*(glm::dvec2 v, float x) { return v *= static_cast<double>(x); }
+constexpr glm::dvec2 operator/(glm::dvec2 v, float x) { return v /= static_cast<double>(x); }
 
-constexpr glm::dvec3 operator*(float x, glm::dvec3 v) { return v *= x; }
-constexpr glm::dvec3 operator*(glm::dvec3 v, float x) { return v *= x; }
-constexpr glm::dvec3 operator/(glm::dvec3 v, float x) { return v /= x; }
+constexpr glm::dvec3 operator*(float x, glm::dvec3 v) { return v *= static_cast<double>(x); }
+constexpr glm::dvec3 operator*(glm::dvec3 v, float x) { return v *= static_cast<double>(x); }
+constexpr glm::dvec3 operator/(glm::dvec3 v, float x) { return v /= static_cast<double>(x); }
 
-constexpr glm::dvec4 operator*(float x, glm::dvec4 v) { return v *= x; }
-constexpr glm::dvec4 operator*(glm::dvec4 v, float x) { return v *= x; }
-constexpr glm::dvec4 operator/(glm::dvec4 v, float x) { return v /= x; }
+constexpr glm::dvec4 operator*(float x, glm::dvec4 v) { return v *= static_cast<double>(x); }
+constexpr glm::dvec4 operator*(glm::dvec4 v, float x) { return v *= static_cast<double>(x); }
+constexpr glm::dvec4 operator/(glm::dvec4 v, float x) { return v /= static_cast<double>(x); }

@@ -29,6 +29,5 @@
 #endif
 
 // =========================== Math ========================= //
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/noise.hpp>
+#include <glm/glm.hpp>
 #include "VecTypes.h"

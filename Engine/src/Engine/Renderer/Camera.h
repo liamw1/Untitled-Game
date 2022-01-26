@@ -1,5 +1,4 @@
 #pragma once
-#include <glm/glm.hpp>
 
 /*
   A 3D camera with prospective projection.

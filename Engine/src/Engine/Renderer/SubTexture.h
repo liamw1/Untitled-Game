@@ -1,6 +1,5 @@
 #pragma once
 #include "Texture.h"
-#include <glm/glm.hpp>
 
 namespace Engine
 {

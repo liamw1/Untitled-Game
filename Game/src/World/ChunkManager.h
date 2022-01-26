@@ -4,6 +4,7 @@
 #include "Util/Array2D.h"
 #include <llvm/ADT/DenseMap.h>
 
+
 class ChunkManager
 {
 public:
@@ -124,8 +125,10 @@ private:
   */
   Chunk* loadNewChunk(const GlobalIndex& chunkIndex);
 
+  /*
+    Creates mesh for a single LOD using the TransVoxel algorithm.
+  */
   void generateLODMesh(LOD::Octree::Node* node);
-  void generateDCLODMesh(LOD::Octree::Node* node);
 
   /*
     Searches for chunk, removes it from whatever map it is currently in,

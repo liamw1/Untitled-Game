@@ -163,7 +163,7 @@ LocalIndex Chunk::getLocalIndex() const
 BlockType Chunk::getBlockType(blockIndex_t i, blockIndex_t j, blockIndex_t k) const
 {
   static constexpr uint64_t chunkSize = static_cast<uint64_t>(s_ChunkSize);
-  EN_ASSERT(i < chunkSize&& j < chunkSize&& k < chunkSize, "Index is out of bounds!");
+  EN_ASSERT(0 <= i && i < chunkSize && 0 <= j && j < chunkSize && 0 <= k && k < chunkSize, "Index is out of bounds!");
   return isEmpty() ? BlockType::Air : m_ChunkComposition[i * chunkSize * chunkSize + j * chunkSize + k];
 }
   
@@ -377,7 +377,7 @@ void Chunk::setBlockType(blockIndex_t i, blockIndex_t j, blockIndex_t k, BlockTy
   static constexpr uint64_t chunkSize = static_cast<uint64_t>(s_ChunkSize);
 
   EN_ASSERT(m_ChunkComposition != nullptr, "Chunk data has not yet been allocated!");
-  EN_ASSERT(i < chunkSize&& j < chunkSize&& k < chunkSize, "Index is out of bounds!");
+  EN_ASSERT(0 <= i && i < chunkSize && 0 <= j && j < chunkSize && 0 <= k && k < chunkSize, "Index is out of bounds!");
 
   m_ChunkComposition[i * chunkSize * chunkSize + j * chunkSize + k] = blockType;
 }

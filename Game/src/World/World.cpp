@@ -163,9 +163,7 @@ beginCollisionDetection:;
       for (int k = 0; k <= playerHeight; ++k)
       {
         const Vec3 cornerPos = anchorPoint + Block::Length() * Vec3(i == playerWidth ? i - 0.2 : i, j == playerWidth ? j - 0.2 : j, k == playerHeight ? k - 0.2 : k);
-
         const RayIntersection collision = castRaySegment(cornerPos - dt * Player::Velocity(), cornerPos);
-        const length_t& collisionDistance = collision.distance;
 
         if (collision.distance < firstCollision.distance)
         {
@@ -212,7 +210,7 @@ void World::playerWorldInteraction()
     {
       const LocalIndex& chunkIndex = m_PlayerRayCast.chunkIndex;
       const BlockIndex& blockIndex = m_PlayerRayCast.blockIndex;
-      const BlockFace& face = m_PlayerRayCast.face;
+      const BlockFace& rayCastFace = m_PlayerRayCast.face;
       Chunk* const chunk = m_ChunkManager.findChunk(chunkIndex);
 
       if (chunk != nullptr)
@@ -233,11 +231,11 @@ void World::playerWorldInteraction()
         }
         else if (m_PlayerRayCast.distance > 2.5 * Block::Length())
         {
-          chunk->placeBlock(blockIndex, face, BlockType::Sand);
+          chunk->placeBlock(blockIndex, rayCastFace, BlockType::Sand);
           m_ChunkManager.sendChunkUpdate(chunk);
 
-          if (chunk->isBlockNeighborInAnotherChunk(blockIndex, face))
-            m_ChunkManager.sendChunkUpdate(chunk->getNeighbor(face));
+          if (chunk->isBlockNeighborInAnotherChunk(blockIndex, rayCastFace))
+            m_ChunkManager.sendChunkUpdate(chunk->getNeighbor(rayCastFace));
         }
       }
     }

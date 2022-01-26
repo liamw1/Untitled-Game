@@ -41,7 +41,8 @@ unsigned char _BitScanReverse64(unsigned long *_Index, unsigned __int64 _Mask);
 namespace llvm {
 
 /// The behavior an operation has on an input of 0.
-enum ZeroBehavior {
+enum class ZeroBehavior 
+{
   /// The returned value is undefined.
   ZB_Undefined,
   /// The returned value is numeric_limits<T>::max()
@@ -182,7 +183,7 @@ template <typename T, std::size_t SizeOfT> struct LeadingZerosCounter {
 #if defined(__GNUC__) || defined(_MSC_VER)
 template <typename T> struct LeadingZerosCounter<T, 4> {
   static unsigned count(T Val, ZeroBehavior ZB) {
-    if (ZB != ZB_Undefined && Val == 0)
+    if (ZB != ZeroBehavior::ZB_Undefined && Val == 0)
       return 32;
 
 #if __has_builtin(__builtin_clz) || defined(__GNUC__)
@@ -198,7 +199,7 @@ template <typename T> struct LeadingZerosCounter<T, 4> {
 #if !defined(_MSC_VER) || defined(_M_X64)
 template <typename T> struct LeadingZerosCounter<T, 8> {
   static unsigned count(T Val, ZeroBehavior ZB) {
-    if (ZB != ZB_Undefined && Val == 0)
+    if (ZB != ZeroBehavior::ZB_Undefined && Val == 0)
       return 64;
 
 #if __has_builtin(__builtin_clzll) || defined(__GNUC__)
@@ -222,7 +223,7 @@ template <typename T> struct LeadingZerosCounter<T, 8> {
 /// \param ZB the behavior on an input of 0. Only ZB_Width and ZB_Undefined are
 ///   valid arguments.
 template <typename T>
-unsigned countLeadingZeros(T Val, ZeroBehavior ZB = ZB_Width) {
+unsigned countLeadingZeros(T Val, ZeroBehavior ZB = ZeroBehavior::ZB_Width) {
   static_assert(std::numeric_limits<T>::is_integer &&
                     !std::numeric_limits<T>::is_signed,
                 "Only unsigned integral types are allowed.");
@@ -694,7 +695,7 @@ inline uint64_t NextPowerOf2(uint64_t A) {
 /// Essentially, it is a floor operation across the domain of powers of two.
 inline uint64_t PowerOf2Floor(uint64_t A) {
   if (!A) return 0;
-  return 1ull << (63 - countLeadingZeros(A, ZB_Undefined));
+  return 1ull << (63 - countLeadingZeros(A, ZeroBehavior::ZB_Undefined));
 }
 
 /// Returns the power of two which is greater than or equal to the given value.
