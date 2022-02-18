@@ -519,13 +519,13 @@ void ChunkManager::generateLODMesh(LOD::Octree::Node* node)
   // Generate heightmap
   length_t minTerrainHeight = std::numeric_limits<length_t>::max();
   length_t maxTerrainHeight = -std::numeric_limits<length_t>::max();
-  std::array<std::array<length_t, numCells + 1>, numCells + 1> terrainHeights{};
-  for (int i = 0; i < numCells + 1; ++i)
-    for (int j = 0; j < numCells + 1; ++j)
+  Array2D<Vec4> noiseValues = Array2D<Vec4>(numCells + 3, numCells + 3);
+  for (int i = 0; i < numCells + 3; ++i)
+    for (int j = 0; j < numCells + 3; ++j)
     {
-      Vec2 pointXY = Chunk::Length() * static_cast<Vec2>(node->anchor) + cellLength * Vec2(i, j);
-      length_t terrainHeight = Noise::TerrainNoise2D(pointXY).w;
-      terrainHeights[i][j] = terrainHeight;
+      Vec2 pointXY = Chunk::Length() * static_cast<Vec2>(node->anchor) + cellLength * Vec2(i - 1, j - 1);
+      noiseValues[i][j] = Noise::TerrainNoise2D(pointXY);
+      length_t terrainHeight = noiseValues[i][j].w;
 
       if (terrainHeight > maxTerrainHeight)
         maxTerrainHeight = terrainHeight;
@@ -538,11 +538,11 @@ void ChunkManager::generateLODMesh(LOD::Octree::Node* node)
 
   // Generate primary LOD mesh
   std::vector<LOD::Vertex> LODMesh{};
-  for (int i = 0; i < numCells; ++i)
-    for (int j = 0; j < numCells; ++j)
-      for (int k = 0; k < numCells; ++k)
+  for (int i = 1; i < numCells + 1; ++i)
+    for (int j = 1; j < numCells + 1; ++j)
+      for (int k = 1; k < numCells + 1; ++k)
       {
-        const length_t cellAnchorZPos = node->anchor.k * Chunk::Length() + k * cellLength;
+        const length_t cellAnchorZPos = node->anchor.k * Chunk::Length() + (k - 1) * cellLength;
 
         // Determine which of the 256 cases the cell belongs to
         uint8_t cellCase = 0;
@@ -553,7 +553,7 @@ void ChunkManager::generateLODMesh(LOD::Octree::Node* node)
           int J = v & bit(1) ? j + 1 : j;
           length_t Z = v & bit(2) ? cellAnchorZPos + cellLength : cellAnchorZPos;
 
-          if (terrainHeights[I][J] > Z)
+          if (noiseValues[I][J].w > Z)
             cellCase |= bit(v);
         }
         if (cellCase == 0 || cellCase == 255)
@@ -569,6 +569,7 @@ void ChunkManager::generateLODMesh(LOD::Octree::Node* node)
         {
           // Local positions of vertices within LOD, measured relative to LOD anchor
           std::array<Vec3, 3> vertexPositions{};
+          std::array<Vec3, 3> isoNormals{};
 
           for (int v = 0; v < 3; ++v)
           {
@@ -591,15 +592,39 @@ void ChunkManager::generateLODMesh(LOD::Octree::Node* node)
             length_t zB = indexB & bit(2) ? cellAnchorZPos + cellLength : cellAnchorZPos;
 
             // Isovalues of vertices A and B
-            length_t tA = terrainHeights[iA][jA] - zA;
-            length_t tB = terrainHeights[iB][jB] - zB;
+            length_t tA = noiseValues[iA][jA].w - zA;
+            length_t tB = noiseValues[iB][jB].w - zB;
 
             length_t t = tA / (tA - tB);
 
             // Calculate the position of the vertex on the cell edge.  The smoothness parameter S is used to interpolate between 
             // roughest iso-surface (vertex is always chosen at edge midpoint) and the smooth iso-surface interpolation used by Paul Bourke.
             Vec3 normalizedCellPosition = vertA + (0.5 * (1 - S) + t * S) * (vertB - vertA);
-            vertexPositions[v] = cellLength * Vec3(i, j, k) + cellLength * normalizedCellPosition;
+            vertexPositions[v] = cellLength * Vec3(i - 1, j - 1, k - 1) + cellLength * normalizedCellPosition;
+
+            // Estimate isosurface normal using trilinear interpolation
+            const length_t& x = normalizedCellPosition.x;
+            const length_t& y = normalizedCellPosition.y;
+            const length_t& z = normalizedCellPosition.z;
+            const Vec3& n000 = noiseValues[i][j];
+            const Vec3& n100 = noiseValues[i + 1][j];
+            const Vec3& n010 = noiseValues[i][j + 1];
+            const Vec3& n110 = noiseValues[i + 1][j + 1];
+            const Vec3& n001 = n000;
+            const Vec3& n101 = n100;
+            const Vec3& n011 = n010;
+            const Vec3& n111 = n110;
+
+            Vec3 n00 = n000 * (1 - x) + n100 * x;
+            Vec3 n01 = n001 * (1 - x) + n101 * x;
+            Vec3 n10 = n010 * (1 - x) + n110 * x;
+            Vec3 n11 = n011 * (1 - x) + n111 * x;
+
+            Vec3 n0 = n00 * (1 - y) + n10 * y;
+            Vec3 n1 = n01 * (1 - y) + n11 * y;
+
+            Vec3 n = n0 * (1 - z) + n1 * z;
+            isoNormals[v] = glm::normalize(n);
           }
 
           // Calculate vertex normal
@@ -607,15 +632,7 @@ void ChunkManager::generateLODMesh(LOD::Octree::Node* node)
           float lightValue = static_cast<float>((1.0 + surfaceNormal.z) / 2);
 
           for (int v = 0; v < 3; ++v)
-          {
-            /*
-              NOTE: Alternatively, we could expand the range of sample voxel data to (chunkSize+3)x(chunkSize+3), and compute
-              central differences to approximate normals at the inner locations.  Then, we can interpolate based on corner
-              normals to find normal within a cell.  This is likely to be more efficient.
-            */
-            Vec3 isoNormal = Vec3(Noise::TerrainNoise2D(Chunk::Length() * static_cast<Vec3>(node->anchor) + vertexPositions[v]));
-            LODMesh.push_back({ vertexPositions[v], surfaceNormal, isoNormal, v, lightValue });
-          }
+            LODMesh.push_back({ vertexPositions[v], surfaceNormal, isoNormals[v], v, lightValue });
         }
       }
 
