@@ -2,8 +2,10 @@
 #version 330 core
 
 layout(location = 0) in vec3 a_Position;
-layout(location = 1) in int a_QuadIndex;
-layout(location = 2) in float a_LightValue;
+layout(location = 1) in vec3 a_SurfaceNormal;
+layout(location = 2) in vec3 a_IsoNormal;
+layout(location = 3) in int a_QuadIndex;
+layout(location = 4) in float a_LightValue;
 
 const vec2 s_TexCoords[4] = vec2[4]( vec2(0.0f,	0.0f),
 									 vec2(1.0f, 0.0f),

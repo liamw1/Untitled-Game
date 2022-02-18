@@ -28,6 +28,7 @@ public:
   */
   bool loadNewChunks(int maxNewChunks);
 
+  void renderLODs();
   void manageLODs();
 
   /*

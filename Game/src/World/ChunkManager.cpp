@@ -61,6 +61,9 @@ void ChunkManager::clean()
 void ChunkManager::render() const
 {
   EN_PROFILE_FUNCTION();
+
+  if (s_RenderDistance == 0)
+    return;
   
   std::array<Vec4, 6> frustumPlanes = calculateViewFrustumPlanes(Player::Camera());
 
@@ -92,8 +95,8 @@ bool ChunkManager::loadNewChunks(int maxNewChunks)
 {
   EN_PROFILE_FUNCTION();
 
-  static constexpr int8_t normals[6][3] = { { 1, 0, 0}, { -1, 0, 0}, { 0, 1, 0}, { 0, -1, 0}, { 0, 0, 1}, { 0, 0, -1} };
-                                       //      East         West        North       South         Top        Bottom
+  static constexpr GlobalIndex normals[6] = { { 1, 0, 0}, { -1, 0, 0}, { 0, 1, 0}, { 0, -1, 0}, { 0, 0, 1}, { 0, 0, -1} };
+                                         //      East         West        North       South         Top        Bottom
 
   // If there are no open chunk slots, don't load any more
   if (m_OpenChunkSlots.size() == 0)
@@ -113,9 +116,7 @@ bool ChunkManager::loadNewChunks(int maxNewChunks)
       if (chunk->getNeighbor(face) == nullptr && !chunk->isFaceOpaque(face))
       {
         // Store index of potential new chunk
-        GlobalIndex neighborIndex = chunk->getGlobalIndex();
-        for (int i = 0; i < 3; ++i)
-          neighborIndex[i] += normals[static_cast<int>(face)][i];
+        const GlobalIndex neighborIndex = chunk->getGlobalIndex() + normals[static_cast<int>(face)];
 
         // If potential chunk is out of load range, skip it
         if (!isInRange(neighborIndex, s_LoadDistance))
@@ -156,9 +157,7 @@ bool ChunkManager::loadNewChunks(int maxNewChunks)
     for (BlockFace dir : BlockFaceIterator())
     {
       // Store index of chunk adjacent to new chunk in direction "dir"
-      GlobalIndex adjIndex = newChunkIndex;
-      for (int j = 0; j < 3; ++j)
-        adjIndex[j] += normals[static_cast<int>(dir)][j];
+      const GlobalIndex adjIndex = newChunkIndex + normals[static_cast<int>(dir)];
 
       // Find and add any existing neighbors to new chunk
       int64_t adjKey = createKey(adjIndex);
@@ -203,43 +202,108 @@ bool ChunkManager::loadNewChunks(int maxNewChunks)
   return newChunks.size() > 0;
 }
 
+void ChunkManager::renderLODs()
+{
+  EN_PROFILE_FUNCTION();
+
+  std::vector<LOD::Octree::Node*> leaves = m_LODTree.getLeaves();
+
+  const std::array<Vec4, 6> frustumPlanes = calculateViewFrustumPlanes(Player::Camera());
+  std::array<Vec4, 6> shiftedFrustumPlanes = frustumPlanes;
+  std::array<length_t, 6> planeNormalMags = { glm::length(Vec3(frustumPlanes[static_cast<int>(FrustumPlane::Left)])),
+                                              glm::length(Vec3(frustumPlanes[static_cast<int>(FrustumPlane::Right)])),
+                                              glm::length(Vec3(frustumPlanes[static_cast<int>(FrustumPlane::Bottom)])),
+                                              glm::length(Vec3(frustumPlanes[static_cast<int>(FrustumPlane::Top)])),
+                                              glm::length(Vec3(frustumPlanes[static_cast<int>(FrustumPlane::Near)])),
+                                              glm::length(Vec3(frustumPlanes[static_cast<int>(FrustumPlane::Far)])), };
+
+  ChunkRenderer::BeginScene(Player::Camera());
+  for (auto it = leaves.begin(); it != leaves.end(); ++it)
+  {
+    LOD::Octree::Node* node = *it;
+
+    if (node->data->LODVertexArray != nullptr)
+    {
+      // Shift each plane by distance equal to radius of sphere that circumscribes LOD
+      static constexpr float sqrt3 = 1.732050807568877f;
+      const length_t LODSphereRadius = sqrt3 * node->length() / 2;
+      for (int planeID = 0; planeID < 6; ++planeID)
+        shiftedFrustumPlanes[planeID].w = frustumPlanes[planeID].w + LODSphereRadius * planeNormalMags[planeID];
+
+      if (isInFrustum(node->center(), shiftedFrustumPlanes) && !isInRange(node->anchor, s_RenderDistance))
+        ChunkRenderer::DrawLOD(node);
+    }
+  }
+  ChunkRenderer::EndScene();
+}
+
 void ChunkManager::manageLODs()
 {
   EN_PROFILE_FUNCTION();
   
   std::vector<LOD::Octree::Node*> leaves = m_LODTree.getLeaves();
 
-  // Render LODs
+  // Initialize LODs
+  if (leaves.size() == 1)
   {
-    EN_PROFILE_SCOPE("LOD Rendering");
-
-    std::array<Vec4, 6> frustumPlanes = calculateViewFrustumPlanes(Player::Camera());
-    std::array<Vec4, 6> shiftedFrustumPlanes = frustumPlanes;
-    std::array<length_t, 6> planeNormalMags = { glm::length(Vec3(frustumPlanes[static_cast<int>(FrustumPlane::Left)])),
-                                                glm::length(Vec3(frustumPlanes[static_cast<int>(FrustumPlane::Right)])),
-                                                glm::length(Vec3(frustumPlanes[static_cast<int>(FrustumPlane::Bottom)])),
-                                                glm::length(Vec3(frustumPlanes[static_cast<int>(FrustumPlane::Top)])),
-                                                glm::length(Vec3(frustumPlanes[static_cast<int>(FrustumPlane::Near)])),
-                                                glm::length(Vec3(frustumPlanes[static_cast<int>(FrustumPlane::Far)])), };
-
-    ChunkRenderer::BeginScene(Player::Camera());
-    for (int n = 0; n < leaves.size(); ++n)
+    bool treeModified = true;
+    while (treeModified)
     {
-      LOD::Octree::Node* node = leaves[n];
+      leaves = m_LODTree.getLeaves();
+      treeModified = false;
 
-      if (node->data->vertexArray != nullptr && !isInRange(node->anchor, s_RenderDistance))
+      // Split close nodes
+      for (auto it = leaves.begin(); it != leaves.end();)
       {
-        // Shift each plane by distance equal to radius of sphere that circumscribes LOD
-        static constexpr float sqrt3 = 1.732050807568877f;
-        const length_t LODSphereRadius = sqrt3 * node->length() / 2;
-        for (int planeID = 0; planeID < 6; ++planeID)
-          shiftedFrustumPlanes[planeID].w = frustumPlanes[planeID].w + LODSphereRadius * planeNormalMags[planeID];
+        LOD::Octree::Node* node = *it;
 
-        if (isInFrustum(node->center(), shiftedFrustumPlanes))
-          ChunkRenderer::DrawLOD(node);
+        if (node->LODLevel() > 0)
+        {
+          int64_t splitRange = pow2(node->LODLevel() + 1) - 1 + s_RenderDistance;
+          LOD::AABB splitRangeBoundingBox = { Player::OriginIndex() - splitRange, Player::OriginIndex() + splitRange };
+
+          if (LOD::Intersection(splitRangeBoundingBox, node->boundingBox()))
+          {
+            m_LODTree.splitNode(node);
+            treeModified = true;
+
+            it = leaves.erase(it);
+            continue;
+          }
+        }
+
+        it++;
       }
+
+      // Search for nodes to combine
+      std::vector<LOD::Octree::Node*> cannibalNodes{};
+      for (auto it = leaves.begin(); it != leaves.end(); ++it)
+      {
+        LOD::Octree::Node* node = *it;
+
+        if (node->depth > 0)
+        {
+          int64_t combineRange = pow2(node->LODLevel() + 2) - 1 + s_RenderDistance;
+          LOD::AABB rangeBoundingBox = { Player::OriginIndex() - combineRange, Player::OriginIndex() + combineRange };
+
+          if (!LOD::Intersection(rangeBoundingBox, node->parent->boundingBox()))
+            cannibalNodes.push_back(node->parent);
+        }
+      }
+
+      // Combine nodes
+      for (int i = 0; i < cannibalNodes.size(); ++i)
+        m_LODTree.combineChildren(cannibalNodes[i]);
+
+      if (cannibalNodes.size() > 0)
+        treeModified = true;
     }
-    ChunkRenderer::EndScene();
+
+    // Generate meshes for all LODs
+    for (auto it = leaves.begin(); it != leaves.end(); ++it)
+      generateLODMesh(*it);
+
+    leaves = m_LODTree.getLeaves();
   }
 
   // Split close nodes and load children
@@ -397,7 +461,7 @@ HeightMap ChunkManager::generateHeightMap(globalIndex_t chunkI, globalIndex_t ch
     for (int j = 0; j < Chunk::Size(); ++j)
     {
       Vec2 blockXY = Chunk::Length() * Vec2(chunkI, chunkJ) + Block::Length() * (Vec2(i, j) + Vec2(0.5));
-      length_t terrainHeight = Noise::FastTerrainNoise2D(blockXY);
+      length_t terrainHeight = Noise::TerrainNoise2D(blockXY).w;
       heightMap.terrainHeights[i][j] = terrainHeight;
 
       if (terrainHeight > heightMap.maxHeight)
@@ -433,7 +497,7 @@ Chunk* ChunkManager::loadNewChunk(const GlobalIndex& chunkIndex)
 void ChunkManager::generateLODMesh(LOD::Octree::Node* node)
 {
   // LOD smoothness parameter, must be in the range [0.0, 1.0]
-#if 1
+#if 0
   const float S = std::min(0.2f * node->LODLevel(), 1.0f);
 #else
   const float S = 1.0f;
@@ -444,23 +508,23 @@ void ChunkManager::generateLODMesh(LOD::Octree::Node* node)
   static constexpr length_t globalMaxTerrainHeight = 255 * Block::Length();
 
   // Number of cells in each direction
-  constexpr int cells = Chunk::Size();
+  constexpr int numCells = Chunk::Size();
 
-  const length_t lodLength = pow2(node->LODLevel()) * Chunk::Length();
-  const length_t cellLength = lodLength / cells;
+  const length_t LODLength = pow2(node->LODLevel()) * Chunk::Length();
+  const length_t cellLength = LODLength / numCells;
 
-  if (node->anchor.k * Chunk::Length() > globalMaxTerrainHeight || node->anchor.k * Chunk::Length() + lodLength < globalMinTerrainHeight)
+  if (node->anchor.k * Chunk::Length() > globalMaxTerrainHeight || node->anchor.k * Chunk::Length() + LODLength < globalMinTerrainHeight)
     return;
 
   // Generate heightmap
   length_t minTerrainHeight = std::numeric_limits<length_t>::max();
   length_t maxTerrainHeight = -std::numeric_limits<length_t>::max();
-  std::array<std::array<length_t, cells + 1>, cells + 1> terrainHeights{};
-  for (int i = 0; i < cells + 1; ++i)
-    for (int j = 0; j < cells + 1; ++j)
+  std::array<std::array<length_t, numCells + 1>, numCells + 1> terrainHeights{};
+  for (int i = 0; i < numCells + 1; ++i)
+    for (int j = 0; j < numCells + 1; ++j)
     {
       Vec2 pointXY = Chunk::Length() * static_cast<Vec2>(node->anchor) + cellLength * Vec2(i, j);
-      length_t terrainHeight = Noise::FastTerrainNoise2D(pointXY);
+      length_t terrainHeight = Noise::TerrainNoise2D(pointXY).w;
       terrainHeights[i][j] = terrainHeight;
 
       if (terrainHeight > maxTerrainHeight)
@@ -469,14 +533,14 @@ void ChunkManager::generateLODMesh(LOD::Octree::Node* node)
         minTerrainHeight = terrainHeight;
     }
 
-  if (node->anchor.k * Chunk::Length() > maxTerrainHeight || node->anchor.k * Chunk::Length() + lodLength < minTerrainHeight)
+  if (node->anchor.k * Chunk::Length() > maxTerrainHeight || node->anchor.k * Chunk::Length() + LODLength < minTerrainHeight)
     return;
 
-  // Generate mesh
+  // Generate primary LOD mesh
   std::vector<LOD::Vertex> LODMesh{};
-  for (int i = 0; i < cells; ++i)
-    for (int j = 0; j < cells; ++j)
-      for (int k = 0; k < cells; ++k)
+  for (int i = 0; i < numCells; ++i)
+    for (int j = 0; j < numCells; ++j)
+      for (int k = 0; k < numCells; ++k)
       {
         const length_t cellAnchorZPos = node->anchor.k * Chunk::Length() + k * cellLength;
 
@@ -492,6 +556,8 @@ void ChunkManager::generateLODMesh(LOD::Octree::Node* node)
           if (terrainHeights[I][J] > Z)
             cellCase |= bit(v);
         }
+        if (cellCase == 0 || cellCase == 255)
+          continue;
 
         // Use lookup table to determine which of 16 equivalence classes the cell belongs to
         uint8_t cubeEquivClass = regularCellClass[cellCase];
@@ -501,7 +567,7 @@ void ChunkManager::generateLODMesh(LOD::Octree::Node* node)
         // Loop over all triangles in cell
         for (int tri = 0; tri < triangleCount; ++tri)
         {
-          // Local positions of vertices within LOD
+          // Local positions of vertices within LOD, measured relative to LOD anchor
           std::array<Vec3, 3> vertexPositions{};
 
           for (int v = 0; v < 3; ++v)
@@ -525,30 +591,111 @@ void ChunkManager::generateLODMesh(LOD::Octree::Node* node)
             length_t zB = indexB & bit(2) ? cellAnchorZPos + cellLength : cellAnchorZPos;
 
             // Isovalues of vertices A and B
-            float tA = terrainHeights[iA][jA] - zA;
-            float tB = terrainHeights[iB][jB] - zB;
+            length_t tA = terrainHeights[iA][jA] - zA;
+            length_t tB = terrainHeights[iB][jB] - zB;
 
-            float t = tA / (tA - tB);
+            length_t t = tA / (tA - tB);
 
             // Calculate the position of the vertex on the cell edge.  The smoothness parameter S is used to interpolate between 
             // roughest iso-surface (vertex is always chosen at edge midpoint) and the smooth iso-surface interpolation used by Paul Bourke.
-            Vec3 edgeOffset = vertA + (0.5 * (1 - S) + t * S) * (vertB - vertA);
-            vertexPositions[v] = cellLength * Vec3(i, j, k) + cellLength * edgeOffset;
+            Vec3 normalizedCellPosition = vertA + (0.5 * (1 - S) + t * S) * (vertB - vertA);
+            vertexPositions[v] = cellLength * Vec3(i, j, k) + cellLength * normalizedCellPosition;
           }
 
           // Calculate vertex normal
-          Vec3 normal = glm::normalize(glm::cross(vertexPositions[1] - vertexPositions[0], vertexPositions[2] - vertexPositions[0]));
-          float lightValue = static_cast<float>((2.0 + normal.z) / 3);
+          Vec3 surfaceNormal = glm::normalize(glm::cross(vertexPositions[1] - vertexPositions[0], vertexPositions[2] - vertexPositions[0]));
+          float lightValue = static_cast<float>((1.0 + surfaceNormal.z) / 2);
 
           for (int v = 0; v < 3; ++v)
-            LODMesh.push_back({ vertexPositions[v], v, lightValue });
+          {
+            /*
+              NOTE: Alternatively, we could expand the range of sample voxel data to (chunkSize+3)x(chunkSize+3), and compute
+              central differences to approximate normals at the inner locations.  Then, we can interpolate based on corner
+              normals to find normal within a cell.  This is likely to be more efficient.
+            */
+            Vec3 isoNormal = Vec3(Noise::TerrainNoise2D(Chunk::Length() * static_cast<Vec3>(node->anchor) + vertexPositions[v]));
+            LODMesh.push_back({ vertexPositions[v], surfaceNormal, isoNormal, v, lightValue });
+          }
         }
       }
+
+  const GlobalIndex offsets[6] = { { node->size(), 0, 0}, { -1, 0, 0}, { 0, node->size(), 0}, { 0, -1, 0}, { 0, 0, node->size()}, { 0, 0, -1} };
+                              //            East              West             North             South             Top               Bottom
+
+  // Determine which faces transition to a higher resolution LOD
+  std::array<bool, 6> isTransitionFace{}; // Change be changed to a single byte
+  for (BlockFace face : BlockFaceIterator())
+  {
+    const int faceID = static_cast<int>(face);
+
+    LOD::Octree::Node* neighbor = m_LODTree.findLeaf(node->anchor + offsets[faceID]);
+    if (neighbor == nullptr)
+      continue;
+
+    if (node->LODLevel() - neighbor->LODLevel() == 0)
+      continue;
+    else if (node->LODLevel() - neighbor->LODLevel() == 1)
+      isTransitionFace[faceID] = true;
+    else if (node->LODLevel() - neighbor->LODLevel() > 1)
+      EN_WARN("LOD neighbor is more than one level higher resolution");
+  }
+
+  if (isTransitionFace[static_cast<int>(BlockFace::East)]  || isTransitionFace[static_cast<int>(BlockFace::West)]  ||
+      isTransitionFace[static_cast<int>(BlockFace::North)] || isTransitionFace[static_cast<int>(BlockFace::South)] ||
+      isTransitionFace[static_cast<int>(BlockFace::Top)]   || isTransitionFace[static_cast<int>(BlockFace::Bottom)])
+  {
+    // Formulas can be found in section 4.4 of TransVoxel paper
+    const length_t transitionCellWidth = cellLength / 4;
+    auto isNearFace = [=](bool facingPositiveDir, length_t u) 
+    { 
+      return facingPositiveDir ? u > cellLength * (numCells - 1) : u < cellLength;
+    };
+    auto calcAdjustment = [=](bool facingPositiveDir, length_t u)
+    {
+      return facingPositiveDir ? (numCells - 1 - u / cellLength) * transitionCellWidth : (1 - u / cellLength) * transitionCellWidth;
+    };
+
+    // Adjust coorindates of boundary cells on primary LOD mesh
+    for (int i = 0; i < LODMesh.size(); ++i)
+    {
+      Vec3 adjustment{};
+      bool isNearSameResolutionLOD = false;
+      for (BlockFace face : BlockFaceIterator())
+      {
+        const int faceID = static_cast<int>(face);
+        const int coordID = faceID / 2;
+        const bool facingPositiveDir = faceID % 2 == 0;
+
+        if (isNearFace(facingPositiveDir, LODMesh[i].position[coordID]))
+        {
+          if (isTransitionFace[faceID])
+            adjustment[coordID] = calcAdjustment(facingPositiveDir, LODMesh[i].position[coordID]);
+          else
+          {
+            isNearSameResolutionLOD = true;
+            break;
+          }
+        }
+      }
+
+      if (!isNearSameResolutionLOD && adjustment != Vec3(0.0))
+      {
+        const Vec3& n = LODMesh[i].isoNormal;
+        const Mat3 transform = Mat3( 1 - n.x * n.x,  -n.x * n.y,      -n.x * n.z,
+                                    -n.x * n.y,       1 - n.y * n.y,  -n.y * n.z,
+                                    -n.x * n.z,      -n.y * n.z,       1 - n.z * n.z );
+
+        LODMesh[i].position += transform * adjustment;
+      }
+    }
+  }
 
   // Generate vertex array
   Engine::Shared<Engine::VertexArray> LODVertexArray = Engine::VertexArray::Create();
   auto LODVertexBuffer = Engine::VertexBuffer::Create(static_cast<uint32_t>(LODMesh.size()) * sizeof(LOD::Vertex));
   LODVertexBuffer->setLayout({ { ShaderDataType::Float3, "a_Position" },
+                               { ShaderDataType::Float3, "a_SurfaceNormal"},
+                               { ShaderDataType::Float3, "a_IsoNormal"},
                                { ShaderDataType::Int,    "a_QuadIndex"},
                                { ShaderDataType::Float,  "s_LightValue"} });
   LODVertexArray->addVertexBuffer(LODVertexBuffer);
@@ -556,8 +703,8 @@ void ChunkManager::generateLODMesh(LOD::Octree::Node* node)
   uintptr_t dataSize = sizeof(LOD::Vertex) * LODMesh.size();
   LODVertexBuffer->setData(LODMesh.data(), dataSize);
 
-  node->data->vertexArray = LODVertexArray;
-  node->data->meshSize = static_cast<uint32_t>(LODMesh.size());
+  node->data->LODVertexArray = LODVertexArray;
+  node->data->LODMeshSize = static_cast<uint32_t>(LODMesh.size());
 }
 
 void ChunkManager::unloadChunk(Chunk* const chunk)

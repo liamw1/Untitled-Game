@@ -12,15 +12,20 @@ namespace LOD
 
   struct Vertex
   {
-    Vec3 position;
+    Float3 position;
+    Float3 surfaceNormal;
+    Float3 isoNormal;
     int quadIndex;
     float lightValue;
   };
 
   struct Data 
   {
-    Engine::Shared<Engine::VertexArray> vertexArray;
-    uint32_t meshSize;
+    Engine::Shared<Engine::VertexArray> LODVertexArray;
+    uint32_t LODMeshSize;
+
+    // std::array<Engine::Shared<Engine::VertexArray>, 6> transitionVertexArrays;
+    // std::array<uint32_t, 6> transitionMeshSizes;
   };
 
   class Octree

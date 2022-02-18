@@ -31,12 +31,16 @@ void World::onUpdate(std::chrono::duration<seconds> timestep)
   if (!m_RenderingPaused)
   {
     m_ChunkManager.manageLODs();
+    m_ChunkManager.renderLODs();
     m_ChunkManager.loadNewChunks(200);
     m_ChunkManager.render();
     m_ChunkManager.clean();
   }
   else
+  {
+    m_ChunkManager.renderLODs();
     m_ChunkManager.render();
+  }
 }
 
 RayIntersection World::castRaySegment(const Vec3& pointA, const Vec3& pointB) const

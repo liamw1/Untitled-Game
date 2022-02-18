@@ -158,7 +158,7 @@ Vec3 Noise::Simplex2D(const Vec2& v)
 
   // Final noise value is:
   // sum of ((radial weights) times (gradient dot vector from corner))
-  float n = dot(t4, w);
+  length_t n = dot(t4, w);
 
   // Final analytical derivative (gradient of a sum of scalar products)
   Vec2 dt0 = 4 * t3.x * Vec2(dtdx.x, dtdy.x);
@@ -249,14 +249,21 @@ length_t Noise::FastTerrainNoise2D(const Vec2& pointXY)
   length_t octave2 = 50 * Block::Length() * glm::simplex(pointXY / 320.0 / Block::Length());
   length_t octave3 = 5 * Block::Length() * glm::simplex(pointXY / 40.0 / Block::Length());
 
-  return octave1 + octave2 + octave3;
+  // return octave1 + octave2 + octave3;
+  return -2.0 + 3.0 * sin(0.409238002985 * pointXY.x) + 3.0 * cos(0.31055831835 * pointXY.x) + 3.0 * sin(0.2412410 * pointXY.y);
 }
 
-Vec3 Noise::TerrainNoise2D(const Vec2& pointXY)
+Vec4 Noise::TerrainNoise2D(const Vec2& pointXY)
 {
   Vec3 octave1 = 150 * Block::Length() * Simplex2D(pointXY / 1280.0 / Block::Length());
+  Vec3 octave2 = 50 * Block::Length() * Simplex2D(pointXY / 320.0 / Block::Length());
+  Vec3 octave3 = 5 * Block::Length() * Simplex2D(pointXY / 40.0 / Block::Length());
 
-  return octave1;
+  length_t value = octave1.z + octave2.z + octave3.z;
+  Vec2 gradient = (Vec2(octave1) / 1280.0 + Vec2(octave2) / 320.0 + Vec2(octave3) / 40.0) / Block::Length();
+  Vec3 normal = glm::normalize(Vec3(-gradient, 1));
+
+  return Vec4(normal, value);
 }
 
 Vec4 Noise::TerrainNoise3D(const Vec3& position)

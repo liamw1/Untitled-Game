@@ -28,6 +28,6 @@ namespace Noise
 
   // NOTE: Replace these with more robust biome/terrain system
   length_t FastTerrainNoise2D(const Vec2& pointXY);
-  Vec3 TerrainNoise2D(const Vec2& pointXY);
+  Vec4 TerrainNoise2D(const Vec2& pointXY);
   Vec4 TerrainNoise3D(const Vec3& position);
 }

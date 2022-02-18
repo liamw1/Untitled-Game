@@ -72,9 +72,12 @@ namespace LOD
 
   Octree::Node* Octree::findLeaf(const GlobalIndex& index)
   {
-    EN_ASSERT(m_Root.anchor.i <= index.i && index.i <= m_Root.anchor.i + m_Root.size() &&
-              m_Root.anchor.j <= index.j && index.j <= m_Root.anchor.j + m_Root.size() &&
-              m_Root.anchor.k <= index.k && index.k <= m_Root.anchor.k + m_Root.size(), "Specified index is not in root node!");
+    if (index.i < m_Root.anchor.i || index.i > m_Root.anchor.i + m_Root.size() ||
+        index.j < m_Root.anchor.j || index.j > m_Root.anchor.j + m_Root.size() ||
+        index.k < m_Root.anchor.k || index.k > m_Root.anchor.k + m_Root.size())
+    {
+      return nullptr;
+    }
 
     return findLeafPriv(&m_Root, index);
   }
@@ -108,8 +111,8 @@ namespace LOD
 
   bool Intersection(AABB boxA, AABB boxB)
   {
-    return boxA.min.i < boxB.max.i&& boxA.max.i > boxB.min.i &&
-           boxA.min.j < boxB.max.j&& boxA.max.j > boxB.min.j &&
-           boxA.min.k < boxB.max.k&& boxA.max.k > boxB.min.k;
+    return boxA.min.i < boxB.max.i && boxA.max.i > boxB.min.i &&
+           boxA.min.j < boxB.max.j && boxA.max.j > boxB.min.j &&
+           boxA.min.k < boxB.max.k && boxA.max.k > boxB.min.k;
   }
 }
