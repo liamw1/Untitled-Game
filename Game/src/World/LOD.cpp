@@ -97,15 +97,7 @@ namespace LOD
   Octree::Node* Octree::findLeafPriv(Node* branch, const GlobalIndex& index)
   {
     if (branch->isLeaf())
-    {
-      if (index.i < branch->anchor.i || index.i >= branch->anchor.i + branch->size() ||
-          index.j < branch->anchor.j || index.j >= branch->anchor.j + branch->size() ||
-          index.k < branch->anchor.k || index.k >= branch->anchor.k + branch->size())
-      {
-        EN_ERROR("Index is not wihin node!");
-      }
       return branch;
-    }
     else
     {
       int i = index.i >= branch->anchor.i + branch->size() / 2;

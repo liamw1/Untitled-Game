@@ -697,23 +697,6 @@ std::vector<LOD::Vertex> ChunkManager::calcAdjustedMesh(LOD::Octree::Node* node)
     if (neighbor == nullptr)
       continue;
 
-#if 0
-    if (node->LODLevel() > 3)
-    {
-      if (node->LODLevel() - neighbor->LODLevel() == 1)
-        EN_WARN("Transition!");
-      EN_INFO("LOD Level: {0}", node->LODLevel());
-      EN_INFO("LOD Anchor: {0}, {1}, {2}", node->anchor.i, node->anchor.j, node->anchor.k);
-      EN_INFO("Search Index: {0}, {1}, {2}", node->anchor.i + offsets[faceID].i, node->anchor.j + offsets[faceID].j, node->anchor.k + offsets[faceID].k);
-      EN_INFO("Neighbor Anchor: {0}, {1}, {2}", neighbor->anchor.i, neighbor->anchor.j, neighbor->anchor.k);
-      EN_INFO("Neighbor LOD Level: {0}", neighbor->LODLevel());
-      EN_INFO("");
-    }
-#endif
-
-    if (neighbor == node)
-      EN_WARN("Something is wrong with findLeaf function");
-
     if (node->LODLevel() == neighbor->LODLevel())
       continue;
     else if (node->LODLevel() - neighbor->LODLevel() == 1)
