@@ -21,11 +21,8 @@ namespace LOD
 
   struct Data 
   {
-    Engine::Shared<Engine::VertexArray> LODVertexArray;
-    uint32_t LODMeshSize;
-
-    // std::array<Engine::Shared<Engine::VertexArray>, 6> transitionVertexArrays;
-    // std::array<uint32_t, 6> transitionMeshSizes;
+    std::vector<Vertex> meshData;
+    Engine::Shared<Engine::VertexArray> vertexArray;
   };
 
   class Octree

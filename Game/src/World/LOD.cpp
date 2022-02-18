@@ -72,9 +72,9 @@ namespace LOD
 
   Octree::Node* Octree::findLeaf(const GlobalIndex& index)
   {
-    if (index.i < m_Root.anchor.i || index.i > m_Root.anchor.i + m_Root.size() ||
-        index.j < m_Root.anchor.j || index.j > m_Root.anchor.j + m_Root.size() ||
-        index.k < m_Root.anchor.k || index.k > m_Root.anchor.k + m_Root.size())
+    if (index.i < m_Root.anchor.i || index.i >= m_Root.anchor.i + m_Root.size() ||
+        index.j < m_Root.anchor.j || index.j >= m_Root.anchor.j + m_Root.size() ||
+        index.k < m_Root.anchor.k || index.k >= m_Root.anchor.k + m_Root.size())
     {
       return nullptr;
     }
@@ -97,7 +97,15 @@ namespace LOD
   Octree::Node* Octree::findLeafPriv(Node* branch, const GlobalIndex& index)
   {
     if (branch->isLeaf())
+    {
+      if (index.i < branch->anchor.i || index.i >= branch->anchor.i + branch->size() ||
+          index.j < branch->anchor.j || index.j >= branch->anchor.j + branch->size() ||
+          index.k < branch->anchor.k || index.k >= branch->anchor.k + branch->size())
+      {
+        EN_ERROR("Index is not wihin node!");
+      }
       return branch;
+    }
     else
     {
       int i = index.i >= branch->anchor.i + branch->size() / 2;

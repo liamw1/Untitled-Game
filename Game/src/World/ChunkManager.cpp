@@ -222,7 +222,7 @@ void ChunkManager::renderLODs()
   {
     LOD::Octree::Node* node = *it;
 
-    if (node->data->LODVertexArray != nullptr)
+    if (node->data->vertexArray != nullptr)
     {
       // Shift each plane by distance equal to radius of sphere that circumscribes LOD
       static constexpr float sqrt3 = 1.732050807568877f;
@@ -243,9 +243,13 @@ void ChunkManager::manageLODs()
   
   std::vector<LOD::Octree::Node*> leaves = m_LODTree.getLeaves();
 
+  bool newNodes = false;
+
   // Initialize LODs
   if (leaves.size() == 1)
   {
+    newNodes = true;
+
     bool treeModified = true;
     while (treeModified)
     {
@@ -319,6 +323,8 @@ void ChunkManager::manageLODs()
 
       if (LOD::Intersection(splitRangeBoundingBox, node->boundingBox()))
       {
+        newNodes = true;
+
         m_LODTree.splitNode(node);
 
         for (int i = 0; i < 8; ++i)
@@ -351,8 +357,22 @@ void ChunkManager::manageLODs()
   // Combine nodes
   for (int i = 0; i < cannibalNodes.size(); ++i)
   {
+    newNodes = true;
+
     m_LODTree.combineChildren(cannibalNodes[i]);
     generateLODMesh(cannibalNodes[i]);
+  }
+
+  if (newNodes)
+  {
+    std::vector<LOD::Octree::Node*> newLeaves = m_LODTree.getLeaves();
+    for (auto it = newLeaves.begin(); it != newLeaves.end(); ++it)
+    {
+      LOD::Octree::Node* node = *it;
+
+      if (node->data->meshData.size() > 0)
+        meshLOD(node);
+    }
   }
 }
 
@@ -510,10 +530,9 @@ void ChunkManager::generateLODMesh(LOD::Octree::Node* node)
   // Number of cells in each direction
   constexpr int numCells = Chunk::Size();
 
-  const length_t LODLength = pow2(node->LODLevel()) * Chunk::Length();
-  const length_t cellLength = LODLength / numCells;
+  const length_t cellLength = node->length() / numCells;
 
-  if (node->anchor.k * Chunk::Length() > globalMaxTerrainHeight || node->anchor.k * Chunk::Length() + LODLength < globalMinTerrainHeight)
+  if (node->anchor.k * Chunk::Length() > globalMaxTerrainHeight || node->anchor.k * Chunk::Length() + node->length() < globalMinTerrainHeight)
     return;
 
   // Generate heightmap
@@ -533,11 +552,11 @@ void ChunkManager::generateLODMesh(LOD::Octree::Node* node)
         minTerrainHeight = terrainHeight;
     }
 
-  if (node->anchor.k * Chunk::Length() > maxTerrainHeight || node->anchor.k * Chunk::Length() + LODLength < minTerrainHeight)
+  if (node->anchor.k * Chunk::Length() > maxTerrainHeight || node->anchor.k * Chunk::Length() + node->length() < minTerrainHeight)
     return;
 
   // Generate primary LOD mesh
-  std::vector<LOD::Vertex> LODMesh{};
+  std::vector<LOD::Vertex> LODMeshData{};
   for (int i = 1; i < numCells + 1; ++i)
     for (int j = 1; j < numCells + 1; ++j)
       for (int k = 1; k < numCells + 1; ++k)
@@ -632,9 +651,38 @@ void ChunkManager::generateLODMesh(LOD::Octree::Node* node)
           float lightValue = static_cast<float>((1.0 + surfaceNormal.z) / 2);
 
           for (int v = 0; v < 3; ++v)
-            LODMesh.push_back({ vertexPositions[v], surfaceNormal, isoNormals[v], v, lightValue });
+            LODMeshData.push_back({ vertexPositions[v], surfaceNormal, isoNormals[v], v, lightValue });
         }
       }
+  node->data->meshData = LODMeshData;
+}
+
+void ChunkManager::meshLOD(LOD::Octree::Node* node)
+{
+  std::vector<LOD::Vertex> LODMesh = calcAdjustedMesh(node);
+
+  // Generate vertex array
+  Engine::Shared<Engine::VertexArray> LODVertexArray = Engine::VertexArray::Create();
+  auto LODVertexBuffer = Engine::VertexBuffer::Create(static_cast<uint32_t>(LODMesh.size()) * sizeof(LOD::Vertex));
+  LODVertexBuffer->setLayout({ { ShaderDataType::Float3, "a_Position" },
+                               { ShaderDataType::Float3, "a_SurfaceNormal"},
+                               { ShaderDataType::Float3, "a_IsoNormal"},
+                               { ShaderDataType::Int,    "a_QuadIndex"},
+                               { ShaderDataType::Float,  "s_LightValue"} });
+  LODVertexArray->addVertexBuffer(LODVertexBuffer);
+
+  uintptr_t dataSize = sizeof(LOD::Vertex) * LODMesh.size();
+  LODVertexBuffer->setData(LODMesh.data(), dataSize);
+
+  node->data->vertexArray = LODVertexArray;
+}
+
+std::vector<LOD::Vertex> ChunkManager::calcAdjustedMesh(LOD::Octree::Node* node)
+{
+  // Number of cells in each direction
+  constexpr int numCells = Chunk::Size();
+
+  const length_t cellLength = node->length() / numCells;
 
   const GlobalIndex offsets[6] = { { node->size(), 0, 0}, { -1, 0, 0}, { 0, node->size(), 0}, { 0, -1, 0}, { 0, 0, node->size()}, { 0, 0, -1} };
                               //            East              West             North             South             Top               Bottom
@@ -649,7 +697,24 @@ void ChunkManager::generateLODMesh(LOD::Octree::Node* node)
     if (neighbor == nullptr)
       continue;
 
-    if (node->LODLevel() - neighbor->LODLevel() == 0)
+#if 0
+    if (node->LODLevel() > 3)
+    {
+      if (node->LODLevel() - neighbor->LODLevel() == 1)
+        EN_WARN("Transition!");
+      EN_INFO("LOD Level: {0}", node->LODLevel());
+      EN_INFO("LOD Anchor: {0}, {1}, {2}", node->anchor.i, node->anchor.j, node->anchor.k);
+      EN_INFO("Search Index: {0}, {1}, {2}", node->anchor.i + offsets[faceID].i, node->anchor.j + offsets[faceID].j, node->anchor.k + offsets[faceID].k);
+      EN_INFO("Neighbor Anchor: {0}, {1}, {2}", neighbor->anchor.i, neighbor->anchor.j, neighbor->anchor.k);
+      EN_INFO("Neighbor LOD Level: {0}", neighbor->LODLevel());
+      EN_INFO("");
+    }
+#endif
+
+    if (neighbor == node)
+      EN_WARN("Something is wrong with findLeaf function");
+
+    if (node->LODLevel() == neighbor->LODLevel())
       continue;
     else if (node->LODLevel() - neighbor->LODLevel() == 1)
       isTransitionFace[faceID] = true;
@@ -657,14 +722,16 @@ void ChunkManager::generateLODMesh(LOD::Octree::Node* node)
       EN_WARN("LOD neighbor is more than one level higher resolution");
   }
 
+  std::vector<LOD::Vertex> LODMesh = node->data->meshData;
+
   if (isTransitionFace[static_cast<int>(BlockFace::East)]  || isTransitionFace[static_cast<int>(BlockFace::West)]  ||
       isTransitionFace[static_cast<int>(BlockFace::North)] || isTransitionFace[static_cast<int>(BlockFace::South)] ||
       isTransitionFace[static_cast<int>(BlockFace::Top)]   || isTransitionFace[static_cast<int>(BlockFace::Bottom)])
   {
     // Formulas can be found in section 4.4 of TransVoxel paper
     const length_t transitionCellWidth = cellLength / 4;
-    auto isNearFace = [=](bool facingPositiveDir, length_t u) 
-    { 
+    auto isNearFace = [=](bool facingPositiveDir, length_t u)
+    {
       return facingPositiveDir ? u > cellLength * (numCells - 1) : u < cellLength;
     };
     auto calcAdjustment = [=](bool facingPositiveDir, length_t u)
@@ -700,28 +767,13 @@ void ChunkManager::generateLODMesh(LOD::Octree::Node* node)
         const Vec3& n = LODMesh[i].isoNormal;
         const Mat3 transform = Mat3( 1 - n.x * n.x,  -n.x * n.y,      -n.x * n.z,
                                     -n.x * n.y,       1 - n.y * n.y,  -n.y * n.z,
-                                    -n.x * n.z,      -n.y * n.z,       1 - n.z * n.z );
+                                    -n.x * n.z,      -n.y * n.z,       1 - n.z * n.z);
 
         LODMesh[i].position += transform * adjustment;
       }
     }
   }
-
-  // Generate vertex array
-  Engine::Shared<Engine::VertexArray> LODVertexArray = Engine::VertexArray::Create();
-  auto LODVertexBuffer = Engine::VertexBuffer::Create(static_cast<uint32_t>(LODMesh.size()) * sizeof(LOD::Vertex));
-  LODVertexBuffer->setLayout({ { ShaderDataType::Float3, "a_Position" },
-                               { ShaderDataType::Float3, "a_SurfaceNormal"},
-                               { ShaderDataType::Float3, "a_IsoNormal"},
-                               { ShaderDataType::Int,    "a_QuadIndex"},
-                               { ShaderDataType::Float,  "s_LightValue"} });
-  LODVertexArray->addVertexBuffer(LODVertexBuffer);
-
-  uintptr_t dataSize = sizeof(LOD::Vertex) * LODMesh.size();
-  LODVertexBuffer->setData(LODMesh.data(), dataSize);
-
-  node->data->LODVertexArray = LODVertexArray;
-  node->data->LODMeshSize = static_cast<uint32_t>(LODMesh.size());
+  return LODMesh;
 }
 
 void ChunkManager::unloadChunk(Chunk* const chunk)

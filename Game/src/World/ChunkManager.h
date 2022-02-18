@@ -130,6 +130,8 @@ private:
     Creates mesh for a single LOD using the TransVoxel algorithm.
   */
   void generateLODMesh(LOD::Octree::Node* node);
+  void meshLOD(LOD::Octree::Node* node);
+  std::vector<LOD::Vertex> calcAdjustedMesh(LOD::Octree::Node* node);
 
   /*
     Searches for chunk, removes it from whatever map it is currently in,

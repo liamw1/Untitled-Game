@@ -65,14 +65,14 @@ void ChunkRenderer::DrawChunk(const Chunk* chunk)
 
 void ChunkRenderer::DrawLOD(const LOD::Octree::Node* node)
 {
-  if (node->data->LODMeshSize == 0)
+  if (node->data->meshData.size() == 0)
     return; // Nothing to draw
 
   Vec3 localAnchorPosition = Chunk::Length() * static_cast<Vec3>(node->anchor - Player::OriginIndex());
 
-  node->data->LODVertexArray->bind();
+  node->data->vertexArray->bind();
   s_LODShader->bind();
   s_LODShader->setFloat("u_TextureScaling", static_cast<float>(bit(node->LODLevel())));
   s_LODShader->setFloat3("u_LODPosition", localAnchorPosition);
-  Engine::RenderCommand::DrawVertices(node->data->LODVertexArray, node->data->LODMeshSize);
+  Engine::RenderCommand::DrawVertices(node->data->vertexArray, node->data->meshData.size());
 }
