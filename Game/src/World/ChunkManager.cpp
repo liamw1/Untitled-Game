@@ -579,8 +579,8 @@ void ChunkManager::generateLODMesh(LOD::Octree::Node* node)
           continue;
 
         // Use lookup table to determine which of 16 equivalence classes the cell belongs to
-        uint8_t cubeEquivClass = regularCellClass[cellCase];
-        RegularCellData cellData = regularCellData[cubeEquivClass];
+        uint8_t cellEquivClass = regularCellClass[cellCase];
+        RegularCellData cellData = regularCellData[cellEquivClass];
         int triangleCount = cellData.getTriangleCount();
 
         // Loop over all triangles in cell
@@ -590,17 +590,17 @@ void ChunkManager::generateLODMesh(LOD::Octree::Node* node)
           std::array<Vec3, 3> vertexPositions{};
           std::array<Vec3, 3> isoNormals{};
 
-          for (int v = 0; v < 3; ++v)
+          for (int vert = 0; vert < 3; ++vert)
           {
             // Lookup indices of vertices A,B of the cell edge that vertex v lies on
-            int cellEdgeIndex = cellData.vertexIndex[3 * tri + v];
-            uint16_t vertexData = regularVertexData[cellCase][cellEdgeIndex];
+            int edgeIndex = cellData.vertexIndex[3 * tri + vert];
+            uint16_t vertexData = regularVertexData[cellCase][edgeIndex];
             uint8_t indexA = vertexData & 0x000F;
             uint8_t indexB = (vertexData & 0x00F0) >> 4;
 
             // Normalized vertex positions
-            Vec3 vertA = cellVertexOffsets[indexA];
-            Vec3 vertB = cellVertexOffsets[indexB];
+            Vec3 vertA = regularCellVertexOffsets[indexA];
+            Vec3 vertB = regularCellVertexOffsets[indexB];
 
             // Cell vertex indices and z-positions
             int iA = indexA & bit(0) ? i + 1 : i;
@@ -619,7 +619,7 @@ void ChunkManager::generateLODMesh(LOD::Octree::Node* node)
             // Calculate the position of the vertex on the cell edge.  The smoothness parameter S is used to interpolate between 
             // roughest iso-surface (vertex is always chosen at edge midpoint) and the smooth iso-surface interpolation used by Paul Bourke.
             Vec3 normalizedCellPosition = vertA + (0.5 * (1 - S) + t * S) * (vertB - vertA);
-            vertexPositions[v] = cellLength * Vec3(i - 1, j - 1, k - 1) + cellLength * normalizedCellPosition;
+            vertexPositions[vert] = cellLength * Vec3(i - 1, j - 1, k - 1) + cellLength * normalizedCellPosition;
 
             // Estimate isosurface normal using trilinear interpolation
             const length_t& x = normalizedCellPosition.x;
@@ -643,18 +643,138 @@ void ChunkManager::generateLODMesh(LOD::Octree::Node* node)
             Vec3 n1 = n01 * (1 - y) + n11 * y;
 
             Vec3 n = n0 * (1 - z) + n1 * z;
-            isoNormals[v] = glm::normalize(n);
+            isoNormals[vert] = glm::normalize(n);
           }
 
           // Calculate vertex normal
           Vec3 surfaceNormal = glm::normalize(glm::cross(vertexPositions[1] - vertexPositions[0], vertexPositions[2] - vertexPositions[0]));
           float lightValue = static_cast<float>((1.0 + surfaceNormal.z) / 2);
 
-          for (int v = 0; v < 3; ++v)
-            LODMeshData.push_back({ vertexPositions[v], surfaceNormal, isoNormals[v], v, lightValue });
+          for (int vert = 0; vert < 3; ++vert)
+            LODMeshData.push_back({ vertexPositions[vert], surfaceNormal, isoNormals[vert], vert, lightValue });
         }
       }
   node->data->meshData = LODMeshData;
+
+  // Generate transition meshes
+  for (BlockFace face : BlockFaceIterator())
+  {
+    std::vector<LOD::Vertex> transitionMeshData{};
+    const int faceID = static_cast<int>(face);
+
+    // Relabel coordinates
+    const int u = faceID / 2;
+    const int v = (u + 1) % 3;
+    const int w = (u + 2) % 3;
+    const bool facingPositiveDir = faceID % 2 == 0;
+
+    for (int i = 1; i < numCells + 1; i += 2)
+      for (int j = 1; j < numCells + 1; j += 2)
+      {
+        // Determine which of the 512 cases the cell belongs to
+        uint16_t cellCase = 0;
+        for (int p = 0; p < 9; ++p)
+        {
+          static constexpr int indexMapping[9] = { 0, 1, 2, 7, 8, 3, 6, 5, 4 };
+
+          BlockIndex cellVertexIndex{};
+          cellVertexIndex[u] = facingPositiveDir ? numCells : 1;
+          cellVertexIndex[v] = i + p % 3;
+          cellVertexIndex[w] = j + p / 3;
+
+          const int& I = cellVertexIndex.i;
+          const int& J = cellVertexIndex.j;
+          const int& K = cellVertexIndex.k;
+          length_t Z = node->anchor.k * Chunk::Length() + (K - 1) * cellLength;
+
+          if (noiseValues[I][J].w > Z)
+            cellCase |= bit(indexMapping[p]);
+        }
+        if (cellCase == 0 || cellCase == 511)
+          continue;
+
+        // Use lookup table to determine which of 56 equivalence classes the cell belongs to
+        uint8_t cellEquivClass = transitionCellClass[cellCase];
+        bool reverseWindingOrder = cellEquivClass >> 7;
+        TransitionCellData cellData = transitionCellData[cellEquivClass & 0x7F];
+        int triangleCount = cellData.getTriangleCount();
+
+        // Loop over all triangles in cell
+        for (int tri = 0; tri < triangleCount; ++tri)
+        {
+          // Local positions of vertices within LOD, measured relative to LOD anchor
+          std::array<Vec3, 3> vertexPositions{};
+
+          for (int vert = 0; vert < 3; ++vert)
+          {
+          // Lookup indices of vertices A,B of the cell edge that vertex v lies on
+            int edgeIndex = cellData.vertexIndex[3 * tri + vert];
+            uint16_t vertexData = transitionVertexData[cellCase][edgeIndex];
+            uint8_t indexA = vertexData & 0x000F;
+            uint8_t indexB = (vertexData & 0x00F0) >> 4;
+
+            // Normalized vertex positions
+            Vec3 vertA = transitionCellVertexOffsets[faceID][indexA];
+            Vec3 vertB = transitionCellVertexOffsets[faceID][indexB];
+
+            static constexpr int indexMapping[13] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 0, 2, 6, 8 };
+
+            BlockIndex vA{};
+            vA[u] = facingPositiveDir ? numCells : 1;
+            vA[v] = i + indexMapping[indexA] % 3;
+            vA[w] = j + indexMapping[indexA] / 3;
+
+            BlockIndex vB{};
+            vB[u] = facingPositiveDir ? numCells : 1;
+            vB[v] = i + indexMapping[indexB] % 3;
+            vB[w] = j + indexMapping[indexB] / 3;
+
+            // Cell vertex indices and z-positions
+            const int& iA = vA.i;
+            const int& iB = vB.i;
+            const int& jA = vA.j;
+            const int& jB = vB.j;
+            const int& kA = vA.k;
+            const int& kB = vB.k;
+            length_t zA = node->anchor.k * Chunk::Length() + (kA - 1) * cellLength;
+            length_t zB = node->anchor.k * Chunk::Length() + (kB - 1) * cellLength;
+
+            // Isovalues of vertices A and B
+            length_t tA = noiseValues[iA][jA].w - zA;
+            length_t tB = noiseValues[iB][jB].w - zB;
+
+            length_t t = tA / (tA - tB);
+
+            // Calculate the position of the vertex on the cell edge.  The smoothness parameter S is used to interpolate between 
+            // roughest iso-surface (vertex is always chosen at edge midpoint) and the smooth iso-surface interpolation used by Paul Bourke.
+            Vec3 normalizedCellPosition = vertA + (0.5 * (1 - S) + t * S) * (vertB - vertA);
+
+            // Squash transition cell towards LOD face
+            length_t adjustment = static_cast<length_t>(facingPositiveDir ? 0.25 : 0.0);
+            Vec3 transitionCellPosition = normalizedCellPosition;
+            transitionCellPosition[u] = static_cast<length_t>(0.25) * transitionCellPosition[u] + adjustment;  // NOTE: Make more general
+
+            Vec3 localCellAnchor{};
+            localCellAnchor[u] = (facingPositiveDir ? numCells - 1 : 0) * cellLength;
+            localCellAnchor[v] = (i - 1) * cellLength;
+            localCellAnchor[w] = (j - 1) * cellLength;
+
+            // NOTE: Currently bug where transition cells facing negative direction have incorrect winding order, investigate.
+            int vertexOrder = reverseWindingOrder ? 2 - vert : vert;
+            vertexPositions[vertexOrder] = localCellAnchor + 2 * cellLength * transitionCellPosition;
+          }
+
+          // Calculate vertex normal
+          Vec3 surfaceNormal = glm::normalize(glm::cross(vertexPositions[1] - vertexPositions[0], vertexPositions[2] - vertexPositions[0]));
+          float lightValue = static_cast<float>((1.0 + surfaceNormal.z) / 2);
+
+          for (int vert = 0; vert < 3; ++vert)
+            transitionMeshData.push_back({ vertexPositions[vert], surfaceNormal, Vec3(0.0), vert, lightValue });
+        }
+      }
+
+    node->data->transitionMeshData[faceID] = transitionMeshData;
+  }
 }
 
 void ChunkManager::meshLOD(LOD::Octree::Node* node)
@@ -673,8 +793,27 @@ void ChunkManager::meshLOD(LOD::Octree::Node* node)
 
   uintptr_t dataSize = sizeof(LOD::Vertex) * LODMesh.size();
   LODVertexBuffer->setData(LODMesh.data(), dataSize);
-
   node->data->vertexArray = LODVertexArray;
+
+  for (BlockFace face : BlockFaceIterator())
+  {
+    const int faceID = static_cast<int>(face);
+    const auto& transitionMesh = node->data->transitionMeshData[faceID];
+
+    // Generate vertex array
+    Engine::Shared<Engine::VertexArray> transitionVertexArray = Engine::VertexArray::Create();
+    auto transitionVertexBuffer = Engine::VertexBuffer::Create(static_cast<uint32_t>(transitionMesh.size()) * sizeof(LOD::Vertex));
+    transitionVertexBuffer->setLayout({ { ShaderDataType::Float3, "a_Position" },
+                                        { ShaderDataType::Float3, "a_SurfaceNormal"},
+                                        { ShaderDataType::Float3, "a_IsoNormal"},
+                                        { ShaderDataType::Int,    "a_QuadIndex"},
+                                        { ShaderDataType::Float,  "s_LightValue"} });
+    transitionVertexArray->addVertexBuffer(transitionVertexBuffer);
+
+    uintptr_t dataSize = sizeof(LOD::Vertex) * transitionMesh.size();
+    transitionVertexBuffer->setData(transitionMesh.data(), dataSize);
+    node->data->transitionVertexArrays[faceID] = transitionVertexArray;
+  }
 }
 
 std::vector<LOD::Vertex> ChunkManager::calcAdjustedMesh(LOD::Octree::Node* node)
@@ -687,8 +826,8 @@ std::vector<LOD::Vertex> ChunkManager::calcAdjustedMesh(LOD::Octree::Node* node)
   const GlobalIndex offsets[6] = { { node->size(), 0, 0}, { -1, 0, 0}, { 0, node->size(), 0}, { 0, -1, 0}, { 0, 0, node->size()}, { 0, 0, -1} };
                               //            East              West             North             South             Top               Bottom
 
-  // Determine which faces transition to a higher resolution LOD
-  std::array<bool, 6> isTransitionFace{}; // Change be changed to a single byte
+  // Determine which faces transition to a lower resolution LOD
+  std::array<bool, 6> isTransitionFace{}; // NOTE: Can be changed to a single byte
   for (BlockFace face : BlockFaceIterator())
   {
     const int faceID = static_cast<int>(face);
@@ -699,11 +838,12 @@ std::vector<LOD::Vertex> ChunkManager::calcAdjustedMesh(LOD::Octree::Node* node)
 
     if (node->LODLevel() == neighbor->LODLevel())
       continue;
-    else if (node->LODLevel() - neighbor->LODLevel() == 1)
+    else if (neighbor->LODLevel() - node->LODLevel() == 1)
       isTransitionFace[faceID] = true;
-    else if (node->LODLevel() - neighbor->LODLevel() > 1)
+    else if (neighbor->LODLevel() - node->LODLevel() > 1)
       EN_WARN("LOD neighbor is more than one level higher resolution");
   }
+  node->data->isTransitionFace = isTransitionFace;
 
   std::vector<LOD::Vertex> LODMesh = node->data->meshData;
 
@@ -712,7 +852,7 @@ std::vector<LOD::Vertex> ChunkManager::calcAdjustedMesh(LOD::Octree::Node* node)
       isTransitionFace[static_cast<int>(BlockFace::Top)]   || isTransitionFace[static_cast<int>(BlockFace::Bottom)])
   {
     // Formulas can be found in section 4.4 of TransVoxel paper
-    const length_t transitionCellWidth = cellLength / 4;
+    const length_t transitionCellWidth = cellLength / 2;
     auto isNearFace = [=](bool facingPositiveDir, length_t u)
     {
       return facingPositiveDir ? u > cellLength * (numCells - 1) : u < cellLength;

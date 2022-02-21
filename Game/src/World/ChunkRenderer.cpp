@@ -74,5 +74,16 @@ void ChunkRenderer::DrawLOD(const LOD::Octree::Node* node)
   s_LODShader->bind();
   s_LODShader->setFloat("u_TextureScaling", static_cast<float>(bit(node->LODLevel())));
   s_LODShader->setFloat3("u_LODPosition", localAnchorPosition);
-  Engine::RenderCommand::DrawVertices(node->data->vertexArray, node->data->meshData.size());
+  Engine::RenderCommand::DrawVertices(node->data->vertexArray, static_cast<uint32_t>(node->data->meshData.size()));
+
+  for (BlockFace face : BlockFaceIterator())
+  {
+    int faceID = static_cast<int>(face);
+
+    if (node->data->transitionMeshData[faceID].size() == 0 || !node->data->isTransitionFace[faceID])
+      continue;
+
+    node->data->transitionVertexArrays[faceID]->bind();
+    Engine::RenderCommand::DrawVertices(node->data->transitionVertexArrays[faceID], static_cast<uint32_t>(node->data->transitionMeshData[faceID].size()));
+  }
 }

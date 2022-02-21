@@ -42,7 +42,7 @@ namespace Engine
 
     length_t m_CameraTranslationSpeed = 5.0;
     float m_CameraSensitivity = 0.0015f;
-    float m_CameraZoomSensitivity = 5.0f;
+    float m_CameraZoomSensitivity = 10.0f;
 
     // Mouse state
     Float2 m_LastMousePosition;

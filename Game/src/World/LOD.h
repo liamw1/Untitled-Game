@@ -23,6 +23,11 @@ namespace LOD
   {
     std::vector<Vertex> meshData;
     Engine::Shared<Engine::VertexArray> vertexArray;
+
+    std::array<std::vector<Vertex>, 6> transitionMeshData;
+    std::array<Engine::Shared<Engine::VertexArray>, 6> transitionVertexArrays;
+
+    std::array<bool, 6> isTransitionFace;
   };
 
   class Octree
