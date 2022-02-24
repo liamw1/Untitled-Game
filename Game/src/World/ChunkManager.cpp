@@ -230,7 +230,7 @@ void ChunkManager::renderLODs()
       for (int planeID = 0; planeID < 6; ++planeID)
         shiftedFrustumPlanes[planeID].w = frustumPlanes[planeID].w + LODSphereRadius * planeNormalMags[planeID];
 
-      if (isInFrustum(node->center(), shiftedFrustumPlanes) && !isInRange(node->anchor, s_RenderDistance))
+      if (isInFrustum(node->center(), shiftedFrustumPlanes))
         ChunkRenderer::DrawLOD(node);
     }
   }
@@ -621,28 +621,10 @@ void ChunkManager::generateLODMesh(LOD::Octree::Node* node)
             Vec3 normalizedCellPosition = vertA + (0.5 * (1 - S) + t * S) * (vertB - vertA);
             vertexPositions[vert] = cellLength * Vec3(i - 1, j - 1, k - 1) + cellLength * normalizedCellPosition;
 
-            // Estimate isosurface normal using trilinear interpolation
-            const length_t& x = normalizedCellPosition.x;
-            const length_t& y = normalizedCellPosition.y;
-            const length_t& z = normalizedCellPosition.z;
-            const Vec3& n000 = noiseValues[i][j];
-            const Vec3& n100 = noiseValues[i + 1][j];
-            const Vec3& n010 = noiseValues[i][j + 1];
-            const Vec3& n110 = noiseValues[i + 1][j + 1];
-            const Vec3& n001 = n000;
-            const Vec3& n101 = n100;
-            const Vec3& n011 = n010;
-            const Vec3& n111 = n110;
-
-            Vec3 n00 = n000 * (1 - x) + n100 * x;
-            Vec3 n01 = n001 * (1 - x) + n101 * x;
-            Vec3 n10 = n010 * (1 - x) + n110 * x;
-            Vec3 n11 = n011 * (1 - x) + n111 * x;
-
-            Vec3 n0 = n00 * (1 - y) + n10 * y;
-            Vec3 n1 = n01 * (1 - y) + n11 * y;
-
-            Vec3 n = n0 * (1 - z) + n1 * z;
+            // Estimate isosurface normal using linear interpolation
+            const Vec3& n0 = noiseValues[iA][jA];
+            const Vec3& n1 = noiseValues[iB][jB];
+            Vec3 n = t * n0 + (1 - t) * n1;
             isoNormals[vert] = glm::normalize(n);
           }
 
@@ -678,7 +660,7 @@ void ChunkManager::generateLODMesh(LOD::Octree::Node* node)
           static constexpr int indexMapping[9] = { 0, 1, 2, 7, 8, 3, 6, 5, 4 };
 
           BlockIndex cellVertexIndex{};
-          cellVertexIndex[u] = facingPositiveDir ? numCells : 1;
+          cellVertexIndex[u] = facingPositiveDir ? numCells + 1 : 1;
           cellVertexIndex[v] = i + p % 3;
           cellVertexIndex[w] = j + p / 3;
 
@@ -704,6 +686,7 @@ void ChunkManager::generateLODMesh(LOD::Octree::Node* node)
         {
           // Local positions of vertices within LOD, measured relative to LOD anchor
           std::array<Vec3, 3> vertexPositions{};
+          std::array<Vec3, 3> isoNormals{};
 
           for (int vert = 0; vert < 3; ++vert)
           {
@@ -720,12 +703,12 @@ void ChunkManager::generateLODMesh(LOD::Octree::Node* node)
             static constexpr int indexMapping[13] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 0, 2, 6, 8 };
 
             BlockIndex vA{};
-            vA[u] = facingPositiveDir ? numCells : 1;
+            vA[u] = facingPositiveDir ? numCells + 1 : 1;
             vA[v] = i + indexMapping[indexA] % 3;
             vA[w] = j + indexMapping[indexA] / 3;
 
             BlockIndex vB{};
-            vB[u] = facingPositiveDir ? numCells : 1;
+            vB[u] = facingPositiveDir ? numCells + 1 : 1;
             vB[v] = i + indexMapping[indexB] % 3;
             vB[w] = j + indexMapping[indexB] / 3;
 
@@ -762,14 +745,21 @@ void ChunkManager::generateLODMesh(LOD::Octree::Node* node)
             // NOTE: Currently bug where transition cells facing negative direction have incorrect winding order, investigate.
             int vertexOrder = reverseWindingOrder ? 2 - vert : vert;
             vertexPositions[vertexOrder] = localCellAnchor + 2 * cellLength * transitionCellPosition;
+
+            // Estimate isosurface normal using linear interpolation
+            const Vec3& n0 = noiseValues[iA][jA];
+            const Vec3& n1 = noiseValues[iB][jB];
+            Vec3 n = t * n0 + (1 - t) * n1;
+            isoNormals[vertexOrder] = glm::normalize(n);
           }
 
           // Calculate vertex normal
           Vec3 surfaceNormal = glm::normalize(glm::cross(vertexPositions[1] - vertexPositions[0], vertexPositions[2] - vertexPositions[0]));
+
           float lightValue = static_cast<float>((1.0 + surfaceNormal.z) / 2);
 
           for (int vert = 0; vert < 3; ++vert)
-            transitionMeshData.push_back({ vertexPositions[vert], surfaceNormal, Vec3(0.0), vert, lightValue });
+            transitionMeshData.push_back({ vertexPositions[vert], surfaceNormal, isoNormals[vert], vert, lightValue });
         }
       }
 
@@ -798,7 +788,7 @@ void ChunkManager::meshLOD(LOD::Octree::Node* node)
   for (BlockFace face : BlockFaceIterator())
   {
     const int faceID = static_cast<int>(face);
-    const auto& transitionMesh = node->data->transitionMeshData[faceID];
+    std::vector<LOD::Vertex> transitionMesh = calcAdjustedTransitionMesh(node, face);
 
     // Generate vertex array
     Engine::Shared<Engine::VertexArray> transitionVertexArray = Engine::VertexArray::Create();
@@ -893,6 +883,120 @@ std::vector<LOD::Vertex> ChunkManager::calcAdjustedMesh(LOD::Octree::Node* node)
                                     -n.x * n.z,      -n.y * n.z,       1 - n.z * n.z);
 
         LODMesh[i].position += transform * adjustment;
+      }
+    }
+  }
+  return LODMesh;
+}
+
+std::vector<LOD::Vertex> ChunkManager::calcAdjustedTransitionMesh(LOD::Octree::Node* node, BlockFace transitionMesh)
+{
+  // Number of cells in each direction
+  constexpr int numCells = Chunk::Size();
+
+  const int meshID = static_cast<int>(transitionMesh);
+  const length_t cellLength = node->length() / numCells;
+
+  const GlobalIndex offsets[6] = { { node->size(), 0, 0}, { -1, 0, 0}, { 0, node->size(), 0}, { 0, -1, 0}, { 0, 0, node->size()}, { 0, 0, -1} };
+                              //            East              West             North             South             Top               Bottom
+
+  // Determine which faces transition to a lower resolution LOD
+  std::array<bool, 6> isTransitionFace{}; // NOTE: Can be changed to a single byte
+  for (BlockFace face : BlockFaceIterator())
+  {
+    const int faceID = static_cast<int>(face);
+
+    LOD::Octree::Node* neighbor = m_LODTree.findLeaf(node->anchor + offsets[faceID]);
+    if (neighbor == nullptr)
+      continue;
+
+    if (node->LODLevel() == neighbor->LODLevel())
+      continue;
+    else if (neighbor->LODLevel() - node->LODLevel() == 1)
+      isTransitionFace[faceID] = true;
+    else if (neighbor->LODLevel() - node->LODLevel() > 1)
+      EN_WARN("LOD neighbor is more than one level higher resolution");
+  }
+  node->data->isTransitionFace = isTransitionFace;
+
+  std::vector<LOD::Vertex> LODMesh = node->data->transitionMeshData[meshID];
+
+  if (isTransitionFace[static_cast<int>(BlockFace::East)]  || isTransitionFace[static_cast<int>(BlockFace::West)]  ||
+      isTransitionFace[static_cast<int>(BlockFace::North)] || isTransitionFace[static_cast<int>(BlockFace::South)] ||
+      isTransitionFace[static_cast<int>(BlockFace::Top)]   || isTransitionFace[static_cast<int>(BlockFace::Bottom)])
+  {
+    // Formulas can be found in section 4.4 of TransVoxel paper
+    const length_t transitionCellWidth = cellLength / 2;
+    auto isNearFace = [=](bool facingPositiveDir, length_t u)
+    {
+      return facingPositiveDir ? u > cellLength * (numCells - 1) : u < cellLength;
+    };
+    auto calcAdjustment = [=](bool facingPositiveDir, length_t u)
+    {
+      return facingPositiveDir ? (numCells - 1 - u / cellLength) * transitionCellWidth : (1 - u / cellLength) * transitionCellWidth;
+    };
+
+    // Adjust coorindates of boundary cells on transition mesh
+    int numTriangles = LODMesh.size() / 3;
+    for (int tri = 0; tri < numTriangles; ++tri)
+    {
+      bool triangleModified = false;
+      for (int vert = 0; vert < 3; ++vert)
+      {
+        int i = 3 * tri + vert;
+
+        // If Vertex is on low-resolution side, skip
+        if (LODMesh[i].position[meshID / 2] < 0.0001 * node->length() || LODMesh[i].position[meshID / 2] > 0.9999 * node->length())
+          continue;
+        else
+          LODMesh[i].position[meshID / 2] = (meshID % 2 == 0) ? node->length() : 0.0;
+
+        Vec3 adjustment{};
+        bool isNearSameResolutionLOD = false;
+        for (BlockFace face : BlockFaceIterator())
+        {
+          const int faceID = static_cast<int>(face);
+          const int coordID = faceID / 2;
+          const bool facingPositiveDir = faceID % 2 == 0;
+
+          if (isNearFace(facingPositiveDir, LODMesh[i].position[coordID]))
+          {
+            if (isTransitionFace[faceID])
+              adjustment[coordID] = calcAdjustment(facingPositiveDir, LODMesh[i].position[coordID]);
+            else
+            {
+              isNearSameResolutionLOD = true;
+              break;
+            }
+          }
+        }
+
+        if (!isNearSameResolutionLOD && adjustment != Vec3(0.0))
+        {
+          const Vec3& n = LODMesh[i].isoNormal;
+          const Mat3 transform = Mat3( 1 - n.x * n.x,  -n.x * n.y,      -n.x * n.z,
+                                       -n.x * n.y,       1 - n.y * n.y,  -n.y * n.z,
+                                       -n.x * n.z,      -n.y * n.z,       1 - n.z * n.z);
+
+          LODMesh[i].position += transform * adjustment;
+
+          triangleModified = true;
+        }
+      }
+
+      // Recalculate surface normals
+      if (triangleModified)
+      {
+        std::array<Vec3, 3> vertexPositions = { LODMesh[3 * tri].position, LODMesh[3 * tri + 1].position , LODMesh[3 * tri + 2].position };
+
+        Vec3 surfaceNormal = glm::normalize(glm::cross(vertexPositions[1] - vertexPositions[0], vertexPositions[2] - vertexPositions[0]));
+        float lightValue = static_cast<float>((1.0 + surfaceNormal.z) / 2);
+
+        for (int vert = 0; vert < 3; ++vert)
+        {
+          LODMesh[3 * tri + vert].surfaceNormal = surfaceNormal;
+          LODMesh[3 * tri + vert].lightValue = lightValue;
+        }
       }
     }
   }
