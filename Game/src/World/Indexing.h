@@ -1,4 +1,5 @@
 #pragma once
+#include "Block/Block.h"
 
 /*
   Structs for indexing of blocks and chunks.
@@ -68,6 +69,14 @@ struct Index3D
 
   constexpr operator Vec2() const { return { i, j }; }
   constexpr operator Vec3() const { return { i, j, k }; }
+
+  static const Index3D<intType>& OutwardNormal(BlockFace face)  // NOTE: Can't declare this as contexpr, not sure why
+  {
+    static constexpr Index3D<intType> normals[6] = { { 1, 0, 0}, { -1, 0, 0}, { 0, 1, 0}, { 0, -1, 0}, { 0, 0, 1}, { 0, 0, -1} };
+                                                //      East         West        North       South         Top        Bottom
+
+    return normals[static_cast<int>(face)];
+  }
 };
 
 template<typename intType>

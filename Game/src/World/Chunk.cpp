@@ -152,8 +152,8 @@ void Chunk::reset()
 LocalIndex Chunk::getLocalIndex() const
 {
   EN_ASSERT(abs(m_GlobalIndex.i - Player::OriginIndex().i) < std::numeric_limits<localIndex_t>::max() &&
-            abs(m_GlobalIndex.j - Player::OriginIndex().j) < std::numeric_limits<localIndex_t>::max() &&
-            abs(m_GlobalIndex.k - Player::OriginIndex().k) < std::numeric_limits<localIndex_t>::max(), "Difference between global indices is too large, will cause overflow!");
+    abs(m_GlobalIndex.j - Player::OriginIndex().j) < std::numeric_limits<localIndex_t>::max() &&
+    abs(m_GlobalIndex.k - Player::OriginIndex().k) < std::numeric_limits<localIndex_t>::max(), "Difference between global indices is too large, will cause overflow!");
 
   return { static_cast<localIndex_t>(m_GlobalIndex.i - Player::OriginIndex().i),
            static_cast<localIndex_t>(m_GlobalIndex.j - Player::OriginIndex().j),
@@ -166,7 +166,7 @@ BlockType Chunk::getBlockType(blockIndex_t i, blockIndex_t j, blockIndex_t k) co
   EN_ASSERT(0 <= i && i < chunkSize && 0 <= j && j < chunkSize && 0 <= k && k < chunkSize, "Index is out of bounds!");
   return isEmpty() ? BlockType::Air : m_ChunkComposition[i * chunkSize * chunkSize + j * chunkSize + k];
 }
-  
+
 BlockType Chunk::getBlockType(const BlockIndex& blockIndex) const
 {
   return getBlockType(blockIndex.i, blockIndex.j, blockIndex.k);
@@ -193,9 +193,6 @@ void Chunk::removeBlock(const BlockIndex& blockIndex)
 
 void Chunk::placeBlock(const BlockIndex& blockIndex, BlockFace face, BlockType blockType)
 {
-  static constexpr BlockIndex normals[6] = { { 1, 0, 0}, { -1, 0, 0}, { 0, 1, 0}, { 0, -1, 0}, { 0, 0, 1}, { 0, 0, -1} };
-                                        //      East         West        North       South         Top        Bottom
-
   EN_ASSERT(!isEmpty(), "Place block cannot be called on an empty chunk!");
 
   // If trying to place an air block or trying to place a block in a space occupied by another block, do nothing
@@ -210,11 +207,11 @@ void Chunk::placeBlock(const BlockIndex& blockIndex, BlockFace face, BlockType b
     else if (m_Neighbors[faceID]->isEmpty())
       m_Neighbors[faceID]->m_ChunkComposition = Engine::CreateUnique<BlockType[]>(s_ChunkTotalBlocks);
 
-    m_Neighbors[faceID]->setBlockType(blockIndex - static_cast<blockIndex_t>(s_ChunkSize - 1) * normals[faceID], blockType);
+    m_Neighbors[faceID]->setBlockType(blockIndex - static_cast<blockIndex_t>(s_ChunkSize - 1) * BlockIndex::OutwardNormal(face), blockType);
     m_Neighbors[faceID]->m_MeshState = MeshState::NeedsUpdate;
   }
   else
-    setBlockType(blockIndex + normals[faceID], blockType);
+    setBlockType(blockIndex + BlockIndex::OutwardNormal(face), blockType);
   m_MeshState = MeshState::NeedsUpdate;
 }
 
@@ -240,9 +237,6 @@ bool Chunk::isBlockNeighborTransparent(blockIndex_t i, blockIndex_t j, blockInde
 
 bool Chunk::isBlockNeighborTransparent(const BlockIndex& blockIndex, BlockFace face)
 {
-  static constexpr BlockIndex normals[6] = { { 1, 0, 0}, { -1, 0, 0}, { 0, 1, 0}, { 0, -1, 0}, { 0, 0, 1}, { 0, 0, -1} };
-                                        //      East         West        North       South         Top        Bottom
-
   const int faceID = static_cast<int>(face);
   if (isBlockNeighborInAnotherChunk(blockIndex, face))
   {
@@ -251,17 +245,14 @@ bool Chunk::isBlockNeighborTransparent(const BlockIndex& blockIndex, BlockFace f
     else if (m_Neighbors[faceID]->isEmpty())
       return true;
 
-    return Block::HasTransparency(m_Neighbors[faceID]->getBlockType(blockIndex - static_cast<blockIndex_t>(s_ChunkSize - 1) * normals[faceID]));
+    return Block::HasTransparency(m_Neighbors[faceID]->getBlockType(blockIndex - static_cast<blockIndex_t>(s_ChunkSize - 1) * BlockIndex::OutwardNormal(face)));
   }
   else
-    return Block::HasTransparency(getBlockType(blockIndex + normals[faceID]));
+    return Block::HasTransparency(getBlockType(blockIndex + BlockIndex::OutwardNormal(face)));
 }
 
 bool Chunk::isBlockNeighborAir(const BlockIndex& blockIndex, BlockFace face)
 {
-  static constexpr BlockIndex normals[6] = { { 1, 0, 0}, { -1, 0, 0}, { 0, 1, 0}, { 0, -1, 0}, { 0, 0, 1}, { 0, 0, -1} };
-                                        //      East         West        North       South         Top        Bottom
-
   const int faceID = static_cast<int>(face);
   if (isBlockNeighborInAnotherChunk(blockIndex, face))
   {
@@ -270,10 +261,10 @@ bool Chunk::isBlockNeighborAir(const BlockIndex& blockIndex, BlockFace face)
     else if (m_Neighbors[faceID]->isEmpty())
       return true;
 
-    return m_Neighbors[faceID]->getBlockType(blockIndex - static_cast<blockIndex_t>(s_ChunkSize - 1) * normals[faceID]) == BlockType::Air;
+    return m_Neighbors[faceID]->getBlockType(blockIndex - static_cast<blockIndex_t>(s_ChunkSize - 1) * BlockIndex::OutwardNormal(face)) == BlockType::Air;
   }
   else
-    return getBlockType(blockIndex + normals[faceID]) == BlockType::Air;
+    return getBlockType(blockIndex + BlockIndex::OutwardNormal(face)) == BlockType::Air;
 }
 
 LocalIndex Chunk::LocalIndexFromPos(const Vec3& position)
@@ -318,6 +309,8 @@ void Chunk::generateMesh()
     return;
 
   m_Mesh.clear();
+
+  EN_PROFILE_FUNCTION();
 
   static constexpr int8_t offsets[6][4][3]
     = { { {1, 0, 0}, {1, 1, 0}, {1, 1, 1}, {1, 0, 1} },    /*  East Face   */
@@ -365,9 +358,9 @@ void Chunk::generateVertexArray()
   auto meshVertexBuffer = Engine::VertexBuffer::Create(static_cast<uint32_t>(m_Mesh.size()) * sizeof(uint32_t));
   meshVertexBuffer->setLayout({ { ShaderDataType::Uint32, "a_VertexData" } });
   m_MeshVertexArray->addVertexBuffer(meshVertexBuffer);
-  
+
   m_MeshVertexArray->setIndexBuffer(s_MeshIndexBuffer);
-  
+
   uintptr_t dataSize = sizeof(uint32_t) * m_Mesh.size();
   meshVertexBuffer->setData(m_Mesh.data(), dataSize);
 }
@@ -455,8 +448,8 @@ BlockIndex Chunk::blockIndexFromPos(const Vec3& position) const
   Vec3 localPosition = position - anchorPosition();
 
   EN_ASSERT(localPosition.x >= 0.0 && localPosition.x <= s_ChunkLength &&
-            localPosition.y >= 0.0 && localPosition.y <= s_ChunkLength &&
-            localPosition.z >= 0.0 && localPosition.z <= s_ChunkLength, "Given position is not inside chunk!");
+    localPosition.y >= 0.0 && localPosition.y <= s_ChunkLength &&
+    localPosition.z >= 0.0 && localPosition.z <= s_ChunkLength, "Given position is not inside chunk!");
 
   BlockIndex blockIndex = { static_cast<blockIndex_t>(localPosition.x / Block::Length()),
                             static_cast<blockIndex_t>(localPosition.y / Block::Length()),

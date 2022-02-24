@@ -99,4 +99,9 @@ namespace LOD
   };
 
   bool Intersection(AABB boxA, AABB boxB);
+
+  void GenerateMesh(LOD::Octree::Node* node);
+  void UpdateMesh(LOD::Octree& tree, LOD::Octree::Node* node);
+  std::vector<LOD::Vertex> CalcAdjustedPrimaryMesh(LOD::Octree& tree, LOD::Octree::Node* node);
+  std::vector<LOD::Vertex> CalcAdjustedTransitionMesh(LOD::Octree& tree, LOD::Octree::Node* node, BlockFace transitionMesh);
 }

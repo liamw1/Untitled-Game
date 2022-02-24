@@ -45,8 +45,6 @@ void World::onUpdate(std::chrono::duration<seconds> timestep)
 
 RayIntersection World::castRaySegment(const Vec3& pointA, const Vec3& pointB) const
 {
-  static constexpr Vec3 normals[3] = { { 1, 0, 0 }, { 0, 1, 0 }, { 0, 0, 1 } };
-
   const Vec3 rayDirection = pointB - pointA;
 
   // Look for solid block face intersections in the x,y,z directions
@@ -146,7 +144,7 @@ void World::playerCollisionHandling(std::chrono::duration<seconds> timestep) con
   EN_PROFILE_FUNCTION();
 
   static constexpr Vec3 normals[6] = { { 1, 0, 0}, { -1, 0, 0}, { 0, 1, 0}, { 0, -1, 0}, { 0, 0, 1}, { 0, 0, -1} };
-                                       //      East         West        North       South         Top        Bottom
+                                  //      East         West        North       South         Top        Bottom
 
   // Player width and height in blocks
   static const int playerWidth = static_cast<int>(ceil(Player::Width() / Block::Length()));

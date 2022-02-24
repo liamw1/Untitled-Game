@@ -1,7 +1,6 @@
 #pragma once
 #include "Chunk.h"
 #include "LOD.h"
-#include "Util/Array2D.h"
 #include <llvm/ADT/DenseMap.h>
 
 
@@ -68,7 +67,7 @@ private:
     float lightValue;
   };
 
-  static constexpr int s_RenderDistance = 0;
+  static constexpr int s_RenderDistance = 4;
   static constexpr int s_LoadDistance = s_RenderDistance + 2;
   static constexpr int s_UnloadDistance = s_LoadDistance;
   static constexpr int s_MaxChunks = (2 * s_UnloadDistance + 1) * (2 * s_UnloadDistance + 1) * (2 * s_UnloadDistance + 1);
@@ -125,14 +124,6 @@ private:
     \returns A pointer to the newly created chunk.
   */
   Chunk* loadNewChunk(const GlobalIndex& chunkIndex);
-
-  /*
-    Creates mesh for a single LOD using the TransVoxel algorithm.
-  */
-  void generateLODMesh(LOD::Octree::Node* node);
-  void meshLOD(LOD::Octree::Node* node);
-  std::vector<LOD::Vertex> calcAdjustedMesh(LOD::Octree::Node* node);
-  std::vector<LOD::Vertex> calcAdjustedTransitionMesh(LOD::Octree::Node* node, BlockFace transitionMesh);
 
   /*
     Searches for chunk, removes it from whatever map it is currently in,

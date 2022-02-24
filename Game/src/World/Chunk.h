@@ -2,6 +2,12 @@
 #include "Block/Block.h"
 #include "Indexing.h"
 
+/*
+  NOTE: May be better to change chunk to a more data-oriented design,
+  giving more contol of chunk data to chunk manager.  May reduce
+  data usage and improve ability to update chunk.
+*/
+
 struct HeightMap
 {
   globalIndex_t chunkI;
