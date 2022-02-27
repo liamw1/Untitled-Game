@@ -134,7 +134,7 @@ namespace LOD
   // LOD smoothness parameter, must be in the range [0.0, 1.0]
   static constexpr float smoothnessLevel(int LODLevel)
   {
-#if 1
+#if 0
     return std::min(0.1f * (LODLevel) + 0.3f, 1.0f);
 #else
     return 1.0f;
@@ -310,10 +310,6 @@ namespace LOD
 
           // Loop over all triangles in cell
           for (int tri = 0; tri < triangleCount; ++tri)
-          {
-            std::array<Vec3, 3> vertexPositions{};  // Local positions of vertices within LOD, measured relative to LOD anchor
-            std::array<Vec3, 3> isoNormals{};       // Interpolated normals of noise function
-
             for (int vert = 0; vert < 3; ++vert)
             {
               // Lookup placement of samples A,B that form the cell edge new vertex lies on
@@ -333,18 +329,8 @@ namespace LOD
               sampleB.k = indexB & bit(2) ? k + 1 : k;
 
               NoiseData noiseData = interpolateNoiseData(node, noiseValues, noiseNormals, sampleA, sampleB, smoothness);
-
-              vertexPositions[vert] = noiseData.position;
-              isoNormals[vert] = noiseData.normal;
+              primaryMeshData.push_back({ noiseData.position, noiseData.normal, vert });
             }
-
-            // Calculate light value based on surface normal
-            Vec3 surfaceNormal = glm::normalize(glm::cross(vertexPositions[1] - vertexPositions[0], vertexPositions[2] - vertexPositions[0]));
-            float lightValue = static_cast<float>((1.0 + surfaceNormal.z) / 2);
-
-            for (int vert = 0; vert < 3; ++vert)
-              primaryMeshData.push_back({ vertexPositions[vert], isoNormals[vert], vert, lightValue });
-          }
         }
     node->data->meshData = primaryMeshData;
   }
@@ -407,11 +393,6 @@ namespace LOD
 
           // Loop over all triangles in cell
           for (int tri = 0; tri < triangleCount; ++tri)
-          {
-            // Local positions of vertices within LOD, measured relative to LOD anchor
-            std::array<Vec3, 3> vertexPositions{};
-            std::array<Vec3, 3> isoNormals{};
-
             for (int vert = 0; vert < 3; ++vert)
             {
               int vertexIndex = reverseWindingOrder ? 2 - vert : vert;
@@ -442,17 +423,8 @@ namespace LOD
               if (!isOnLowResSide)
                 noiseData.position -= transitionCellWidth * normals[faceID];
 
-              vertexPositions[vert] = noiseData.position;
-              isoNormals[vert] = noiseData.normal;
+              transitionMeshData.push_back({ noiseData.position, noiseData.normal, vertexIndex });
             }
-
-            // Calculate light value based on surface normal
-            Vec3 surfaceNormal = glm::normalize(glm::cross(vertexPositions[1] - vertexPositions[0], vertexPositions[2] - vertexPositions[0]));
-            float lightValue = static_cast<float>((1.0 + surfaceNormal.z) / 2);
-
-            for (int vert = 0; vert < 3; ++vert)
-              transitionMeshData.push_back({ vertexPositions[vert], isoNormals[vert], vert, lightValue });
-          }
         }
 
       node->data->transitionMeshData[faceID] = transitionMeshData;
@@ -528,10 +500,8 @@ namespace LOD
     }
     return isNearSameResolutionLOD;
   }
-  static bool adjustVertex(LOD::Vertex& vertex, length_t cellLength, uint8_t transitionFaces)
+  static void adjustVertex(LOD::Vertex& vertex, length_t cellLength, uint8_t transitionFaces)
   {
-    bool vertexAdjusted = false;
-
     Vec3 adjustment{};
     bool isNearSameResolutionLOD = calcVertexAdjustment(adjustment, vertex.position, cellLength, transitionFaces);
 
@@ -541,9 +511,7 @@ namespace LOD
       const Mat3 transform = calcVertexTransform(n);
 
       vertex.position += transform * adjustment;
-      vertexAdjusted = true;
     }
-    return vertexAdjusted;
   }
 
   std::vector<LOD::Vertex> calcAdjustedPrimaryMesh(LOD::Octree::Node* node)
@@ -570,43 +538,18 @@ namespace LOD
 
     // Adjust coorindates of boundary cells on transition mesh
     if (node->data->transitionFaces != 0)
-    {
-      int numTriangles = static_cast<int>(LODMesh.size()) / 3;
-      for (int tri = 0; tri < numTriangles; ++tri)
+      for (auto it = LODMesh.begin(); it != LODMesh.end(); ++it)
       {
-        bool triangleModified = false;
-        for (int vert = 0; vert < 3; ++vert)
-        {
-          int i = 3 * tri + vert;
+        Vertex& vertex = *it;
 
-          // If Vertex is on low-resolution side, skip.  If on high-resolution side, move vertex to LOD face
-          if (LODMesh[i].position[coordID] < LNGTH_EPSILON * node->length() || LODMesh[i].position[coordID] > (1.0 - LNGTH_EPSILON) * node->length())
-            continue;
-          else
-            LODMesh[i].position[coordID] = facingPositiveDir ? node->length() : static_cast<length_t>(0.0);
+        // If Vertex is on low-resolution side, skip.  If on high-resolution side, move vertex to LOD face
+        if (vertex.position[coordID] < LNGTH_EPSILON * node->length() || vertex.position[coordID] > (1.0 - LNGTH_EPSILON) * node->length())
+          continue;
+        else
+          vertex.position[coordID] = facingPositiveDir ? node->length() : static_cast<length_t>(0.0);
 
-          bool vertexAdjusted = adjustVertex(LODMesh[i], cellLength, node->data->transitionFaces);
-          if (vertexAdjusted)
-            triangleModified = true;
-        }
-
-        // Recalculate surface normals
-        if (triangleModified)
-        {
-          int v0 = 3 * tri, v1 = v0 + 1, v2 = v0 + 2;
-          std::array<Vec3, 3> vertexPositions = { LODMesh[v0].position, LODMesh[v1].position , LODMesh[v2].position };
-
-          Vec3 surfaceNormal = glm::normalize(glm::cross(vertexPositions[1] - vertexPositions[0], vertexPositions[2] - vertexPositions[0]));
-          float lightValue = static_cast<float>((1.0 + surfaceNormal.z) / 2);
-
-          for (int vert = 0; vert < 3; ++vert)
-          {
-            int i = 3 * tri + vert;
-            LODMesh[i].lightValue = lightValue;
-          }
-        }
+        adjustVertex(vertex, cellLength, node->data->transitionFaces);
       }
-    }
     return LODMesh;
   }
 
@@ -645,8 +588,7 @@ namespace LOD
 
     static const Engine::BufferLayout LODBufferLayout = { { ShaderDataType::Float3, "a_Position" },
                                                           { ShaderDataType::Float3, "a_IsoNormal"},
-                                                          { ShaderDataType::Int,    "a_QuadIndex"},
-                                                          { ShaderDataType::Float,  "s_LightValue"} };
+                                                          { ShaderDataType::Int,    "a_QuadIndex"} };
 
     // Generate vertex array
     Engine::Shared<Engine::VertexArray> LODVertexArray = Engine::VertexArray::Create();
@@ -678,7 +620,5 @@ namespace LOD
       const int faceID = static_cast<int>(face);
       uploadMesh(node->data->transitionVertexArrays[faceID], calcAdjustedTransitionMesh(node, face));
     }
-
-    node->data->needsUpdate = false;
   }
 }

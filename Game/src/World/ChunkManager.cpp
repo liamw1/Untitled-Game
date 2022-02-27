@@ -171,6 +171,8 @@ void ChunkManager::manageLODs()
 
   if (treeModified)
   {
+    int totalVerts = 0;
+
     leaves = m_LODTree.getLeaves();
     for (auto it = leaves.begin(); it != leaves.end(); ++it)
     {
@@ -180,7 +182,12 @@ void ChunkManager::manageLODs()
         LOD::GenerateMesh(node);
 
       LOD::UpdateMesh(m_LODTree, node);
+
+      totalVerts += static_cast<int>(node->data->meshData.size());
+      for (BlockFace face : BlockFaceIterator())
+        totalVerts += static_cast<int>(node->data->transitionMeshData.size());
     }
+    EN_INFO("Total LOD Vertices: {0}", totalVerts);
   }
 }
 

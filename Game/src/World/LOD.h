@@ -15,7 +15,6 @@ namespace LOD
     Float3 position;
     Float3 isoNormal;
     int quadIndex;
-    float lightValue;
   };
 
   struct Data 

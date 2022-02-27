@@ -3,7 +3,6 @@
 
 layout(location = 0) in vec3 a_Position;
 layout(location = 2) in int a_QuadIndex;
-layout(location = 3) in float a_LightValue;
 
 const vec2 s_TexCoords[4] = vec2[4]( vec2(0.0f,	0.0f),
 									 vec2(1.0f, 0.0f),
@@ -14,13 +13,13 @@ uniform float u_TextureScaling;
 uniform vec3 u_LODPosition;
 uniform mat4 u_ViewProjection;
 
-out float v_LightValue;
 out vec3 v_TexCoord;
+out vec3 v_LocalWorldPosition;
 
 void main()
 {
-  v_LightValue = a_LightValue;
   v_TexCoord = vec3(u_TextureScaling * s_TexCoords[a_QuadIndex], float(1));
+  v_LocalWorldPosition = a_Position;
   gl_Position = u_ViewProjection * vec4(u_LODPosition + a_Position, 1.0f);
 }
 
@@ -31,14 +30,17 @@ void main()
 
 layout(location = 0) out vec4 color;
 
-in float v_LightValue;
 in vec3 v_TexCoord;
+in vec3 v_LocalWorldPosition;
 
 uniform sampler2DArray u_TextureArray;
 
 void main()
 {
-  color = vec4(vec3(v_LightValue), 1.0f) * texture(u_TextureArray, v_TexCoord);
+  vec3 normal = -normalize(cross(dFdy(v_LocalWorldPosition), dFdx(v_LocalWorldPosition)));
+  float lightValue = (1.0 + normal.z) / 2;
+
+  color = vec4(vec3(lightValue), 1.0f) * texture(u_TextureArray, v_TexCoord);
   if (color.a == 0)
 	discard;
 }
