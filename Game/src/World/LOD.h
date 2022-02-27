@@ -27,7 +27,7 @@ namespace LOD
     std::array<std::vector<Vertex>, 6> transitionMeshData;
     std::array<Engine::Shared<Engine::VertexArray>, 6> transitionVertexArrays;
 
-    std::array<bool, 6> isTransitionFace;
+    uint8_t transitionFaces;
   };
 
   class Octree
@@ -102,6 +102,8 @@ namespace LOD
 
   void GenerateMesh(LOD::Octree::Node* node);
   void UpdateMesh(LOD::Octree& tree, LOD::Octree::Node* node);
-  std::vector<LOD::Vertex> CalcAdjustedPrimaryMesh(LOD::Octree& tree, LOD::Octree::Node* node);
-  std::vector<LOD::Vertex> CalcAdjustedTransitionMesh(LOD::Octree& tree, LOD::Octree::Node* node, BlockFace transitionMesh);
+
+  void DetermineTransitionFaces(LOD::Octree& tree, LOD::Octree::Node* node);
+  std::vector<LOD::Vertex> CalcAdjustedPrimaryMesh(LOD::Octree::Node* node);
+  std::vector<LOD::Vertex> CalcAdjustedTransitionMesh(LOD::Octree::Node* node, BlockFace face);
 }

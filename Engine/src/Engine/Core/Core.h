@@ -28,6 +28,9 @@ using radiansPerSec = radians;
 using length_t = float;
 using seconds = float;
 
+// ======= Precision selection for floating point tolerance ========= //
+static constexpr length_t LNGTH_EPSILON = std::is_same<double, length_t>::value ? DBL_EPSILON : FLT_EPSILON;
+
 constexpr radians PI = static_cast<radians>(3.14159265358979323846264338327950288419716939937510L);
 
 

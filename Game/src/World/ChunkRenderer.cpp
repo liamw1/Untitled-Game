@@ -80,7 +80,7 @@ void ChunkRenderer::DrawLOD(const LOD::Octree::Node* node)
   {
     int faceID = static_cast<int>(face);
 
-    if (node->data->transitionMeshData[faceID].size() == 0 || !node->data->isTransitionFace[faceID])
+    if (node->data->transitionMeshData[faceID].size() == 0 || !(node->data->transitionFaces & bit(faceID)))
       continue;
 
     node->data->transitionVertexArrays[faceID]->bind();

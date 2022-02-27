@@ -246,8 +246,8 @@ Vec4 Noise::Simplex3D(const Vec3& v)
 length_t Noise::FastTerrainNoise2D(const Vec2& pointXY)
 {
   length_t octave1 = 150 * Block::Length() * glm::simplex(pointXY / 1280.0 / Block::Length());
-  length_t octave2 = 50 * Block::Length() * glm::simplex(pointXY / 320.0 / Block::Length());
-  length_t octave3 = 5 * Block::Length() * glm::simplex(pointXY / 40.0 / Block::Length());
+  length_t octave2 = 25 * Block::Length() * glm::simplex(pointXY / 320.0 / Block::Length());
+  length_t octave3 = 5 * Block::Length() * glm::simplex(pointXY / 100.0 / Block::Length());
 
   return octave1 + octave2 + octave3;
 }
@@ -262,7 +262,6 @@ Vec4 Noise::TerrainNoise2D(const Vec2& pointXY)
   Vec2 gradient = (Vec2(octave1) / 1280.0 + Vec2(octave2) / 320.0 + Vec2(octave3) / 40.0) / Block::Length();
   Vec3 normal = glm::normalize(Vec3(-gradient, 1));
 
-  // return Vec4(0.0, 0.0, 1.0, -15.26246);
   return Vec4(normal, value);
 }
 

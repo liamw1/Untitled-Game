@@ -310,8 +310,6 @@ void Chunk::generateMesh()
 
   m_Mesh.clear();
 
-  EN_PROFILE_FUNCTION();
-
   static constexpr int8_t offsets[6][4][3]
     = { { {1, 0, 0}, {1, 1, 0}, {1, 1, 1}, {1, 0, 1} },    /*  East Face   */
         { {0, 1, 0}, {0, 0, 0}, {0, 0, 1}, {0, 1, 1} },    /*  West Face   */

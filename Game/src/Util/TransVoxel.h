@@ -368,7 +368,7 @@ struct TransitionCellData
 /*
 	Normalized offsets of transition cell corners.  Offset measured from cell anchor.
 */
-static constexpr Vec3 transitionCellVertexOffsets[6][13] =
+static constexpr Vec3 transitionCellVertexOffsets[3][13] =
 {
 	{ /* East Face */
 		Vec3(0.0, 0.0, 0.0),
@@ -384,22 +384,6 @@ static constexpr Vec3 transitionCellVertexOffsets[6][13] =
 		Vec3(1.0, 1.0, 0.0),
 		Vec3(1.0, 0.0, 1.0),
 		Vec3(1.0, 1.0, 1.0)
-	},
-
-	{	/* West Face */
-		Vec3(1.0, 0.0, 0.0),
-		Vec3(1.0, 0.5, 0.0),
-		Vec3(1.0, 1.0, 0.0),
-		Vec3(1.0, 0.0, 0.5),
-		Vec3(1.0, 0.5, 0.5),
-		Vec3(1.0, 1.0, 0.5),
-		Vec3(1.0, 0.0, 1.0),
-		Vec3(1.0, 0.5, 1.0),
-		Vec3(1.0, 1.0, 1.0),
-		Vec3(0.0, 0.0, 0.0),
-		Vec3(0.0, 1.0, 0.0),
-		Vec3(0.0, 0.0, 1.0),
-		Vec3(0.0, 1.0, 1.0)
 	},
 
 	{ /* North Face */
@@ -418,22 +402,6 @@ static constexpr Vec3 transitionCellVertexOffsets[6][13] =
 		Vec3(1.0, 1.0, 1.0)
 	},
 
-	{ /* South Face */
-		Vec3(0.0, 1.0, 0.0),
-		Vec3(0.0, 1.0, 0.5),
-		Vec3(0.0, 1.0, 1.0),
-		Vec3(0.5, 1.0, 0.0),
-		Vec3(0.5, 1.0, 0.5),
-		Vec3(0.5, 1.0, 1.0),
-		Vec3(1.0, 1.0, 0.0),
-		Vec3(1.0, 1.0, 0.5),
-		Vec3(1.0, 1.0, 1.0),
-		Vec3(0.0, 0.0, 0.0),
-		Vec3(0.0, 0.0, 1.0),
-		Vec3(1.0, 0.0, 0.0),
-		Vec3(1.0, 0.0, 1.0)
-	},
-
 	{ /* Top Face */
 		Vec3(0.0, 0.0, 0.0),
 		Vec3(0.5, 0.0, 0.0),
@@ -448,22 +416,6 @@ static constexpr Vec3 transitionCellVertexOffsets[6][13] =
 		Vec3(1.0, 0.0, 1.0),
 		Vec3(0.0, 1.0, 1.0),
 		Vec3(1.0, 1.0, 1.0)
-	},
-
-	{ /* Bottom Face */
-		Vec3(0.0, 0.0, 1.0),
-		Vec3(0.5, 0.0, 1.0),
-		Vec3(1.0, 0.0, 1.0),
-		Vec3(0.0, 0.5, 1.0),
-		Vec3(0.5, 0.5, 1.0),
-		Vec3(1.0, 0.5, 1.0),
-		Vec3(0.0, 1.0, 1.0),
-		Vec3(0.5, 1.0, 1.0),
-		Vec3(1.0, 1.0, 1.0),
-		Vec3(0.0, 0.0, 0.0),
-		Vec3(1.0, 0.0, 0.0),
-		Vec3(0.0, 1.0, 0.0),
-		Vec3(1.0, 1.0, 0.0)
 	}
 };
 

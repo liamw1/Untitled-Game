@@ -226,7 +226,7 @@ void ChunkManager::renderLODs()
       for (int planeID = 0; planeID < 6; ++planeID)
         shiftedFrustumPlanes[planeID].w = frustumPlanes[planeID].w + LODSphereRadius * planeNormalMags[planeID];
 
-      if (isInFrustum(node->center(), shiftedFrustumPlanes) && !isInRange(node->anchor, s_RenderDistance))
+      if (isInFrustum(node->center(), shiftedFrustumPlanes) && !isInRange(node->anchor, s_RenderDistance - 1))
         ChunkRenderer::DrawLOD(node);
     }
   }
@@ -257,7 +257,7 @@ void ChunkManager::manageLODs()
       {
         LOD::Octree::Node* node = *it;
 
-        if (node->LODLevel() > 0)
+        if (node->LODLevel() > 1)
         {
           int64_t splitRange = pow2(node->LODLevel() + 1) - 1 + s_RenderDistance;
           LOD::AABB splitRangeBoundingBox = { Player::OriginIndex() - splitRange, Player::OriginIndex() + splitRange };
@@ -310,11 +310,10 @@ void ChunkManager::manageLODs()
   for (auto it = leaves.begin(); it != leaves.end();)
   {
     LOD::Octree::Node* node = *it;
-    int lodLevel = node->LODLevel();
 
-    if (lodLevel > 0)
+    if (node->LODLevel() > 1)
     {
-      int64_t splitRange = pow2(lodLevel + 1) - 1 + s_RenderDistance;
+      int64_t splitRange = pow2(node->LODLevel() + 1) - 1 + s_RenderDistance;
       LOD::AABB splitRangeBoundingBox = { Player::OriginIndex() - splitRange, Player::OriginIndex() + splitRange };
 
       if (LOD::Intersection(splitRangeBoundingBox, node->boundingBox()))
@@ -477,7 +476,7 @@ HeightMap ChunkManager::generateHeightMap(globalIndex_t chunkI, globalIndex_t ch
     for (int j = 0; j < Chunk::Size(); ++j)
     {
       Vec2 blockXY = Chunk::Length() * Vec2(chunkI, chunkJ) + Block::Length() * (Vec2(i, j) + Vec2(0.5));
-      length_t terrainHeight = Noise::TerrainNoise2D(blockXY).w;
+      length_t terrainHeight = Noise::FastTerrainNoise2D(blockXY);
       heightMap.terrainHeights[i][j] = terrainHeight;
 
       if (terrainHeight > heightMap.maxHeight)
