@@ -117,13 +117,19 @@ private:
   */
   HeightMap generateHeightMap(globalIndex_t chunkI, globalIndex_t chunkJ);
 
+  void setNeighbors(Chunk* chunk);
+
+  std::vector<GlobalIndex> searchForChunks(int maxNewChunks);
+
   /*
     Searches for open chunk slot and loads chunk at the given index.
     New chunk is always categorized as a boundary chunk.
 
     \returns A pointer to the newly created chunk.
   */
-  Chunk* loadNewChunk(const GlobalIndex& chunkIndex);
+  Chunk* loadChunk(const GlobalIndex& chunkIndex);
+
+  void loadChunks(const std::vector<GlobalIndex>& newChunks);
 
   /*
     Searches for chunk, removes it from whatever map it is currently in,
@@ -155,4 +161,9 @@ private:
   void moveToMap(Chunk* const chunk, MapType source, MapType destination);
 
   bool isOnBoundary(const Chunk* const chunk) const;
+
+  void initializeLODs();
+  bool splitLODs(std::vector<LOD::Octree::Node*>& leaves);
+  bool combineLODs(std::vector<LOD::Octree::Node*>& leaves);
+  bool splitAndCombineLODs(std::vector<LOD::Octree::Node*>& leaves);
 };

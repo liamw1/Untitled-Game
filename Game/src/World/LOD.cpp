@@ -278,8 +278,6 @@ namespace LOD
   // Generate primary LOD mesh using Marching Cubes algorithm
   static void generatePrimaryMesh(LOD::Octree::Node* node, const Array2D<length_t>& noiseValues, const Array2D<Vec3>& noiseNormals)
   {
-    EN_PROFILE_FUNCTION();
-
     const length_t LODFloor = node->anchor.k * Chunk::Length();
     const length_t cellLength = node->length() / s_NumCells;
     const float smoothness = smoothnessLevel(node->LODLevel());
@@ -340,12 +338,12 @@ namespace LOD
               isoNormals[vert] = noiseData.normal;
             }
 
-            // Calculate vertex normal of triangle
+            // Calculate light value based on surface normal
             Vec3 surfaceNormal = glm::normalize(glm::cross(vertexPositions[1] - vertexPositions[0], vertexPositions[2] - vertexPositions[0]));
             float lightValue = static_cast<float>((1.0 + surfaceNormal.z) / 2);
 
             for (int vert = 0; vert < 3; ++vert)
-              primaryMeshData.push_back({ vertexPositions[vert], surfaceNormal, isoNormals[vert], vert, lightValue });
+              primaryMeshData.push_back({ vertexPositions[vert], isoNormals[vert], vert, lightValue });
           }
         }
     node->data->meshData = primaryMeshData;
@@ -354,8 +352,6 @@ namespace LOD
   // Generate transition meshes using Transvoxel algorithm
   static void generateTransitionMeshes(LOD::Octree::Node* node, const Array2D<length_t>& noiseValues, const Array2D<Vec3>& noiseNormals)
   {
-    EN_PROFILE_FUNCTION();
-
     static constexpr Vec3 normals[6] = { { 1, 0, 0}, { -1, 0, 0}, { 0, 1, 0}, { 0, -1, 0}, { 0, 0, 1}, { 0, 0, -1} };
                                     //      East         West        North       South         Top        Bottom
 
@@ -405,7 +401,7 @@ namespace LOD
 
           // Use lookup table to determine which of 56 equivalence classes the cell belongs to
           uint8_t cellEquivClass = transitionCellClass[cellCase];
-          bool reverseWindingOrder = cellEquivClass >> 7;
+          bool reverseWindingOrder = static_cast<bool>(cellEquivClass >> 7) == facingPositiveDir;   // Don't know why, but this works
           TransitionCellData cellData = transitionCellData[cellEquivClass & 0x7F];
           int triangleCount = cellData.getTriangleCount();
 
@@ -418,14 +414,16 @@ namespace LOD
 
             for (int vert = 0; vert < 3; ++vert)
             {
-              static constexpr int indexMapping[13] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 0, 2, 6, 8 };
+              int vertexIndex = reverseWindingOrder ? 2 - vert : vert;
 
               // Lookup indices of vertices A,B of the cell edge that vertex v lies on
-              int edgeIndex = cellData.vertexIndex[3 * tri + vert];
+              int edgeIndex = cellData.vertexIndex[3 * tri + vertexIndex];
               uint16_t vertexData = transitionVertexData[cellCase][edgeIndex];
               uint8_t indexA = vertexData & 0x000F;
               uint8_t indexB = (vertexData & 0x00F0) >> 4;
               bool isOnLowResSide = indexB > 8;
+
+              static constexpr int indexMapping[13] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 0, 2, 6, 8 };
 
               // Indices of samples A,B
               BlockIndex sampleA{};
@@ -444,19 +442,16 @@ namespace LOD
               if (!isOnLowResSide)
                 noiseData.position -= transitionCellWidth * normals[faceID];
 
-              // Don't know why, but this works
-              int vertexOrder = reverseWindingOrder == facingPositiveDir ? 2 - vert : vert;
-
-              vertexPositions[vertexOrder] = noiseData.position;
-              isoNormals[vertexOrder] = noiseData.normal;
+              vertexPositions[vert] = noiseData.position;
+              isoNormals[vert] = noiseData.normal;
             }
 
-            // Calculate vertex normal
+            // Calculate light value based on surface normal
             Vec3 surfaceNormal = glm::normalize(glm::cross(vertexPositions[1] - vertexPositions[0], vertexPositions[2] - vertexPositions[0]));
             float lightValue = static_cast<float>((1.0 + surfaceNormal.z) / 2);
 
             for (int vert = 0; vert < 3; ++vert)
-              transitionMeshData.push_back({ vertexPositions[vert], surfaceNormal, isoNormals[vert], vert, lightValue });
+              transitionMeshData.push_back({ vertexPositions[vert], isoNormals[vert], vert, lightValue });
           }
         }
 
@@ -472,6 +467,8 @@ namespace LOD
 
     const length_t LODFloor = node->anchor.k * Chunk::Length();
     const length_t LODCeiling = LODFloor + node->length();
+
+    node->data->meshGenerated = true;
 
     // If LOD is fully below or above global min/max values, no need to generate mesh
     if (LODFloor > globalMaxTerrainHeight || LODCeiling < globalMinTerrainHeight)
@@ -490,71 +487,8 @@ namespace LOD
 
     generatePrimaryMesh(node, noiseValues, noiseNormals);
     generateTransitionMeshes(node, noiseValues, noiseNormals);
-  }
 
-  void UpdateMesh(LOD::Octree& tree, LOD::Octree::Node* node)
-  {
-    EN_PROFILE_FUNCTION();
-
-    static const Engine::BufferLayout LODBufferLayout = { { ShaderDataType::Float3, "a_Position" },
-                                                          { ShaderDataType::Float3, "a_SurfaceNormal"},
-                                                          { ShaderDataType::Float3, "a_IsoNormal"},
-                                                          { ShaderDataType::Int,    "a_QuadIndex"},
-                                                          { ShaderDataType::Float,  "s_LightValue"} };
-
-    DetermineTransitionFaces(tree, node);
-    std::vector<LOD::Vertex> LODMesh = CalcAdjustedPrimaryMesh(node);
-
-    // Generate vertex array
-    Engine::Shared<Engine::VertexArray> LODVertexArray = Engine::VertexArray::Create();
-    auto LODVertexBuffer = Engine::VertexBuffer::Create(static_cast<uint32_t>(LODMesh.size()) * sizeof(LOD::Vertex));
-    LODVertexBuffer->setLayout(LODBufferLayout);
-    LODVertexArray->addVertexBuffer(LODVertexBuffer);
-
-    uintptr_t dataSize = sizeof(LOD::Vertex) * LODMesh.size();
-    LODVertexBuffer->setData(LODMesh.data(), dataSize);
-    node->data->vertexArray = LODVertexArray;
-
-    for (BlockFace face : BlockFaceIterator())
-    {
-      const int faceID = static_cast<int>(face);
-      std::vector<LOD::Vertex> transitionMesh = CalcAdjustedTransitionMesh(node, face);
-
-      // Generate vertex array
-      Engine::Shared<Engine::VertexArray> transitionVertexArray = Engine::VertexArray::Create();
-      auto transitionVertexBuffer = Engine::VertexBuffer::Create(static_cast<uint32_t>(transitionMesh.size()) * sizeof(LOD::Vertex));
-      transitionVertexBuffer->setLayout(LODBufferLayout);
-      transitionVertexArray->addVertexBuffer(transitionVertexBuffer);
-
-      uintptr_t dataSize = sizeof(LOD::Vertex) * transitionMesh.size();
-      transitionVertexBuffer->setData(transitionMesh.data(), dataSize);
-      node->data->transitionVertexArrays[faceID] = transitionVertexArray;
-    }
-  }
-
-  void DetermineTransitionFaces(LOD::Octree& tree, LOD::Octree::Node* node)
-  {
-    const GlobalIndex offsets[6] = { { node->size(), 0, 0 }, { -1, 0, 0 }, { 0, node->size(), 0 }, { 0, -1, 0 }, { 0, 0, node->size() }, { 0, 0, -1 } };
-                                //            East               West              North              South              Top                Bottom
-
-    // Determine which faces transition to a lower resolution LOD
-    uint8_t transitionFaces = 0;
-    for (BlockFace face : BlockFaceIterator())
-    {
-      const int faceID = static_cast<int>(face);
-
-      LOD::Octree::Node* neighbor = tree.findLeaf(node->anchor + offsets[faceID]);
-      if (neighbor == nullptr)
-        continue;
-
-      if (node->LODLevel() == neighbor->LODLevel())
-        continue;
-      else if (neighbor->LODLevel() - node->LODLevel() == 1)
-        transitionFaces |= bit(faceID);
-      else if (neighbor->LODLevel() - node->LODLevel() > 1)
-        EN_WARN("LOD neighbor is more than one level higher resolution");
-    }
-    node->data->transitionFaces = transitionFaces;
+    node->data->needsUpdate = true;
   }
 
   // Formulas can be found in section 4.4 of TransVoxel paper
@@ -612,7 +546,7 @@ namespace LOD
     return vertexAdjusted;
   }
 
-  std::vector<LOD::Vertex> CalcAdjustedPrimaryMesh(LOD::Octree::Node* node)
+  std::vector<LOD::Vertex> calcAdjustedPrimaryMesh(LOD::Octree::Node* node)
   {
     const length_t cellLength = node->length() / s_NumCells;
 
@@ -625,7 +559,7 @@ namespace LOD
     return LODMesh;
   }
 
-  std::vector<LOD::Vertex> CalcAdjustedTransitionMesh(LOD::Octree::Node* node, BlockFace face)
+  std::vector<LOD::Vertex> calcAdjustedTransitionMesh(LOD::Octree::Node* node, BlockFace face)
   {
     const int faceID = static_cast<int>(face);
     const int coordID = faceID / 2;
@@ -668,12 +602,83 @@ namespace LOD
           for (int vert = 0; vert < 3; ++vert)
           {
             int i = 3 * tri + vert;
-            LODMesh[i].surfaceNormal = surfaceNormal;
             LODMesh[i].lightValue = lightValue;
           }
         }
       }
     }
     return LODMesh;
+  }
+
+  void DetermineTransitionFaces(LOD::Octree& tree, LOD::Octree::Node* node)
+  {
+    const GlobalIndex offsets[6] = { { node->size(), 0, 0 }, { -1, 0, 0 }, { 0, node->size(), 0 }, { 0, -1, 0 }, { 0, 0, node->size() }, { 0, 0, -1 } };
+                                //            East               West              North              South              Top                Bottom
+
+    // Determine which faces transition to a lower resolution LOD
+    uint8_t transitionFaces = 0;
+    for (BlockFace face : BlockFaceIterator())
+    {
+      const int faceID = static_cast<int>(face);
+
+      LOD::Octree::Node* neighbor = tree.findLeaf(node->anchor + offsets[faceID]);
+      if (neighbor == nullptr)
+        continue;
+
+      if (node->LODLevel() == neighbor->LODLevel())
+        continue;
+      else if (neighbor->LODLevel() - node->LODLevel() == 1)
+        transitionFaces |= bit(faceID);
+      else if (neighbor->LODLevel() - node->LODLevel() > 1)
+        EN_WARN("LOD neighbor is more than one level higher resolution");
+    }
+
+    if (node->data->transitionFaces != transitionFaces)
+      node->data->needsUpdate = true;
+
+    node->data->transitionFaces = transitionFaces;
+  }
+
+  static void uploadMesh(Engine::Shared<Engine::VertexArray>& target, const std::vector<LOD::Vertex>& mesh)
+  {
+    EN_PROFILE_FUNCTION();
+
+    static const Engine::BufferLayout LODBufferLayout = { { ShaderDataType::Float3, "a_Position" },
+                                                          { ShaderDataType::Float3, "a_IsoNormal"},
+                                                          { ShaderDataType::Int,    "a_QuadIndex"},
+                                                          { ShaderDataType::Float,  "s_LightValue"} };
+
+    // Generate vertex array
+    Engine::Shared<Engine::VertexArray> LODVertexArray = Engine::VertexArray::Create();
+    auto LODVertexBuffer = Engine::VertexBuffer::Create(static_cast<uint32_t>(mesh.size()) * sizeof(LOD::Vertex));
+    LODVertexBuffer->setLayout(LODBufferLayout);
+    LODVertexArray->addVertexBuffer(LODVertexBuffer);
+
+    uintptr_t dataSize = sizeof(LOD::Vertex) * mesh.size();
+    LODVertexBuffer->setData(mesh.data(), dataSize);
+    target = LODVertexArray;
+  }
+
+  void UpdateMesh(LOD::Octree& tree, LOD::Octree::Node* node)
+  {
+    EN_PROFILE_FUNCTION();
+
+    if (node->data->meshData.size() == 0)
+      return;
+
+    DetermineTransitionFaces(tree, node);
+
+    if (!node->data->needsUpdate)
+      return;
+
+    uploadMesh(node->data->vertexArray, calcAdjustedPrimaryMesh(node));
+
+    for (BlockFace face : BlockFaceIterator())
+    {
+      const int faceID = static_cast<int>(face);
+      uploadMesh(node->data->transitionVertexArrays[faceID], calcAdjustedTransitionMesh(node, face));
+    }
+
+    node->data->needsUpdate = false;
   }
 }

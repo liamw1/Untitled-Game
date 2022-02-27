@@ -13,7 +13,6 @@ namespace LOD
   struct Vertex
   {
     Float3 position;
-    Float3 surfaceNormal;
     Float3 isoNormal;
     int quadIndex;
     float lightValue;
@@ -27,7 +26,9 @@ namespace LOD
     std::array<std::vector<Vertex>, 6> transitionMeshData;
     std::array<Engine::Shared<Engine::VertexArray>, 6> transitionVertexArrays;
 
-    uint8_t transitionFaces;
+    uint8_t transitionFaces = 0;
+    bool meshGenerated = false;
+    bool needsUpdate = false;
   };
 
   class Octree
@@ -100,10 +101,8 @@ namespace LOD
 
   bool Intersection(AABB boxA, AABB boxB);
 
+  void DetermineTransitionFaces(LOD::Octree& tree, LOD::Octree::Node* node);
+
   void GenerateMesh(LOD::Octree::Node* node);
   void UpdateMesh(LOD::Octree& tree, LOD::Octree::Node* node);
-
-  void DetermineTransitionFaces(LOD::Octree& tree, LOD::Octree::Node* node);
-  std::vector<LOD::Vertex> CalcAdjustedPrimaryMesh(LOD::Octree::Node* node);
-  std::vector<LOD::Vertex> CalcAdjustedTransitionMesh(LOD::Octree::Node* node, BlockFace face);
 }

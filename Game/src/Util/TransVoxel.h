@@ -17,21 +17,6 @@ struct RegularCellData
 };
 
 /*
-	Normalized offsets of regular cell corners.  Offset measured from cell anchor.
-*/
-static constexpr Vec3 regularCellVertexOffsets[8] =
-{
-	Vec3(0.0, 0.0, 0.0),
-	Vec3(1.0, 0.0, 0.0),
-	Vec3(0.0, 1.0, 0.0),
-	Vec3(1.0, 1.0, 0.0),
-	Vec3(0.0, 0.0, 1.0),
-	Vec3(1.0, 0.0, 1.0),
-	Vec3(0.0, 1.0, 1.0),
-	Vec3(1.0, 1.0, 1.0)
-};
-
-/*
   The regularCellClass table maps an 8-bit regular Marching Cubes case index to
   an equivalence class index. Even though there are 18 equivalence classes in our
   modified Marching Cubes algorithm, a couple of them use the same exact triangulations,
@@ -363,60 +348,6 @@ struct TransitionCellData
 
 	int getVertexCount() const { return (geometryCounts >> 4); }
 	int getTriangleCount() const { return (geometryCounts & 0x0F); }
-};
-
-/*
-	Normalized offsets of transition cell corners.  Offset measured from cell anchor.
-*/
-static constexpr Vec3 transitionCellVertexOffsets[3][13] =
-{
-	{ /* East Face */
-		Vec3(0.0, 0.0, 0.0),
-		Vec3(0.0, 0.5, 0.0),
-		Vec3(0.0, 1.0, 0.0),
-		Vec3(0.0, 0.0, 0.5),
-		Vec3(0.0, 0.5, 0.5),
-		Vec3(0.0, 1.0, 0.5),
-		Vec3(0.0, 0.0, 1.0),
-		Vec3(0.0, 0.5, 1.0),
-		Vec3(0.0, 1.0, 1.0),
-		Vec3(1.0, 0.0, 0.0),
-		Vec3(1.0, 1.0, 0.0),
-		Vec3(1.0, 0.0, 1.0),
-		Vec3(1.0, 1.0, 1.0)
-	},
-
-	{ /* North Face */
-		Vec3(0.0, 0.0, 0.0),
-		Vec3(0.0, 0.0, 0.5),
-		Vec3(0.0, 0.0, 1.0),
-		Vec3(0.5, 0.0, 0.0),
-		Vec3(0.5, 0.0, 0.5),
-		Vec3(0.5, 0.0, 1.0),
-		Vec3(1.0, 0.0, 0.0),
-		Vec3(1.0, 0.0, 0.5),
-		Vec3(1.0, 0.0, 1.0),
-		Vec3(0.0, 1.0, 0.0),
-		Vec3(0.0, 1.0, 1.0),
-		Vec3(1.0, 1.0, 0.0),
-		Vec3(1.0, 1.0, 1.0)
-	},
-
-	{ /* Top Face */
-		Vec3(0.0, 0.0, 0.0),
-		Vec3(0.5, 0.0, 0.0),
-		Vec3(1.0, 0.0, 0.0),
-		Vec3(0.0, 0.5, 0.0),
-		Vec3(0.5, 0.5, 0.0),
-		Vec3(1.0, 0.5, 0.0),
-		Vec3(0.0, 1.0, 0.0),
-		Vec3(0.5, 1.0, 0.0),
-		Vec3(1.0, 1.0, 0.0),
-		Vec3(0.0, 0.0, 1.0),
-		Vec3(1.0, 0.0, 1.0),
-		Vec3(0.0, 1.0, 1.0),
-		Vec3(1.0, 1.0, 1.0)
-	}
 };
 
 /*

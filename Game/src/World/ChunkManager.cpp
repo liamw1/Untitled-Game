@@ -12,6 +12,8 @@ ChunkManager::ChunkManager()
   m_OpenChunkSlots.reserve(s_MaxChunks);
   for (int i = 0; i < s_MaxChunks; ++i)
     m_OpenChunkSlots.push_back(i);
+
+  initializeLODs();
 }
 
 ChunkManager::~ChunkManager()
@@ -100,86 +102,13 @@ bool ChunkManager::loadNewChunks(int maxNewChunks)
 
   // Load First chunk if none exist
   if (m_OpenChunkSlots.size() == s_MaxChunks)
-    loadNewChunk(Player::OriginIndex());
+    loadChunk(Player::OriginIndex());
 
   // Find new chunks to generate
-  std::vector<GlobalIndex> newChunks{};
-  for (auto& pair : m_BoundaryChunks)
-  {
-    Chunk* chunk = pair.second;
+  std::vector<GlobalIndex> newChunks = searchForChunks(maxNewChunks);
 
-    for (BlockFace face : BlockFaceIterator())
-      if (chunk->getNeighbor(face) == nullptr && !chunk->isFaceOpaque(face))
-      {
-        // Store index of potential new chunk
-        const GlobalIndex neighborIndex = chunk->getGlobalIndex() + GlobalIndex::OutwardNormal(face);
-
-        // If potential chunk is out of load range, skip it
-        if (!isInRange(neighborIndex, s_LoadDistance))
-          continue;
-
-        newChunks.push_back(neighborIndex);
-      }
-
-    if (newChunks.size() >= maxNewChunks)
-      break;
-  }
-
-  // Load new chunks
-  for (int i = 0; i < newChunks.size(); ++i)
-  {
-    const GlobalIndex newChunkIndex = newChunks[i];
-    int64_t key = createKey(newChunkIndex);
-
-    // Create key for hash map.  If chunk is already in a map, skip it
-    bool isInMap = false;
-    for (MapType mapType : MapTypeIterator())
-    {
-      const int mapTypeID = static_cast<int>(mapType);
-
-      if (m_Chunks[mapTypeID].find(key) != m_Chunks[mapTypeID].end())
-      {
-        isInMap = true;
-        break;
-      }
-    }
-    if (isInMap)
-      continue;
-
-    // Generate Chunk
-    Chunk* newChunk = loadNewChunk(newChunkIndex);
-
-    // Set neighbors in all directions
-    for (BlockFace dir : BlockFaceIterator())
-    {
-      // Store index of chunk adjacent to new chunk in direction "dir"
-      const GlobalIndex adjIndex = newChunkIndex + GlobalIndex::OutwardNormal(dir);
-
-      // Find and add any existing neighbors to new chunk
-      int64_t adjKey = createKey(adjIndex);
-      for (MapType mapType : MapTypeIterator())
-      {
-        const int mapTypeID = static_cast<int>(mapType);
-
-        if (m_Chunks[mapTypeID].find(adjKey) != m_Chunks[mapTypeID].end())
-        {
-          Chunk* adjChunk = m_Chunks[mapTypeID][adjKey];
-          newChunk->setNeighbor(dir, adjChunk);
-          adjChunk->setNeighbor(!dir, newChunk);
-
-          // Renderable chunks should receive an update if they get a new neighbor
-          if (mapType == MapType::Renderable)
-            adjChunk->update();
-
-          break;
-        }
-      }
-    }
-
-    // If there are no open chunk slots, don't load any more
-    if (m_OpenChunkSlots.size() == 0)
-      break;
-  }
+  // Load newly found chunks
+  loadChunks(newChunks);
 
   // Move chunk pointers out of m_BoundaryChunks when all their neighbors are accounted for
   for (auto& pair : m_BoundaryChunks)
@@ -238,135 +167,19 @@ void ChunkManager::manageLODs()
   EN_PROFILE_FUNCTION();
   
   std::vector<LOD::Octree::Node*> leaves = m_LODTree.getLeaves();
+  bool treeModified = splitAndCombineLODs(leaves);
 
-  bool newNodes = false;
-
-  // Initialize LODs
-  if (leaves.size() == 1)
+  if (treeModified)
   {
-    newNodes = true;
-
-    bool treeModified = true;
-    while (treeModified)
-    {
-      leaves = m_LODTree.getLeaves();
-      treeModified = false;
-
-      // Split close nodes
-      for (auto it = leaves.begin(); it != leaves.end();)
-      {
-        LOD::Octree::Node* node = *it;
-
-        if (node->LODLevel() > 1)
-        {
-          int64_t splitRange = pow2(node->LODLevel() + 1) - 1 + s_RenderDistance;
-          LOD::AABB splitRangeBoundingBox = { Player::OriginIndex() - splitRange, Player::OriginIndex() + splitRange };
-
-          if (LOD::Intersection(splitRangeBoundingBox, node->boundingBox()))
-          {
-            m_LODTree.splitNode(node);
-            treeModified = true;
-
-            it = leaves.erase(it);
-            continue;
-          }
-        }
-
-        it++;
-      }
-
-      // Search for nodes to combine
-      std::vector<LOD::Octree::Node*> cannibalNodes{};
-      for (auto it = leaves.begin(); it != leaves.end(); ++it)
-      {
-        LOD::Octree::Node* node = *it;
-
-        if (node->depth > 0)
-        {
-          int64_t combineRange = pow2(node->LODLevel() + 2) - 1 + s_RenderDistance;
-          LOD::AABB rangeBoundingBox = { Player::OriginIndex() - combineRange, Player::OriginIndex() + combineRange };
-
-          if (!LOD::Intersection(rangeBoundingBox, node->parent->boundingBox()))
-            cannibalNodes.push_back(node->parent);
-        }
-      }
-
-      // Combine nodes
-      for (int i = 0; i < cannibalNodes.size(); ++i)
-        m_LODTree.combineChildren(cannibalNodes[i]);
-
-      if (cannibalNodes.size() > 0)
-        treeModified = true;
-    }
-
-    // Generate meshes for all LODs
-    for (auto it = leaves.begin(); it != leaves.end(); ++it)
-      LOD::GenerateMesh(*it);
-
     leaves = m_LODTree.getLeaves();
-  }
-
-  // Split close nodes and load children
-  for (auto it = leaves.begin(); it != leaves.end();)
-  {
-    LOD::Octree::Node* node = *it;
-
-    if (node->LODLevel() > 1)
-    {
-      int64_t splitRange = pow2(node->LODLevel() + 1) - 1 + s_RenderDistance;
-      LOD::AABB splitRangeBoundingBox = { Player::OriginIndex() - splitRange, Player::OriginIndex() + splitRange };
-
-      if (LOD::Intersection(splitRangeBoundingBox, node->boundingBox()))
-      {
-        newNodes = true;
-
-        m_LODTree.splitNode(node);
-
-        for (int i = 0; i < 8; ++i)
-          LOD::GenerateMesh(node->children[i]);
-
-        it = leaves.erase(it);
-        continue;
-      }
-    }
-
-    it++;
-  }
-
-  // Search for nodes to combine
-  std::vector<LOD::Octree::Node*> cannibalNodes{};
-  for (auto it = leaves.begin(); it != leaves.end(); ++it)
-  {
-    LOD::Octree::Node* node = *it;
-
-    if (node->depth > 0)
-    {
-      int64_t combineRange = pow2(node->LODLevel() + 2) - 1 + s_RenderDistance;
-      LOD::AABB rangeBoundingBox = { Player::OriginIndex() - combineRange, Player::OriginIndex() + combineRange };
-
-      if (!LOD::Intersection(rangeBoundingBox, node->parent->boundingBox()))
-        cannibalNodes.push_back(node->parent);
-    }
-  }
-
-  // Combine nodes
-  for (int i = 0; i < cannibalNodes.size(); ++i)
-  {
-    newNodes = true;
-
-    m_LODTree.combineChildren(cannibalNodes[i]);
-    LOD::GenerateMesh(cannibalNodes[i]);
-  }
-
-  if (newNodes)
-  {
-    std::vector<LOD::Octree::Node*> newLeaves = m_LODTree.getLeaves();
-    for (auto it = newLeaves.begin(); it != newLeaves.end(); ++it)
+    for (auto it = leaves.begin(); it != leaves.end(); ++it)
     {
       LOD::Octree::Node* node = *it;
 
-      if (node->data->meshData.size() > 0)
-        LOD::UpdateMesh(m_LODTree, node);
+      if (!node->data->meshGenerated)
+        LOD::GenerateMesh(node);
+
+      LOD::UpdateMesh(m_LODTree, node);
     }
   }
 }
@@ -485,7 +298,65 @@ HeightMap ChunkManager::generateHeightMap(globalIndex_t chunkI, globalIndex_t ch
   return heightMap;
 }
 
-Chunk* ChunkManager::loadNewChunk(const GlobalIndex& chunkIndex)
+void ChunkManager::setNeighbors(Chunk* chunk)
+{
+  const GlobalIndex& chunkIndex = chunk->getGlobalIndex();
+
+  // Set neighbors in all directions
+  for (BlockFace face : BlockFaceIterator())
+  {
+    // Store index of chunk adjacent to new chunk in direction of face
+    const GlobalIndex neighborIndex = chunkIndex + GlobalIndex::OutwardNormal(face);
+
+    // Find and add any existing neighbors to new chunk
+    int64_t key = createKey(neighborIndex);
+    for (MapType mapType : MapTypeIterator())
+    {
+      const int mapTypeID = static_cast<int>(mapType);
+
+      if (m_Chunks[mapTypeID].find(key) != m_Chunks[mapTypeID].end())
+      {
+        Chunk* neighboringChunk = m_Chunks[mapTypeID][key];
+        chunk->setNeighbor(face, neighboringChunk);
+        neighboringChunk->setNeighbor(!face, chunk);
+
+        // Renderable chunks should receive an update if they get a new neighbor
+        if (mapType == MapType::Renderable)
+          neighboringChunk->update();
+
+        break;
+      }
+    }
+  }
+}
+
+std::vector<GlobalIndex> ChunkManager::searchForChunks(int maxNewChunks)
+{
+  std::vector<GlobalIndex> newChunks{};
+  for (auto& pair : m_BoundaryChunks)
+  {
+    Chunk* chunk = pair.second;
+
+    for (BlockFace face : BlockFaceIterator())
+      if (chunk->getNeighbor(face) == nullptr && !chunk->isFaceOpaque(face))
+      {
+        // Store index of potential new chunk
+        const GlobalIndex neighborIndex = chunk->getGlobalIndex() + GlobalIndex::OutwardNormal(face);
+
+        // If potential chunk is out of load range, skip it
+        if (!isInRange(neighborIndex, s_LoadDistance))
+          continue;
+
+        newChunks.push_back(neighborIndex);
+      }
+
+    if (newChunks.size() >= maxNewChunks)
+      break;
+  }
+  return newChunks;
+}
+
+Chunk* ChunkManager::loadChunk(const GlobalIndex& chunkIndex)
 {
   EN_ASSERT(m_OpenChunkSlots.size() > 0, "All chunks slots are full!");
 
@@ -507,6 +378,38 @@ Chunk* ChunkManager::loadNewChunk(const GlobalIndex& chunkIndex)
   addToMap(newChunk, MapType::Boundary);
 
   return newChunk;
+}
+
+void ChunkManager::loadChunks(const std::vector<GlobalIndex>& newChunks)
+{
+  for (int i = 0; i < newChunks.size(); ++i)
+  {
+    const GlobalIndex newChunkIndex = newChunks[i];
+    int64_t key = createKey(newChunkIndex);
+
+    // Create key for hash map.  If chunk is already in a map, skip it
+    bool isInMap = false;
+    for (MapType mapType : MapTypeIterator())
+    {
+      const int mapTypeID = static_cast<int>(mapType);
+
+      if (m_Chunks[mapTypeID].find(key) != m_Chunks[mapTypeID].end())
+      {
+        isInMap = true;
+        break;
+      }
+    }
+    if (isInMap)
+      continue;
+
+    // Generate Chunk
+    Chunk* newChunk = loadChunk(newChunkIndex);
+    setNeighbors(newChunk);
+
+    // If there are no open chunk slots, don't load any more
+    if (m_OpenChunkSlots.size() == 0)
+      break;
+  }
 }
 
 void ChunkManager::unloadChunk(Chunk* const chunk)
@@ -586,4 +489,84 @@ bool ChunkManager::isOnBoundary(const Chunk* const chunk) const
     if (chunk->getNeighbor(face) == nullptr && !chunk->isFaceOpaque(face))
       return true;
   return false;
+}
+
+void ChunkManager::initializeLODs()
+{
+  std::vector<LOD::Octree::Node*> leaves{};
+
+  bool treeModified = true;
+  while (treeModified)
+  {
+    leaves = m_LODTree.getLeaves();
+    treeModified = splitAndCombineLODs(leaves);
+  }
+
+  // Generate meshes for all LODs
+  leaves = m_LODTree.getLeaves();
+  for (auto it = leaves.begin(); it != leaves.end(); ++it)
+  {
+    LOD::Octree::Node* node = *it;
+    LOD::GenerateMesh(node);
+    LOD::UpdateMesh(m_LODTree, node);
+  }
+}
+
+bool ChunkManager::splitLODs(std::vector<LOD::Octree::Node*>& leaves)
+{
+  bool treeModified = false;
+  for (auto it = leaves.begin(); it != leaves.end();)
+  {
+    LOD::Octree::Node* node = *it;
+
+    if (node->LODLevel() > 1)
+    {
+      int64_t splitRange = pow2(node->LODLevel() + 1) - 1 + s_RenderDistance;
+      LOD::AABB splitRangeBoundingBox = { Player::OriginIndex() - splitRange, Player::OriginIndex() + splitRange };
+
+      if (LOD::Intersection(splitRangeBoundingBox, node->boundingBox()))
+      {
+        m_LODTree.splitNode(node);
+        treeModified = true;
+
+        it = leaves.erase(it);
+        continue;
+      }
+    }
+
+    it++;
+  }
+  return treeModified;
+}
+
+bool ChunkManager::combineLODs(std::vector<LOD::Octree::Node*>& leaves)
+{
+  // Search for nodes to combine
+  std::vector<LOD::Octree::Node*> cannibalNodes{};
+  for (auto it = leaves.begin(); it != leaves.end(); ++it)
+  {
+    LOD::Octree::Node* node = *it;
+
+    if (node->depth > 0)
+    {
+      int64_t combineRange = pow2(node->LODLevel() + 2) - 1 + s_RenderDistance;
+      LOD::AABB rangeBoundingBox = { Player::OriginIndex() - combineRange, Player::OriginIndex() + combineRange };
+
+      if (!LOD::Intersection(rangeBoundingBox, node->parent->boundingBox()))
+        cannibalNodes.push_back(node->parent);
+    }
+  }
+
+  // Combine nodes
+  for (int i = 0; i < cannibalNodes.size(); ++i)
+    m_LODTree.combineChildren(cannibalNodes[i]);
+
+  return cannibalNodes.size() > 0;
+}
+
+bool ChunkManager::splitAndCombineLODs(std::vector<LOD::Octree::Node*>& leaves)
+{
+  bool nodesSplit = splitLODs(leaves);
+  bool nodesCombined = combineLODs(leaves);
+  return nodesSplit || nodesCombined;
 }

@@ -152,8 +152,8 @@ void Chunk::reset()
 LocalIndex Chunk::getLocalIndex() const
 {
   EN_ASSERT(abs(m_GlobalIndex.i - Player::OriginIndex().i) < std::numeric_limits<localIndex_t>::max() &&
-    abs(m_GlobalIndex.j - Player::OriginIndex().j) < std::numeric_limits<localIndex_t>::max() &&
-    abs(m_GlobalIndex.k - Player::OriginIndex().k) < std::numeric_limits<localIndex_t>::max(), "Difference between global indices is too large, will cause overflow!");
+            abs(m_GlobalIndex.j - Player::OriginIndex().j) < std::numeric_limits<localIndex_t>::max() &&
+            abs(m_GlobalIndex.k - Player::OriginIndex().k) < std::numeric_limits<localIndex_t>::max(), "Difference between global indices is too large, will cause overflow!");
 
   return { static_cast<localIndex_t>(m_GlobalIndex.i - Player::OriginIndex().i),
            static_cast<localIndex_t>(m_GlobalIndex.j - Player::OriginIndex().j),
