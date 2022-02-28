@@ -36,6 +36,8 @@ struct RegularCellData
 	int getTriangleCount() const { return (geometryCounts & 0x0F); }
 };
 
+static constexpr int maxCellVertexCount = 12;
+
 /*
   The regularCellClass table maps an 8-bit regular Marching Cubes case index to
   an equivalence class index. Even though there are 18 equivalence classes in our

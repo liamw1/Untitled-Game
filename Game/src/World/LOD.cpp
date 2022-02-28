@@ -5,6 +5,12 @@
 #include "Util/Array2D.h"
 #include "Util/TransVoxel.h"
 
+struct NoiseData
+{
+  Vec3 position;
+  Vec3 normal;
+};
+
 namespace LOD
 {
   // Number of cells in each direction
@@ -130,7 +136,7 @@ namespace LOD
   // LOD smoothness parameter, must be in the range [0.0, 1.0]
   static constexpr float smoothnessLevel(int LODLevel)
   {
-#if 0
+#if 1
     return std::min(0.1f * (LODLevel) + 0.3f, 1.0f);
 #else
     return 1.0f;
@@ -242,6 +248,35 @@ namespace LOD
     return noiseNormals;
   }
 
+  static NoiseData interpolateNoiseData(LOD::Octree::Node* node, const Array2D<length_t>& noiseValues, const Array2D<Vec3>& noiseNormals, const BlockIndex& cornerA, const BlockIndex& cornerB, float s)
+  {
+    const length_t LODFloor = node->anchor.k * Chunk::Length();
+    const length_t cellLength = node->length() / s_NumCells;
+
+    // Vertex positions
+    Vec3 posA = static_cast<Vec3>(cornerA) * cellLength;
+    Vec3 posB = static_cast<Vec3>(cornerB) * cellLength;
+
+    length_t zA = LODFloor + cornerA.k * cellLength;
+    length_t zB = LODFloor + cornerB.k * cellLength;
+
+    // Isovalues of corners A and B
+    length_t tA = noiseValues[cornerA.i][cornerA.j] - zA;
+    length_t tB = noiseValues[cornerB.i][cornerB.j] - zB;
+
+    // Fraction of distance along edge vertex should be placed
+    length_t t = tA / (tA - tB);
+
+    Vec3 vertexPosition = LODInterpolation(t, s, posA, posB);
+
+    // Estimate isosurface normal using linear interpolation between corners
+    const Vec3& n0 = noiseNormals[cornerA.i][cornerA.j];
+    const Vec3& n1 = noiseNormals[cornerB.i][cornerB.j];
+    Vec3 isoNormal = LODInterpolation(t, s, n0, n1);
+
+    return { vertexPosition, isoNormal };
+  }
+
   // Generate primary LOD mesh using Marching Cubes algorithm
   static void generatePrimaryMesh(LOD::Octree::Node* node, const Array2D<length_t>& noiseValues, const Array2D<Vec3>& noiseNormals)
   {
@@ -293,54 +328,29 @@ namespace LOD
 
           // Loop over all triangles in cell
           int cellVertexCount = 0;
+          std::array<uint32_t, maxCellVertexCount> prevCellVertexIndices{};
           for (int vert = 0; vert < 3 * triangleCount; ++vert)
           {
-            // Lookup placement of corners A,B that form the cell edge new vertex lies on
             int edgeIndex = cellData.vertexIndex[vert];
+
+            // Check if vertex has already been created in this cell
+            int vertexIndex = prevCellVertexIndices[edgeIndex];
+            if (vertexIndex > 0)
+            {
+              primaryMeshIndices.push_back(vertexIndex);
+              continue;
+            }
+
+            // Lookup placement of corners A,B that form the cell edge new vertex lies on
             uint16_t vertexData = regularVertexData[cellCase][edgeIndex];
-            uint8_t cornerIndexA = vertexData & 0x000F;
-            uint8_t cornerIndexB = (vertexData & 0x00F0) >> 4;
             uint8_t sharedVertexIndex = (vertexData & 0x0F00) >> 8;
             uint8_t sharedVertexDirection = (vertexData & 0xF000) >> 12;
+            bool newVertex = sharedVertexDirection == 8;
 
-            // Indices of corners A,B
-            BlockIndex cornerA{};
-            cornerA.i = cornerIndexA & bit(0) ? i + 1 : i;
-            cornerA.j = cornerIndexA & bit(1) ? j + 1 : j;
-            cornerA.k = cornerIndexA & bit(2) ? k + 1 : k;
-            BlockIndex cornerB{};
-            cornerB.i = cornerIndexB & bit(0) ? i + 1 : i;
-            cornerB.j = cornerIndexB & bit(1) ? j + 1 : j;
-            cornerB.k = cornerIndexB & bit(2) ? k + 1 : k;
-
-            // Vertex positions
-            Vec3 posA = static_cast<Vec3>(cornerA) * cellLength;
-            Vec3 posB = static_cast<Vec3>(cornerB) * cellLength;
-
-            length_t zA = LODFloor + cornerA.k * cellLength;
-            length_t zB = LODFloor + cornerB.k * cellLength;
-
-            // Isovalues of corners A and B
-            length_t tA = noiseValues[cornerA.i][cornerA.j] - zA;
-            length_t tB = noiseValues[cornerB.i][cornerB.j] - zB;
-
-            // Determine if new vertex will be created
-            bool newVertex = false;
-            if (smoothness == 1.0f && (tA == 0.0 || tB == 0.0))   // If smoothness < 1, vertex cannot be placed at corner
-            {
-              sharedVertexIndex = 0;
-              uint8_t cornerIndex = tA == 0.0 ? cornerIndexA : cornerIndexB;
-
-              if (cornerIndex == 7)
-                newVertex = true;
-              else
-                sharedVertexDirection = cornerIndex ^ 0x07;
-            }
-            else if (sharedVertexDirection == 8)
-              newVertex = true;
-
-            // Attempt to reuse previous vertex
-            if (!newVertex)
+            // If a new vertex must be created, store vertex index information for later reuse.  If not, attempt to reuse previous vertex
+            if (newVertex)
+              currLayer[j][k].vertexOrder[sharedVertexIndex] = cellVertexCount;
+            else
             {
               int I = sharedVertexDirection & bit(0) ? i - 1 : i;
               int J = sharedVertexDirection & bit(1) ? j - 1 : j;
@@ -355,22 +365,29 @@ namespace LOD
                 if (baseMeshIndex > 0 && vertexOrder >= 0)
                 {
                   primaryMeshIndices.push_back(baseMeshIndex + vertexOrder);
+                  prevCellVertexIndices[edgeIndex] = baseMeshIndex + vertexOrder;
                   continue;
                 }
               }
             }
-            else  // Store vertex index information for later reuse
-              currLayer[j][k].vertexOrder[sharedVertexIndex] = cellVertexCount;
 
-            const Vec3& n0 = noiseNormals[cornerA.i][cornerA.j];
-            const Vec3& n1 = noiseNormals[cornerB.i][cornerB.j];
+            uint8_t cornerIndexA =  vertexData & 0x000F;
+            uint8_t cornerIndexB = (vertexData & 0x00F0) >> 4;
 
-            // Fraction of distance along edge vertex should be placed (when s == 1)
-            length_t t = tA / (tA - tB);
-            const float& s = smoothness;
+            // Indices of corners A,B
+            BlockIndex cornerA{};
+            cornerA.i = cornerIndexA & bit(0) ? i + 1 : i;
+            cornerA.j = cornerIndexA & bit(1) ? j + 1 : j;
+            cornerA.k = cornerIndexA & bit(2) ? k + 1 : k;
+            BlockIndex cornerB{};
+            cornerB.i = cornerIndexB & bit(0) ? i + 1 : i;
+            cornerB.j = cornerIndexB & bit(1) ? j + 1 : j;
+            cornerB.k = cornerIndexB & bit(2) ? k + 1 : k;
 
-            primaryMeshVertices.push_back({ LODInterpolation(t, s, posA, posB), LODInterpolation(t, s, n0, n1), vert % 3 });
+            NoiseData noiseData = interpolateNoiseData(node, noiseValues, noiseNormals, cornerA, cornerB, smoothness);
+            primaryMeshVertices.push_back({ noiseData.position, noiseData.normal, vert % 3 });
             primaryMeshIndices.push_back(vertexCount);
+            prevCellVertexIndices[edgeIndex] = vertexCount;
 
             vertexCount++;
             cellVertexCount++;
@@ -457,19 +474,52 @@ namespace LOD
 
           // Loop over all triangles in cell
           int cellVertexCount = 0;
+          std::array<uint32_t, maxCellVertexCount> prevCellVertexIndices{};
           for (int vert = 0; vert < 3 * triangleCount; ++vert)
           {
-            // Lookup indices of vertices A,B of the cell edge that vertex v lies on
             int edgeIndex = cellData.vertexIndex[reverseWindingOrder ? 3 * triangleCount - 1 - vert : vert];
+
+            // Check if vertex has already been created in this cell
+            int vertexIndex = prevCellVertexIndices[edgeIndex];
+            if (vertexIndex > 0)
+            {
+              transitionMeshIndices.push_back(vertexIndex);
+              continue;
+            }
+
+            // Lookup indices of vertices A,B of the cell edge that vertex v lies on
             uint16_t vertexData = transitionVertexData[cellCase][edgeIndex];
-            uint8_t cornerIndexA = vertexData & 0x000F;
-            uint8_t cornerIndexB = (vertexData & 0x00F0) >> 4;
             uint8_t sharedVertexIndex = (vertexData & 0x0F00) >> 8;
             uint8_t sharedVertexDirection = (vertexData & 0xF000) >> 12;
-            bool isOnLowResSide = cornerIndexB > 8;
+            bool isReusable = sharedVertexDirection != 4;
+            bool newVertex = sharedVertexDirection == 8;
 
-            // If vertex is on low-resolution side, use smoothness level of low-resolution LOD
-            float smoothness = isOnLowResSide ? smoothnessLevel(node->LODLevel() + 1) : smoothnessLevel(node->LODLevel());
+            // If a new vertex must be created, store vertex index information for later reuse.  If not, attempt to reuse previous vertex
+            if (newVertex)
+              currRow[j / 2].vertexOrder[sharedVertexIndex] = cellVertexCount;
+            else if (isReusable)
+            {
+              int I = sharedVertexDirection & bit(0) ? i / 2 - 1 : i / 2;
+              int J = sharedVertexDirection & bit(1) ? j / 2 - 1 : j / 2;
+
+              if (I >= 0 && J >= 0)
+              {
+                const auto& targetRow = I == i / 2 ? currRow : prevRow;
+
+                int baseMeshIndex = targetRow[J].baseMeshIndex;
+                int vertexOrder = targetRow[J].vertexOrder[sharedVertexIndex];
+                if (baseMeshIndex > 0 && vertexOrder >= 0)
+                {
+                  transitionMeshIndices.push_back(baseMeshIndex + vertexOrder);
+                  prevCellVertexIndices[edgeIndex] = baseMeshIndex + vertexOrder;
+                  continue;
+                }
+              }
+            }
+
+            uint8_t cornerIndexA = vertexData & 0x000F;
+            uint8_t cornerIndexB = (vertexData & 0x00F0) >> 4;
+            bool isOnLowResSide = cornerIndexB > 8;
 
             // Indices of samples A,B
             BlockIndex sampleA{};
@@ -488,69 +538,16 @@ namespace LOD
               sampleB[v] = s_NumCells - sampleB[v];
             }
 
-            // Vertex positions
-            Vec3 posA = static_cast<Vec3>(sampleA) * cellLength;
-            Vec3 posB = static_cast<Vec3>(sampleB) * cellLength;
+            // If vertex is on low-resolution side, use smoothness level of low-resolution LOD
+            float smoothness = isOnLowResSide ? smoothnessLevel(node->LODLevel() + 1) : smoothnessLevel(node->LODLevel());
 
-            length_t zA = LODFloor + sampleA.k * cellLength;
-            length_t zB = LODFloor + sampleB.k * cellLength;
-
-            // Isovalues of corners A and B
-            length_t tA = noiseValues[sampleA.i][sampleA.j] - zA;
-            length_t tB = noiseValues[sampleB.i][sampleB.j] - zB;
-
-            // Handle special case of vertex placed exactly at corner.  If smoothness < 1, vertex cannot be placed at corner
-            if (smoothness == 1.0f && (tA == 0.0 || tB == 0.0))
-            {
-              uint8_t cornerIndex = tA == 0.0 ? cornerIndexA : cornerIndexB;
-
-              sharedVertexIndex = cornerVertexReuseInformation[cornerIndex] & 0x0F;
-              sharedVertexDirection = (cornerVertexReuseInformation[cornerIndex] & 0xF0) >> 4;
-              EN_INFO("Corner Index: {0}, Shared Vertex Index: {1}, Shared Vertex Direction: {2}", cornerIndex, sharedVertexIndex, sharedVertexDirection);
-            }
-
-            // Determine if new vertex will be created
-            bool newVertex = sharedVertexDirection == 8;
-            bool isReusable = sharedVertexDirection != 4;
-
-            // Attempt to reuse previous vertex
-            if (isReusable)
-            {
-              if (!newVertex)
-              {
-                int I = sharedVertexDirection & bit(0) ? i / 2 - 1 : i / 2;
-                int J = sharedVertexDirection & bit(1) ? j / 2 - 1 : j / 2;
-
-                if (I >= 0 && J >= 0)
-                {
-                  const auto& targetLayer = I == i / 2 ? currRow : prevRow;
-
-                  int baseMeshIndex = targetLayer[J].baseMeshIndex;
-                  int vertexOrder = targetLayer[J].vertexOrder[sharedVertexIndex];
-                  if (baseMeshIndex > 0 && vertexOrder >= 0)
-                  {
-                    transitionMeshIndices.push_back(baseMeshIndex + vertexOrder);
-                    continue;
-                  }
-                }
-              }
-              else  // Store vertex index information for later reuse
-                currRow[j / 2].vertexOrder[sharedVertexIndex] = cellVertexCount;
-            }
-
-            const Vec3& nA = noiseNormals[sampleA.i][sampleA.j];
-            const Vec3& nB = noiseNormals[sampleB.i][sampleB.j];
-
-            // Fraction of distance along edge vertex should be placed (when s == 1)
-            length_t t = tA / (tA - tB);
-            const float& s = smoothness;
-
-            Vec3 vertexPosition = LODInterpolation(t, s, posA, posB);
+            NoiseData noiseData = interpolateNoiseData(node, noiseValues, noiseNormals, sampleA, sampleB, smoothness);
             if (!isOnLowResSide)
-              vertexPosition -= transitionCellWidth * normals[faceID];
+              noiseData.position -= transitionCellWidth * normals[faceID];
 
-            transitionMeshVertices.push_back({ vertexPosition, LODInterpolation(t, s, nA, nB), vert % 3 });
+            transitionMeshVertices.push_back({ noiseData.position, noiseData.normal, vert % 3 });
             transitionMeshIndices.push_back(vertexCount);
+            prevCellVertexIndices[edgeIndex] = vertexCount;
 
             vertexCount++;
             cellVertexCount++;

@@ -171,9 +171,6 @@ void ChunkManager::manageLODs()
 
   if (treeModified)
   {
-    int totalVerts = 0;
-    int totalIndices = 0;
-
     leaves = m_LODTree.getLeaves();
     for (auto it = leaves.begin(); it != leaves.end(); ++it)
     {
@@ -183,17 +180,7 @@ void ChunkManager::manageLODs()
         LOD::GenerateMesh(node);
 
       LOD::UpdateMesh(m_LODTree, node);
-
-      totalVerts += static_cast<int>(node->data->primaryMesh.vertices.size());
-      totalIndices += static_cast<int>(node->data->primaryMesh.indices.size());
-      for (BlockFace face : BlockFaceIterator())
-      {
-        const int faceID = static_cast<int>(face);
-        totalVerts += static_cast<int>(node->data->transitionMeshes[faceID].vertices.size());
-        totalIndices += static_cast<int>(node->data->transitionMeshes[faceID].indices.size());
-      }
     }
-    EN_INFO("Vertex Reduction: {0}%", 100 * (1.0f - static_cast<float>(totalVerts) / totalIndices));
   }
 }
 
