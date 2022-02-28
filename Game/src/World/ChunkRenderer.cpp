@@ -65,25 +65,29 @@ void ChunkRenderer::DrawChunk(const Chunk* chunk)
 
 void ChunkRenderer::DrawLOD(const LOD::Octree::Node* node)
 {
-  if (node->data->meshData.size() == 0)
+  uint32_t primaryMeshIndexCount = static_cast<uint32_t>(node->data->primaryMesh.indices.size());
+
+  if (primaryMeshIndexCount == 0)
     return; // Nothing to draw
 
   Vec3 localAnchorPosition = Chunk::Length() * static_cast<Vec3>(node->anchor - Player::OriginIndex());
 
-  node->data->vertexArray->bind();
+  node->data->primaryMesh.vertexArray->bind();
   s_LODShader->bind();
   s_LODShader->setFloat("u_TextureScaling", static_cast<float>(bit(node->LODLevel())));
   s_LODShader->setFloat3("u_LODPosition", localAnchorPosition);
-  Engine::RenderCommand::DrawVertices(node->data->vertexArray, static_cast<uint32_t>(node->data->meshData.size()));
+  Engine::RenderCommand::DrawIndexed(node->data->primaryMesh.vertexArray, primaryMeshIndexCount);
 
   for (BlockFace face : BlockFaceIterator())
   {
     int faceID = static_cast<int>(face);
 
-    if (node->data->transitionMeshData[faceID].size() == 0 || !(node->data->transitionFaces & bit(faceID)))
+    uint32_t transitionMeshIndexCount = static_cast<uint32_t>(node->data->transitionMeshes[faceID].indices.size());
+
+    if (transitionMeshIndexCount == 0 || !(node->data->transitionFaces & bit(faceID)))
       continue;
 
-    node->data->transitionVertexArrays[faceID]->bind();
-    Engine::RenderCommand::DrawVertices(node->data->transitionVertexArrays[faceID], static_cast<uint32_t>(node->data->transitionMeshData[faceID].size()));
+    node->data->transitionMeshes[faceID].vertexArray->bind();
+    Engine::RenderCommand::DrawIndexed(node->data->transitionMeshes[faceID].vertexArray, transitionMeshIndexCount);
   }
 }

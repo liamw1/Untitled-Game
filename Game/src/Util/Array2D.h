@@ -15,7 +15,10 @@ public:
   Array2D()
     : Array2D(0, 0) {}
 
-  Array2D(const int size1, const int size2)
+  Array2D(int size)
+    : Array2D(size, size) {}
+
+  Array2D(int size1, int size2)
     : container(Container<T>(size1, size2)) {}
 
   Array2D(const Array2D& other) = delete;
@@ -32,13 +35,13 @@ public:
     return *this;
   }
 
-  Container<T>& operator[](const int index)
+  Container<T>& operator[](int index)
   {
     container.index1 = index;
     return container;
   }
 
-  const Container<T>& operator[](const int index) const
+  const Container<T>& operator[](int index) const
   {
     container.index1 = index;
     return container;
@@ -50,7 +53,7 @@ private:
 
 
 template<typename T>
-void printArray(const Array2D<T>& data, const int size1, const int size2)
+void printArray(const Array2D<T>& data, int size1, int size2)
 {
   for (int j = 0; j < size2; ++j)
   {

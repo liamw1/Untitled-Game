@@ -171,6 +171,6 @@ namespace Engine
       \param indices Buffer of vertex indices
       \param count   Number of indices
     */
-    static Shared<IndexBuffer> Create(uint32_t* indices, uint32_t count);
+    static Shared<IndexBuffer> Create(const uint32_t* indices, uint32_t count);
   };
 }

@@ -131,17 +131,19 @@ namespace LOD
            boxA.min.k < boxB.max.k && boxA.max.k > boxB.min.k;
   }
 
+
+
   // LOD smoothness parameter, must be in the range [0.0, 1.0]
   static constexpr float smoothnessLevel(int LODLevel)
   {
-#if 0
+#if 1
     return std::min(0.1f * (LODLevel) + 0.3f, 1.0f);
 #else
     return 1.0f;
 #endif
   }
 
-  // Calculate quantity based on values at samples that compose an edge.  The smoothness parameter S is used to interpolate between 
+  // Calculate quantity based on values at corners that compose an edge.  The smoothness parameter s is used to interpolate between 
   // roughest iso-surface (vertex is always chosen at edge midpoint) and the smooth iso-surface interpolation used by Paul Bourke.
   template<typename T>
   static T LODInterpolation(float t, float s, const T& q0, const T& q1)
@@ -156,7 +158,7 @@ namespace LOD
     const length_t cellLength = node->length() / s_NumCells;
     const Vec2 LODAnchorXY = Chunk::Length() * static_cast<Vec2>(node->anchor);
 
-    Array2D<length_t> noiseValues = Array2D<length_t>(s_NumCells + 1, s_NumCells + 1);
+    Array2D<length_t> noiseValues = Array2D<length_t>(s_NumCells + 1);
     for (int i = 0; i < s_NumCells + 1; ++i)
       for (int j = 0; j < s_NumCells + 1; ++j)
       {
@@ -197,7 +199,7 @@ namespace LOD
     const Vec2 LODAnchorXY = Chunk::Length() * static_cast<Vec2>(node->anchor);
 
     // Calculate normals using central differences
-    Array2D<Vec3> noiseNormals = Array2D<Vec3>(s_NumCells + 1, s_NumCells + 1);
+    Array2D<Vec3> noiseNormals = Array2D<Vec3>(s_NumCells + 1);
     for (int i = 0; i < s_NumCells + 1; ++i)
       for (int j = 0; j < s_NumCells + 1; ++j)
       {
@@ -246,30 +248,32 @@ namespace LOD
     return noiseNormals;
   }
 
-  static NoiseData interpolateNoiseData(LOD::Octree::Node* node, const Array2D<length_t>& noiseValues, const Array2D<Vec3>& noiseNormals, const BlockIndex& sampleA, const BlockIndex& sampleB, float s)
+  static NoiseData interpolateNoiseData(LOD::Octree::Node* node, const Array2D<length_t>& noiseValues, const Array2D<Vec3>& noiseNormals, const BlockIndex& cornerA, const BlockIndex& cornerB, float s)
   {
     const length_t LODFloor = node->anchor.k * Chunk::Length();
     const length_t cellLength = node->length() / s_NumCells;
 
     // Vertex positions
-    const Vec3& posA = static_cast<Vec3>(sampleA) * cellLength;
-    const Vec3& posB = static_cast<Vec3>(sampleB) * cellLength;
+    const Vec3& posA = static_cast<Vec3>(cornerA) * cellLength;
+    const Vec3& posB = static_cast<Vec3>(cornerB) * cellLength;
 
-    length_t zA = LODFloor + sampleA.k * cellLength;
-    length_t zB = LODFloor + sampleB.k * cellLength;
+    length_t zA = LODFloor + cornerA.k * cellLength;
+    length_t zB = LODFloor + cornerB.k * cellLength;
 
-    // Isovalues of samples A and B
-    length_t tA = noiseValues[sampleA.i][sampleA.j] - zA;
-    length_t tB = noiseValues[sampleB.i][sampleB.j] - zB;
+    // Isovalues of corners A and B
+    length_t tA = noiseValues[cornerA.i][cornerA.j] - zA;
+    length_t tB = noiseValues[cornerB.i][cornerB.j] - zB;
 
     // Fraction of distance along edge vertex should be placed
     length_t t = tA / (tA - tB);
+    if (t == 0.0)
+      EN_WARN("t == 0!");
 
     Vec3 vertexPosition = LODInterpolation(t, s, posA, posB);
 
-    // Estimate isosurface normal using linear interpolation between sample points
-    const Vec3& n0 = noiseNormals[sampleA.i][sampleA.j];
-    const Vec3& n1 = noiseNormals[sampleB.i][sampleB.j];
+    // Estimate isosurface normal using linear interpolation between corners
+    const Vec3& n0 = noiseNormals[cornerA.i][cornerA.j];
+    const Vec3& n1 = noiseNormals[cornerB.i][cornerB.j];
     Vec3 isoNormal = LODInterpolation(t, s, n0, n1);
 
     return { vertexPosition, isoNormal };
@@ -278,12 +282,26 @@ namespace LOD
   // Generate primary LOD mesh using Marching Cubes algorithm
   static void generatePrimaryMesh(LOD::Octree::Node* node, const Array2D<length_t>& noiseValues, const Array2D<Vec3>& noiseNormals)
   {
+    EN_PROFILE_FUNCTION();
+
+    struct VertexIndexData
+    {
+      uint32_t baseMeshIndex = 0;
+      int8_t vertexOrder[4] = { -1, -1, -1, -1 };
+    };
+
     const length_t LODFloor = node->anchor.k * Chunk::Length();
     const length_t cellLength = node->length() / s_NumCells;
     const float smoothness = smoothnessLevel(node->LODLevel());
 
-    std::vector<LOD::Vertex> primaryMeshData{};
+    int vertexCount = 0;
+    std::vector<uint32_t> primaryMeshIndices{};
+    std::vector<LOD::Vertex> primaryMeshVertices{};
+    Array2D<VertexIndexData> prevLayer = Array2D<VertexIndexData>(s_NumCells);
     for (int i = 0; i < s_NumCells; ++i)
+    {
+      Array2D<VertexIndexData> currLayer = Array2D<VertexIndexData>(s_NumCells);
+
       for (int j = 0; j < s_NumCells; ++j)
         for (int k = 0; k < s_NumCells; ++k)
         {
@@ -303,41 +321,86 @@ namespace LOD
           if (cellCase == 0 || cellCase == 255)
             continue;
 
+          currLayer[j][k].baseMeshIndex = vertexCount;
+
           // Use lookup table to determine which of 15 equivalence classes the cell belongs to
           uint8_t cellEquivClass = regularCellClass[cellCase];
           RegularCellData cellData = regularCellData[cellEquivClass];
           int triangleCount = cellData.getTriangleCount();
 
           // Loop over all triangles in cell
-          for (int tri = 0; tri < triangleCount; ++tri)
-            for (int vert = 0; vert < 3; ++vert)
+          int cellVertexCount = 0;
+          for (int vert = 0; vert < 3 * triangleCount; ++vert)
+          {
+            // Lookup placement of corners A,B that form the cell edge new vertex lies on
+            int edgeIndex = cellData.vertexIndex[vert];
+            uint16_t vertexData = regularVertexData[cellCase][edgeIndex];
+            uint8_t sharedVertexIndex = (vertexData & 0x0F00) >> 8;
+            uint8_t sharedVertexDirection = (vertexData & 0xF000) >> 12;
+
+            if (sharedVertexDirection == 8)   // Store vertex index information for later reuse
             {
-              // Lookup placement of samples A,B that form the cell edge new vertex lies on
-              int edgeIndex = cellData.vertexIndex[3 * tri + vert];
-              uint16_t vertexData = regularVertexData[cellCase][edgeIndex];
-              uint8_t indexA = vertexData & 0x000F;
-              uint8_t indexB = (vertexData & 0x00F0) >> 4;
-
-              // Indices of samples A,B
-              BlockIndex sampleA{};
-              sampleA.i = indexA & bit(0) ? i + 1 : i;
-              sampleA.j = indexA & bit(1) ? j + 1 : j;
-              sampleA.k = indexA & bit(2) ? k + 1 : k;
-              BlockIndex sampleB{};
-              sampleB.i = indexB & bit(0) ? i + 1 : i;
-              sampleB.j = indexB & bit(1) ? j + 1 : j;
-              sampleB.k = indexB & bit(2) ? k + 1 : k;
-
-              NoiseData noiseData = interpolateNoiseData(node, noiseValues, noiseNormals, sampleA, sampleB, smoothness);
-              primaryMeshData.push_back({ noiseData.position, noiseData.normal, vert });
+              currLayer[j][k].vertexOrder[sharedVertexIndex] = cellVertexCount;
             }
+            else  // Attempt to reuse previous vertex
+            {
+              int I = sharedVertexDirection & bit(0) ? i - 1 : i;
+              int J = sharedVertexDirection & bit(1) ? j - 1 : j;
+              int K = sharedVertexDirection & bit(2) ? k - 1 : k;
+
+              if (I >= 0 && J >= 0 && K >= 0)
+              {
+                const auto& targetLayer = I == i ? currLayer : prevLayer;
+
+                int baseMeshIndex = targetLayer[J][K].baseMeshIndex;
+                int vertexOrder = targetLayer[J][K].vertexOrder[sharedVertexIndex];
+                if (baseMeshIndex > 0 && vertexOrder >= 0)
+                {
+                  primaryMeshIndices.push_back(baseMeshIndex + vertexOrder);
+                  continue;
+                }
+              }
+            }
+
+            uint8_t cornerIndexA =  vertexData & 0x000F;
+            uint8_t cornerIndexB = (vertexData & 0x00F0) >> 4;
+
+            // Indices of corners A,B
+            BlockIndex cornerA{};
+            cornerA.i = cornerIndexA & bit(0) ? i + 1 : i;
+            cornerA.j = cornerIndexA & bit(1) ? j + 1 : j;
+            cornerA.k = cornerIndexA & bit(2) ? k + 1 : k;
+            BlockIndex cornerB{};
+            cornerB.i = cornerIndexB & bit(0) ? i + 1 : i;
+            cornerB.j = cornerIndexB & bit(1) ? j + 1 : j;
+            cornerB.k = cornerIndexB & bit(2) ? k + 1 : k;
+
+            NoiseData noiseData = interpolateNoiseData(node, noiseValues, noiseNormals, cornerA, cornerB, smoothness);
+            primaryMeshVertices.push_back({ noiseData.position, noiseData.normal, vert % 3 });
+            primaryMeshIndices.push_back(vertexCount);
+
+            vertexCount++;
+            cellVertexCount++;
+          }
         }
-    node->data->meshData = primaryMeshData;
+
+      prevLayer = std::move(currLayer);
+    }
+    node->data->primaryMesh.vertices = primaryMeshVertices;
+    node->data->primaryMesh.indices = primaryMeshIndices;
   }
 
   // Generate transition meshes using Transvoxel algorithm
   static void generateTransitionMeshes(LOD::Octree::Node* node, const Array2D<length_t>& noiseValues, const Array2D<Vec3>& noiseNormals)
   {
+    EN_PROFILE_FUNCTION();
+
+    struct VertexIndexData
+    {
+      uint32_t baseMeshIndex = 0;
+      int8_t vertexOrder[10] = { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 };
+    };
+
     static constexpr Vec3 normals[6] = { { 1, 0, 0}, { -1, 0, 0}, { 0, 1, 0}, { 0, -1, 0}, { 0, 0, 1}, { 0, 0, -1} };
                                     //      East         West        North       South         Top        Bottom
 
@@ -354,12 +417,17 @@ namespace LOD
       const int v = (u + 1) % 3;
       const int w = (u + 2) % 3;
       const bool facingPositiveDir = faceID % 2 == 0;
-
       const int uIndex = facingPositiveDir ? s_NumCells : 0;
 
       // Generate transition meshes using Transvoxel algorithm
-      std::vector<LOD::Vertex> transitionMeshData{};
+      int vertexCount = 0;
+      std::vector<uint32_t> transitionMeshIndices{};
+      std::vector<LOD::Vertex> transitionMeshVertices{};
+      std::array<VertexIndexData, s_NumCells / 2> prevRow{};
       for (int i = 0; i < s_NumCells; i += 2)
+      {
+        std::array<VertexIndexData, s_NumCells / 2> currRow{};
+
         for (int j = 0; j < s_NumCells; j += 2)
         {
           // Determine which of the 512 cases the cell belongs to
@@ -367,67 +435,112 @@ namespace LOD
           for (int p = 0; p < 9; ++p)
           {
             // From Figure 4.17 in Transvoxel paper
-            static constexpr int indexMapping[9] = { 0, 1, 2, 7, 8, 3, 6, 5, 4 };
+            static constexpr int cornerIndexToBitFlip[9] = { 0, 1, 2, 7, 8, 3, 6, 5, 4 };
 
-            BlockIndex cellVertexIndex{};
-            cellVertexIndex[u] = uIndex;
-            cellVertexIndex[v] = i + p % 3;
-            cellVertexIndex[w] = j + p / 3;
+            BlockIndex sample{};
+            sample[u] = uIndex;
+            sample[v] = i + p % 3;
+            sample[w] = j + p / 3;
 
-            const int& I = cellVertexIndex.i;
-            const int& J = cellVertexIndex.j;
-            const int& K = cellVertexIndex.k;
+            // If block face normal along negative axis, we must reverse v coordinate-axis to ensure correct orientation
+            if (!facingPositiveDir)
+              sample[v] = s_NumCells - sample[v];
+
+            const int& I = sample.i;
+            const int& J = sample.j;
+            const int& K = sample.k;
             length_t Z = LODFloor + K * cellLength;
 
             if (noiseValues[I][J] > Z)
-              cellCase |= bit(indexMapping[p]);
+              cellCase |= bit(cornerIndexToBitFlip[p]);
           }
           if (cellCase == 0 || cellCase == 511)
             continue;
 
+          currRow[j / 2].baseMeshIndex = vertexCount;
+
           // Use lookup table to determine which of 56 equivalence classes the cell belongs to
           uint8_t cellEquivClass = transitionCellClass[cellCase];
-          bool reverseWindingOrder = static_cast<bool>(cellEquivClass >> 7) == facingPositiveDir;   // Don't know why, but this works
+          bool reverseWindingOrder = cellEquivClass >> 7;
           TransitionCellData cellData = transitionCellData[cellEquivClass & 0x7F];
           int triangleCount = cellData.getTriangleCount();
 
           // Loop over all triangles in cell
-          for (int tri = 0; tri < triangleCount; ++tri)
-            for (int vert = 0; vert < 3; ++vert)
+          int cellVertexCount = 0;
+          for (int vert = 0; vert < 3 * triangleCount; ++vert)
+          {
+            // Lookup indices of vertices A,B of the cell edge that vertex v lies on
+            int edgeIndex = cellData.vertexIndex[reverseWindingOrder ? 3 * triangleCount - 1 - vert : vert];
+            uint16_t vertexData = transitionVertexData[cellCase][edgeIndex];
+            uint8_t sharedVertexIndex = (vertexData & 0x0F00) >> 8;
+            uint8_t sharedVertexDirection = (vertexData & 0xF000) >> 12;
+
+            if (sharedVertexDirection == 8)   // Store vertex index information for later reuse
             {
-              int vertexIndex = reverseWindingOrder ? 2 - vert : vert;
-
-              // Lookup indices of vertices A,B of the cell edge that vertex v lies on
-              int edgeIndex = cellData.vertexIndex[3 * tri + vertexIndex];
-              uint16_t vertexData = transitionVertexData[cellCase][edgeIndex];
-              uint8_t indexA = vertexData & 0x000F;
-              uint8_t indexB = (vertexData & 0x00F0) >> 4;
-              bool isOnLowResSide = indexB > 8;
-
-              static constexpr int indexMapping[13] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 0, 2, 6, 8 };
-
-              // Indices of samples A,B
-              BlockIndex sampleA{};
-              sampleA[u] = uIndex;
-              sampleA[v] = i + indexMapping[indexA] % 3;
-              sampleA[w] = j + indexMapping[indexA] / 3;
-              BlockIndex sampleB{};
-              sampleB[u] = uIndex;
-              sampleB[v] = i + indexMapping[indexB] % 3;
-              sampleB[w] = j + indexMapping[indexB] / 3;
-
-              // If vertex is on low-resolution side, use smoothness level of low-resolution LOD
-              float smoothness = isOnLowResSide ? smoothnessLevel(node->LODLevel() + 1) : smoothnessLevel(node->LODLevel());
-
-              NoiseData noiseData = interpolateNoiseData(node, noiseValues, noiseNormals, sampleA, sampleB, smoothness);
-              if (!isOnLowResSide)
-                noiseData.position -= transitionCellWidth * normals[faceID];
-
-              transitionMeshData.push_back({ noiseData.position, noiseData.normal, vertexIndex });
+              currRow[j / 2].vertexOrder[sharedVertexIndex] = cellVertexCount;
             }
+            else if (sharedVertexDirection != 4)  // Attempt to reuse previous vertex
+            {
+              int I = sharedVertexDirection & bit(0) ? i / 2 - 1 : i / 2;
+              int J = sharedVertexDirection & bit(1) ? j / 2 - 1 : j / 2;
+
+              if (I >= 0 && J >= 0)
+              {
+                const auto& targetRow = I == i / 2 ? currRow : prevRow;
+
+                int baseMeshIndex = targetRow[J].baseMeshIndex;
+                int vertexOrder = targetRow[J].vertexOrder[sharedVertexIndex];
+                if (baseMeshIndex > 0 && vertexOrder >= 0)
+                {
+                  transitionMeshIndices.push_back(baseMeshIndex + vertexOrder);
+                  continue;
+                }
+              }
+            }
+
+            uint8_t cornerIndexA = vertexData & 0x000F;
+            uint8_t cornerIndexB = (vertexData & 0x00F0) >> 4;
+            bool isOnLowResSide = cornerIndexB > 8;
+
+            static constexpr int cornerIndexToSampleIndex[13] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 0, 2, 6, 8 };
+
+            // Indices of samples A,B
+            BlockIndex sampleA{};
+            sampleA[u] = uIndex;
+            sampleA[v] = i + cornerIndexToSampleIndex[cornerIndexA] % 3;
+            sampleA[w] = j + cornerIndexToSampleIndex[cornerIndexA] / 3;
+            BlockIndex sampleB{};
+            sampleB[u] = uIndex;
+            sampleB[v] = i + cornerIndexToSampleIndex[cornerIndexB] % 3;
+            sampleB[w] = j + cornerIndexToSampleIndex[cornerIndexB] / 3;
+
+            // If block face normal along negative axis, we must reverse v coordinate-axis to ensure correct orientation
+            if (!facingPositiveDir)
+            {
+              sampleA[v] = s_NumCells - sampleA[v];
+              sampleB[v] = s_NumCells - sampleB[v];
+            }
+
+            // If vertex is on low-resolution side, use smoothness level of low-resolution LOD
+            float smoothness = isOnLowResSide ? smoothnessLevel(node->LODLevel() + 1) : smoothnessLevel(node->LODLevel());
+
+            NoiseData noiseData = interpolateNoiseData(node, noiseValues, noiseNormals, sampleA, sampleB, smoothness);
+            if (!isOnLowResSide)
+              noiseData.position -= transitionCellWidth * normals[faceID];
+
+            transitionMeshVertices.push_back({ noiseData.position, noiseData.normal, vert % 3 });
+            transitionMeshIndices.push_back(vertexCount);
+
+            vertexCount++;
+            cellVertexCount++;
+          }
         }
 
-      node->data->transitionMeshData[faceID] = transitionMeshData;
+        prevRow = std::move(currRow);
+      }
+
+      node->data->transitionMeshes[faceID].vertices = transitionMeshVertices;
+      node->data->transitionMeshes[faceID].indices = transitionMeshIndices;
     }
   }
 
@@ -518,7 +631,7 @@ namespace LOD
   {
     const length_t cellLength = node->length() / s_NumCells;
 
-    std::vector<LOD::Vertex> LODMesh = node->data->meshData;
+    std::vector<LOD::Vertex> LODMesh = node->data->primaryMesh.vertices;
 
     // Adjust coorindates of boundary cells on primary LOD mesh
     if (node->data->transitionFaces != 0)
@@ -534,7 +647,7 @@ namespace LOD
     const bool facingPositiveDir = faceID % 2 == 0;
     const length_t cellLength = node->length() / s_NumCells;
 
-    std::vector<LOD::Vertex> LODMesh = node->data->transitionMeshData[faceID];
+    std::vector<LOD::Vertex> LODMesh = node->data->transitionMeshes[faceID].vertices;
 
     // Adjust coorindates of boundary cells on transition mesh
     if (node->data->transitionFaces != 0)
@@ -582,22 +695,26 @@ namespace LOD
     node->data->transitionFaces = transitionFaces;
   }
 
-  static void uploadMesh(Engine::Shared<Engine::VertexArray>& target, const std::vector<LOD::Vertex>& mesh)
+  static void uploadMesh(Engine::Shared<Engine::VertexArray>& target, const std::vector<LOD::Vertex>& meshVertices, const std::vector<uint32_t>& meshIndices)
   {
-    EN_PROFILE_FUNCTION();
-
     static const Engine::BufferLayout LODBufferLayout = { { ShaderDataType::Float3, "a_Position" },
                                                           { ShaderDataType::Float3, "a_IsoNormal"},
                                                           { ShaderDataType::Int,    "a_QuadIndex"} };
 
+    uint32_t vertexCount = static_cast<uint32_t>(meshVertices.size());
+    uint32_t indexCount = static_cast<uint32_t>(meshIndices.size());
+
     // Generate vertex array
     Engine::Shared<Engine::VertexArray> LODVertexArray = Engine::VertexArray::Create();
-    auto LODVertexBuffer = Engine::VertexBuffer::Create(static_cast<uint32_t>(mesh.size()) * sizeof(LOD::Vertex));
+    auto LODVertexBuffer = Engine::VertexBuffer::Create(sizeof(LOD::Vertex) * vertexCount);
     LODVertexBuffer->setLayout(LODBufferLayout);
     LODVertexArray->addVertexBuffer(LODVertexBuffer);
 
-    uintptr_t dataSize = sizeof(LOD::Vertex) * mesh.size();
-    LODVertexBuffer->setData(mesh.data(), dataSize);
+    Engine::Shared<Engine::IndexBuffer> LODIndexBuffer = Engine::IndexBuffer::Create(meshIndices.data(), indexCount);
+    LODVertexArray->setIndexBuffer(LODIndexBuffer);
+
+    uintptr_t dataSize = sizeof(LOD::Vertex) * vertexCount;
+    LODVertexBuffer->setData(meshVertices.data(), dataSize);
     target = LODVertexArray;
   }
 
@@ -605,7 +722,7 @@ namespace LOD
   {
     EN_PROFILE_FUNCTION();
 
-    if (node->data->meshData.size() == 0)
+    if (node->data->primaryMesh.vertices.size() == 0)
       return;
 
     DetermineTransitionFaces(tree, node);
@@ -613,12 +730,12 @@ namespace LOD
     if (!node->data->needsUpdate)
       return;
 
-    uploadMesh(node->data->vertexArray, calcAdjustedPrimaryMesh(node));
+    uploadMesh(node->data->primaryMesh.vertexArray, calcAdjustedPrimaryMesh(node), node->data->primaryMesh.indices);
 
     for (BlockFace face : BlockFaceIterator())
     {
       const int faceID = static_cast<int>(face);
-      uploadMesh(node->data->transitionVertexArrays[faceID], calcAdjustedTransitionMesh(node, face));
+      uploadMesh(node->data->transitionMeshes[faceID].vertexArray, calcAdjustedTransitionMesh(node, face), node->data->transitionMeshes[faceID].indices);
     }
   }
 }

@@ -17,13 +17,17 @@ namespace LOD
     int quadIndex;
   };
 
+  struct MeshData
+  {
+    std::vector<Vertex> vertices;
+    std::vector<uint32_t> indices;
+    Engine::Shared<Engine::VertexArray> vertexArray;
+  };
+
   struct Data 
   {
-    std::vector<Vertex> meshData;
-    Engine::Shared<Engine::VertexArray> vertexArray;
-
-    std::array<std::vector<Vertex>, 6> transitionMeshData;
-    std::array<Engine::Shared<Engine::VertexArray>, 6> transitionVertexArrays;
+    MeshData primaryMesh;
+    std::array<MeshData, 6> transitionMeshes;
 
     uint8_t transitionFaces = 0;
     bool meshGenerated = false;
