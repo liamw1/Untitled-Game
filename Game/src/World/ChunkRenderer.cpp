@@ -63,6 +63,7 @@ void ChunkRenderer::DrawChunk(const Chunk* chunk)
   Engine::RenderCommand::DrawIndexed(chunk->getVertexArray(), meshIndexCount);
 }
 
+// NOTE: Should use glMultiDrawArrays to draw primary mesh and transition meshes in single draw call
 void ChunkRenderer::DrawLOD(const LOD::Octree::Node* node)
 {
   uint32_t primaryMeshIndexCount = static_cast<uint32_t>(node->data->primaryMesh.indices.size());

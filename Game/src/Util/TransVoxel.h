@@ -1,3 +1,23 @@
+//================================================================================
+//
+// The Transvoxel Algorithm look-up tables
+//
+// Copyright 2009 by Eric Lengyel
+//
+// The following data originates from Eric Lengyel's Transvoxel Algorithm.
+// http://transvoxel.org/
+//
+// The data in this file may be freely used in implementations of the Transvoxel
+// Algorithm. If you do use this data, or any transformation of it, in your own
+// projects, commercial or otherwise, please give credit by indicating in your
+// source code that the data is part of the author's implementation of the
+// Transvoxel Algorithm and that it came from the web address given above.
+//
+// The format of the data in this file is described in the dissertation "Voxel-
+// Based Terrain for Real-Time Virtual Simulations", available at the web page
+// given above. References to sections and figures below pertain to that paper.
+//
+//================================================================================
 #pragma once
 #include <cstdint>
 #include <VecTypes.h>
@@ -349,6 +369,11 @@ struct TransitionCellData
 	int getVertexCount() const { return (geometryCounts >> 4); }
 	int getTriangleCount() const { return (geometryCounts & 0x0F); }
 };
+
+// From Figures 4.16, 4.17, and 4.19 in Transvoxel paper
+static constexpr uint8_t sampleIndexToBitFlip[9] = { 0, 1, 2, 7, 8, 3, 6, 5, 4 };
+static constexpr uint8_t cornerIndexToSampleIndex[13] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 0, 2, 6, 8 };
+static constexpr uint8_t cornerVertexReuseInformation[13] = { 0x30, 0x21, 0x20, 0x12, 0x40, 0x82, 0x10, 0x81, 0x80, 0x37, 0x27, 0x17, 0x87 };
 
 /*
 	The transitionCellClass table maps a 9-bit transition cell case index to an equivalence
