@@ -105,16 +105,7 @@ public:
   */
   void setNeighbor(BlockFace face, Chunk* chunk);
 
-  /*
-    \returns A vector of compressed vertex data that represents the chunk's mesh.
-
-    Compresed format is follows,
-     bits 0-17:  Relative position of vertex within chunk (3-comps, 6 bits each)
-     bits 18-20: Normal direction of quad (follows BlockFace convention)
-     bits 21-22: Texture coordinate index (see BlockFace.glsl for details)
-     bits 23-31: Texure ID
-  */
-  const std::vector<uint32_t>& getMesh() const { return m_Mesh; }
+  int getQuadCount() const { return m_QuadCount; }
   const Engine::Shared<Engine::VertexArray>& getVertexArray() const { return m_MeshVertexArray; }
 
   bool isEmpty() const { return m_ChunkComposition == nullptr; }
@@ -158,20 +149,25 @@ private:
 
   // Mesh data
   MeshState m_MeshState = MeshState::NotGenerated;
-  std::vector<uint32_t> m_Mesh;
+  uint16_t m_QuadCount;
   Engine::Shared<Engine::VertexArray> m_MeshVertexArray;
   static Engine::Shared<Engine::IndexBuffer> s_MeshIndexBuffer;
+  static Engine::BufferLayout s_MeshVertexBufferLayout;
 
   // Chunk neighbor data
   std::array<Chunk*, 6> m_Neighbors{};
 
   /*
-    Generates simplistic mesh based on chunk compostion.
+    Generates simplistic mesh in a compressed format based on chunk compostion.
     Block faces covered by opaque blocks will not be added to mesh.
+
+    Compresed format is follows,
+     bits 0-17:  Relative position of vertex within chunk (3-comps, 6 bits each)
+     bits 18-20: Normal direction of quad (follows BlockFace convention)
+     bits 21-22: Texture coordinate index (see BlockFace.glsl for details)
+     bits 23-31: Texure ID
   */
   void generateMesh();
-
-  void generateVertexArray();
 
   void setBlockType(blockIndex_t i, blockIndex_t j, blockIndex_t k, BlockType blockType);
   void setBlockType(const BlockIndex& blockIndex, BlockType blockType);

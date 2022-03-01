@@ -24,6 +24,8 @@ namespace Engine
     radians getFOV() const { return m_FOV; }
     float getAspectRatio() const { return m_AspectRatio; }
 
+    void toggleFreeCam() { m_FreeCamEnabled = !m_FreeCamEnabled; }
+
   private:
     // Camera state
     bool m_IsMouseEnabled = false;

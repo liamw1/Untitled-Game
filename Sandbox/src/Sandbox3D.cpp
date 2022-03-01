@@ -7,6 +7,7 @@ Sandbox3D::Sandbox3D()
 {
   Engine::RenderCommand::Initialize();
   Engine::Renderer::Initialize();
+  m_CameraController.toggleFreeCam();
 }
 
 void Sandbox3D::onAttach()
@@ -33,7 +34,7 @@ void Sandbox3D::onUpdate(std::chrono::duration<seconds> timestep)
   Engine::Renderer::BeginScene(m_CameraController.getCamera());
   for (int i = 0; i < 3; ++i)
     for (int j = 0; j < 3; ++j)
-      Engine::Renderer::DrawCube(Vec3((i - 1) * 1.25, (j - 1) * 1.25, -2.0), Vec3(1.0f), m_CheckerboardTexture);
+      Engine::Renderer::DrawCube(Vec3((i - 1) * 1.25, 2.0, (j + 1) * 1.25), Vec3(1.0f), m_CheckerboardTexture);
   Engine::Renderer::EndScene();
 }
 

@@ -19,6 +19,10 @@ namespace LOD
   // Width of a transition cell as a fraction of regular cell width
   static constexpr length_t s_TCFractionalWidth = 0.5f;
 
+  static const Engine::BufferLayout s_LODBufferLayout = { { ShaderDataType::Float3, "a_Position" },
+                                                          { ShaderDataType::Float3, "a_IsoNormal"},
+                                                          { ShaderDataType::Int,    "a_QuadIndex"} };
+
   Vec3 Octree::Node::anchorPosition() const
   {
     GlobalIndex relativeIndex = anchor - Player::OriginIndex();
@@ -137,7 +141,7 @@ namespace LOD
   static constexpr float smoothnessLevel(int LODLevel)
   {
 #if 1
-    return std::min(0.1f * (LODLevel) + 0.3f, 1.0f);
+    return std::min(0.15f * (LODLevel) + 0.3f, 1.0f);
 #else
     return 1.0f;
 #endif
@@ -713,29 +717,6 @@ namespace LOD
     node->data->transitionFaces = transitionFaces;
   }
 
-  static void uploadMesh(Engine::Shared<Engine::VertexArray>& target, const std::vector<LOD::Vertex>& meshVertices, const std::vector<uint32_t>& meshIndices)
-  {
-    static const Engine::BufferLayout LODBufferLayout = { { ShaderDataType::Float3, "a_Position" },
-                                                          { ShaderDataType::Float3, "a_IsoNormal"},
-                                                          { ShaderDataType::Int,    "a_QuadIndex"} };
-
-    uint32_t vertexCount = static_cast<uint32_t>(meshVertices.size());
-    uint32_t indexCount = static_cast<uint32_t>(meshIndices.size());
-
-    // Generate vertex array
-    Engine::Shared<Engine::VertexArray> LODVertexArray = Engine::VertexArray::Create();
-    auto LODVertexBuffer = Engine::VertexBuffer::Create(sizeof(LOD::Vertex) * vertexCount);
-    LODVertexBuffer->setLayout(LODBufferLayout);
-    LODVertexArray->addVertexBuffer(LODVertexBuffer);
-
-    Engine::Shared<Engine::IndexBuffer> LODIndexBuffer = Engine::IndexBuffer::Create(meshIndices.data(), indexCount);
-    LODVertexArray->setIndexBuffer(LODIndexBuffer);
-
-    uintptr_t dataSize = sizeof(LOD::Vertex) * vertexCount;
-    LODVertexBuffer->setData(meshVertices.data(), dataSize);
-    target = LODVertexArray;
-  }
-
   void UpdateMesh(LOD::Octree& tree, LOD::Octree::Node* node)
   {
     EN_PROFILE_FUNCTION();
@@ -748,12 +729,15 @@ namespace LOD
     if (!node->data->needsUpdate)
       return;
 
-    uploadMesh(node->data->primaryMesh.vertexArray, calcAdjustedPrimaryMesh(node), node->data->primaryMesh.indices);
+    auto& primaryMesh = node->data->primaryMesh;
+    Engine::Renderer::UploadMesh(primaryMesh.vertexArray, s_LODBufferLayout, primaryMesh.vertices, primaryMesh.indices);
 
     for (BlockFace face : BlockFaceIterator())
     {
       const int faceID = static_cast<int>(face);
-      uploadMesh(node->data->transitionMeshes[faceID].vertexArray, calcAdjustedTransitionMesh(node, face), node->data->transitionMeshes[faceID].indices);
+
+      auto& transitionMesh = node->data->transitionMeshes[faceID];
+      Engine::Renderer::UploadMesh(transitionMesh.vertexArray, s_LODBufferLayout, transitionMesh.vertices, transitionMesh.indices);
     }
   }
 }

@@ -45,12 +45,10 @@ namespace Engine
         for (Layer* layer : m_LayerStack)
           layer->onUpdate(timestep);
 
-        /*
         m_ImGuiLayer->begin();
         for (Layer* layer : m_LayerStack)
           layer->onImGuiRender();
         m_ImGuiLayer->end();
-        */
       }
       
       m_Window->onUpdate();
@@ -81,6 +79,11 @@ namespace Engine
   {
     m_LayerStack.pushOverlay(layer);
     layer->onAttach();
+  }
+
+  void Application::close()
+  {
+    m_Running = false;
   }
 
   bool Application::onWindowClose(WindowCloseEvent& /*event*/)

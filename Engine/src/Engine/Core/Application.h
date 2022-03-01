@@ -21,6 +21,8 @@ namespace Engine
     void pushLayer(Layer* layer);
     void pushOverlay(Layer* layer);
 
+    void close();
+
     Window& getWindow() { return *m_Window; }
     static Application& Get() { return *s_Instance; }
 

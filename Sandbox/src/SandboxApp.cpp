@@ -9,8 +9,8 @@ class Sandbox : public Engine::Application
 public:
   Sandbox()
   {
-    // pushLayer(new Sandbox2D());
-    pushLayer(new Sandbox3D());
+    pushLayer(new Sandbox2D());
+    // pushLayer(new Sandbox3D());
   }
 
   ~Sandbox()

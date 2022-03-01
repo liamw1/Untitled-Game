@@ -6,7 +6,7 @@
 namespace Engine
 {
   /*
-    Renderer 2D data
+    Renderer data
   */
   static Shared<VertexArray> s_CubeVertexArray;
   static Shared<VertexArray> s_CubeFrameVertexArray;

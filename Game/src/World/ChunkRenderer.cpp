@@ -52,7 +52,7 @@ void ChunkRenderer::EndScene()
 
 void ChunkRenderer::DrawChunk(const Chunk* chunk)
 {
-  uint32_t meshIndexCount = 6 * static_cast<uint32_t>(chunk->getMesh().size()) / 4;
+  uint32_t meshIndexCount = 6 * static_cast<uint32_t>(chunk->getQuadCount());
 
   if (meshIndexCount == 0)
     return; // Nothing to draw
