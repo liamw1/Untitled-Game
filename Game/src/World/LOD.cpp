@@ -730,14 +730,14 @@ namespace LOD
       return;
 
     auto& primaryMesh = node->data->primaryMesh;
-    Engine::Renderer::UploadMesh(primaryMesh.vertexArray, s_LODBufferLayout, primaryMesh.vertices, primaryMesh.indices);
+    Engine::Renderer::UploadMesh(primaryMesh.vertexArray, s_LODBufferLayout, calcAdjustedPrimaryMesh(node), primaryMesh.indices);
 
     for (BlockFace face : BlockFaceIterator())
     {
       const int faceID = static_cast<int>(face);
 
       auto& transitionMesh = node->data->transitionMeshes[faceID];
-      Engine::Renderer::UploadMesh(transitionMesh.vertexArray, s_LODBufferLayout, transitionMesh.vertices, transitionMesh.indices);
+      Engine::Renderer::UploadMesh(transitionMesh.vertexArray, s_LODBufferLayout, calcAdjustedTransitionMesh(node, face), transitionMesh.indices);
     }
   }
 }

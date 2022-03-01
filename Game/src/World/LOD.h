@@ -177,6 +177,8 @@ namespace LOD
   /*
     Adjusts meshes based on surrounding LODs and uploads
     mesh data to the GPU for rendering.
+
+    NOTE: Needs to be made faster.
   */
   void UpdateMesh(LOD::Octree& tree, LOD::Octree::Node* node);
 }
