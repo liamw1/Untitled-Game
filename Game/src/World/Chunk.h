@@ -82,7 +82,7 @@ public:
 
     Useful property:
     If the anchor point is denoted by A, then for any point
-    X within the chunk, X_i >= X_i.
+    X within the chunk, X_i >= A_i.
   */
   Vec3 anchorPosition() const { return s_ChunkLength * static_cast<Vec3>(getLocalIndex()); }
 
