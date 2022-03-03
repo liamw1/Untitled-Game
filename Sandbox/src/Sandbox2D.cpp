@@ -19,9 +19,11 @@ void Sandbox2D::onAttach()
   EN_PROFILE_FUNCTION();
 
   m_CheckerboardTexture = Engine::Texture2D::Create("assets/textures/Checkerboard.png");
-  m_SpriteSheet = Engine::Texture2D::Create("assets/textures/voxel-pack/Spritesheets/spritesheet_tiles.png");
 
-  m_RockTexture = Engine::SubTexture2D::CreateFromIndices(m_SpriteSheet, 128, 3, 1);
+  Engine::FramebufferSpecification framebufferSpecification;
+  framebufferSpecification.width = 1280;
+  framebufferSpecification.height = 720;
+  m_Framebuffer = Engine::Framebuffer::Create(framebufferSpecification);
 }
 
 void Sandbox2D::onDetach()
@@ -32,10 +34,12 @@ void Sandbox2D::onUpdate(std::chrono::duration<seconds> timestep)
 {
   EN_PROFILE_FUNCTION();
 
-  Engine::Renderer2D::ResetStats();
-  
+  // Update
   m_CameraController.onUpdate(timestep);
 
+  // Render
+  Engine::Renderer2D::ResetStats();
+  m_Framebuffer->bind();
   Engine::RenderCommand::Clear({ 0.1f, 0.1f, 0.1f, 1.0f });
 
   static radians rotation = 0.0;
@@ -53,13 +57,9 @@ void Sandbox2D::onUpdate(std::chrono::duration<seconds> timestep)
       Float4 color = { (x + 5.0f) / 10.0f, 0.4f, (y + 5.0f) / 10.0f, 0.5f };
       Engine::Renderer2D::DrawQuad({ { x, y, 0.0 }, Vec2(static_cast<length_t>(0.45)), color, 1.0f });
     }
-  Engine::Renderer2D::EndScene();
 
-#if 0
-  Engine::Renderer2D::BeginScene(m_CameraController.getCamera());
-  Engine::Renderer2D::DrawQuad({ {0.0, 0.0, 0.0}, Vec2(1.0), Float4(1.0f), 1.0f }, m_RockTexture);
   Engine::Renderer2D::EndScene();
-#endif
+  m_Framebuffer->unbind();
 }
 
 void Sandbox2D::onImGuiRender()
@@ -143,8 +143,8 @@ void Sandbox2D::onImGuiRender()
   ImGui::Text("Vertices: %d", stats.getTotalVertexCount());
   ImGui::Text("Indices: %d", stats.getTotatlIndexCount());
 
-  uint32_t textureID = m_CheckerboardTexture->getRendererID();
-  ImGui::Image((void*)textureID, ImVec2{ 128.0f, 128.0f });
+  uintptr_t textureID = m_Framebuffer->getColorAttachmentRendererID();
+  ImGui::Image(reinterpret_cast<void*>(textureID), ImVec2{ 1280, 720 }, ImVec2{ 0, 1 }, ImVec2{ 1, 0 });
   ImGui::End();
 
   ImGui::End();

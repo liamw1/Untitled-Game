@@ -105,10 +105,56 @@ bool ChunkManager::loadNewChunks(int maxNewChunks)
     loadChunk(Player::OriginIndex());
 
   // Find new chunks to generate
-  std::vector<GlobalIndex> newChunks = searchForChunks(maxNewChunks);
+  std::vector<GlobalIndex> newChunks{};
+  for (auto& pair : m_BoundaryChunks)
+  {
+    Chunk* chunk = pair.second;
+
+    for (BlockFace face : BlockFaceIterator())
+      if (chunk->getNeighbor(face) == nullptr && !chunk->isFaceOpaque(face))
+      {
+        // Store index of potential new chunk
+        const GlobalIndex neighborIndex = chunk->getGlobalIndex() + GlobalIndex::OutwardNormal(face);
+
+        // If potential chunk is out of load range, skip it
+        if (!isInRange(neighborIndex, s_LoadDistance))
+          continue;
+
+        newChunks.push_back(neighborIndex);
+      }
+
+    if (newChunks.size() >= maxNewChunks)
+      break;
+  }
 
   // Load newly found chunks
-  loadChunks(newChunks);
+  for (int i = 0; i < newChunks.size(); ++i)
+  {
+    const GlobalIndex newChunkIndex = newChunks[i];
+    int64_t key = createKey(newChunkIndex);
+
+    // Create key for hash map.  If chunk is already in a map, skip it
+    bool isInMap = false;
+    for (MapType mapType : MapTypeIterator())
+    {
+      const int mapTypeID = static_cast<int>(mapType);
+
+      if (m_Chunks[mapTypeID].find(key) != m_Chunks[mapTypeID].end())
+      {
+        isInMap = true;
+        break;
+      }
+    }
+    if (isInMap)
+      continue;
+
+    // Generate Chunk
+    Chunk* newChunk = loadChunk(newChunkIndex);
+
+    // If there are no open chunk slots, don't load any more
+    if (m_OpenChunkSlots.size() == 0)
+      break;
+  }
 
   // Move chunk pointers out of m_BoundaryChunks when all their neighbors are accounted for
   for (auto& pair : m_BoundaryChunks)
@@ -298,64 +344,6 @@ HeightMap ChunkManager::generateHeightMap(globalIndex_t chunkI, globalIndex_t ch
   return heightMap;
 }
 
-void ChunkManager::setNeighbors(Chunk* chunk)
-{
-  const GlobalIndex& chunkIndex = chunk->getGlobalIndex();
-
-  // Set neighbors in all directions
-  for (BlockFace face : BlockFaceIterator())
-  {
-    // Store index of chunk adjacent to new chunk in direction of face
-    const GlobalIndex neighborIndex = chunkIndex + GlobalIndex::OutwardNormal(face);
-
-    // Find and add any existing neighbors to new chunk
-    int64_t key = createKey(neighborIndex);
-    for (MapType mapType : MapTypeIterator())
-    {
-      const int mapTypeID = static_cast<int>(mapType);
-
-      if (m_Chunks[mapTypeID].find(key) != m_Chunks[mapTypeID].end())
-      {
-        Chunk* neighboringChunk = m_Chunks[mapTypeID][key];
-        chunk->setNeighbor(face, neighboringChunk);
-        neighboringChunk->setNeighbor(!face, chunk);
-
-        // Renderable chunks should receive an update if they get a new neighbor
-        if (mapType == MapType::Renderable)
-          neighboringChunk->update();
-
-        break;
-      }
-    }
-  }
-}
-
-std::vector<GlobalIndex> ChunkManager::searchForChunks(int maxNewChunks)
-{
-  std::vector<GlobalIndex> newChunks{};
-  for (auto& pair : m_BoundaryChunks)
-  {
-    Chunk* chunk = pair.second;
-
-    for (BlockFace face : BlockFaceIterator())
-      if (chunk->getNeighbor(face) == nullptr && !chunk->isFaceOpaque(face))
-      {
-        // Store index of potential new chunk
-        const GlobalIndex neighborIndex = chunk->getGlobalIndex() + GlobalIndex::OutwardNormal(face);
-
-        // If potential chunk is out of load range, skip it
-        if (!isInRange(neighborIndex, s_LoadDistance))
-          continue;
-
-        newChunks.push_back(neighborIndex);
-      }
-
-    if (newChunks.size() >= maxNewChunks)
-      break;
-  }
-  return newChunks;
-}
-
 Chunk* ChunkManager::loadChunk(const GlobalIndex& chunkIndex)
 {
   EN_ASSERT(m_OpenChunkSlots.size() > 0, "All chunks slots are full!");
@@ -377,39 +365,33 @@ Chunk* ChunkManager::loadChunk(const GlobalIndex& chunkIndex)
   // Insert chunk pointer into boundary chunk map
   addToMap(newChunk, MapType::Boundary);
 
-  return newChunk;
-}
-
-void ChunkManager::loadChunks(const std::vector<GlobalIndex>& newChunks)
-{
-  for (int i = 0; i < newChunks.size(); ++i)
+  // Set neighbors in all directions
+  for (BlockFace face : BlockFaceIterator())
   {
-    const GlobalIndex newChunkIndex = newChunks[i];
-    int64_t key = createKey(newChunkIndex);
+    const GlobalIndex neighborIndex = chunkIndex + GlobalIndex::OutwardNormal(face);
 
-    // Create key for hash map.  If chunk is already in a map, skip it
-    bool isInMap = false;
+    // Find and add neighbor to new chunk, if it exists
+    int64_t key = createKey(neighborIndex);
     for (MapType mapType : MapTypeIterator())
     {
       const int mapTypeID = static_cast<int>(mapType);
 
       if (m_Chunks[mapTypeID].find(key) != m_Chunks[mapTypeID].end())
       {
-        isInMap = true;
+        Chunk* neighboringChunk = m_Chunks[mapTypeID][key];
+        newChunk->setNeighbor(face, neighboringChunk);
+        neighboringChunk->setNeighbor(!face, newChunk);
+
+        // Renderable chunks should receive an update if they get a new neighbor
+        if (mapType == MapType::Renderable)
+          neighboringChunk->update();
+
         break;
       }
     }
-    if (isInMap)
-      continue;
-
-    // Generate Chunk
-    Chunk* newChunk = loadChunk(newChunkIndex);
-    setNeighbors(newChunk);
-
-    // If there are no open chunk slots, don't load any more
-    if (m_OpenChunkSlots.size() == 0)
-      break;
   }
+
+  return newChunk;
 }
 
 void ChunkManager::unloadChunk(Chunk* const chunk)

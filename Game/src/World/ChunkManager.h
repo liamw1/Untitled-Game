@@ -117,10 +117,6 @@ private:
   */
   HeightMap generateHeightMap(globalIndex_t chunkI, globalIndex_t chunkJ);
 
-  void setNeighbors(Chunk* chunk);
-
-  std::vector<GlobalIndex> searchForChunks(int maxNewChunks);
-
   /*
     Searches for open chunk slot and loads chunk at the given index.
     New chunk is always categorized as a boundary chunk.
@@ -128,8 +124,6 @@ private:
     \returns A pointer to the newly created chunk.
   */
   Chunk* loadChunk(const GlobalIndex& chunkIndex);
-
-  void loadChunks(const std::vector<GlobalIndex>& newChunks);
 
   /*
     Searches for chunk, removes it from whatever map it is currently in,

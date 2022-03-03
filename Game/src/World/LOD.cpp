@@ -613,8 +613,10 @@ namespace LOD
                  -n.x * n.y,       1 - n.y * n.y,  -n.y * n.z,
                  -n.x * n.z,      -n.y * n.z,       1 - n.z * n.z);
   }
-  static bool calcVertexAdjustment(Vec3& vertexAdjustment, const Vec3& vertexPosition, length_t cellLength, uint8_t transitionFaces)
+
+  static void adjustVertex(LOD::Vertex& vertex, length_t cellLength, uint8_t transitionFaces)
   {
+    Vec3 vertexAdjustment{};
     bool isNearSameResolutionLOD = false;
     for (BlockFace face : BlockFaceIterator())
     {
@@ -622,10 +624,10 @@ namespace LOD
       const int coordID = faceID / 2;
       const bool facingPositiveDir = faceID % 2 == 0;
 
-      if (isVertexNearFace(facingPositiveDir, vertexPosition[coordID], cellLength))
+      if (isVertexNearFace(facingPositiveDir, vertex.position[coordID], cellLength))
       {
         if (transitionFaces & bit(faceID))
-          vertexAdjustment[coordID] = vertexAdjustment1D(facingPositiveDir, vertexPosition[coordID], cellLength);
+          vertexAdjustment[coordID] = vertexAdjustment1D(facingPositiveDir, vertex.position[coordID], cellLength);
         else
         {
           isNearSameResolutionLOD = true;
@@ -633,19 +635,13 @@ namespace LOD
         }
       }
     }
-    return isNearSameResolutionLOD;
-  }
-  static void adjustVertex(LOD::Vertex& vertex, length_t cellLength, uint8_t transitionFaces)
-  {
-    Vec3 adjustment{};
-    bool isNearSameResolutionLOD = calcVertexAdjustment(adjustment, vertex.position, cellLength, transitionFaces);
 
-    if (!isNearSameResolutionLOD && adjustment != Vec3(0.0))
+    if (!isNearSameResolutionLOD && vertexAdjustment != Vec3(0.0))
     {
       const Vec3& n = vertex.isoNormal;
       const Mat3 transform = calcVertexTransform(n);
 
-      vertex.position += transform * adjustment;
+      vertex.position += transform * vertexAdjustment;
     }
   }
 
