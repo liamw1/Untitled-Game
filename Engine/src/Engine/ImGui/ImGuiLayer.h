@@ -17,6 +17,7 @@ namespace Engine
     void end();
 
   private:
+    bool m_BlockEvents = false;
     seconds m_Time = 0.0f;
   };
 }

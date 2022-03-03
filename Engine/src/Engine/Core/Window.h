@@ -43,6 +43,6 @@ namespace Engine
 
     virtual void* getNativeWindow() const = 0;
 
-    static Window* Create(const WindowProps& properties = WindowProps());
+    static Unique<Window> Create(const WindowProps& properties = WindowProps());
   };
 }

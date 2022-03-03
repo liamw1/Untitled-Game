@@ -15,9 +15,9 @@ namespace Engine
     EN_CORE_ERROR("GLFW Error ({0}): {1}", errorCode, description);
   }
 
-  Window* Window::Create(const WindowProps& props)
+  Unique<Window> Window::Create(const WindowProps& props)
   {
-    return new WindowsWindow(props);
+    return CreateUnique<WindowsWindow>(props);
   }
 
   WindowsWindow::WindowsWindow(const WindowProps& properties)

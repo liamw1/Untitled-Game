@@ -63,6 +63,12 @@ namespace Engine
     dispatcher.dispatch<WindowResizeEvent>(EN_BIND_EVENT_FN(onWindowResize));
   }
 
+  void OrthographicCameraController::resize(float width, float height)
+  {
+    m_AspectRatio = height > 0.0f ? width / height : 0.0f;
+    m_Camera.setProjection(-m_AspectRatio * m_ZoomLevel, m_AspectRatio * m_ZoomLevel, -m_ZoomLevel, m_ZoomLevel);
+  }
+
   bool OrthographicCameraController::onMouseScroll(MouseScrollEvent& event)
   {
     m_ZoomLevel -= event.getYOffset() * 0.1f * m_ZoomLevel;
@@ -73,8 +79,7 @@ namespace Engine
 
   bool OrthographicCameraController::onWindowResize(WindowResizeEvent& event)
   {
-    m_AspectRatio = event.getHeight() == 0.0f ? 0.0f : static_cast<float>(event.getWidth()) / event.getHeight();
-    m_Camera.setProjection(-m_AspectRatio * m_ZoomLevel, m_AspectRatio * m_ZoomLevel, -m_ZoomLevel, m_ZoomLevel);
+    resize(event.getWidth(), event.getHeight());
     return false;
   }
 }

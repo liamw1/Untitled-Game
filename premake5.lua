@@ -1,6 +1,6 @@
 workspace "Engine"
 	architecture "x86_64"
-	startproject "Sandbox"
+	startproject "GameDev"
 
 	configurations
 	{
@@ -170,6 +170,60 @@ project "Game"
 
 project "Sandbox"
 	location "Sandbox"
+	kind "ConsoleApp"
+	language "C++"
+	cppdialect "C++17"
+	staticruntime "off"
+
+	targetdir ("bin/" .. outputdir .. "/%{prj.name}")
+	objdir ("obj/" .. outputdir .. "/%{prj.name}")
+
+	files
+	{
+		"%{prj.name}/src/**.h",
+		"%{prj.name}/src/**.cpp"
+	}
+
+	includedirs
+	{
+		"%{prj.name}/src/",
+		"Engine/src"
+	}
+
+	sysincludedirs
+	{
+		"%{IncludeDir.spdlog}",
+		"%{IncludeDir.ImGui}",
+		"%{IncludeDir.glm}"
+	}
+
+	links
+	{
+		"Engine"
+	}
+
+	filter "system:windows"
+		systemversion "latest"
+
+	filter "configurations:Debug"
+		defines "EN_DEBUG"
+		runtime "Debug"
+		symbols "on"
+
+	filter "configurations:Release"
+		defines "EN_RELEASE"
+		runtime "Release"
+		optimize "on"
+
+	filter "configurations:Dist"
+		defines "EN_DIST"
+		runtime "Release"
+		optimize "on"
+
+
+
+project "GameDev"
+	location "GameDev"
 	kind "ConsoleApp"
 	language "C++"
 	cppdialect "C++17"

@@ -13,6 +13,8 @@ namespace Engine
     void onUpdate(std::chrono::duration<seconds> timestep);
     void onEvent(Event& event);
 
+    void resize(float width, float height);
+
     OrthographicCamera& getCamera() { return m_Camera; }
     const OrthographicCamera& getCamera() const { return m_Camera; }
 

@@ -17,6 +17,4 @@ public:
 private:
   Engine::OrthographicCameraController m_CameraController;
   Engine::Shared<Engine::Texture2D> m_CheckerboardTexture;
-
-  Engine::Shared<Engine::Framebuffer> m_Framebuffer;
 };

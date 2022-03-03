@@ -70,9 +70,12 @@ namespace Engine
 
   void ImGuiLayer::onEvent(Event& event)
   {
-    ImGuiIO& io = ImGui::GetIO();
-    event.handled |= event.isInCategory(EventCategory::Mouse) & io.WantCaptureMouse;
-    event.handled |= event.isInCategory(EventCategory::Keyboard) & io.WantCaptureKeyboard;
+    if (m_BlockEvents)
+    {
+      ImGuiIO& io = ImGui::GetIO();
+      event.handled |= event.isInCategory(EventCategory::Mouse) & io.WantCaptureMouse;
+      event.handled |= event.isInCategory(EventCategory::Keyboard) & io.WantCaptureKeyboard;
+    }
   }
 
   void ImGuiLayer::begin()
