@@ -1,5 +1,4 @@
 #pragma once
-#include "Engine.h"
 
 namespace Engine
 {
@@ -22,6 +21,8 @@ namespace Engine
 
     Shared<Framebuffer> m_Framebuffer;
 
-    Float2 m_ViewportSize{};
+    bool m_ViewportFocused = false;
+    bool m_ViewportHovered = false;
+    Float2 m_ViewportSize;
   };
 }

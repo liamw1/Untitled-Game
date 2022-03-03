@@ -23,6 +23,8 @@ namespace Engine
 
     void close();
 
+    ImGuiLayer* getImGuiLayer() { return m_ImGuiLayer; }
+
     Window& getWindow() { return *m_Window; }
     static Application& Get() { return *s_Instance; }
 

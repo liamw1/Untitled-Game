@@ -79,7 +79,7 @@ namespace Engine
 
   bool OrthographicCameraController::onWindowResize(WindowResizeEvent& event)
   {
-    resize(event.getWidth(), event.getHeight());
+    resize(static_cast<float>(event.getWidth()), static_cast<float>(event.getHeight()));
     return false;
   }
 }

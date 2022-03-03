@@ -1,3 +1,4 @@
+#include "GDpch.h"
 #include "EditorLayer.h"
 
 #include <codeanalysis\warnings.h> // Disable intellisense warnings
@@ -10,7 +11,8 @@ namespace Engine
 {
   EditorLayer::EditorLayer()
     : Layer("EditorLayer"),
-    m_CameraController(1280.0f / 720.0f, true)
+      m_CameraController(1280.0f / 720.0f, true),
+      m_ViewportSize({0, 0})
   {
     RenderCommand::Initialize();
     Renderer2D::Initialize();
@@ -37,7 +39,8 @@ namespace Engine
     EN_PROFILE_FUNCTION();
 
     // Update
-    m_CameraController.onUpdate(timestep);
+    if (m_ViewportFocused)
+      m_CameraController.onUpdate(timestep);
 
     // Render
     Renderer2D::ResetStats();
@@ -149,6 +152,12 @@ namespace Engine
 
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{ 0, 0 });
     ImGui::Begin("Viewport");
+
+    m_ViewportFocused = ImGui::IsWindowFocused();
+    m_ViewportHovered = ImGui::IsWindowHovered();
+    if (m_ViewportFocused)
+      Application::Get().getImGuiLayer()->blockEvents(!m_ViewportFocused || !m_ViewportHovered);
+
     ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
     if (viewportPanelSize.x != m_ViewportSize.x || viewportPanelSize.y != m_ViewportSize.y)
     {
@@ -169,5 +178,4 @@ namespace Engine
   {
     m_CameraController.onEvent(event);
   }
-
 }

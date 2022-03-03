@@ -9,7 +9,7 @@ namespace Engine
   class Shader
   {
   public:
-    virtual ~Shader() {}
+    virtual ~Shader() = default;
 
     virtual void bind() const = 0;
     virtual void unBind() const = 0;

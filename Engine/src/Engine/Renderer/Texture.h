@@ -9,6 +9,8 @@ namespace Engine
   class TextureArray
   {
   public:
+    virtual ~TextureArray() = default;
+
     virtual void bind(uint32_t slot = 0) const = 0;
 
     virtual void addTexture(const std::string& path) = 0;

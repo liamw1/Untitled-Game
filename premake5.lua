@@ -232,6 +232,9 @@ project "GameDev"
 	targetdir ("bin/" .. outputdir .. "/%{prj.name}")
 	objdir ("obj/" .. outputdir .. "/%{prj.name}")
 
+	pchheader "GDpch.h"
+	pchsource "GameDev/src/GDpch.cpp"
+
 	files
 	{
 		"%{prj.name}/src/**.h",
