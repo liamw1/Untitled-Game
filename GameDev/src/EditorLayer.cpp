@@ -5,6 +5,7 @@
 #pragma warning( push )
 #pragma warning ( disable : ALL_CODE_ANALYSIS_WARNINGS )
 #include <imgui.h>
+#include <glm/gtc/type_ptr.hpp>
 #pragma warning( pop )
 
 namespace Engine
@@ -28,6 +29,10 @@ namespace Engine
     framebufferSpecification.width = 1280;
     framebufferSpecification.height = 720;
     m_Framebuffer = Framebuffer::Create(framebufferSpecification);
+
+    m_SquareEntity = Scene::CreateEntity();
+    m_SquareEntity.add<Component::Position>();
+    m_SquareEntity.add<Component::SpriteRenderer>(Vec4(0.0, 1.0, 0.0, 1.0));
   }
 
   void EditorLayer::onDetach()
@@ -38,6 +43,14 @@ namespace Engine
   {
     EN_PROFILE_FUNCTION();
 
+    // Resize
+    FramebufferSpecification spec = m_Framebuffer->getSpecification();
+    if (m_ViewportSize.x > 0.0f && m_ViewportSize.y > 0.0f && (spec.width != m_ViewportSize.x || spec.height != m_ViewportSize.y))
+    {
+      m_Framebuffer->resize(static_cast<uint32_t>(m_ViewportSize.x), static_cast<uint32_t>(m_ViewportSize.y));
+      m_CameraController.resize(m_ViewportSize.x, m_ViewportSize.y);
+    }
+
     // Update
     if (m_ViewportFocused)
       m_CameraController.onUpdate(timestep);
@@ -45,25 +58,12 @@ namespace Engine
     // Render
     Renderer2D::ResetStats();
     m_Framebuffer->bind();
-    RenderCommand::Clear({ 0.1f, 0.1f, 0.1f, 1.0f });
-
-    static radians rotation = 0.0;
-    rotation += timestep.count();
+    RenderCommand::Clear(Vec4(0.1f, 0.1f, 0.1f, 1.0f));
 
     Renderer2D::BeginScene(m_CameraController.getCamera());
-    Renderer2D::DrawQuad({ {0.0, 0.0, -0.1}, Vec2(50.0), Float4(1.0f), 10.0f }, m_CheckerboardTexture);
-    for (int i = 0; i < 5; ++i)
-      for (int j = 0; j < 5; ++j)
-        Renderer2D::DrawRotatedQuad({ { static_cast<length_t>(i) - 2.0, static_cast<length_t>(j) - 2.0, 0.0 }, { 0.66, 0.66 }, {0.8f, 0.2f, 0.3f, 1.0f} }, rotation, m_CheckerboardTexture);
-
-    for (length_t y = -5.0; y < 5.0; y += 0.5)
-      for (length_t x = -5.0; x < 5.0; x += 0.5)
-      {
-        Float4 color = { (x + 5.0f) / 10.0f, 0.4f, (y + 5.0f) / 10.0f, 0.5f };
-        Renderer2D::DrawQuad({ { x, y, 0.0 }, Vec2(static_cast<length_t>(0.45)), color, 1.0f });
-      }
-
+    Scene::OnUpdate(timestep);
     Renderer2D::EndScene();
+
     m_Framebuffer->unbind();
   }
 
@@ -139,7 +139,7 @@ namespace Engine
       ImGui::EndMenuBar();
     }
 
-    ImGui::Begin("Settings");
+    ImGui::Begin("Statistics");
 
     auto stats = Renderer2D::GetStats();
     ImGui::Text("Renderer2D Stats:");
@@ -148,9 +148,12 @@ namespace Engine
     ImGui::Text("Vertices: %d", stats.getTotalVertexCount());
     ImGui::Text("Indices: %d", stats.getTotatlIndexCount());
 
+    auto& squareColor = m_SquareEntity.get<Component::SpriteRenderer>().color;
+    ImGui::ColorEdit4("Square Color", glm::value_ptr(squareColor));
+
     ImGui::End();
 
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{ 0, 0 });
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
     ImGui::Begin("Viewport");
 
     m_ViewportFocused = ImGui::IsWindowFocused();
@@ -159,15 +162,10 @@ namespace Engine
       Application::Get().getImGuiLayer()->blockEvents(!m_ViewportFocused || !m_ViewportHovered);
 
     ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
-    if (viewportPanelSize.x != m_ViewportSize.x || viewportPanelSize.y != m_ViewportSize.y)
-    {
-      m_Framebuffer->resize(static_cast<uint32_t>(viewportPanelSize.x), static_cast<uint32_t>(viewportPanelSize.y));
-      m_ViewportSize = { viewportPanelSize.x, viewportPanelSize.y };
+    m_ViewportSize = Float2(viewportPanelSize.x, viewportPanelSize.y );
 
-      m_CameraController.resize(viewportPanelSize.x, viewportPanelSize.y);
-    }
     uintptr_t textureID = m_Framebuffer->getColorAttachmentRendererID();
-    ImGui::Image(reinterpret_cast<void*>(textureID), ImVec2{ m_ViewportSize.x, m_ViewportSize.y }, ImVec2{ 0, 1 }, ImVec2{ 1, 0 });
+    ImGui::Image(reinterpret_cast<void*>(textureID), ImVec2(m_ViewportSize.x, m_ViewportSize.y), ImVec2(0, 1), ImVec2(1, 0));
     ImGui::End();
     ImGui::PopStyleVar();
 

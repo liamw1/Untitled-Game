@@ -58,21 +58,21 @@
     <IntDir>..\obj\Debug-windows-x86_64\Engine\</IntDir>
     <TargetName>Engine</TargetName>
     <TargetExt>.lib</TargetExt>
-    <IncludePath>lib\spdlog\include;lib\GLFW\include;lib\GLad\include;lib\imgui;lib\glm;lib\stb_image;$(IncludePath)</IncludePath>
+    <IncludePath>lib\spdlog\include;lib\GLFW\include;lib\GLad\include;lib\imgui;lib\glm;lib\stb_image;lib\EnTT\single_include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>..\bin\Release-windows-x86_64\Engine\</OutDir>
     <IntDir>..\obj\Release-windows-x86_64\Engine\</IntDir>
     <TargetName>Engine</TargetName>
     <TargetExt>.lib</TargetExt>
-    <IncludePath>lib\spdlog\include;lib\GLFW\include;lib\GLad\include;lib\imgui;lib\glm;lib\stb_image;$(IncludePath)</IncludePath>
+    <IncludePath>lib\spdlog\include;lib\GLFW\include;lib\GLad\include;lib\imgui;lib\glm;lib\stb_image;lib\EnTT\single_include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Dist|x64'">
     <OutDir>..\bin\Dist-windows-x86_64\Engine\</OutDir>
     <IntDir>..\obj\Dist-windows-x86_64\Engine\</IntDir>
     <TargetName>Engine</TargetName>
     <TargetExt>.lib</TargetExt>
-    <IncludePath>lib\spdlog\include;lib\GLFW\include;lib\GLad\include;lib\imgui;lib\glm;lib\stb_image;$(IncludePath)</IncludePath>
+    <IncludePath>lib\spdlog\include;lib\GLFW\include;lib\GLad\include;lib\imgui;lib\glm;lib\stb_image;lib\EnTT\single_include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -147,6 +147,8 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="src\Engine\Scene\Components.h" />
+    <ClInclude Include="src\Engine\Scene\Entity.h" />
     <ClInclude Include="src\ENpch.h" />
     <ClInclude Include="src\Engine.h" />
     <ClInclude Include="src\Engine\Core\Application.h" />
@@ -181,6 +183,7 @@
     <ClInclude Include="src\Engine\Renderer\SubTexture.h" />
     <ClInclude Include="src\Engine\Renderer\Texture.h" />
     <ClInclude Include="src\Engine\Renderer\VertexArray.h" />
+    <ClInclude Include="src\Engine\Scene\Scene.h" />
     <ClInclude Include="src\Platform\OpenGL\OpenGLBuffer.h" />
     <ClInclude Include="src\Platform\OpenGL\OpenGLContext.h" />
     <ClInclude Include="src\Platform\OpenGL\OpenGLFramebuffer.h" />
@@ -192,6 +195,7 @@
     <ClInclude Include="src\VecTypes.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\Engine\Scene\Components.cpp" />
     <ClCompile Include="src\ENpch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
@@ -216,6 +220,7 @@
     <ClCompile Include="src\Engine\Renderer\Texture.cpp" />
     <ClCompile Include="src\Engine\Renderer\VertexArray.cpp" />
     <ClCompile Include="src\Engine\Renderer\stb_image.cpp" />
+    <ClCompile Include="src\Engine\Scene\Scene.cpp" />
     <ClCompile Include="src\Platform\OpenGL\OpenGLBuffer.cpp" />
     <ClCompile Include="src\Platform\OpenGL\OpenGLContext.cpp" />
     <ClCompile Include="src\Platform\OpenGL\OpenGLFramebuffer.cpp" />

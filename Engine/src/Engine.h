@@ -14,6 +14,10 @@
 #include "Engine/Events/MouseEvent.h"
 #include "Engine/Events/ApplicationEvent.h"
 
+#include "Engine/Scene/Scene.h"
+#include "Engine/Scene/Components.h"
+#include "Engine/Scene/Entity.h"
+
 #include "Engine/Renderer/Renderer.h"
 #include "Engine/Renderer/Renderer2D.h"
 #include "Engine/Renderer/RenderCommand.h"

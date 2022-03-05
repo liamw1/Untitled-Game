@@ -59,7 +59,7 @@
     <IntDir>..\obj\Debug-windows-x86_64\Sandbox\</IntDir>
     <TargetName>Sandbox</TargetName>
     <TargetExt>.exe</TargetExt>
-    <IncludePath>..\Engine\lib\spdlog\include;..\Engine\lib\imgui;..\Engine\lib\glm;$(IncludePath)</IncludePath>
+    <IncludePath>..\Engine\lib\spdlog\include;..\Engine\lib\imgui;..\Engine\lib\glm;..\Engine\lib\EnTT\single_include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
@@ -67,7 +67,7 @@
     <IntDir>..\obj\Release-windows-x86_64\Sandbox\</IntDir>
     <TargetName>Sandbox</TargetName>
     <TargetExt>.exe</TargetExt>
-    <IncludePath>..\Engine\lib\spdlog\include;..\Engine\lib\imgui;..\Engine\lib\glm;$(IncludePath)</IncludePath>
+    <IncludePath>..\Engine\lib\spdlog\include;..\Engine\lib\imgui;..\Engine\lib\glm;..\Engine\lib\EnTT\single_include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Dist|x64'">
     <LinkIncremental>false</LinkIncremental>
@@ -75,7 +75,7 @@
     <IntDir>..\obj\Dist-windows-x86_64\Sandbox\</IntDir>
     <TargetName>Sandbox</TargetName>
     <TargetExt>.exe</TargetExt>
-    <IncludePath>..\Engine\lib\spdlog\include;..\Engine\lib\imgui;..\Engine\lib\glm;$(IncludePath)</IncludePath>
+    <IncludePath>..\Engine\lib\spdlog\include;..\Engine\lib\imgui;..\Engine\lib\glm;..\Engine\lib\EnTT\single_include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>

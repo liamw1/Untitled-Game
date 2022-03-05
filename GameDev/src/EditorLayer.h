@@ -18,8 +18,9 @@ namespace Engine
   private:
     OrthographicCameraController m_CameraController;
     Shared<Texture2D> m_CheckerboardTexture;
-
     Shared<Framebuffer> m_Framebuffer;
+
+    Entity m_SquareEntity;
 
     bool m_ViewportFocused = false;
     bool m_ViewportHovered = false;

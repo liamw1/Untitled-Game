@@ -5,16 +5,18 @@
 #include <GLFW/glfw3.h>
 #include <glad/glad.h>
 
+static constexpr bool verboseOpenGLDebugLog = false;
+
 namespace Engine
 {
   static void openGLLogMessage(GLenum /*source*/, GLenum /*type*/, GLuint /*id*/, GLenum severity, GLsizei /*length*/, const GLchar* message, const void* /*userParam*/)
   {
     switch (severity)
     {
+      case GL_DEBUG_SEVERITY_NOTIFICATION:  if (verboseOpenGLDebugLog) EN_CORE_TRACE(message); return;
+      case GL_DEBUG_SEVERITY_LOW:           EN_CORE_INFO(message);  return;
+      case GL_DEBUG_SEVERITY_MEDIUM:        EN_CORE_WARN(message);  return;
       case GL_DEBUG_SEVERITY_HIGH:          EN_CORE_ERROR(message); return;
-      case GL_DEBUG_SEVERITY_MEDIUM:        EN_CORE_WARN(message); return;
-      case GL_DEBUG_SEVERITY_LOW:           EN_CORE_INFO(message); return;
-      case GL_DEBUG_SEVERITY_NOTIFICATION:  EN_CORE_TRACE(message); return;
       default:                              EN_CORE_ASSERT(false, "OpenGL message \"{0}\" has unknown severity level", message); return;
     }
   }

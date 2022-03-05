@@ -24,6 +24,7 @@ IncludeDir["ImGui"] = "Engine/lib/imgui"
 IncludeDir["glm"] = "Engine/lib/glm"
 IncludeDir["stb_image"] = "Engine/lib/stb_image"
 IncludeDir["spdlog"] = "Engine/lib/spdlog/include"
+IncludeDir["EnTT"] = "Engine/lib/EnTT/single_include"
 IncludeDir["llvm"] = "Game/lib/llvm/include"
 
 
@@ -71,7 +72,8 @@ project "Engine"
 		"%{IncludeDir.GLad}",
 		"%{IncludeDir.ImGui}",
 		"%{IncludeDir.glm}",
-		"%{IncludeDir.stb_image}"
+		"%{IncludeDir.stb_image}",
+		"%{IncludeDir.EnTT}"
 	}
 
 	links
@@ -140,6 +142,7 @@ project "Game"
 		"%{IncludeDir.spdlog}",
 		"%{IncludeDir.ImGui}",
 		"%{IncludeDir.glm}",
+		"%{IncludeDir.EnTT}",
 		"%{IncludeDir.llvm}"
 	}
 
@@ -194,7 +197,8 @@ project "Sandbox"
 	{
 		"%{IncludeDir.spdlog}",
 		"%{IncludeDir.ImGui}",
-		"%{IncludeDir.glm}"
+		"%{IncludeDir.glm}",
+		"%{IncludeDir.EnTT}"
 	}
 
 	links
@@ -251,7 +255,8 @@ project "GameDev"
 	{
 		"%{IncludeDir.spdlog}",
 		"%{IncludeDir.ImGui}",
-		"%{IncludeDir.glm}"
+		"%{IncludeDir.glm}",
+		"%{IncludeDir.EnTT}"
 	}
 
 	links

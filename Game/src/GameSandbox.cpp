@@ -29,17 +29,6 @@ void GameSandbox::onUpdate(std::chrono::duration<seconds> timestep)
 
   // EN_TRACE("fps: {0}", static_cast<int>(1.0f / timestep.count()));
 
-#if 0
-  EN_TRACE("({0}, {1}, {2})", static_cast<int>(m_Player.getPosition()[0] / Block::Length()),
-                              static_cast<int>(m_Player.getPosition()[1] / Block::Length()),
-                              static_cast<int>(m_Player.getPosition()[2] / Block::Length()));
-#endif
-
-#if 0
-  LocalIndex chunk = Chunk::ChunkIndexFromPos(m_Player.getPosition());
-  EN_TRACE("({0}, {1}, {2})", chunk.i, chunk.j, chunk.k);
-#endif
-
   Engine::RenderCommand::Clear({ 0.788f, 0.949f, 0.949f, 1.0f });
 
   m_World.onUpdate(timestep);

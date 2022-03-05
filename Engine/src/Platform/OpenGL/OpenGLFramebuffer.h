@@ -12,7 +12,7 @@ namespace Engine
     void bind() override;
     void unbind() override;
 
-    const FramebufferSpecification& getSpecialization() const override { return m_Specification; }
+    const FramebufferSpecification& getSpecification() const override { return m_Specification; }
     uint32_t getColorAttachmentRendererID() const { return m_ColorAttachment; }
 
     void invalidate();

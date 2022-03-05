@@ -2,6 +2,8 @@
 #include "OpenGLFramebuffer.h"
 #include <glad/glad.h>
 
+static constexpr uint32_t s_MaxFrameBufferSize = 8192;
+
 namespace Engine
 {
   OpenGLFramebuffer::OpenGLFramebuffer(const FramebufferSpecification& specification)
@@ -53,13 +55,19 @@ namespace Engine
     glTexStorage2D(GL_TEXTURE_2D, 1, GL_DEPTH24_STENCIL8, m_Specification.width, m_Specification.height);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, m_DepthAttachment, 0);
 
-    EN_ASSERT(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE, "Framebuffer is incomplete!");
+    EN_CORE_ASSERT(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE, "Framebuffer is incomplete!");
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
   }
 
   void OpenGLFramebuffer::resize(uint32_t width, uint32_t height)
   {
+    if (width == 0 || width > s_MaxFrameBufferSize || height == 0 || height > s_MaxFrameBufferSize)
+    {
+      EN_CORE_WARN("Attempted to resize framebuffer to {0}, {1}", width, height);
+      return;
+    }
+
     m_Specification.width = width;
     m_Specification.height = height;
     invalidate();

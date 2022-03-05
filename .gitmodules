@@ -21,3 +21,4 @@
 [submodule "Engine/lib/EnTT"]
 	path = Engine/lib/EnTT
 	url = https://github.com/skypjack/entt
+	branch = master
