@@ -48,7 +48,7 @@ namespace LOD
       for (int j = 0; j < 2; ++j)
         for (int k = 0; k < 2; ++k)
         {
-          int childIndex = i * bit32(2) + j * bit32(1) + k * bit32(0);
+          int childIndex = i * bitUi32(2) + j * bitUi32(1) + k * bitUi32(0);
           EN_ASSERT(node->children[childIndex] == nullptr, "Child node already exists!");
 
           GlobalIndex nodeChildAnchor = node->anchor + nodeChildSize * GlobalIndex({ i, j, k });
@@ -122,7 +122,7 @@ namespace LOD
       int i = index.i >= branch->anchor.i + branch->size() / 2;
       int j = index.j >= branch->anchor.j + branch->size() / 2;
       int k = index.k >= branch->anchor.k + branch->size() / 2;
-      int childIndex = i * bit32(2) + j * bit32(1) + k * bit32(0);
+      int childIndex = i * bitUi32(2) + j * bitUi32(1) + k * bitUi32(0);
 
       return findLeafPriv(branch->children[childIndex], index);
     }

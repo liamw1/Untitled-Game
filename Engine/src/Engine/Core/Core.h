@@ -34,13 +34,13 @@ constexpr length_t PI = static_cast<length_t>(3.14159265358979323846264338327950
 
 
 // ======================== Common Utilities ======================== //
-constexpr uint8_t bit8(int n) { return 1Ui8 << n; }
-constexpr uint16_t bit16(int n) { return 1Ui16 << n; }
-constexpr uint32_t bit32(int n) { return 1Ui32 << n; }
-constexpr uint64_t bit64(int n) { return 1Ui64 << n; }
+constexpr uint8_t bitUi8(int n) { return 1Ui8 << n; }
+constexpr uint16_t bitUi16(int n) { return 1Ui16 << n; }
+constexpr uint32_t bitUi32(int n) { return 1Ui32 << n; }
+constexpr uint64_t bitUi64(int n) { return 1Ui64 << n; }
 
-constexpr uint64_t bit(int n) { return bit64(n); }
-constexpr uint64_t pow2(int n) { return bit64(n); }
+constexpr uint64_t bit(int n) { return bitUi64(n); }
+constexpr uint64_t pow2(int n) { return bitUi64(n); }
 #define EN_BIND_EVENT_FN(fn) [this](auto&&... args) -> decltype(auto) { return this->fn(std::forward<decltype(args)>(args)...); }
 
 namespace Engine
