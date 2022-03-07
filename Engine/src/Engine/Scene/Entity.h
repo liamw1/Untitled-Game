@@ -1,5 +1,10 @@
 #pragma once
-#include "entt/entt.hpp"
+#include "Engine/Core/Log.h"
+
+#pragma warning( push )
+#pragma warning ( disable : ALL_CODE_ANALYSIS_WARNINGS )
+#include <entt/entt.hpp>
+#pragma warning( pop )
 
 namespace Engine
 {

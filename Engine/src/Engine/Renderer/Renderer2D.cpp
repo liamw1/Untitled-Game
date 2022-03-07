@@ -63,7 +63,7 @@ namespace Engine
     if (texture != nullptr)
     {
       for (uint32_t i = 1; i < s_TextureSlotIndex; ++i)
-        if (*s_TextureSlots[i].get() == *texture.get())
+        if (*s_TextureSlots[i] == *texture)
         {
           textureIndex = i;
           break;

@@ -87,9 +87,7 @@ namespace Engine
     m_Framebuffer->bind();
     RenderCommand::Clear(Vec4(0.1f, 0.1f, 0.1f, 1.0f));
 
-    Renderer2D::BeginScene(Scene::GetActiveCamera().getProjection());
     Scene::OnUpdate(timestep);
-    Renderer2D::EndScene();
 
     m_Framebuffer->unbind();
   }

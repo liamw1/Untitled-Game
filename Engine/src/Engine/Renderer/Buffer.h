@@ -1,4 +1,5 @@
 #pragma once
+#include "Engine/Core/Log.h"
 
 /*
   Indicates underyling type of data to be send to shader.

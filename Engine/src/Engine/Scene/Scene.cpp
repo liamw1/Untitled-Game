@@ -4,6 +4,7 @@
 #include "Components.h"
 #include "Engine/Renderer/Renderer2D.h"
 #include <glm/gtc/matrix_transform.hpp>
+#include <entt/entt.hpp>
 
 namespace Engine
 {

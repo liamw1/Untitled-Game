@@ -1,4 +1,5 @@
 #pragma once
+#include "VecTypes.h"
 #include "KeyCodes.h"
 #include "MouseButtonCodes.h"
 
@@ -11,7 +12,7 @@ namespace Engine
   namespace Input
   {
     bool IsKeyPressed(Key keyCode);
-    bool IsMouseButtonPressed(MouseButton button);
+    bool IsMouseButtonPressed(Mouse button);
 
     Float2 GetMousePosition();
     float GetMouseX();

@@ -59,19 +59,19 @@ namespace Engine
   public:
     EventCategory getCategoryFlags() const override { return EventCategory::Mouse | EventCategory::Input; }
 
-    MouseButton getMouseButton() const { return m_Button; }
+    Mouse getMouseButton() const { return m_Button; }
 
   protected:
-    MouseButtonEvent(MouseButton button)
+    MouseButtonEvent(Mouse button)
       : m_Button(button) {}
 
-    MouseButton m_Button;
+    Mouse m_Button;
   };
 
   class MouseButtonPressEvent : public MouseButtonEvent
   {
   public:
-    MouseButtonPressEvent(MouseButton button)
+    MouseButtonPressEvent(Mouse button)
       : MouseButtonEvent(button) {}
 
     static EventType GetStaticType() { return EventType::MouseButtonPress; }
@@ -89,7 +89,7 @@ namespace Engine
   class MouseButtonReleaseEvent : public MouseButtonEvent
   {
   public:
-    MouseButtonReleaseEvent(MouseButton button)
+    MouseButtonReleaseEvent(Mouse button)
       : MouseButtonEvent(button) {}
 
     static EventType GetStaticType() { return EventType::MouseButtonRelease; }

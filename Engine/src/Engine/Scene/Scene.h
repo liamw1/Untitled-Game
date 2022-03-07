@@ -1,5 +1,4 @@
 #pragma once
-#include "entt/entt.hpp"
 #include "Engine/Renderer/SceneCamera.h"
 
 namespace Engine

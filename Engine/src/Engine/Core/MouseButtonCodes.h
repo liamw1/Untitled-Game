@@ -2,7 +2,7 @@
 
 using mouseCode = uint8_t;
 
-enum class MouseButton : mouseCode
+enum class Mouse : mouseCode
 {
   // From glfw3.h
   Button0 = 0,

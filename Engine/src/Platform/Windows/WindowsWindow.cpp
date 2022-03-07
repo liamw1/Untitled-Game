@@ -15,11 +15,6 @@ namespace Engine
     EN_CORE_ERROR("GLFW Error ({0}): {1}", errorCode, description);
   }
 
-  Unique<Window> Window::Create(const WindowProps& props)
-  {
-    return CreateUnique<WindowsWindow>(props);
-  }
-
   WindowsWindow::WindowsWindow(const WindowProps& properties)
   {
     initialize(properties);
@@ -130,19 +125,19 @@ namespace Engine
       {
         case GLFW_PRESS:
         {
-          KeyPressEvent event((Key)keyCode, 0);
+          KeyPressEvent event(static_cast<Key>(keyCode), 0);
           data.eventCallback(event);
           break;
         }
         case GLFW_RELEASE:
         {
-          KeyReleaseEvent event((Key)keyCode);
+          KeyReleaseEvent event(static_cast<Key>(keyCode));
           data.eventCallback(event);
           break;
         }
         case GLFW_REPEAT:
         {
-          KeyPressEvent event((Key)keyCode, 1);
+          KeyPressEvent event(static_cast<Key>(keyCode), 1);
           data.eventCallback(event);
           break;
         }
@@ -166,13 +161,13 @@ namespace Engine
       {
         case GLFW_PRESS:
         {
-          MouseButtonPressEvent event((MouseButton)button);
+          MouseButtonPressEvent event(static_cast<Mouse>(button));
           data.eventCallback(event);
           break;
         }
         case GLFW_RELEASE:
         {
-          MouseButtonReleaseEvent event((MouseButton)button);
+          MouseButtonReleaseEvent event(static_cast<Mouse>(button));
           data.eventCallback(event);
           break;
         }

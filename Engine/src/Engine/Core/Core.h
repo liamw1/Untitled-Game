@@ -1,5 +1,7 @@
 ﻿#pragma once
 #include "PlatformDetection.h"
+#include <memory>
+#include <chrono>
 
 /*
   *:･ﾟ✧*:･ﾟ✧ ~~ Macro/Template Magic Zone ~~ ✧･ﾟ: *✧･ﾟ:*

@@ -147,7 +147,6 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="src\Engine\Renderer\SceneCamera.h" />
     <ClInclude Include="src\ENpch.h" />
     <ClInclude Include="src\Engine.h" />
     <ClInclude Include="src\Engine\Core\Application.h" />
@@ -178,6 +177,7 @@
     <ClInclude Include="src\Engine\Renderer\Renderer.h" />
     <ClInclude Include="src\Engine\Renderer\Renderer2D.h" />
     <ClInclude Include="src\Engine\Renderer\RendererAPI.h" />
+    <ClInclude Include="src\Engine\Renderer\SceneCamera.h" />
     <ClInclude Include="src\Engine\Renderer\Shader.h" />
     <ClInclude Include="src\Engine\Renderer\SubTexture.h" />
     <ClInclude Include="src\Engine\Renderer\Texture.h" />
@@ -196,7 +196,6 @@
     <ClInclude Include="src\VecTypes.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\Engine\Renderer\SceneCamera.cpp" />
     <ClCompile Include="src\ENpch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
@@ -204,6 +203,7 @@
     <ClCompile Include="src\Engine\Core\Layer.cpp" />
     <ClCompile Include="src\Engine\Core\LayerStack.cpp" />
     <ClCompile Include="src\Engine\Core\Log.cpp" />
+    <ClCompile Include="src\Engine\Core\Window.cpp" />
     <ClCompile Include="src\Engine\ImGui\ImGuiBuild.cpp" />
     <ClCompile Include="src\Engine\ImGui\ImGuiLayer.cpp" />
     <ClCompile Include="src\Engine\Renderer\Buffer.cpp" />
@@ -216,6 +216,7 @@
     <ClCompile Include="src\Engine\Renderer\Renderer.cpp" />
     <ClCompile Include="src\Engine\Renderer\Renderer2D.cpp" />
     <ClCompile Include="src\Engine\Renderer\RendererAPI.cpp" />
+    <ClCompile Include="src\Engine\Renderer\SceneCamera.cpp" />
     <ClCompile Include="src\Engine\Renderer\Shader.cpp" />
     <ClCompile Include="src\Engine\Renderer\SubTexture.cpp" />
     <ClCompile Include="src\Engine\Renderer\Texture.cpp" />

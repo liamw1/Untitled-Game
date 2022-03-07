@@ -3,7 +3,7 @@
 
 Sandbox3D::Sandbox3D()
   : Layer("Sandbox3D"),
-  m_CameraController(static_cast<radians>(glm::radians(45.0)), 1280.0f / 720.0f, static_cast<length_t>(0.1), static_cast<length_t>(100.0))
+  m_CameraController(Engine::Angle(45.0f), 1280.0f / 720.0f, static_cast<length_t>(0.1), static_cast<length_t>(100.0))
 {
   Engine::RenderCommand::Initialize();
   Engine::Renderer::Initialize();
@@ -17,7 +17,7 @@ void Sandbox3D::onAttach()
   m_CheckerboardTexture = Engine::Texture2D::Create("assets/textures/Checkerboard.png");
 
   m_CameraEntity = Engine::Scene::CreateEntity();
-  m_CameraEntity.add<Engine::Component::Camera>(m_CameraController.getViewProjectionMatrix(), true);
+  m_CameraEntity.add<Engine::Component::Camera>().isActive = true;
 }
 
 void Sandbox3D::onDetach()
@@ -28,14 +28,12 @@ void Sandbox3D::onUpdate(Engine::Timestep timestep)
 {
   EN_PROFILE_FUNCTION();
 
-  // EN_TRACE("dt: {0}", timestep.count());
-
   m_CameraController.onUpdate(timestep);
-  m_CameraEntity.get<Engine::Component::Camera>().viewProjection = m_CameraController.getViewProjectionMatrix();
+  m_CameraEntity.get<Engine::Component::Camera>().camera.setProjection(m_CameraController.getViewProjectionMatrix());
 
   Engine::RenderCommand::Clear({ 0.1f, 0.1f, 0.1f, 1.0f });
 
-  Engine::Renderer::BeginScene(Engine::Scene::GetActiveCamera().viewProjection);
+  Engine::Renderer::BeginScene(Engine::Scene::GetActiveCamera().getProjection());
   for (int i = 0; i < 3; ++i)
     for (int j = 0; j < 3; ++j)
       Engine::Renderer::DrawCube(Vec3((i - 1) * 1.25, 2.0, (j + 1) * 1.25), Vec3(1.0f), m_CheckerboardTexture);

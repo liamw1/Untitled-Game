@@ -18,14 +18,14 @@ outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
 
 -- Include system directories relative to root folder (solution directory)
 IncludeDir = {}
-IncludeDir["GLFW"] = "Engine/lib/GLFW/include"
-IncludeDir["GLad"] = "Engine/lib/GLad/include"
-IncludeDir["ImGui"] = "Engine/lib/imgui"
-IncludeDir["glm"] = "Engine/lib/glm"
-IncludeDir["stb_image"] = "Engine/lib/stb_image"
-IncludeDir["spdlog"] = "Engine/lib/spdlog/include"
-IncludeDir["EnTT"] = "Engine/lib/EnTT/single_include"
-IncludeDir["llvm"] = "Game/lib/llvm/include"
+IncludeDir["GLFW"] = "%{wks.location}/Engine/lib/GLFW/include"
+IncludeDir["GLad"] = "%{wks.location}/Engine/lib/GLad/include"
+IncludeDir["ImGui"] = "%{wks.location}/Engine/lib/imgui"
+IncludeDir["glm"] = "%{wks.location}/Engine/lib/glm"
+IncludeDir["stb_image"] = "%{wks.location}/Engine/lib/stb_image"
+IncludeDir["spdlog"] = "%{wks.location}/Engine/lib/spdlog/include"
+IncludeDir["EnTT"] = "%{wks.location}/Engine/lib/EnTT/single_include"
+IncludeDir["llvm"] = "%{wks.location}/Game/lib/llvm/include"
 
 
 

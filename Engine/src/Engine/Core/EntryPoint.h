@@ -1,5 +1,6 @@
 #pragma once
 #include "Application.h"
+#include "Engine/Debug/Instrumentor.h"
 
 #ifdef EN_PLATFORM_WINDOWS
 

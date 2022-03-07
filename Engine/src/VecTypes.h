@@ -1,4 +1,5 @@
 #pragma once
+#include <glm/glm.hpp>
 
 // =========== Precision selection for vectors/matrices ============= //
 

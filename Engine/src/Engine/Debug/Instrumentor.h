@@ -1,5 +1,9 @@
 #pragma once
 #include "Engine/Core/Log.h"
+#include <fstream>
+#include <iomanip>
+#include <sstream>
+#include <mutex>
 
 /*
   Tool for easily profiling functions and scopes.
