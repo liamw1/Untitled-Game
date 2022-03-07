@@ -1,12 +1,6 @@
 #include "SBpch.h"
 #include "Sandbox2D.h"
 
-#include <codeanalysis\warnings.h> // Disable intellisense warnings
-#pragma warning( push )
-#pragma warning ( disable : ALL_CODE_ANALYSIS_WARNINGS )
-#include <imgui.h>
-#pragma warning( pop )
-
 Sandbox2D::Sandbox2D()
   : Layer("Sandbox2D"),
     m_CameraController(1280.0f / 720.0f, true)

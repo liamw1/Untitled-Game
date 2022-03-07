@@ -3,7 +3,6 @@
 #include "ChunkRenderer.h"
 #include "Player/Player.h"
 #include "Util/Noise.h"
-#include <glm/gtc/matrix_access.hpp>
 
 ChunkManager::ChunkManager()
 {

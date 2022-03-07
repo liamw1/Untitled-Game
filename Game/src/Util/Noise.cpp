@@ -1,7 +1,6 @@
 #include "GMpch.h"
 #include "Noise.h"
 #include "Block/Block.h"
-#include <glm/gtc/noise.hpp>
 
 // Operators for element-wise vector-vector multiplication
 constexpr Vec2 operator*(Vec2 v, Vec2 u) { return { v.x * u.x, v.y * u.y }; }

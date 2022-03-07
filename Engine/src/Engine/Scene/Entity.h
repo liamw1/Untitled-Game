@@ -17,7 +17,7 @@ namespace Engine
       : m_Handle(registry, entityID) {}
 
     template<typename T>
-    bool has()
+    bool has() const
     {
       EN_CORE_ASSERT(isValid(), "Entity handle is invalid!");
       return m_Handle.any_of<T>();
@@ -36,6 +36,13 @@ namespace Engine
       EN_CORE_ASSERT(has<T>(), "Entity does not have component!");
       return m_Handle.get<T>();
     }
+
+    template<typename T>
+    const T& get() const
+    {
+      EN_CORE_ASSERT(has<T>(), "Entity does not have component!");
+      return m_Handle.get<T>();
+    }
     
     template<typename T>
     void remove()
@@ -46,13 +53,13 @@ namespace Engine
 
     uint32_t id() const { return static_cast<uint32_t>(m_Handle.entity()); }
 
+    bool isValid() const { return static_cast<bool>(m_Handle); }
+
     bool operator==(const Entity& other) const { return m_Handle == other.m_Handle; }
     bool operator!=(const Entity& other) const { return m_Handle != other.m_Handle; }
 
   private:
     entt::handle m_Handle;
-
-    bool isValid() { return static_cast<bool>(m_Handle); }
   };
 
 

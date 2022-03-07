@@ -39,16 +39,16 @@ namespace Engine
     Mat4 viewProj = Mat4{};
     {
       auto view = s_Registry.view<Component::Camera>();
-      for (auto entity : view)
+      for (entt::entity entityID : view)
       {
-        Component::Camera& cameraComponent = view.get<Component::Camera>(entity);
+        Component::Camera& cameraComponent = view.get<Component::Camera>(entityID);
         if (cameraComponent.isActive)
         {
           mainCamera = &cameraComponent.camera;
 
           viewProj = mainCamera->getProjection();
-          if (s_Registry.any_of<Component::Transform>(entity))
-            viewProj *= glm::inverse(s_Registry.get<Component::Transform>(entity).transform);
+          if (s_Registry.any_of<Component::Transform>(entityID))
+            viewProj *= glm::inverse(s_Registry.get<Component::Transform>(entityID).transform);
 
           break;
         }
@@ -60,9 +60,9 @@ namespace Engine
     {
       Renderer2D::BeginScene(viewProj);
       auto group = s_Registry.group<Component::Transform>(entt::get<Component::SpriteRenderer>);
-      for (auto entity : group)
+      for (entt::entity entityID : group)
       {
-        const auto [transform, sprite] = group.get<Component::Transform, Component::SpriteRenderer>(entity);
+        const auto [transform, sprite] = group.get<Component::Transform, Component::SpriteRenderer>(entityID);
 
         Renderer2D::DrawQuad(transform.transform, sprite.color);
       }
@@ -73,9 +73,9 @@ namespace Engine
   const SceneCamera& Scene::GetActiveCamera()
   {
     auto view = s_Registry.view<Component::Camera>();
-    for (auto entity : view)
+    for (entt::entity entityID : view)
     {
-      const Component::Camera& cameraComponent = view.get<Component::Camera>(entity);
+      const Component::Camera& cameraComponent = view.get<Component::Camera>(entityID);
       
       if (cameraComponent.isActive)
         return cameraComponent.camera;
@@ -89,9 +89,9 @@ namespace Engine
   {
     // Resize our non-fixed aspect ratio cameras
     auto view = s_Registry.view<Component::Camera>();
-    for (auto entity : view)
+    for (entt::entity entityID : view)
     {
-      Component::Camera& cameraComponent = view.get<Component::Camera>(entity);
+      Component::Camera& cameraComponent = view.get<Component::Camera>(entityID);
       if (!cameraComponent.fixedAspectRatio)
         cameraComponent.camera.setViewportSize(width, height);
     }
