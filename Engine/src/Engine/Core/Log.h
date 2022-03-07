@@ -1,5 +1,4 @@
 #pragma once
-#include "Core.h"
 
 #include <codeanalysis\warnings.h> // Disable intellisense warnings
 #pragma warning( push )

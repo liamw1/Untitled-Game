@@ -1,7 +1,7 @@
 #include "GDpch.h"
 #include "EditorLayer.h"
+#include "Panels/SceneHierarchyPanel.h"
 
-#include <codeanalysis\warnings.h> // Disable intellisense warnings
 #pragma warning( push )
 #pragma warning ( disable : ALL_CODE_ANALYSIS_WARNINGS )
 #include <imgui.h>
@@ -29,19 +29,25 @@ namespace Engine
     framebufferSpecification.height = 720;
     m_Framebuffer = Framebuffer::Create(framebufferSpecification);
 
-    m_SquareEntity = Scene::CreateEntity();
-    m_SquareEntity.add<Component::Transform>();
+    m_SquareEntity = Scene::CreateEntity("Square");
     m_SquareEntity.add<Component::SpriteRenderer>(Vec4(0.0, 1.0, 0.0, 1.0));
 
-    m_CameraEntity = Scene::CreateEntity();
+    m_CameraEntity = Scene::CreateEntity("Primary Camera");
     m_CameraEntity.add<Component::Camera>().isActive = true;
-    m_CameraEntity.add<Component::Transform>();
-
     m_CameraEntity.get<Component::Camera>().camera.setOrthographic(1.0f, 3.0f, 0.0f, 1.0f);
+
+    m_SecondCamera = Scene::CreateEntity("Secondary Camera");
+    m_SecondCamera.add<Component::Camera>().camera.setOrthographic(1.0f, 3.0f, 0.0f, 1.0f);
 
     class CameraController : public ScriptableEntity
     {
     public:
+      void onCreate()
+      {
+        Mat4& transform = get<Component::Transform>().transform;
+        transform[3][0] = static_cast<length_t>(rand() % 30) / 10 - static_cast<length_t>(1.0);
+      }
+
       void onUpdate(Timestep timestep)
       {
         seconds dt = timestep.sec();
@@ -61,6 +67,7 @@ namespace Engine
     };
 
     m_CameraEntity.add<Component::NativeScript>().bind<CameraController>();
+    m_SecondCamera.add<Component::NativeScript>().bind<CameraController>();
   }
 
   void EditorLayer::onDetach()
@@ -87,6 +94,7 @@ namespace Engine
     m_Framebuffer->bind();
     RenderCommand::Clear(Vec4(0.1f, 0.1f, 0.1f, 1.0f));
 
+    // Update scene
     Scene::OnUpdate(timestep);
 
     m_Framebuffer->unbind();
@@ -164,6 +172,8 @@ namespace Engine
       ImGui::EndMenuBar();
     }
 
+    SceneHierarchyPanel::OnImGuiRender();
+
     ImGui::Begin("Statistics");
 
     auto stats = Renderer2D::GetStats();
@@ -173,8 +183,24 @@ namespace Engine
     ImGui::Text("Vertices: %d", stats.getTotalVertexCount());
     ImGui::Text("Indices: %d", stats.getTotatlIndexCount());
 
-    auto& squareColor = m_SquareEntity.get<Component::SpriteRenderer>().color;
-    ImGui::ColorEdit4("Square Color", glm::value_ptr(squareColor));
+    {
+      ImGui::Separator();
+      const std::string& name = m_SquareEntity.get<Component::Tag>().name;
+      ImGui::Text("%s", name.c_str());
+
+      Float4& squareColor = m_SquareEntity.get<Component::SpriteRenderer>().color;
+      ImGui::ColorEdit4("Square Color", glm::value_ptr(squareColor));
+      ImGui::Separator();
+    }
+
+    ImGui::DragFloat3("Camera Transform", glm::value_ptr(m_CameraEntity.get<Component::Transform>().transform[3]));
+
+    bool primaryCamera = m_CameraEntity.get<Component::Camera>().isActive;
+    if (ImGui::Checkbox("Camera A", &primaryCamera))
+    {
+      m_CameraEntity.get<Component::Camera>().isActive = primaryCamera;
+      m_SecondCamera.get<Component::Camera>().isActive = !primaryCamera;
+    }
 
     ImGui::End();
 

@@ -181,6 +181,9 @@ project "Sandbox"
 	targetdir ("bin/" .. outputdir .. "/%{prj.name}")
 	objdir ("obj/" .. outputdir .. "/%{prj.name}")
 
+	pchheader "SBpch.h"
+	pchsource "Sandbox/src/SBpch.cpp"
+
 	files
 	{
 		"%{prj.name}/src/**.h",

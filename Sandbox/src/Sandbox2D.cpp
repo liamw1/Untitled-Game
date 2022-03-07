@@ -1,3 +1,4 @@
+#include "SBpch.h"
 #include "Sandbox2D.h"
 
 #include <codeanalysis\warnings.h> // Disable intellisense warnings

@@ -1,31 +1,32 @@
 #include "ENpch.h"
 #include "Scene.h"
-#include "Entity.h"
 #include "Components.h"
 #include "Engine/Renderer/Renderer2D.h"
 #include <glm/gtc/matrix_transform.hpp>
-#include <entt/entt.hpp>
 
 namespace Engine
 {
   static entt::registry s_Registry;
   
-  Entity Scene::CreateEntity()
+  Entity Scene::CreateEntity(const std::string& name)
   {
-    return Entity(s_Registry, s_Registry.create());
+    Entity entity = Entity(s_Registry, s_Registry.create());
+    entity.add<Component::Transform>();
+    entity.add<Component::Tag>().name = name.empty() ? "Unnamed Entity" : name;
+    return entity;
   }
 
   void Scene::OnUpdate(Timestep timestep)
   {
     // Update scripts
     {
-      s_Registry.view<Component::NativeScript>().each([=](auto entity, auto& nsc)
+      s_Registry.view<Component::NativeScript>().each([=](entt::entity entityID, Component::NativeScript& nsc)
         {
           // TODO: Move to Scene::OnScenePlay
           if (!nsc.instance)
           {
             nsc.instance = nsc.instantiateScript();
-            nsc.instance->entity = Entity(s_Registry, entity);
+            nsc.instance->entity = Entity(s_Registry, entityID);
             nsc.instance->onCreate();
           }
 
@@ -94,5 +95,10 @@ namespace Engine
       if (!cameraComponent.fixedAspectRatio)
         cameraComponent.camera.setViewportSize(width, height);
     }
+  }
+
+  entt::registry& Scene::Registry()
+  {
+    return s_Registry;
   }
 }

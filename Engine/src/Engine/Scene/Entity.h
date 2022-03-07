@@ -13,8 +13,8 @@ namespace Engine
   public:
     Entity() = default;
 
-    Entity(entt::registry& registry, entt::entity entity)
-      : m_Handle(registry, entity) {}
+    Entity(entt::registry& registry, entt::entity entityID)
+      : m_Handle(registry, entityID) {}
 
     template<typename T>
     bool has()
@@ -43,6 +43,11 @@ namespace Engine
       EN_CORE_ASSERT(has<T>(), "Entity does not have component!");
       m_Handle.remove<T>();
     }
+
+    uint32_t id() const { return static_cast<uint32_t>(m_Handle.entity()); }
+
+    bool operator==(const Entity& other) const { return m_Handle == other.m_Handle; }
+    bool operator!=(const Entity& other) const { return m_Handle != other.m_Handle; }
 
   private:
     entt::handle m_Handle;

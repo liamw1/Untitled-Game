@@ -91,20 +91,20 @@ namespace Engine
 
     operator float& () = delete;
 
-    constexpr bool operator>(const Angle& rhs) const { return m_Degrees > rhs.m_Degrees; }
-    constexpr bool operator<(const Angle& rhs) const { return m_Degrees < rhs.m_Degrees; }
-    constexpr bool operator>=(const Angle& rhs) const { return m_Degrees >= rhs.m_Degrees; }
-    constexpr bool operator<=(const Angle& rhs) const { return m_Degrees <= rhs.m_Degrees; }
-    constexpr bool operator==(const Angle& rhs) const { return m_Degrees == rhs.m_Degrees; }
+    constexpr bool operator>(const Angle& other) const { return m_Degrees > other.m_Degrees; }
+    constexpr bool operator<(const Angle& other) const { return m_Degrees < other.m_Degrees; }
+    constexpr bool operator>=(const Angle& other) const { return m_Degrees >= other.m_Degrees; }
+    constexpr bool operator<=(const Angle& other) const { return m_Degrees <= other.m_Degrees; }
+    constexpr bool operator==(const Angle& other) const { return m_Degrees == other.m_Degrees; }
 
     constexpr Angle operator-() const { return Angle(-m_Degrees); }
 
     constexpr Angle operator*(int n) const { return Angle(n * m_Degrees); }
     constexpr Angle operator*(float x) const { return Angle(x * m_Degrees); }
 
-    constexpr Angle& operator+=(const Angle& rhs)
+    constexpr Angle& operator+=(const Angle& other)
     {
-      m_Degrees += rhs.m_Degrees;
+      m_Degrees += other.m_Degrees;
       return *this;
     }
 

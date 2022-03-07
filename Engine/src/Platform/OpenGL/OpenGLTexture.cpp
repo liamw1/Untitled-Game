@@ -1,6 +1,5 @@
 #include "ENpch.h"
 #include "OpenGLTexture.h"
-#include <glad/glad.h>
 
 #include <codeanalysis\warnings.h> // Disable intellisense warnings
 #pragma warning( push )

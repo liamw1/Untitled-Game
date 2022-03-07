@@ -6,6 +6,11 @@ namespace Engine
 {
   namespace Component
   {
+    struct Tag
+    {
+      std::string name{};
+    };
+
     struct Transform
     {
       Mat4 transform = Mat4(1.0);
