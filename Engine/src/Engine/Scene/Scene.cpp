@@ -60,7 +60,7 @@ namespace Engine
       auto group = s_Registry.group<Component::Transform>(entt::get<Component::SpriteRenderer>);
       for (auto entity : group)
       {
-        const auto& [transform, sprite] = group.get<Component::Transform, Component::SpriteRenderer>(entity);
+        const auto [transform, sprite] = group.get<Component::Transform, Component::SpriteRenderer>(entity);
 
         Renderer2D::DrawQuad(transform.transform, sprite.color);
       }
