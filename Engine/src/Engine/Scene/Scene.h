@@ -1,5 +1,6 @@
 #pragma once
 #include "entt/entt.hpp"
+#include "Engine/Renderer/SceneCamera.h"
 
 namespace Engine
 {
@@ -9,6 +10,10 @@ namespace Engine
   {
     Entity CreateEntity();
 
-    void OnUpdate(std::chrono::duration<seconds> timestep);
+    void OnUpdate(Timestep timestep);
+
+    const SceneCamera& GetActiveCamera();
+
+    void OnViewportResize(uint32_t width, uint32_t height);
   };
 }

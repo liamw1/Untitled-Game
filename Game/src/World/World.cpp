@@ -16,7 +16,7 @@ void World::initialize()
   }
 }
 
-void World::onUpdate(std::chrono::duration<seconds> timestep)
+void World::onUpdate(Engine::Timestep timestep)
 {
   EN_PROFILE_FUNCTION();
 
@@ -25,13 +25,12 @@ void World::onUpdate(std::chrono::duration<seconds> timestep)
   playerCollisionHandling(timestep);
   Player::UpdateEnd();
 
-  playerWorldInteraction();
-
   /* Rendering stage */
   if (!m_RenderingPaused)
   {
     m_ChunkManager.manageLODs();
     m_ChunkManager.renderLODs();
+    Engine::RenderCommand::ClearDepthBuffer();
     m_ChunkManager.loadNewChunks(200);
     m_ChunkManager.render();
     m_ChunkManager.clean();
@@ -39,8 +38,11 @@ void World::onUpdate(std::chrono::duration<seconds> timestep)
   else
   {
     m_ChunkManager.renderLODs();
+    Engine::RenderCommand::ClearDepthBuffer();
     m_ChunkManager.render();
   }
+
+  playerWorldInteraction();
 }
 
 RayIntersection World::castRaySegment(const Vec3& pointA, const Vec3& pointB) const
@@ -139,7 +141,7 @@ RayIntersection World::castRay(const Vec3& rayOrigin, const Vec3& rayDirection, 
   return castRaySegment(pointA, pointB);
 }
 
-void World::playerCollisionHandling(std::chrono::duration<seconds> timestep) const
+void World::playerCollisionHandling(Engine::Timestep timestep) const
 {
   EN_PROFILE_FUNCTION();
 
@@ -149,7 +151,7 @@ void World::playerCollisionHandling(std::chrono::duration<seconds> timestep) con
   // Player width and height in blocks
   static const int playerWidth = static_cast<int>(ceil(Player::Width() / Block::Length()));
   static const int playerHeight = static_cast<int>(ceil(Player::Height() / Block::Length()));
-  const seconds dt = timestep.count();  // Time between frames in seconds
+  const seconds dt = timestep.sec();  // Time between frames in seconds
 
 beginCollisionDetection:;
   const length_t distanceMoved = dt * glm::length(Player::Velocity());
@@ -198,7 +200,7 @@ void World::playerWorldInteraction()
   m_PlayerRayCast = castRay(Player::Camera().getPosition(), Player::ViewDirection(), maxInteractionDistance);
   if (m_PlayerRayCast.distance <= maxInteractionDistance)
   {
-    Engine::Renderer::BeginScene(Player::Camera());
+    Engine::Renderer::BeginScene(Engine::Scene::GetActiveCamera().getProjection());
     const BlockIndex& blockIndex = m_PlayerRayCast.blockIndex;
     const LocalIndex& chunkIndex = m_PlayerRayCast.chunkIndex;
     const Vec3 blockCenter = Chunk::Length() * Vec3(chunkIndex.i, chunkIndex.j, chunkIndex.k) + Block::Length() * (Vec3(blockIndex.i, blockIndex.j, blockIndex.k) + Vec3(0.5));

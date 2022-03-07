@@ -8,12 +8,12 @@ namespace Engine
   class Camera
   {
   public:
-    Camera(radians fov, float aspectRatio, length_t nearPlane, length_t farPlane);
-    Camera(const Camera& camera, radians fov, float aspectRatio, length_t nearPlane, length_t farPlane);
+    Camera(Angle fov, float aspectRatio, length_t nearPlane, length_t farPlane);
+    Camera(const Camera& camera, Angle fov, float aspectRatio, length_t nearPlane, length_t farPlane);
 
     void setPosition(const Vec3& position);
     void setView(const Vec3& position, const Vec3& viewDirection);
-    void setProjection(radians fov, float aspectRatio, length_t nearPlane, length_t farPlane);
+    void setProjection(Angle fov, float aspectRatio, length_t nearPlane, length_t farPlane);
 
     const Vec3& getPosition() const { return m_Position; }
     const Mat4& getProjectionMatrix() const { return m_ProjectionMatrix; }

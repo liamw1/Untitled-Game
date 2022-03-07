@@ -11,42 +11,42 @@ namespace Engine
   {
   }
 
-  void OrthographicCameraController::onUpdate(std::chrono::duration<seconds> timestep)
+  void OrthographicCameraController::onUpdate(Timestep timestep)
   {
-    const seconds dt = timestep.count();  // Time between frames in seconds
+    const seconds dt = timestep.sec();  // Time between frames in seconds
 
     if (Input::IsKeyPressed(Key::A))
     {
-      m_CameraPosition.x -= cos(m_CameraRotation) * m_CameraTranslationSpeed * dt;
-      m_CameraPosition.y -= sin(m_CameraRotation) * m_CameraTranslationSpeed * dt;
+      m_CameraPosition.x -= cos(m_CameraRotation.rad()) * m_CameraTranslationSpeed * dt;
+      m_CameraPosition.y -= sin(m_CameraRotation.rad()) * m_CameraTranslationSpeed * dt;
     }
     if (Input::IsKeyPressed(Key::D))
     {
-      m_CameraPosition.x += cos(m_CameraRotation) * m_CameraTranslationSpeed * dt;
-      m_CameraPosition.y += sin(m_CameraRotation) * m_CameraTranslationSpeed * dt;
+      m_CameraPosition.x += cos(m_CameraRotation.rad()) * m_CameraTranslationSpeed * dt;
+      m_CameraPosition.y += sin(m_CameraRotation.rad()) * m_CameraTranslationSpeed * dt;
     }
     if (Input::IsKeyPressed(Key::W))
     {
-      m_CameraPosition.x += -sin(m_CameraRotation) * m_CameraTranslationSpeed * dt;
-      m_CameraPosition.y +=  cos(m_CameraRotation) * m_CameraTranslationSpeed * dt;
+      m_CameraPosition.x += -sin(m_CameraRotation.rad()) * m_CameraTranslationSpeed * dt;
+      m_CameraPosition.y +=  cos(m_CameraRotation.rad()) * m_CameraTranslationSpeed * dt;
     }
     if (Input::IsKeyPressed(Key::S))
     {
-      m_CameraPosition.x -= -sin(m_CameraRotation) * m_CameraTranslationSpeed * dt;
-      m_CameraPosition.y -=  cos(m_CameraRotation) * m_CameraTranslationSpeed * dt;
+      m_CameraPosition.x -= -sin(m_CameraRotation.rad()) * m_CameraTranslationSpeed * dt;
+      m_CameraPosition.y -=  cos(m_CameraRotation.rad()) * m_CameraTranslationSpeed * dt;
     }
 
     if (m_CanRotate)
     {
       if (Input::IsKeyPressed(Key::Q))
-        m_CameraRotation += static_cast<radians>(m_CameraRotationSpeed * dt);
+        m_CameraRotation += m_CameraRotationSpeed * dt;
       if (Input::IsKeyPressed(Key::E))
-        m_CameraRotation -= static_cast<radians>(m_CameraRotationSpeed * dt);
+        m_CameraRotation -= m_CameraRotationSpeed * dt;
 
-      if (m_CameraRotation > PI)
-        m_CameraRotation -= 2 * PI;
-      else if (m_CameraRotation <= -PI)
-        m_CameraRotation += 2 * PI;
+      if (m_CameraRotation > Angle::PI())
+        m_CameraRotation -= Angle::PI() * 2;
+      else if (m_CameraRotation <= Angle::PI())
+        m_CameraRotation += Angle::PI() * 2;
 
       m_Camera.setRotation(m_CameraRotation);
     }

@@ -1,6 +1,7 @@
 #include "ENpch.h"
 #include "Renderer.h"
 #include "RenderCommand.h"
+#include "Engine/Scene/Scene.h"
 #include <glm/gtc/matrix_transform.hpp>
 
 namespace Engine
@@ -116,13 +117,13 @@ namespace Engine
   {
   }
 
-  void Renderer::BeginScene(const Camera& camera)
+  void Renderer::BeginScene(const Mat4& viewProjection)
   {
     s_CubeFrameShader->bind();
-    s_CubeFrameShader->setMat4("u_ViewProjection", camera.getViewProjectionMatrix());
+    s_CubeFrameShader->setMat4("u_ViewProjection", viewProjection);
 
     s_TextureShader->bind();
-    s_TextureShader->setMat4("u_ViewProjection", camera.getViewProjectionMatrix());
+    s_TextureShader->setMat4("u_ViewProjection", viewProjection);
   }
 
   void Renderer::EndScene()

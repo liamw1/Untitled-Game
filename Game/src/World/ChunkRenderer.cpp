@@ -5,13 +5,15 @@
 #include "Player/Player.h"
 
 /*
-  Renderer 2D data
+  Renderer data
 */
 static Engine::Shared<Engine::Shader> s_BlockFaceShader;
 static Engine::Shared<Engine::Shader> s_LODShader;
 static Engine::Shared<Engine::TextureArray> s_TextureArray;
 static constexpr int s_TextureSlot = 0;
 
+static constexpr float s_LODNearPlaneDistance = static_cast<float>(10 * Block::Length());
+static constexpr float s_LODFarPlaneDistance = static_cast<float>(1e6 * Block::Length());
 
 
 void ChunkRenderer::Initialize()
@@ -29,21 +31,19 @@ void ChunkRenderer::Initialize()
   s_LODShader = Engine::Shader::Create("assets/shaders/ChunkLOD.glsl");
   s_LODShader->bind();
   s_LODShader->setInt("u_TextureArray", s_TextureSlot);
+  s_LODShader->setFloat("u_NearPlaneDistance", s_LODNearPlaneDistance);
+  s_LODShader->setFloat("u_FarPlaneDistance", s_LODFarPlaneDistance);
 }
 
-void ChunkRenderer::BeginScene(const Engine::Camera& camera)
+void ChunkRenderer::BeginScene(const Mat4& viewProjection)
 {
   s_BlockFaceShader->bind();
   s_BlockFaceShader->setFloat("u_BlockLength", static_cast<float>(Block::Length()));
-  s_BlockFaceShader->setMat4("u_ViewProjection", camera.getViewProjectionMatrix());
+  s_BlockFaceShader->setMat4("u_ViewProjection", viewProjection);
   s_TextureArray->bind(s_TextureSlot);
 
-  const radians playerFOV = Player::CameraController().getFOV();
-  const float playerAspectRatio = Player::CameraController().getAspectRatio();
-  Engine::Camera farCamera = Engine::Camera(camera, playerFOV, playerAspectRatio, static_cast<length_t>(0.01 * Block::Length()), static_cast<length_t>(100000.0 * Block::Length()));
-
   s_LODShader->bind();
-  s_LODShader->setMat4("u_ViewProjection", farCamera.getViewProjectionMatrix());
+  s_LODShader->setMat4("u_ViewProjection", viewProjection);
 }
 
 void ChunkRenderer::EndScene()

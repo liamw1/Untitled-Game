@@ -12,6 +12,10 @@ const vec2 s_TexCoords[4] = vec2[4]( vec2(0.0f,	0.0f),
 uniform float u_TextureScaling;
 uniform vec3 u_LODPosition;
 uniform mat4 u_ViewProjection;
+uniform float u_NearPlaneDistance;
+uniform float u_FarPlaneDistance;
+
+float C = 2.0 / log(u_FarPlaneDistance / u_NearPlaneDistance);
 
 out vec3 v_TexCoord;
 out vec3 v_LocalWorldPosition;
@@ -21,6 +25,12 @@ void main()
   v_TexCoord = vec3(u_TextureScaling * s_TexCoords[a_QuadIndex], float(1));
   v_LocalWorldPosition = a_Position;
   gl_Position = u_ViewProjection * vec4(u_LODPosition + a_Position, 1.0f);
+
+  // Applying logarithmic depth buffer
+  // NOTE: This might be disorting normals far from the camera,
+  //	   it may be better to give shader a modified camera instead
+  gl_Position.z = C * log(gl_Position.w / u_NearPlaneDistance) - 1; 
+  gl_Position.z *= gl_Position.w;
 }
 
 

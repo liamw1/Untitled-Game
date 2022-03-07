@@ -15,23 +15,27 @@ void Sandbox3D::onAttach()
   EN_PROFILE_FUNCTION();
 
   m_CheckerboardTexture = Engine::Texture2D::Create("assets/textures/Checkerboard.png");
+
+  m_CameraEntity = Engine::Scene::CreateEntity();
+  m_CameraEntity.add<Engine::Component::Camera>(m_CameraController.getViewProjectionMatrix(), true);
 }
 
 void Sandbox3D::onDetach()
 {
 }
 
-void Sandbox3D::onUpdate(std::chrono::duration<seconds> timestep)
+void Sandbox3D::onUpdate(Engine::Timestep timestep)
 {
   EN_PROFILE_FUNCTION();
 
   // EN_TRACE("dt: {0}", timestep.count());
 
   m_CameraController.onUpdate(timestep);
+  m_CameraEntity.get<Engine::Component::Camera>().viewProjection = m_CameraController.getViewProjectionMatrix();
 
   Engine::RenderCommand::Clear({ 0.1f, 0.1f, 0.1f, 1.0f });
 
-  Engine::Renderer::BeginScene(m_CameraController.getCamera());
+  Engine::Renderer::BeginScene(Engine::Scene::GetActiveCamera().viewProjection);
   for (int i = 0; i < 3; ++i)
     for (int j = 0; j < 3; ++j)
       Engine::Renderer::DrawCube(Vec3((i - 1) * 1.25, 2.0, (j + 1) * 1.25), Vec3(1.0f), m_CheckerboardTexture);

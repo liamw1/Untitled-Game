@@ -21,15 +21,15 @@ namespace Engine
     void Initialize();
     void Shutdown();
 
-    void BeginScene(const OrthographicCamera& camera);
+    void BeginScene(const Mat4& viewProjection);
     void EndScene();
     void Flush();
 
     // Primitives
-    void DrawQuad(const QuadParams& params, const Shared<Texture2D>& texture = nullptr);
-    void DrawQuad(const QuadParams& params, const Shared<SubTexture2D>& subTexture);
-    void DrawRotatedQuad(const QuadParams& params, radians rotation, const Shared<Texture2D>& texture = nullptr);
-    void DrawRotatedQuad(const QuadParams& params, radians rotation, const Shared<SubTexture2D>& subTexture);
+    void DrawQuad(const Mat4& transform, const Float4& tintColor = Float4(1.0), float textureScalingFactor = 1.0f, const Shared<Texture2D>& texture = nullptr);
+    void DrawQuad(const Vec3& position, const Vec2& size, const Float4& tintColor = Float4(1.0), float textureScalingFactor = 1.0f, const Shared<Texture2D>& texture = nullptr);
+    void DrawRotatedQuad(const QuadParams& params, Angle rotation, const Shared<Texture2D>& texture = nullptr);
+    void DrawRotatedQuad(const QuadParams& params, Angle rotation, const Shared<SubTexture2D>& subTexture);
 
     // Stats
     struct Statistics

@@ -15,7 +15,7 @@ class World
 public:
   void initialize();
 
-  void onUpdate(std::chrono::duration<seconds> timestep);
+  void onUpdate(Engine::Timestep timestep);
 
   void onEvent(Engine::Event& event);
 
@@ -35,7 +35,7 @@ private:
 
   RayIntersection castRay(const Vec3& rayOrigin, const Vec3& rayDirection, length_t maxDistance) const;
 
-  void playerCollisionHandling(std::chrono::duration<seconds> timestep) const;
+  void playerCollisionHandling(Engine::Timestep timestep) const;
   void playerWorldInteraction();
 
   bool onMouseButtonPressEvent(Engine::MouseButtonPressEvent& event);

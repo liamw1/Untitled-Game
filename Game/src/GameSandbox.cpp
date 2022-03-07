@@ -23,7 +23,7 @@ void GameSandbox::onDetach()
 {
 }
 
-void GameSandbox::onUpdate(std::chrono::duration<seconds> timestep)
+void GameSandbox::onUpdate(Engine::Timestep timestep)
 {
   EN_PROFILE_FUNCTION();
 

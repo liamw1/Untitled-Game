@@ -10,9 +10,9 @@ namespace Engine
   {
   public:
     CameraController();
-    CameraController(radians FOV, float aspectRatio, length_t nearPlane, length_t farPlane);
+    CameraController(Angle FOV, float aspectRatio, length_t nearPlane, length_t farPlane);
 
-    void onUpdate(std::chrono::duration<seconds> timestep);
+    void onUpdate(Timestep timestep);
     void onEvent(Event& event);
 
     void setPosition(const Vec3& position) { m_CameraPosition = position; }
@@ -20,8 +20,9 @@ namespace Engine
     Camera& getCamera() { return m_Camera; }
     const Camera& getCamera() const { return m_Camera; }
     const Vec3& getViewDirection() const { return m_CameraViewDirection; }
+    const Mat4& getViewProjectionMatrix() const { return m_Camera.getViewProjectionMatrix(); }
 
-    radians getFOV() const { return m_FOV; }
+    Angle getFOV() const { return m_FOV; }
     float getAspectRatio() const { return m_AspectRatio; }
 
     void toggleFreeCam() { m_FreeCamEnabled = !m_FreeCamEnabled; }
@@ -30,21 +31,21 @@ namespace Engine
     // Camera state
     bool m_IsMouseEnabled = false;
     bool m_FreeCamEnabled = false;
-    radians m_FOV;
+    Angle m_FOV;
     float m_AspectRatio;
     length_t m_NearPlane;
     length_t m_FarPlane;
     Camera m_Camera;
 
-    radians m_Roll = 0.0;    // Rotation around x-axis
-    radians m_Pitch = 0.0;   // Rotation around y-axis
-    radians m_Yaw = -PI / 2;  // Rotation around z-axis
+    Angle m_Roll = Angle(0.0f);     // Rotation around x-axis
+    Angle m_Pitch = Angle(0.0f);    // Rotation around y-axis
+    Angle m_Yaw = Angle(-90.0f);    // Rotation around z-axis
     Vec3 m_CameraPosition = { 0.0, 0.0, 0.0 };
     Vec3 m_CameraViewDirection = { 0.0, 1.0, 0.0 };
 
     length_t m_CameraTranslationSpeed = 5.0;
-    float m_CameraSensitivity = 0.0015f;
-    float m_CameraZoomSensitivity = 10.0f;
+    float m_CameraSensitivity = 0.1f;
+    float m_CameraZoomSensitivity = 0.2f;
 
     // Mouse state
     Float2 m_LastMousePosition;

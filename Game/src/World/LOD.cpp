@@ -286,7 +286,7 @@ namespace LOD
   {
     EN_PROFILE_FUNCTION();
 
-    struct VertexIndexData
+    struct VertexReuseData
     {
       uint32_t baseMeshIndex = 0;
       int8_t vertexOrder[4] = { -1, -1, -1, -1 };
@@ -299,10 +299,10 @@ namespace LOD
     int vertexCount = 0;
     std::vector<uint32_t> primaryMeshIndices{};
     std::vector<LOD::Vertex> primaryMeshVertices{};
-    Array2D<VertexIndexData> prevLayer = Array2D<VertexIndexData>(s_NumCells);
+    Array2D<VertexReuseData> prevLayer = Array2D<VertexReuseData>(s_NumCells);
     for (int i = 0; i < s_NumCells; ++i)
     {
-      Array2D<VertexIndexData> currLayer = Array2D<VertexIndexData>(s_NumCells);
+      Array2D<VertexReuseData> currLayer = Array2D<VertexReuseData>(s_NumCells);
 
       for (int j = 0; j < s_NumCells; ++j)
         for (int k = 0; k < s_NumCells; ++k)
@@ -409,7 +409,7 @@ namespace LOD
   {
     EN_PROFILE_FUNCTION();
 
-    struct VertexIndexData
+    struct VertexReuseData
     {
       uint32_t baseMeshIndex = 0;
       int8_t vertexOrder[10] = { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 };
@@ -437,10 +437,10 @@ namespace LOD
       int vertexCount = 0;
       std::vector<uint32_t> transitionMeshIndices{};
       std::vector<LOD::Vertex> transitionMeshVertices{};
-      std::array<VertexIndexData, s_NumCells / 2> prevRow{};
+      std::array<VertexReuseData, s_NumCells / 2> prevRow{};
       for (int i = 0; i < s_NumCells; i += 2)
       {
-        std::array<VertexIndexData, s_NumCells / 2> currRow{};
+        std::array<VertexReuseData, s_NumCells / 2> currRow{};
 
         for (int j = 0; j < s_NumCells; j += 2)
         {

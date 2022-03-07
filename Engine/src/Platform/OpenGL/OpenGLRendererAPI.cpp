@@ -20,18 +20,18 @@ namespace Engine
     glViewport(x, y, width, height);
   }
 
-  void OpenGLRendererAPI::clear(const Float4& color) const
+  void OpenGLRendererAPI::clear(const Float4& color)
   {
     glClearColor(color.r, color.g, color.b, color.a);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   }
 
-  void OpenGLRendererAPI::wireFrameToggle(bool enableWireFrame) const
+  void OpenGLRendererAPI::wireFrameToggle(bool enableWireFrame)
   {
     enableWireFrame ? glPolygonMode(GL_FRONT_AND_BACK, GL_LINE) : glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
   }
 
-  void OpenGLRendererAPI::faceCullToggle(bool enableFaceCulling) const
+  void OpenGLRendererAPI::faceCullToggle(bool enableFaceCulling)
   {
     enableFaceCulling ? glEnable(GL_CULL_FACE) : glDisable(GL_CULL_FACE);
   }
@@ -53,5 +53,10 @@ namespace Engine
   {
     uint32_t count = indexCount == 0 ? vertexArray->getIndexBuffer()->getCount() : indexCount;
     glDrawElements(GL_LINES, count, GL_UNSIGNED_INT, nullptr);
+  }
+
+  void OpenGLRendererAPI::clearDepthBuffer()
+  {
+    glClear(GL_DEPTH_BUFFER_BIT);
   }
 }

@@ -1,5 +1,4 @@
 #pragma once
-#include "Block/Block.h"
 #include "World/LOD.h"
 
 class Chunk;
@@ -17,7 +16,7 @@ namespace ChunkRenderer
   /*
     Setup that only needs to be done once per frame.
   */
-  void BeginScene(const Engine::Camera& camera);
+  void BeginScene(const Mat4& viewProjection);
   void EndScene();
   
   /*

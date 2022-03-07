@@ -1,5 +1,4 @@
 #pragma once
-#include "Scene.h"
 #include "entt/entt.hpp"
 
 namespace Engine
@@ -44,5 +43,25 @@ namespace Engine
     entt::handle m_Handle;
 
     bool isValid() { return static_cast<bool>(m_Handle); }
+  };
+
+
+
+  class ScriptableEntity
+  {
+  public:
+    Entity entity;
+
+    virtual ~ScriptableEntity() {}
+
+    template<typename T>
+    T& get()
+    {
+      return entity.get<T>();
+    }
+
+    virtual void onCreate() {};
+    virtual void onDestroy() {};
+    virtual void onUpdate(Timestep timestep) {};
   };
 }

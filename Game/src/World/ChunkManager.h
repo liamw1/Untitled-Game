@@ -104,7 +104,7 @@ private:
              For a plane of the form Ax + By + Cz + D = 0, 
              its corresponding vector is {A, B, C, D}.
   */
-  std::array<Vec4, 6> calculateViewFrustumPlanes(const Engine::Camera& playerCamera) const;
+  std::array<Vec4, 6> calculateViewFrustumPlanes(const Mat4& viewProjection) const;
 
   /*
     \returns True if the given point is inside the given set of frustum planes.

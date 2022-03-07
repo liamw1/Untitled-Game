@@ -11,7 +11,7 @@ namespace Engine
 
     virtual void onAttach() {}
     virtual void onDetach() {}
-    virtual void onUpdate(std::chrono::duration<seconds> /*timestep*/) {}
+    virtual void onUpdate(Timestep /*timestep*/) {}
     virtual void onImGuiRender() {}
     virtual void onEvent(Event& /*event*/) {}
 

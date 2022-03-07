@@ -11,16 +11,16 @@ namespace Engine
     void onAttach() override;
     void onDetach() override;
 
-    void onUpdate(std::chrono::duration<seconds> timestep) override;
+    void onUpdate(Timestep timestep) override;
     void onImGuiRender() override;
     void onEvent(Event& event) override;
 
   private:
-    OrthographicCameraController m_CameraController;
     Shared<Texture2D> m_CheckerboardTexture;
     Shared<Framebuffer> m_Framebuffer;
 
     Entity m_SquareEntity;
+    Entity m_CameraEntity;
 
     bool m_ViewportFocused = false;
     bool m_ViewportHovered = false;

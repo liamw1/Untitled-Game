@@ -65,8 +65,10 @@ void ChunkManager::render() const
 
   if (s_RenderDistance == 0)
     return;
+
+  const Mat4& viewProjection = Engine::Scene::GetActiveCamera().getProjection();
   
-  std::array<Vec4, 6> frustumPlanes = calculateViewFrustumPlanes(Player::Camera());
+  std::array<Vec4, 6> frustumPlanes = calculateViewFrustumPlanes(viewProjection);
 
   // Shift each plane by distance equal to radius of sphere that circumscribes chunk
   static constexpr float sqrt3 = 1.732050807568877f;
@@ -78,7 +80,7 @@ void ChunkManager::render() const
   }
 
   // Render chunks in view frustum
-  ChunkRenderer::BeginScene(Player::Camera());
+  ChunkRenderer::BeginScene(viewProjection);
   for (auto& pair : m_RenderableChunks)
   {
     Chunk* chunk = pair.second;
@@ -178,8 +180,9 @@ void ChunkManager::renderLODs()
   EN_PROFILE_FUNCTION();
 
   std::vector<LOD::Octree::Node*> leaves = m_LODTree.getLeaves();
+  const Mat4& viewProjection = Engine::Scene::GetActiveCamera().getProjection();
 
-  const std::array<Vec4, 6> frustumPlanes = calculateViewFrustumPlanes(Player::Camera());
+  const std::array<Vec4, 6> frustumPlanes = calculateViewFrustumPlanes(viewProjection);
   std::array<Vec4, 6> shiftedFrustumPlanes = frustumPlanes;
   std::array<length_t, 6> planeNormalMags = { glm::length(Vec3(frustumPlanes[static_cast<int>(FrustumPlane::Left)])),
                                               glm::length(Vec3(frustumPlanes[static_cast<int>(FrustumPlane::Right)])),
@@ -188,7 +191,7 @@ void ChunkManager::renderLODs()
                                               glm::length(Vec3(frustumPlanes[static_cast<int>(FrustumPlane::Near)])),
                                               glm::length(Vec3(frustumPlanes[static_cast<int>(FrustumPlane::Far)])), };
 
-  ChunkRenderer::BeginScene(Player::Camera());
+  ChunkRenderer::BeginScene(viewProjection);
   for (auto it = leaves.begin(); it != leaves.end(); ++it)
   {
     LOD::Octree::Node* node = *it;
@@ -296,13 +299,12 @@ bool ChunkManager::isInRange(const GlobalIndex& chunkIndex, globalIndex_t range)
   return true;
 }
 
-std::array<Vec4, 6> ChunkManager::calculateViewFrustumPlanes(const Engine::Camera& playerCamera) const
+std::array<Vec4, 6> ChunkManager::calculateViewFrustumPlanes(const Mat4& viewProjection) const
 {
-  const Mat4& viewProj = playerCamera.getViewProjectionMatrix();
-  const Vec4 row1 = glm::row(viewProj, 0);
-  const Vec4 row2 = glm::row(viewProj, 1);
-  const Vec4 row3 = glm::row(viewProj, 2);
-  const Vec4 row4 = glm::row(viewProj, 3);
+  const Vec4 row1 = glm::row(viewProjection, 0);
+  const Vec4 row2 = glm::row(viewProjection, 1);
+  const Vec4 row3 = glm::row(viewProjection, 2);
+  const Vec4 row4 = glm::row(viewProjection, 3);
 
   std::array<Vec4, 6> frustumPlanes{};
   frustumPlanes[static_cast<int>(FrustumPlane::Left)] = row4 + row1;

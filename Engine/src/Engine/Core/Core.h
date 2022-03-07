@@ -23,15 +23,13 @@
 
 
 // ================== Physical Units and Constants ================== //
-using radians = float;
-using radiansPerSec = radians;
 using length_t = float;
 using seconds = float;
 
 // ======= Precision selection for floating point tolerance ========= //
 static constexpr length_t LNGTH_EPSILON = std::is_same<double, length_t>::value ? DBL_EPSILON : FLT_EPSILON;
 
-constexpr radians PI = static_cast<radians>(3.14159265358979323846264338327950288419716939937510L);
+constexpr length_t PI = static_cast<length_t>(3.14159265358979323846264338327950288419716939937510L);
 
 
 
@@ -62,6 +60,64 @@ namespace Engine
   {
     return std::make_shared<T>(std::forward<Args>(args)...);
   }
+
+  class Timestep
+  {
+  public:
+    Timestep()
+      : m_Timestep(std::chrono::duration<seconds>::zero()) {}
+
+    Timestep(std::chrono::duration<seconds> duration)
+      : m_Timestep(duration) {}
+
+    seconds sec() const { return m_Timestep.count(); }
+
+  private:
+    std::chrono::duration<seconds> m_Timestep;
+  };
+
+  class Angle
+  {
+  public:
+    Angle() = default;
+
+    constexpr explicit Angle(float degrees)
+      : m_Degrees(degrees) {}
+
+    constexpr float deg() const { return m_Degrees; }
+    constexpr float rad() const { return 0.01745329238f * m_Degrees; }
+
+    operator float& () = delete;
+
+    constexpr bool operator>(const Angle& rhs) const { return m_Degrees > rhs.m_Degrees; }
+    constexpr bool operator<(const Angle& rhs) const { return m_Degrees < rhs.m_Degrees; }
+    constexpr bool operator>=(const Angle& rhs) const { return m_Degrees >= rhs.m_Degrees; }
+    constexpr bool operator<=(const Angle& rhs) const { return m_Degrees <= rhs.m_Degrees; }
+    constexpr bool operator==(const Angle& rhs) const { return m_Degrees == rhs.m_Degrees; }
+
+    constexpr Angle operator-() const { return Angle(-m_Degrees); }
+
+    constexpr Angle operator*(int n) const { return Angle(n * m_Degrees); }
+    constexpr Angle operator*(float x) const { return Angle(x * m_Degrees); }
+
+    constexpr Angle& operator+=(const Angle& rhs)
+    {
+      m_Degrees += rhs.m_Degrees;
+      return *this;
+    }
+
+    constexpr Angle& operator-=(const Angle& rhs)
+    {
+      m_Degrees -= rhs.m_Degrees;
+      return *this;
+    }
+
+    static constexpr Angle PI() { return Angle(180.0f); }
+    static constexpr Angle FromRad(float rad) { return Angle(57.2957795f * rad); }
+
+  private:
+    float m_Degrees;
+  };
 }
 
 

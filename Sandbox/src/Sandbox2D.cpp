@@ -19,27 +19,31 @@ void Sandbox2D::onAttach()
   EN_PROFILE_FUNCTION();
 
   m_CheckerboardTexture = Engine::Texture2D::Create("assets/textures/Checkerboard.png");
+
+  m_CameraEntity = Engine::Scene::CreateEntity();
+  m_CameraEntity.add<Engine::Component::Camera>(m_CameraController.getViewProjectionMatrix(), true);
 }
 
 void Sandbox2D::onDetach()
 {
 }
 
-void Sandbox2D::onUpdate(std::chrono::duration<seconds> timestep)
+void Sandbox2D::onUpdate(Engine::Timestep timestep)
 {
   EN_PROFILE_FUNCTION();
 
   // Update
   m_CameraController.onUpdate(timestep);
+  m_CameraEntity.get<Engine::Component::Camera>().viewProjection = m_CameraController.getViewProjectionMatrix();
 
   // Render
   Engine::Renderer2D::ResetStats();
   Engine::RenderCommand::Clear({ 0.1f, 0.1f, 0.1f, 1.0f });
 
   static radians rotation = 0.0;
-  rotation += timestep.count();
+  rotation += timestep.sec();
 
-  Engine::Renderer2D::BeginScene(m_CameraController.getCamera());
+  Engine::Renderer2D::BeginScene(Engine::Scene::GetActiveCamera().viewProjection);
   Engine::Renderer2D::DrawQuad({ {0.0, 0.0, -0.1}, Vec2(50.0), Float4(1.0f), 10.0f}, m_CheckerboardTexture);
   for (int i = 0; i < 5; ++i)
     for (int j = 0; j < 5; ++j)

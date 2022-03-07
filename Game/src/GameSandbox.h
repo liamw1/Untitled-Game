@@ -10,7 +10,7 @@ public:
   void onAttach() override;
   void onDetach() override;
 
-  void onUpdate(std::chrono::duration<seconds> timestep) override;
+  void onUpdate(Engine::Timestep timestep) override;
   void onImGuiRender() override;
   void onEvent(Engine::Event& event) override;
 

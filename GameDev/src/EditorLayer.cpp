@@ -12,7 +12,6 @@ namespace Engine
 {
   EditorLayer::EditorLayer()
     : Layer("EditorLayer"),
-      m_CameraController(1280.0f / 720.0f, true),
       m_ViewportSize({0, 0})
   {
     RenderCommand::Initialize();
@@ -31,15 +30,44 @@ namespace Engine
     m_Framebuffer = Framebuffer::Create(framebufferSpecification);
 
     m_SquareEntity = Scene::CreateEntity();
-    m_SquareEntity.add<Component::Position>();
+    m_SquareEntity.add<Component::Transform>();
     m_SquareEntity.add<Component::SpriteRenderer>(Vec4(0.0, 1.0, 0.0, 1.0));
+
+    m_CameraEntity = Scene::CreateEntity();
+    m_CameraEntity.add<Component::Camera>().isActive = true;
+    m_CameraEntity.add<Component::Transform>();
+
+    m_CameraEntity.get<Component::Camera>().camera.setOrthographic(1.0f, 3.0f, 0.0f, 1.0f);
+
+    class CameraController : public ScriptableEntity
+    {
+    public:
+      void onUpdate(Timestep timestep)
+      {
+        seconds dt = timestep.sec();
+        length_t speed = 5.0;
+
+        Mat4& transform = get<Component::Transform>();
+
+        if (Input::IsKeyPressed(Key::A))
+          transform[3][0] -= speed * dt;
+        if (Input::IsKeyPressed(Key::D))
+          transform[3][0] += speed * dt;
+        if (Input::IsKeyPressed(Key::W))
+          transform[3][1] += speed * dt;
+        if (Input::IsKeyPressed(Key::S))
+          transform[3][1] -= speed * dt;
+      }
+    };
+
+    m_CameraEntity.add<Component::NativeScript>().bind<CameraController>();
   }
 
   void EditorLayer::onDetach()
   {
   }
 
-  void EditorLayer::onUpdate(std::chrono::duration<seconds> timestep)
+  void EditorLayer::onUpdate(Timestep timestep)
   {
     EN_PROFILE_FUNCTION();
 
@@ -47,20 +75,19 @@ namespace Engine
     FramebufferSpecification spec = m_Framebuffer->getSpecification();
     if (m_ViewportSize.x > 0.0f && m_ViewportSize.y > 0.0f && (spec.width != m_ViewportSize.x || spec.height != m_ViewportSize.y))
     {
-      m_Framebuffer->resize(static_cast<uint32_t>(m_ViewportSize.x), static_cast<uint32_t>(m_ViewportSize.y));
-      m_CameraController.resize(m_ViewportSize.x, m_ViewportSize.y);
-    }
+      uint32_t viewportWidth = static_cast<uint32_t>(m_ViewportSize.x);
+      uint32_t viewportHeight = static_cast<uint32_t>(m_ViewportSize.y);
 
-    // Update
-    if (m_ViewportFocused)
-      m_CameraController.onUpdate(timestep);
+      m_Framebuffer->resize(viewportWidth, viewportHeight);
+      Scene::OnViewportResize(viewportWidth, viewportHeight);
+    }
 
     // Render
     Renderer2D::ResetStats();
     m_Framebuffer->bind();
     RenderCommand::Clear(Vec4(0.1f, 0.1f, 0.1f, 1.0f));
 
-    Renderer2D::BeginScene(m_CameraController.getCamera());
+    Renderer2D::BeginScene(Scene::GetActiveCamera().getProjection());
     Scene::OnUpdate(timestep);
     Renderer2D::EndScene();
 
@@ -100,11 +127,11 @@ namespace Engine
     if (dockspace_flags & ImGuiDockNodeFlags_PassthruCentralNode)
       window_flags |= ImGuiWindowFlags_NoBackground;
 
-  // Important: note that we proceed even if Begin() returns false (aka window is collapsed).
-  // This is because we want to keep our DockSpace() active. If a DockSpace() is inactive,
-  // all active windows docked into it will lose their parent and become undocked.
-  // We cannot preserve the docking relationship between an active window and an inactive docking, otherwise
-  // any change of dockspace/settings would lead to windows being stuck in limbo and never being visible.
+    // Important: note that we proceed even if Begin() returns false (aka window is collapsed).
+    // This is because we want to keep our DockSpace() active. If a DockSpace() is inactive,
+    // all active windows docked into it will lose their parent and become undocked.
+    // We cannot preserve the docking relationship between an active window and an inactive docking, otherwise
+    // any change of dockspace/settings would lead to windows being stuck in limbo and never being visible.
     if (!opt_padding)
       ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
     ImGui::Begin("DockSpace Demo", &dockspaceOpen, window_flags);
@@ -114,7 +141,7 @@ namespace Engine
     if (opt_fullscreen)
       ImGui::PopStyleVar(2);
 
-  // DockSpace
+    // DockSpace
     ImGuiIO& io = ImGui::GetIO();
     if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable)
     {
@@ -174,6 +201,5 @@ namespace Engine
 
   void EditorLayer::onEvent(Event& event)
   {
-    m_CameraController.onEvent(event);
   }
 }

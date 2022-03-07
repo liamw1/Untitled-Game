@@ -4,13 +4,13 @@
 
 // ================================ Player Data ================================ //
 // Camera initialization
-static constexpr radians s_FOV = static_cast<radians>(glm::radians(80.0));
+static constexpr Engine::Angle s_FOV = Engine::Angle(80.0f);
 static constexpr float s_AspectRatio = 1280.0f / 720.0f;
 static constexpr length_t s_NearPlaneDistance = static_cast<length_t>(0.125 * Block::Length());
-static constexpr length_t s_FarPlaneDistance = static_cast<length_t>(1000 * Block::Length());
+static constexpr length_t s_FarPlaneDistance = static_cast<length_t>(10000 * Block::Length());
 
 // Time between current frame and previous frame
-static std::chrono::duration<seconds> s_Timestep;
+static Engine::Timestep s_Timestep;
 
 // Hitbox dimensions
 static constexpr length_t s_Width = 1 * Block::Length();
@@ -29,6 +29,8 @@ static Vec3 s_Velocity;
 
 static length_t s_TranslationSpeed = 32 * Block::Length();
 
+static Engine::Entity s_PlayerEntity;
+
 
 
 void Player::Initialize(const GlobalIndex& initialChunkIndex, const Vec3& initialLocalPosition)
@@ -41,12 +43,15 @@ void Player::Initialize(const GlobalIndex& initialChunkIndex, const Vec3& initia
   s_OriginIndex = initialChunkIndex;
   s_LocalPosition = initialLocalPosition;
   s_Velocity = Vec3(0.0);
+
+  s_PlayerEntity = Engine::Scene::CreateEntity();
+  s_PlayerEntity.add<Engine::Component::Camera>().isActive = true;
 }
 
-void Player::UpdateBegin(std::chrono::duration<seconds> timestep)
+void Player::UpdateBegin(Engine::Timestep timestep)
 {
   s_Timestep = timestep;
-  const seconds dt = s_Timestep.count();  // Time between frames in seconds
+  const seconds dt = s_Timestep.sec();  // Time between frames in seconds
 
   if (!s_FreeCamEnabled)
   {
@@ -91,6 +96,7 @@ void Player::UpdateEnd()
   s_CameraController.setPosition(eyesPosition);
 
   s_CameraController.onUpdate(s_Timestep);
+  s_PlayerEntity.get<Engine::Component::Camera>().camera.setProjection(s_CameraController.getViewProjectionMatrix());
 }
 
 void Player::OnEvent(Engine::Event& event)
@@ -100,7 +106,6 @@ void Player::OnEvent(Engine::Event& event)
 
 const Vec3& Player::ViewDirection() { return s_CameraController.getViewDirection(); }
 const Engine::Camera& Player::Camera() { return s_CameraController.getCamera(); }
-const Engine::CameraController& Player::CameraController() { return s_CameraController; }
 
 const Vec3& Player::Position() { return s_LocalPosition; }
 void Player::SetPosition(const Vec3& position) { s_LocalPosition = position; }

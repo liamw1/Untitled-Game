@@ -131,6 +131,12 @@
     <ClInclude Include="src\Engine\Renderer\VertexArray.h">
       <Filter>Engine\Renderer</Filter>
     </ClInclude>
+    <ClInclude Include="src\Engine\Scene\Components.h">
+      <Filter>Engine\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Engine\Scene\Entity.h">
+      <Filter>Engine\Scene</Filter>
+    </ClInclude>
     <ClInclude Include="src\Engine\Scene\Scene.h">
       <Filter>Engine\Scene</Filter>
     </ClInclude>
@@ -159,8 +165,7 @@
       <Filter>Platform\Windows</Filter>
     </ClInclude>
     <ClInclude Include="src\VecTypes.h" />
-    <ClInclude Include="src\Engine\Scene\Components.h" />
-    <ClInclude Include="src\Engine\Scene\Entity.h" />
+    <ClInclude Include="src\Engine\Renderer\SceneCamera.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\ENpch.cpp" />
@@ -227,6 +232,9 @@
     <ClCompile Include="src\Engine\Renderer\stb_image.cpp">
       <Filter>Engine\Renderer</Filter>
     </ClCompile>
+    <ClCompile Include="src\Engine\Scene\Components.cpp">
+      <Filter>Engine\Scene</Filter>
+    </ClCompile>
     <ClCompile Include="src\Engine\Scene\Scene.cpp">
       <Filter>Engine\Scene</Filter>
     </ClCompile>
@@ -257,6 +265,6 @@
     <ClCompile Include="src\Platform\Windows\WindowsWindow.cpp">
       <Filter>Platform\Windows</Filter>
     </ClCompile>
-    <ClCompile Include="src\Engine\Scene\Components.cpp" />
+    <ClCompile Include="src\Engine\Renderer\SceneCamera.cpp" />
   </ItemGroup>
 </Project>

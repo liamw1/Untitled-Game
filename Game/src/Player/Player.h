@@ -21,7 +21,7 @@ namespace Player
     The first stage of the player's update.
     Adjusts player state based on player input.
   */
-  void UpdateBegin(std::chrono::duration<seconds> timestep);
+  void UpdateBegin(Engine::Timestep timestep);
 
   /*
     The last stage of the player's update.
@@ -33,7 +33,6 @@ namespace Player
 
   const Vec3& ViewDirection();
   const Engine::Camera& Camera();
-  const Engine::CameraController& CameraController();
 
   const Vec3& Position();
   void SetPosition(const Vec3& position);

@@ -1,7 +1,6 @@
 #pragma once
 #include "RendererAPI.h"
 #include "Shader.h"
-#include "Camera.h"
 #include "Texture.h"
 
 /*
@@ -16,7 +15,7 @@ namespace Engine
 
     inline RendererAPI::API GetAPI() { return RendererAPI::GetAPI(); }
 
-    void BeginScene(const Camera& camera);
+    void BeginScene(const Mat4& viewProjection);
     void EndScene();
 
     void DrawCube(const Vec3& position, const Vec3& size, Shared<Texture2D> texture = nullptr);
