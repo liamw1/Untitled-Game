@@ -1,5 +1,6 @@
 #pragma once
 #include "Engine/Core/Log.h"
+#include "Engine/Events/Event.h"
 
 #pragma warning( push )
 #pragma warning ( disable : ALL_CODE_ANALYSIS_WARNINGS )
@@ -72,13 +73,24 @@ namespace Engine
     virtual ~ScriptableEntity() {}
 
     template<typename T>
-    T& get()
-    {
-      return entity.get<T>();
-    }
+    bool has() const { return entity.has<T>(); }
+
+    template<typename T>
+    T& get() { return entity.get<T>(); }
+
+    template<typename T>
+    const T& get() const { return entity.get<T>(); }
+
+    template<typename T, typename... Args>
+    T& add(Args&&... args) { return entity.add<T>(std::forward<Args>(args)...); }
+
+    template<typename T>
+    void remove() { entity.remove<T>(); }
 
     virtual void onCreate() {};
     virtual void onDestroy() {};
+
     virtual void onUpdate(Timestep timestep) {};
+    virtual void onEvent(Event& event) {};
   };
 }

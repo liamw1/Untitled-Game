@@ -2,7 +2,7 @@
 #include "Chunk.h"
 #include "Player/Player.h"
 
-Engine::Shared<Engine::IndexBuffer> Chunk::s_MeshIndexBuffer = nullptr;
+Shared<Engine::IndexBuffer> Chunk::s_MeshIndexBuffer = nullptr;
 Engine::BufferLayout Chunk::s_MeshVertexBufferLayout = { { ShaderDataType::Uint32, "a_VertexData" } };
 
 Chunk::Chunk()
@@ -71,7 +71,7 @@ void Chunk::load(HeightMap heightMap)
     return;
   }
 
-  m_ChunkComposition = Engine::CreateUnique<BlockType[]>(s_ChunkTotalBlocks);
+  m_ChunkComposition = CreateUnique<BlockType[]>(s_ChunkTotalBlocks);
 
   bool isEmpty = true;
   for (blockIndex_t i = 0; i < s_ChunkSize; ++i)
@@ -206,7 +206,7 @@ void Chunk::placeBlock(const BlockIndex& blockIndex, BlockFace face, BlockType b
     if (m_Neighbors[faceID] == nullptr)
       return;
     else if (m_Neighbors[faceID]->isEmpty())
-      m_Neighbors[faceID]->m_ChunkComposition = Engine::CreateUnique<BlockType[]>(s_ChunkTotalBlocks);
+      m_Neighbors[faceID]->m_ChunkComposition = CreateUnique<BlockType[]>(s_ChunkTotalBlocks);
 
     m_Neighbors[faceID]->setBlockType(blockIndex - static_cast<blockIndex_t>(s_ChunkSize - 1) * BlockIndex::OutwardNormal(face), blockType);
     m_Neighbors[faceID]->m_MeshState = MeshState::NeedsUpdate;

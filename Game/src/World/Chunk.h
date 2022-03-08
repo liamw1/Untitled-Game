@@ -106,7 +106,7 @@ public:
   void setNeighbor(BlockFace face, Chunk* chunk);
 
   int getQuadCount() const { return m_QuadCount; }
-  const Engine::Shared<Engine::VertexArray>& getVertexArray() const { return m_MeshVertexArray; }
+  const Shared<Engine::VertexArray>& getVertexArray() const { return m_MeshVertexArray; }
 
   bool isEmpty() const { return m_ChunkComposition == nullptr; }
   bool isFaceOpaque(BlockFace face) const { return m_FaceIsOpaque[static_cast<int>(face)]; }
@@ -144,14 +144,14 @@ private:
 
   // Position and composition
   GlobalIndex m_GlobalIndex;
-  Engine::Unique<BlockType[]> m_ChunkComposition = nullptr;
+  Unique<BlockType[]> m_ChunkComposition = nullptr;
   std::array<bool, 6> m_FaceIsOpaque = { true, true, true, true, true, true };
 
   // Mesh data
   MeshState m_MeshState = MeshState::NotGenerated;
   uint16_t m_QuadCount;
-  Engine::Shared<Engine::VertexArray> m_MeshVertexArray;
-  static Engine::Shared<Engine::IndexBuffer> s_MeshIndexBuffer;
+  Shared<Engine::VertexArray> m_MeshVertexArray;
+  static Shared<Engine::IndexBuffer> s_MeshIndexBuffer;
   static Engine::BufferLayout s_MeshVertexBufferLayout;
 
   // Chunk neighbor data

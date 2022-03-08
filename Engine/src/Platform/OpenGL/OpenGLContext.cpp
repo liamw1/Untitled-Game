@@ -42,7 +42,7 @@ namespace Engine
     
     // Version check
     #ifdef EN_ENABLE_ASSERTS
-      EN_CORE_ASSERT(GlVersion.major > 4 || (GlVersion.major == 4 && GlVersion.minor >= 5), "Hazel requires at least OpenGL version 4.5!");
+      EN_CORE_ASSERT(GLVersion.major > 4 || (GLVersion.major == 4 && GLVersion.minor >= 5), "Hazel requires at least OpenGL version 4.5!");
     #endif
 
     #ifdef EN_DEBUG

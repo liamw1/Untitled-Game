@@ -11,7 +11,6 @@ namespace Engine
   Entity Scene::CreateEntity(const std::string& name)
   {
     Entity entity = Entity(s_Registry, s_Registry.create());
-    entity.add<Component::Transform>();
     entity.add<Component::Tag>().name = name.empty() ? "Unnamed Entity" : name;
     return entity;
   }
@@ -35,7 +34,7 @@ namespace Engine
     }
 
     // Find active camera
-    SceneCamera* mainCamera = nullptr;
+    Camera* mainCamera = nullptr;
     Mat4 viewProj = Mat4{};
     {
       auto view = s_Registry.view<Component::Camera>();
@@ -59,30 +58,51 @@ namespace Engine
     if (mainCamera)
     {
       Renderer2D::BeginScene(viewProj);
-      auto group = s_Registry.group<Component::Transform>(entt::get<Component::SpriteRenderer>);
-      for (entt::entity entityID : group)
+      auto view = s_Registry.view<Component::Transform, Component::SpriteRenderer>();
+      for (entt::entity entityID : view)
       {
-        const auto [transform, sprite] = group.get<Component::Transform, Component::SpriteRenderer>(entityID);
+        const Mat4& transform = view.get<Component::Transform>(entityID).transform;
+        const Float4& color = view.get<Component::SpriteRenderer>(entityID).color;
 
-        Renderer2D::DrawQuad(transform.transform, sprite.color);
+        Renderer2D::DrawQuad(transform, color);
       }
       Renderer2D::EndScene();
     }
   }
 
-  const SceneCamera& Scene::GetActiveCamera()
+  void Scene::OnEvent(Event& event)
   {
-    auto view = s_Registry.view<Component::Camera>();
+    s_Registry.view<Component::NativeScript>().each([&](entt::entity entityID, Component::NativeScript& nsc)
+      {
+        // TODO: Move to Scene::OnScenePlay
+        if (!nsc.instance)
+        {
+          nsc.instance = nsc.instantiateScript();
+          nsc.instance->entity = Entity(s_Registry, entityID);
+          nsc.instance->onCreate();
+        }
+
+        nsc.instance->onEvent(event);
+      });
+  }
+
+  Mat4 Scene::ActiveCameraViewProjection()
+  {
+    auto view = s_Registry.view<Component::Camera, Component::Transform>();
     for (entt::entity entityID : view)
     {
       const Component::Camera& cameraComponent = view.get<Component::Camera>(entityID);
-      
+
       if (cameraComponent.isActive)
-        return cameraComponent.camera;
+      {
+        const Mat4& viewMatrix = view.get<Component::Transform>(entityID).transform;
+        const Mat4& projection = view.get<Component::Camera>(entityID).camera.getProjection();
+        return projection * viewMatrix;
+      }
     }
 
     EN_ERROR("No active camera found!");
-    return view.get<Component::Camera>(entt::null).camera;
+    return Mat4{};
   }
 
   void Scene::OnViewportResize(uint32_t width, uint32_t height)

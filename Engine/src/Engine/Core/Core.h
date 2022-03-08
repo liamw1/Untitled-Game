@@ -45,82 +45,79 @@ constexpr uint64_t bit(int n) { return bitUi64(n); }
 constexpr uint64_t pow2(int n) { return bitUi64(n); }
 #define EN_BIND_EVENT_FN(fn) [this](auto&&... args) -> decltype(auto) { return this->fn(std::forward<decltype(args)>(args)...); }
 
-namespace Engine
+template<typename T>
+using Unique = std::unique_ptr<T>;
+template<typename T, typename ... Args>
+constexpr Unique<T> CreateUnique(Args&& ... args)
 {
-  template<typename T>
-  using Unique = std::unique_ptr<T>;
-  template<typename T, typename ... Args>
-  constexpr Unique<T> CreateUnique(Args&& ... args)
-  {
-    return std::make_unique<T>(std::forward<Args>(args)...);
-  }
-
-  template<typename T>
-  using Shared = std::shared_ptr<T>;
-  template<typename T, typename ... Args>
-  constexpr Shared<T> CreateShared(Args&& ... args)
-  {
-    return std::make_shared<T>(std::forward<Args>(args)...);
-  }
-
-  class Timestep
-  {
-  public:
-    Timestep()
-      : m_Timestep(std::chrono::duration<seconds>::zero()) {}
-
-    Timestep(std::chrono::duration<seconds> duration)
-      : m_Timestep(duration) {}
-
-    seconds sec() const { return m_Timestep.count(); }
-
-  private:
-    std::chrono::duration<seconds> m_Timestep;
-  };
-
-  class Angle
-  {
-  public:
-    Angle() = default;
-
-    constexpr explicit Angle(float degrees)
-      : m_Degrees(degrees) {}
-
-    constexpr float deg() const { return m_Degrees; }
-    constexpr float rad() const { return 0.01745329238f * m_Degrees; }
-
-    operator float& () = delete;
-
-    constexpr bool operator>(const Angle& other) const { return m_Degrees > other.m_Degrees; }
-    constexpr bool operator<(const Angle& other) const { return m_Degrees < other.m_Degrees; }
-    constexpr bool operator>=(const Angle& other) const { return m_Degrees >= other.m_Degrees; }
-    constexpr bool operator<=(const Angle& other) const { return m_Degrees <= other.m_Degrees; }
-    constexpr bool operator==(const Angle& other) const { return m_Degrees == other.m_Degrees; }
-
-    constexpr Angle operator-() const { return Angle(-m_Degrees); }
-
-    constexpr Angle operator*(int n) const { return Angle(n * m_Degrees); }
-    constexpr Angle operator*(float x) const { return Angle(x * m_Degrees); }
-
-    constexpr Angle& operator+=(const Angle& other)
-    {
-      m_Degrees += other.m_Degrees;
-      return *this;
-    }
-
-    constexpr Angle& operator-=(const Angle& rhs)
-    {
-      m_Degrees -= rhs.m_Degrees;
-      return *this;
-    }
-
-    static constexpr Angle PI() { return Angle(180.0f); }
-    static constexpr Angle FromRad(float rad) { return Angle(57.2957795f * rad); }
-
-  private:
-    float m_Degrees;
-  };
+  return std::make_unique<T>(std::forward<Args>(args)...);
 }
+
+template<typename T>
+using Shared = std::shared_ptr<T>;
+template<typename T, typename ... Args>
+constexpr Shared<T> CreateShared(Args&& ... args)
+{
+  return std::make_shared<T>(std::forward<Args>(args)...);
+}
+
+class Timestep
+{
+public:
+  Timestep()
+    : m_Timestep(std::chrono::duration<seconds>::zero()) {}
+
+  Timestep(std::chrono::duration<seconds> duration)
+    : m_Timestep(duration) {}
+
+  seconds sec() const { return m_Timestep.count(); }
+
+private:
+  std::chrono::duration<seconds> m_Timestep;
+};
+
+class Angle
+{
+public:
+  Angle() = default;
+
+  constexpr explicit Angle(float degrees)
+    : m_Degrees(degrees) {}
+
+  constexpr float deg() const { return m_Degrees; }
+  constexpr float rad() const { return 0.01745329238f * m_Degrees; }
+
+  operator float& () = delete;
+
+  constexpr bool operator>(const Angle& other) const { return m_Degrees > other.m_Degrees; }
+  constexpr bool operator<(const Angle& other) const { return m_Degrees < other.m_Degrees; }
+  constexpr bool operator>=(const Angle& other) const { return m_Degrees >= other.m_Degrees; }
+  constexpr bool operator<=(const Angle& other) const { return m_Degrees <= other.m_Degrees; }
+  constexpr bool operator==(const Angle& other) const { return m_Degrees == other.m_Degrees; }
+
+  constexpr Angle operator-() const { return Angle(-m_Degrees); }
+
+  constexpr Angle operator*(int n) const { return Angle(n * m_Degrees); }
+  constexpr Angle operator*(float x) const { return Angle(x * m_Degrees); }
+
+  constexpr Angle& operator+=(const Angle& other)
+  {
+    m_Degrees += other.m_Degrees;
+    return *this;
+  }
+
+  constexpr Angle& operator-=(const Angle& rhs)
+  {
+    m_Degrees -= rhs.m_Degrees;
+    return *this;
+  }
+
+  static constexpr Angle PI() { return Angle(180.0f); }
+  static constexpr Angle FromRad(float rad) { return Angle(57.2957795f * rad); }
+
+private:
+  float m_Degrees;
+};
 
 
 

@@ -7,9 +7,9 @@
 /*
   Renderer data
 */
-static Engine::Shared<Engine::Shader> s_BlockFaceShader;
-static Engine::Shared<Engine::Shader> s_LODShader;
-static Engine::Shared<Engine::TextureArray> s_TextureArray;
+static Shared<Engine::Shader> s_BlockFaceShader;
+static Shared<Engine::Shader> s_LODShader;
+static Shared<Engine::TextureArray> s_TextureArray;
 static constexpr int s_TextureSlot = 0;
 
 static constexpr float s_LODNearPlaneDistance = static_cast<float>(10 * Block::Length());

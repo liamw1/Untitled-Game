@@ -29,7 +29,7 @@ namespace LOD
   {
     std::vector<Vertex> vertices;
     std::vector<uint32_t> indices;
-    Engine::Shared<Engine::VertexArray> vertexArray;
+    Shared<Engine::VertexArray> vertexArray;
   };
 
   struct Data 

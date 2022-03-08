@@ -1,34 +1,28 @@
 #pragma once
 
-/*
-  A 3D camera with prospective projection.
-*/
 namespace Engine
 {
   class Camera
   {
   public:
-    Camera(Angle fov, float aspectRatio, length_t nearPlane, length_t farPlane);
-    Camera(const Camera& camera, Angle fov, float aspectRatio, length_t nearPlane, length_t farPlane);
+    Camera() = default;
 
-    void setPosition(const Vec3& position);
-    void setView(const Vec3& position, const Vec3& viewDirection);
-    void setProjection(Angle fov, float aspectRatio, length_t nearPlane, length_t farPlane);
+    const Mat4& getProjection() const { return m_Projection; }
 
-    const Vec3& getPosition() const { return m_Position; }
-    const Mat4& getProjectionMatrix() const { return m_ProjectionMatrix; }
-    const Mat4& getViewMatrix() const { return m_ViewMatrix; }
-    const Mat4& getViewProjectionMatrix() const { return m_ViewProjectionMatrix; }
+    // TEMP 
+    void setProjection(const Mat4& proj) { m_Projection = proj; }
+
+    void setOrthographic(float aspectRatio, float size, float nearClip, float farClip);
+    void setPerspective(float aspectRatio, Angle fov, float nearClip, float farClip);
+
+    void setViewportSize(uint32_t width, uint32_t height);
 
   private:
-    Mat4 m_ProjectionMatrix;
-    Mat4 m_ViewMatrix;
-    Mat4 m_ViewProjectionMatrix;
+    Mat4 m_Projection = Mat4(1.0);
+    std::array<float, 4> m_CameraParameters{};
+    bool m_Orthographic = false;
 
-    Vec3 m_Position = { 0.0, 0.0, 0.0 };
-    Vec3 m_ViewDirection = { 0.0, 1.0, 0.0 };
-    constexpr static Vec3 s_UpDirection = { 0.0, 0.0, 1.0 };
-
-    void recalculateViewMatrix();
+    void recalculateOrthographicProjection();
+    void recalculatePerspectiveProjection();
   };
 }

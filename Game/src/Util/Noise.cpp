@@ -42,7 +42,7 @@ Vec2 hash(const Vec2& v)
   Hashed 2D gradients with an extra rotation.
   The constant 0.0243902439 is 1/41
 */
-static Vec2 rgrad2(Vec2 v, Engine::Angle rot)
+static Vec2 rgrad2(Vec2 v, Angle rot)
 {
   length_t u = permute(permute(v.x) + v.y) / 41 + rot.rad();
 
@@ -74,7 +74,7 @@ length_t Noise::FastSimplex2D(const Vec2& v)
 
 Vec3 Noise::Simplex2D(const Vec2& v)
 {
-  static constexpr Engine::Angle rot = Engine::Angle(0.0f);
+  static constexpr Angle rot = Angle(0.0f);
 
   // Offset y slightly to hide some rare artifacts
   const Vec2 pos = v + Vec2(0.0, 0.001);

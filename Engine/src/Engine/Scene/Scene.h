@@ -1,6 +1,5 @@
 #pragma once
 #include "Entity.h"
-#include "Engine/Renderer/SceneCamera.h"
 
 #pragma warning( push )
 #pragma warning ( disable : ALL_CODE_ANALYSIS_WARNINGS )
@@ -15,7 +14,9 @@ namespace Engine
 
     void OnUpdate(Timestep timestep);
 
-    const SceneCamera& GetActiveCamera();
+    void OnEvent(Event& event);
+
+    Mat4 ActiveCameraViewProjection();
 
     void OnViewportResize(uint32_t width, uint32_t height);
 

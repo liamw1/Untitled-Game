@@ -24,25 +24,28 @@ namespace Engine
     m_Framebuffer = Framebuffer::Create(framebufferSpecification);
 
     m_SquareEntity = Scene::CreateEntity("Square");
+    m_SquareEntity.add<Component::Transform>();
     m_SquareEntity.add<Component::SpriteRenderer>(Vec4(0.0, 1.0, 0.0, 1.0));
 
     m_CameraEntity = Scene::CreateEntity("Primary Camera");
+    m_CameraEntity.add<Component::Transform>();
     m_CameraEntity.add<Component::Camera>().isActive = true;
     m_CameraEntity.get<Component::Camera>().camera.setOrthographic(1.0f, 3.0f, 0.0f, 1.0f);
 
     m_SecondCamera = Scene::CreateEntity("Secondary Camera");
+    m_SecondCamera.add<Component::Transform>();
     m_SecondCamera.add<Component::Camera>().camera.setOrthographic(1.0f, 3.0f, 0.0f, 1.0f);
 
     class CameraController : public ScriptableEntity
     {
     public:
-      void onCreate()
+      void onCreate() override
       {
         Mat4& transform = get<Component::Transform>().transform;
         transform[3][0] = static_cast<length_t>(rand() % 30) / 10 - static_cast<length_t>(1.0);
       }
 
-      void onUpdate(Timestep timestep)
+      void onUpdate(Timestep timestep) override
       {
         seconds dt = timestep.sec();
         length_t speed = 5.0;
@@ -86,7 +89,7 @@ namespace Engine
     // Render
     Renderer2D::ResetStats();
     m_Framebuffer->bind();
-    RenderCommand::Clear(Vec4(0.1f, 0.1f, 0.1f, 1.0f));
+    RenderCommand::Clear(Float4(0.1f, 0.1f, 0.1f, 1.0f));
 
     // Update scene
     Scene::OnUpdate(timestep);
@@ -219,5 +222,6 @@ namespace Engine
 
   void EditorLayer::onEvent(Event& event)
   {
+    Scene::OnEvent(event);
   }
 }

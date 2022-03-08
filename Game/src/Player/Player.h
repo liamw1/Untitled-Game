@@ -1,5 +1,4 @@
 #pragma once
-#include "Engine/Renderer/CameraController.h"
 #include "World/Chunk.h"
 
 /*
@@ -21,18 +20,13 @@ namespace Player
     The first stage of the player's update.
     Adjusts player state based on player input.
   */
-  void UpdateBegin(Engine::Timestep timestep);
+  void UpdateBegin(Timestep timestep);
 
   /*
     The last stage of the player's update.
     Handles final camera positioning for the frame.
   */
   void UpdateEnd();
-
-  void OnEvent(Engine::Event& event);
-
-  const Vec3& ViewDirection();
-  const Engine::Camera& Camera();
 
   const Vec3& Position();
   void SetPosition(const Vec3& position);

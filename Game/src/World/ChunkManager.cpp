@@ -65,7 +65,7 @@ void ChunkManager::render() const
   if (s_RenderDistance == 0)
     return;
 
-  const Mat4& viewProjection = Engine::Scene::GetActiveCamera().getProjection();
+  const Mat4& viewProjection = Engine::Scene::ActiveCameraViewProjection();
   
   std::array<Vec4, 6> frustumPlanes = calculateViewFrustumPlanes(viewProjection);
 
@@ -179,7 +179,7 @@ void ChunkManager::renderLODs()
   EN_PROFILE_FUNCTION();
 
   std::vector<LOD::Octree::Node*> leaves = m_LODTree.getLeaves();
-  const Mat4& viewProjection = Engine::Scene::GetActiveCamera().getProjection();
+  const Mat4& viewProjection = Engine::Scene::ActiveCameraViewProjection();
 
   const std::array<Vec4, 6> frustumPlanes = calculateViewFrustumPlanes(viewProjection);
   std::array<Vec4, 6> shiftedFrustumPlanes = frustumPlanes;

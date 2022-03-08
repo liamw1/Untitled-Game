@@ -16,7 +16,7 @@ void World::initialize()
   }
 }
 
-void World::onUpdate(Engine::Timestep timestep)
+void World::onUpdate(Timestep timestep)
 {
   EN_PROFILE_FUNCTION();
 
@@ -141,7 +141,7 @@ RayIntersection World::castRay(const Vec3& rayOrigin, const Vec3& rayDirection, 
   return castRaySegment(pointA, pointB);
 }
 
-void World::playerCollisionHandling(Engine::Timestep timestep) const
+void World::playerCollisionHandling(Timestep timestep) const
 {
   EN_PROFILE_FUNCTION();
 
@@ -197,6 +197,7 @@ void World::playerWorldInteraction()
 {
   static constexpr length_t maxInteractionDistance = 1000 * Block::Length();
 
+#if 0
   m_PlayerRayCast = castRay(Player::Camera().getPosition(), Player::ViewDirection(), maxInteractionDistance);
   if (m_PlayerRayCast.distance <= maxInteractionDistance)
   {
@@ -244,54 +245,13 @@ void World::playerWorldInteraction()
       }
     }
   }
+#endif
 }
 
 void World::onEvent(Engine::Event& event)
 {
   Engine::EventDispatcher dispatcher(event);
-  dispatcher.dispatch<Engine::MouseButtonPressEvent>(EN_BIND_EVENT_FN(onMouseButtonPressEvent));
   dispatcher.dispatch<Engine::KeyPressEvent>(EN_BIND_EVENT_FN(onKeyPressEvent));
-}
-
-bool World::onMouseButtonPressEvent(Engine::MouseButtonPressEvent& event)
-{
-#if 0
-  if (m_PlayerRayCast.intersectionOccured)
-  {
-    const LocalIndex& chunkIndex = m_PlayerRayCast.chunkIndex;
-    const BlockIndex& blockIndex = m_PlayerRayCast.blockIndex;
-    const BlockFace&  face = m_PlayerRayCast.face;
-    Chunk* const chunk = m_ChunkManager.findChunk(chunkIndex);
-
-    if (chunk != nullptr)
-    {
-      if (event.getMouseButton() == MouseButton::Button0)
-      {
-        chunk->removeBlock(blockIndex);
-        m_ChunkManager.sendChunkUpdate(chunk);
-
-        for (BlockFace face : BlockFaceIterator())
-        {
-          const int faceID = static_cast<int>(face);
-          const int coordID = faceID / 2;
-
-          if (blockIndex[coordID] == (faceID % 2 == 0 ? Chunk::Size() - 1 : 0))
-            m_ChunkManager.sendChunkUpdate(chunk->getNeighbor(face));
-        }
-      }
-      else if (event.getMouseButton() == MouseButton::Button1)
-      {
-        chunk->placeBlock(blockIndex, face, BlockType::Sand);
-        m_ChunkManager.sendChunkUpdate(chunk);
-
-        if (chunk->isBlockNeighborInAnotherChunk(blockIndex, face))
-          m_ChunkManager.sendChunkUpdate(chunk->getNeighbor(face));
-      }
-    }
-  }
-#endif
-
-  return false;
 }
 
 bool World::onKeyPressEvent(Engine::KeyPressEvent& event)
