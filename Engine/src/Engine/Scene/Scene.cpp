@@ -6,11 +6,12 @@
 
 namespace Engine
 {
+  static constexpr Vec3 s_UpDirection(0, 0, 1);
   static entt::registry s_Registry;
   
   Entity Scene::CreateEntity(const std::string& name)
   {
-    Entity entity = Entity(s_Registry, s_Registry.create());
+    Entity entity(s_Registry, s_Registry.create());
     entity.add<Component::Tag>().name = name.empty() ? "Unnamed Entity" : name;
     return entity;
   }
@@ -35,7 +36,7 @@ namespace Engine
 
     // Find active camera
     Camera* mainCamera = nullptr;
-    Mat4 viewProj = Mat4{};
+    Mat4 viewProj{};
     {
       auto view = s_Registry.view<Component::Camera>();
       for (entt::entity entityID : view)
@@ -88,21 +89,34 @@ namespace Engine
 
   Mat4 Scene::ActiveCameraViewProjection()
   {
-    auto view = s_Registry.view<Component::Camera, Component::Transform>();
+    auto view = s_Registry.view<Component::Camera>();
     for (entt::entity entityID : view)
     {
       const Component::Camera& cameraComponent = view.get<Component::Camera>(entityID);
 
       if (cameraComponent.isActive)
       {
-        const Mat4& viewMatrix = view.get<Component::Transform>(entityID).transform;
         const Mat4& projection = view.get<Component::Camera>(entityID).camera.getProjection();
+        
+        Mat4 viewMatrix{};
+        Entity entity(s_Registry, entityID);
+        if (entity.has<Component::Orientation>())
+        {
+          Vec3 viewDirection = entity.get<Component::Orientation>().orientationDirection();
+          Vec3 position = entity.get<Component::Transform>().transform[3];
+          viewMatrix = glm::lookAt(position, position + viewDirection, s_UpDirection);
+        }
+        else if (entity.has<Component::Transform>())
+          viewMatrix = entity.get<Component::Transform>();
+        else
+          EN_WARN("Active camera has no transform!");
+
         return projection * viewMatrix;
       }
     }
 
     EN_ERROR("No active camera found!");
-    return Mat4{};
+    return {};
   }
 
   void Scene::OnViewportResize(uint32_t width, uint32_t height)

@@ -63,7 +63,7 @@ namespace Engine
     {
       int64_t startTimeInNanoseconds = std::chrono::time_point_cast<std::chrono::nanoseconds>(start).time_since_epoch().count();
 
-      std::stringstream json;
+      std::stringstream json{};
 
       json << std::setprecision(3) << std::fixed;
       json << ",{";

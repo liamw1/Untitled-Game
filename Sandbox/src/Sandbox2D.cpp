@@ -32,7 +32,7 @@ void Sandbox2D::onUpdate(Timestep timestep)
   Engine::Renderer2D::ResetStats();
   Engine::RenderCommand::Clear(Float4(0.1f, 0.1f, 0.1f, 1.0f));
 
-  static Angle rotation = Angle(0.0f);
+  static Angle rotation(0.0f);
   rotation += Angle::FromRad(timestep.sec());
 
   Engine::Renderer2D::BeginScene(Engine::Scene::ActiveCameraViewProjection());
@@ -44,7 +44,7 @@ void Sandbox2D::onUpdate(Timestep timestep)
   for (float y = -5.0; y < 5.0; y += 0.5)
     for (float x = -5.0; x < 5.0; x += 0.5)
     {
-      Float4 color = Float4((x + 5.0f) / 10, 0.4f, (y + 5.0f) / 10, 0.5f);
+      Float4 color((x + 5.0f) / 10, 0.4f, (y + 5.0f) / 10, 0.5f);
       Engine::Renderer2D::DrawQuad(Vec3(x, y, 0), Vec2(0.45), color);
     }
 

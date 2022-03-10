@@ -437,8 +437,8 @@ BlockIndex Chunk::blockIndexFromPos(const Vec3& position) const
   Vec3 localPosition = position - anchorPosition();
 
   EN_ASSERT(localPosition.x >= 0.0 && localPosition.x <= s_ChunkLength &&
-    localPosition.y >= 0.0 && localPosition.y <= s_ChunkLength &&
-    localPosition.z >= 0.0 && localPosition.z <= s_ChunkLength, "Given position is not inside chunk!");
+            localPosition.y >= 0.0 && localPosition.y <= s_ChunkLength &&
+            localPosition.z >= 0.0 && localPosition.z <= s_ChunkLength, "Given position is not inside chunk!");
 
   BlockIndex blockIndex = { static_cast<blockIndex_t>(localPosition.x / Block::Length()),
                             static_cast<blockIndex_t>(localPosition.y / Block::Length()),

@@ -17,7 +17,7 @@ namespace Component
     Mat4 transform = Mat4(1.0);
 
     operator Mat4& () { return transform; }
-    operator const Mat4& () { return transform; }
+    operator const Mat4& () const { return transform; }
   };
 
   struct Orientation
@@ -25,6 +25,14 @@ namespace Component
     Angle roll = Angle(0.0f);     // Rotation around x-axis
     Angle pitch = Angle(0.0f);    // Rotation around y-axis
     Angle yaw = Angle(-90.0f);    // Rotation around z-axis
+
+    // Converts from rotation angle coordinates to Cartesian coordinates
+    Vec3 orientationDirection() const
+    {
+      return { cos(yaw.rad()) * cos(pitch.rad()),
+              -sin(yaw.rad()) * cos(pitch.rad()),
+              -sin(pitch.rad()) };
+    }
   };
 
   struct SpriteRenderer

@@ -19,9 +19,9 @@ namespace LOD
   // Width of a transition cell as a fraction of regular cell width
   static constexpr length_t s_TCFractionalWidth = 0.5f;
 
-  static const Engine::BufferLayout s_LODBufferLayout = { { ShaderDataType::Float3, "a_Position" },
-                                                          { ShaderDataType::Float3, "a_IsoNormal"},
-                                                          { ShaderDataType::Int,    "a_QuadIndex"} };
+  static const Engine::BufferLayout s_LODBufferLayout({ { ShaderDataType::Float3, "a_Position" },
+                                                         { ShaderDataType::Float3, "a_IsoNormal"},
+                                                         { ShaderDataType::Int,    "a_QuadIndex"} });
 
   Vec3 Octree::Node::anchorPosition() const
   {
@@ -203,7 +203,7 @@ namespace LOD
     const Vec2 LODAnchorXY = Chunk::Length() * static_cast<Vec2>(node->anchor);
 
     // Calculate normals using central differences
-    Array2D<Vec3> noiseNormals = Array2D<Vec3>(s_NumCells + 1);
+    Array2D<Vec3> noiseNormals(s_NumCells + 1);
     for (int i = 0; i < s_NumCells + 1; ++i)
       for (int j = 0; j < s_NumCells + 1; ++j)
       {
@@ -299,10 +299,10 @@ namespace LOD
     int vertexCount = 0;
     std::vector<uint32_t> primaryMeshIndices{};
     std::vector<LOD::Vertex> primaryMeshVertices{};
-    Array2D<VertexReuseData> prevLayer = Array2D<VertexReuseData>(s_NumCells);
+    Array2D<VertexReuseData> prevLayer(s_NumCells);
     for (int i = 0; i < s_NumCells; ++i)
     {
-      Array2D<VertexReuseData> currLayer = Array2D<VertexReuseData>(s_NumCells);
+      Array2D<VertexReuseData> currLayer(s_NumCells);
 
       for (int j = 0; j < s_NumCells; ++j)
         for (int k = 0; k < s_NumCells; ++k)

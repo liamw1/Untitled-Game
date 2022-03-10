@@ -50,7 +50,7 @@ namespace Engine
 
     Scene::Registry().each([](entt::entity entityID)
       {
-        Entity entity = Entity(Scene::Registry(), entityID);
+        Entity entity(Scene::Registry(), entityID);
         drawEntityNode(entity);
       });
 

@@ -300,10 +300,10 @@ bool ChunkManager::isInRange(const GlobalIndex& chunkIndex, globalIndex_t range)
 
 std::array<Vec4, 6> ChunkManager::calculateViewFrustumPlanes(const Mat4& viewProjection) const
 {
-  const Vec4 row1 = glm::row(viewProjection, 0);
-  const Vec4 row2 = glm::row(viewProjection, 1);
-  const Vec4 row3 = glm::row(viewProjection, 2);
-  const Vec4 row4 = glm::row(viewProjection, 3);
+  Vec4 row1 = glm::row(viewProjection, 0);
+  Vec4 row2 = glm::row(viewProjection, 1);
+  Vec4 row3 = glm::row(viewProjection, 2);
+  Vec4 row4 = glm::row(viewProjection, 3);
 
   std::array<Vec4, 6> frustumPlanes{};
   frustumPlanes[static_cast<int>(FrustumPlane::Left)] = row4 + row1;
@@ -356,7 +356,7 @@ Chunk* ChunkManager::loadChunk(const GlobalIndex& chunkIndex)
   // Generate heightmap is none exists
   int64_t heightMapKey = createHeightMapKey(chunkIndex.i, chunkIndex.j);
   if (m_HeightMaps.find(heightMapKey) == m_HeightMaps.end())
-    m_HeightMaps[heightMapKey] = generateHeightMap(chunkIndex.i, chunkIndex.j);
+    m_HeightMaps.insert({ heightMapKey, generateHeightMap(chunkIndex.i, chunkIndex.j) });
 
   // Insert chunk into array and load it
   m_ChunkArray[chunkSlot] = std::move(Chunk(chunkIndex));

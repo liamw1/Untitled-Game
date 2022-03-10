@@ -34,7 +34,7 @@ Vec4 taylorInvSqrt(const Vec4& r)
 
 Vec2 hash(const Vec2& v)
 {
-  Vec2 p = Vec2(glm::dot(v, Vec2(127.1, 311.7)), glm::dot(v, Vec2(269.5, 183.3)));
+  Vec2 p(glm::dot(v, Vec2(127.1, 311.7)), glm::dot(v, Vec2(269.5, 183.3)));
   return 2 * glm::fract(43758.5453123 * sin(p)) - Vec2(1.0);
 }
 
@@ -74,13 +74,13 @@ length_t Noise::FastSimplex2D(const Vec2& v)
 
 Vec3 Noise::Simplex2D(const Vec2& v)
 {
-  static constexpr Angle rot = Angle(0.0f);
+  static constexpr Angle rot(0.0f);
 
   // Offset y slightly to hide some rare artifacts
   const Vec2 pos = v + Vec2(0.0, 0.001);
 
   // Skew to hexagonal grid
-  Vec2 uv = Vec2(pos.x + pos.y / 2, pos.y);
+  Vec2 uv(pos.x + pos.y / 2, pos.y);
 
   Vec2 i0 = glm::floor(uv);
   Vec2 f0 = glm::fract(uv);
@@ -89,9 +89,9 @@ Vec3 Noise::Simplex2D(const Vec2& v)
   Vec2 i1 = (f0.x > f0.y) ? Vec2(1.0, 0.0) : Vec2(0.0, 1.0);
 
   // Unskewed grid points in (x, y) space
-  Vec2 p0 = Vec2(i0.x - i0.y / 2, i0.y);
-  Vec2 p1 = Vec2(p0.x + i1.x - i1.y / 2, p0.y + i1.y);
-  Vec2 p2 = Vec2(p0.x + 0.5, p0.y + 1.0);
+  Vec2 p0(i0.x - i0.y / 2, i0.y);
+  Vec2 p1(p0.x + i1.x - i1.y / 2, p0.y + i1.y);
+  Vec2 p2(p0.x + 0.5, p0.y + 1.0);
 
   // Integer grid point indices in (u, v) space
   i1 = i0 + i1;
@@ -103,8 +103,8 @@ Vec3 Noise::Simplex2D(const Vec2& v)
   Vec2 d1 = pos - p1;
   Vec2 d2 = pos - p2;
 
-  Vec3 x = Vec3(p0.x, p1.x, p2.x);
-  Vec3 y = Vec3(p0.y, p1.y, p2.y);
+  Vec3 x(p0.x, p1.x, p2.x);
+  Vec3 y(p0.y, p1.y, p2.y);
   Vec3 iuw = x + y / 2;
   Vec3 ivw = y;
 
@@ -119,7 +119,7 @@ Vec3 Noise::Simplex2D(const Vec2& v)
 
   // Gradients dot vectors to corresponding corners
   // (The derivatives of this are simply the gradients)
-  Vec3 w = Vec3(glm::dot(g0, d0), glm::dot(g1, d1), glm::dot(g2, d2));
+  Vec3 w(glm::dot(g0, d0), glm::dot(g1, d1), glm::dot(g2, d2));
 
   // Radial weights from corners
   // 0.8 is the square of 2/sqrt(5), the distance from
@@ -206,8 +206,8 @@ Vec4 Noise::Simplex3D(const Vec3& v)
 
   Vec4 h = Vec4(1.0) - glm::abs(x) - glm::abs(y);
 
-  Vec4 b0 = Vec4(x.x, x.y, y.x, y.y);
-  Vec4 b1 = Vec4(x.z, x.w, y.z, y.w);
+  Vec4 b0(x.x, x.y, y.x, y.y);
+  Vec4 b1(x.z, x.w, y.z, y.w);
 
   Vec4 s0 = 2 * glm::floor(b0) + Vec4(1.0);
   Vec4 s1 = 2 * glm::floor(b1) + Vec4(1.0);
@@ -216,10 +216,10 @@ Vec4 Noise::Simplex3D(const Vec3& v)
   Vec4 a0 = Vec4(b0.x, b0.z, b0.y, b0.w) + Vec4(s0.x * sh.x, s0.z * sh.x, s0.y * sh.y, s0.w * sh.y);
   Vec4 a1 = Vec4(b1.x, b1.z, b1.y, b1.w) + Vec4(s1.x * sh.z, s1.z * sh.z, s1.y * sh.w, s1.w * sh.w);
 
-  Vec3 g0 = Vec3(a0.x, a0.y, h.x);
-  Vec3 g1 = Vec3(a0.z, a0.w, h.y);
-  Vec3 g2 = Vec3(a1.x, a1.y, h.z);
-  Vec3 g3 = Vec3(a1.z, a1.w, h.w);
+  Vec3 g0(a0.x, a0.y, h.x);
+  Vec3 g1(a0.z, a0.w, h.y);
+  Vec3 g2(a1.x, a1.y, h.z);
+  Vec3 g3(a1.z, a1.w, h.w);
 
   // Normalize gradients
   Vec4 norm = taylorInvSqrt(Vec4(glm::dot(g0, g0), glm::dot(g1, g1), glm::dot(g2, g2), glm::dot(g3, g3)));
@@ -238,7 +238,7 @@ Vec4 Noise::Simplex3D(const Vec3& v)
     -6 * m3.y * x1 * glm::dot(x1, g1) + m4.y * g1 +
     -6 * m3.z * x2 * glm::dot(x2, g2) + m4.z * g2 +
     -6 * m3.w * x3 * glm::dot(x3, g3) + m4.w * g3;
-  Vec4 px = Vec4(glm::dot(x0, g0), glm::dot(x1, g1), glm::dot(x2, g2), glm::dot(x3, g3));
+  Vec4 px(glm::dot(x0, g0), glm::dot(x1, g1), glm::dot(x2, g2), glm::dot(x3, g3));
   return 42 * Vec4(grad, dot(m4, px));
 }
 

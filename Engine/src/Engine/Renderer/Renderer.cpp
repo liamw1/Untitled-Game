@@ -24,6 +24,10 @@ namespace Engine
                                                          -0.5f,  0.5f,  0.5f,
                                                           0.5f,  0.5f,  0.5f };
 
+  static constexpr uint32_t s_CubeFrameIndices[24] = { 0, 1, 1, 2, 2, 3, 3, 0,
+                                                       4, 5, 5, 6, 6, 7, 7, 4,
+                                                       1, 4, 2, 7, 0, 5, 3, 6 };
+
   static constexpr float s_CubeVertices[24 * 5] = {  // Front face
                                                     -0.5f, -0.5f, -2.0f, 0.0f, 0.0f,
                                                      0.5f, -0.5f, -2.0f, 1.0f, 0.0f,
@@ -73,10 +77,7 @@ namespace Engine
     cubeFrameVB->setLayout({ { ShaderDataType::Float3, "a_Position" } });
     s_CubeFrameVertexArray->addVertexBuffer(cubeFrameVB);
 
-    uint32_t cubeFrameIndices[24]{ 0, 1, 1, 2, 2, 3, 3, 0,
-                                   4, 5, 5, 6, 6, 7, 7, 4,
-                                   1, 4, 2, 7, 0, 5, 3, 6 };
-    Shared<IndexBuffer> cubeFrameIB = IndexBuffer::Create(cubeFrameIndices, sizeof(cubeFrameIndices) / sizeof(uint32_t));
+    Shared<IndexBuffer> cubeFrameIB = IndexBuffer::Create(s_CubeFrameIndices, sizeof(s_CubeFrameIndices) / sizeof(uint32_t));
     s_CubeFrameVertexArray->setIndexBuffer(cubeFrameIB);
 
     s_CubeFrameShader = Shader::Create("assets/shaders/CubeFrame.glsl");

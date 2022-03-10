@@ -178,10 +178,10 @@ namespace Engine
 
   void Renderer2D::DrawQuad(const Mat4& transform, const Float4& tintColor, float textureScalingFactor, const Shared<Texture2D>& texture)
   {
-    constexpr Float2 textureCoordinates[4] = { {0.0f, 0.0f},
-                                               {1.0f, 0.0f},
-                                               {1.0f, 1.0f},
-                                               {0.0f, 1.0f} };
+    static constexpr Float2 textureCoordinates[4] = { {0.0f, 0.0f},
+                                                      {1.0f, 0.0f},
+                                                      {1.0f, 1.0f},
+                                                      {0.0f, 1.0f} };
 
     if (s_QuadIndexCount >= s_MaxIndices)
       flushAndReset();
@@ -204,10 +204,10 @@ namespace Engine
 
   void Renderer2D::DrawQuad(const Vec3& position, const Vec2& size, const Float4& tintColor, float textureScalingFactor, const Shared<Texture2D>& texture, Angle rotation)
   {
-    constexpr Float2 textureCoordinates[4] = { {0.0f, 0.0f},
-                                               {1.0f, 0.0f},
-                                               {1.0f, 1.0f},
-                                               {0.0f, 1.0f} };
+    static constexpr Float2 textureCoordinates[4] = { {0.0f, 0.0f},
+                                                      {1.0f, 0.0f},
+                                                      {1.0f, 1.0f},
+                                                      {0.0f, 1.0f} };
 
     if (s_QuadIndexCount >= s_MaxIndices)
       flushAndReset();

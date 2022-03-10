@@ -4,12 +4,12 @@
 static constexpr float s_CameraSensitivity = 0.1f;
 static constexpr float s_CameraZoomSensitivity = 0.2f;
 
-static constexpr Angle s_MinPitch = Angle(-89.99f);
-static constexpr Angle s_MaxPitch = Angle(89.99f);
-static constexpr Angle s_MinFOV = Angle(0.5f);
-static constexpr Angle s_MaxFOV = Angle(80.0f);
+static constexpr Angle s_MinPitch(-89.99f);
+static constexpr Angle s_MaxPitch(89.99f);
+static constexpr Angle s_MinFOV(0.5f);
+static constexpr Angle s_MaxFOV(80.0f);
 
-static constexpr Vec3 s_UpDirection = { 0.0, 0.0, 1.0 };
+static constexpr Vec3 s_UpDirection(0, 0, 1);
 
 static Float2 s_LastMousePosition{};
 

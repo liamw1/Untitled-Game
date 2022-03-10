@@ -2,23 +2,24 @@
 #include "Player.h"
 #include "Engine/Core/Input.h"
 #include <glm/gtc/matrix_transform.hpp>
+#include <iostream>
 
 // ============================== Camera Controls ============================== //
 static constexpr float s_CameraSensitivity = 0.1f;
 static constexpr float s_CameraZoomSensitivity = 0.2f;
 
-static constexpr Angle s_MinPitch = Angle(-89.99f);
-static constexpr Angle s_MaxPitch = Angle(89.99f);
-static constexpr Angle s_MinFOV = Angle(0.5f);
-static constexpr Angle s_MaxFOV = Angle(80.0f);
+static constexpr Angle s_MinPitch(-89.99f);
+static constexpr Angle s_MaxPitch(89.99f);
+static constexpr Angle s_MinFOV(0.5f);
+static constexpr Angle s_MaxFOV(80.0f);
 
-static constexpr Vec3 s_UpDirection = { 0.0, 0.0, 1.0 };
+static constexpr Vec3 s_UpDirection(0, 0, 1);
 
 // Camera initialization
-static constexpr Angle s_FOV = Angle(80.0f);
+static constexpr Angle s_FOV(80.0f);
 static constexpr float s_AspectRatio = 1280.0f / 720.0f;
-static constexpr length_t s_NearClip = static_cast<length_t>(0.125 * Block::Length());
-static constexpr length_t s_FarClip = static_cast<length_t>(10000 * Block::Length());
+static constexpr length_t s_NearClip = 0.125 * Block::Length();
+static constexpr length_t s_FarClip = 10000 * Block::Length();
 
 static Float2 s_LastMousePosition{};
 
@@ -27,9 +28,7 @@ class CameraController : public Engine::ScriptableEntity
 public:
   void onCreate() override
   {
-    add<Component::Transform>();
-    add<Component::Orientation>();
-    auto& cameraComponent = add<Component::Camera>();
+    auto& cameraComponent = get<Component::Camera>();
     cameraComponent.isActive = true;
     cameraComponent.camera.setPerspective(s_AspectRatio, s_FOV, s_NearClip, s_FarClip);
   }
@@ -59,15 +58,6 @@ private:
     pitch = std::max(pitch, s_MinPitch);
     pitch = std::min(pitch, s_MaxPitch);
 
-    // Convert from spherical coordinates to Cartesian coordinates
-    Vec3 viewDirection{};
-
-    viewDirection.x = cos(yaw.rad()) * cos(pitch.rad());
-    viewDirection.y = -sin(yaw.rad()) * cos(pitch.rad());
-    viewDirection.z = -sin(pitch.rad());
-
-    transform = glm::lookAt(position, position + viewDirection, s_UpDirection);
-
     s_LastMousePosition.x = event.getX();
     s_LastMousePosition.y = event.getY();
 
@@ -93,7 +83,6 @@ static bool s_FreeCamEnabled = false;
 static GlobalIndex s_OriginIndex;
 
 // Position of center of the player hitbox relative to anchor of origin chunk
-static Vec3 s_LocalPosition;
 static Vec3 s_Velocity;
 
 static length_t s_TranslationSpeed = 32 * Block::Length();
@@ -110,12 +99,13 @@ void Player::Initialize(const GlobalIndex& initialChunkIndex, const Vec3& initia
 
   // s_CameraController = Engine::CameraController(s_FOV, s_AspectRatio, s_NearPlaneDistance, s_FarPlaneDistance);
   s_OriginIndex = initialChunkIndex;
-  s_LocalPosition = initialLocalPosition;
   s_Velocity = Vec3(0.0);
 
   s_PlayerEntity = Engine::Scene::CreateEntity();
   s_PlayerEntity.add<Component::NativeScript>().bind<CameraController>();
-  auto& nsc = s_PlayerEntity.get<Component::NativeScript>();
+  s_PlayerEntity.add<Component::Transform>().transform[3] = Vec4(initialLocalPosition, 0);
+  s_PlayerEntity.add<Component::Orientation>();
+  s_PlayerEntity.add<Component::Camera>();
 }
 
 void Player::UpdateBegin(Timestep timestep)
@@ -150,16 +140,17 @@ void Player::UpdateBegin(Timestep timestep)
 
 void Player::UpdateEnd()
 {
+  const Vec3 lastLocalPosition = Position();
+
   // If player enters new chunk, set that chunk as the new origin and recalculate local position
+  Vec3 newLocalPosition = lastLocalPosition;
   for (int i = 0; i < 3; ++i)
   {
-    globalIndex_t chunkIndexOffset = static_cast<globalIndex_t>(floor(s_LocalPosition[i] / Chunk::Length()));
+    globalIndex_t chunkIndexOffset = static_cast<globalIndex_t>(floor(lastLocalPosition[i] / Chunk::Length()));
     s_OriginIndex[i] += chunkIndexOffset;
-    s_LocalPosition[i] -= chunkIndexOffset * Chunk::Length();
+    newLocalPosition[i] -= chunkIndexOffset * Chunk::Length();
   }
-
-  if (s_PlayerEntity.has<Component::Transform>())
-    s_PlayerEntity.get<Component::Transform>().transform[3] = Vec4(s_LocalPosition, 0);
+  s_PlayerEntity.get<Component::Transform>().transform[3] = Vec4(newLocalPosition, 0);
 
   // const Vec3& viewDirection = s_CameraController.getViewDirection();
   // Vec2 planarViewDirection = glm::normalize(Vec2(viewDirection));
@@ -172,8 +163,8 @@ void Player::UpdateEnd()
   // s_PlayerEntity.get<Component::Camera>().camera.setProjection(s_CameraController.getViewProjectionMatrix());
 }
 
-const Vec3& Player::Position() { return s_LocalPosition; }
-void Player::SetPosition(const Vec3& position) { s_LocalPosition = position; }
+const Vec3 Player::Position() { return s_PlayerEntity.get<Component::Transform>().transform[3]; }
+void Player::SetPosition(const Vec3& position) { s_PlayerEntity.get<Component::Transform>().transform[3] = Vec4(position, 0); }
 
 const Vec3& Player::Velocity() { return s_Velocity; }
 void Player::SetVelocity(const Vec3& velocity) { s_Velocity = velocity; }
