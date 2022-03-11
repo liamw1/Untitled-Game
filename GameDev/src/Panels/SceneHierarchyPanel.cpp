@@ -36,8 +36,10 @@ namespace Engine
     {
       if (ImGui::TreeNodeEx(reinterpret_cast<void*>(typeid(Component::Transform).hash_code()), ImGuiTreeNodeFlags_DefaultOpen, "Transform"))
       {
-        Mat4& transform = entity.get<Component::Transform>().transform;
-        ImGui::DragFloat3("Position", glm::value_ptr(transform[3]), 0.1f);
+        Component::Transform& transformComponent = entity.get<Component::Transform>();
+        Vec3 position = transformComponent.getPosition();
+        ImGui::DragFloat3("Position", glm::value_ptr(position), 0.1f);
+        transformComponent.setPosition(position);
 
         ImGui::TreePop();
       }

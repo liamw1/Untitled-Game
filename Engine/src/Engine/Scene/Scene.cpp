@@ -103,11 +103,11 @@ namespace Engine
         if (entity.has<Component::Orientation>())
         {
           Vec3 viewDirection = entity.get<Component::Orientation>().orientationDirection();
-          Vec3 position = entity.get<Component::Transform>().transform[3];
+          Vec3 position = entity.get<Component::Transform>().getPosition();
           viewMatrix = glm::lookAt(position, position + viewDirection, s_UpDirection);
         }
         else if (entity.has<Component::Transform>())
-          viewMatrix = entity.get<Component::Transform>();
+          viewMatrix = entity.get<Component::Transform>().transform;
         else
           EN_WARN("Active camera has no transform!");
 

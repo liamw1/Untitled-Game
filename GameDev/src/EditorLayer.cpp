@@ -30,36 +30,32 @@ namespace Engine
     m_CameraEntity = Scene::CreateEntity("Primary Camera");
     m_CameraEntity.add<Component::Transform>();
     m_CameraEntity.add<Component::Camera>().isActive = true;
-    m_CameraEntity.get<Component::Camera>().camera.setOrthographic(1.0f, 3.0f, 0.0f, 1.0f);
+    m_CameraEntity.get<Component::Camera>().camera.setOrthographic(1.0f, 3.0f, -1.0f, 1.0f);
 
     m_SecondCamera = Scene::CreateEntity("Secondary Camera");
     m_SecondCamera.add<Component::Transform>();
-    m_SecondCamera.add<Component::Camera>().camera.setOrthographic(1.0f, 3.0f, 0.0f, 1.0f);
+    m_SecondCamera.add<Component::Camera>().camera.setOrthographic(1.0f, 3.0f, -1.0f, 1.0f);
 
     class CameraController : public ScriptableEntity
     {
     public:
-      void onCreate() override
-      {
-        Mat4& transform = get<Component::Transform>().transform;
-        transform[3][0] = static_cast<length_t>(rand() % 30) / 10 - static_cast<length_t>(1.0);
-      }
-
       void onUpdate(Timestep timestep) override
       {
         seconds dt = timestep.sec();
         length_t speed = 5.0;
 
-        Mat4& transform = get<Component::Transform>();
+        Component::Transform& transformComponent = get<Component::Transform>();
 
+        Vec3 position = transformComponent.getPosition();
         if (Input::IsKeyPressed(Key::A))
-          transform[3][0] -= speed * dt;
+          position.x -= speed * dt;
         if (Input::IsKeyPressed(Key::D))
-          transform[3][0] += speed * dt;
+          position.x += speed * dt;
         if (Input::IsKeyPressed(Key::W))
-          transform[3][1] += speed * dt;
+          position.y += speed * dt;
         if (Input::IsKeyPressed(Key::S))
-          transform[3][1] -= speed * dt;
+          position.y -= speed * dt;
+        transformComponent.setPosition(position);
       }
     };
 
@@ -190,7 +186,9 @@ namespace Engine
       ImGui::Separator();
     }
 
-    ImGui::DragFloat3("Camera Transform", glm::value_ptr(m_CameraEntity.get<Component::Transform>().transform[3]));
+    Vec3 cameraPosition = m_CameraEntity.get<Component::Transform>().getPosition();
+    ImGui::DragFloat3("Camera Transform", glm::value_ptr(cameraPosition));
+    m_CameraEntity.get<Component::Transform>().setPosition(cameraPosition);
 
     bool primaryCamera = m_CameraEntity.get<Component::Camera>().isActive;
     if (ImGui::Checkbox("Camera A", &primaryCamera))

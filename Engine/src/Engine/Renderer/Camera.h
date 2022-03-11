@@ -9,8 +9,9 @@ namespace Engine
 
     const Mat4& getProjection() const { return m_Projection; }
 
-    // TEMP 
-    void setProjection(const Mat4& proj) { m_Projection = proj; }
+    Angle getFOV() const;
+    void changeFOV(Angle fov);
+    void changeAspectRatio(float aspectRatio);
 
     void setOrthographic(float aspectRatio, float size, float nearClip, float farClip);
     void setPerspective(float aspectRatio, Angle fov, float nearClip, float farClip);

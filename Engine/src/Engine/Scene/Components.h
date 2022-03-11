@@ -16,8 +16,8 @@ namespace Component
   {
     Mat4 transform = Mat4(1.0);
 
-    operator Mat4& () { return transform; }
-    operator const Mat4& () const { return transform; }
+    Vec3 getPosition() const { return Vec3(transform[3]); }
+    void setPosition(const Vec3& newPosition) { transform[3] = Vec4(newPosition, transform[3][3]); }
   };
 
   struct Orientation

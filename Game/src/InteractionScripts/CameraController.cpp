@@ -25,8 +25,9 @@ public:
 private:
   bool onMouseMove(Engine::MouseMoveEvent& event)
   {
-    Mat4& transform = get<Component::Transform>().transform;
-    const Vec3& position = transform[3];
+    Component::Transform& transformComponent = get<Component::Transform>();
+    Mat4& transform = transformComponent.transform;
+    Vec3 position = transformComponent.getPosition();
 
     auto& cameraComponent = get<Component::Camera>();
     auto& orientationComponent = get<Component::Orientation>();

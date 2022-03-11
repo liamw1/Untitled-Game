@@ -64,10 +64,19 @@ constexpr glm::dvec4 operator*(glm::dvec4 v, float x) { return v *= static_cast<
 constexpr glm::dvec4 operator/(glm::dvec4 v, float x) { return v /= static_cast<double>(x); }
 
 // Operator overloads for ostream
-inline std::ostream& operator<<(std::ostream& os, const glm::vec2& v) { return os << "(" << v.x << ", " << v.y << ")"; }
-inline std::ostream& operator<<(std::ostream& os, const glm::vec3& v) { return os << "(" << v.x << ", " << v.y << ", " << v.z << ")"; }
-inline std::ostream& operator<<(std::ostream& os, const glm::vec4& v) { return os << "(" << v.x << ", " << v.y << ", " << v.z << ", " << v.w << ")"; }
+namespace std
+{
+  inline ostream& operator<<(ostream& os, const glm::vec2& v) { return os << '(' << v.x << ", " << v.y << ')'; }
+  inline ostream& operator<<(ostream& os, const glm::vec3& v) { return os << '(' << v.x << ", " << v.y << ", " << v.z << ')'; }
+  inline ostream& operator<<(ostream& os, const glm::vec4& v) { return os << '(' << v.x << ", " << v.y << ", " << v.z << ", " << v.w << ')'; }
 
-inline std::ostream& operator<<(std::ostream& os, const glm::dvec2& v) { return os << "(" << v.x << ", " << v.y << ")"; }
-inline std::ostream& operator<<(std::ostream& os, const glm::dvec3& v) { return os << "(" << v.x << ", " << v.y << ", " << v.z << ")"; }
-inline std::ostream& operator<<(std::ostream& os, const glm::dvec4& v) { return os << "(" << v.x << ", " << v.y << ", " << v.z << ", " << v.w << ")"; }
+  inline ostream& operator<<(ostream& os, const glm::dvec2& v) { return os << '(' << v.x << ", " << v.y << ')'; }
+  inline ostream& operator<<(ostream& os, const glm::dvec3& v) { return os << '(' << v.x << ", " << v.y << ", " << v.z << ')'; }
+  inline ostream& operator<<(ostream& os, const glm::dvec4& v) { return os << '(' << v.x << ", " << v.y << ", " << v.z << ", " << v.w << ')'; }
+
+  inline ostream& operator<<(ostream& os, const glm::mat3& m) { return os << m[0] << '\n' << m[1] << '\n' << m[2]; }
+  inline ostream& operator<<(ostream& os, const glm::mat4& m) { return os << m[0] << '\n' << m[1] << '\n' << m[2] << '\n' << m[3]; }
+
+  inline ostream& operator<<(ostream& os, const glm::dmat3& m) { return os << m[0] << '\n' << m[1] << '\n' << m[2]; }
+  inline ostream& operator<<(ostream& os, const glm::dmat4& m) { return os << m[0] << '\n' << m[1] << '\n' << m[2] << '\n' << m[3]; }
+}

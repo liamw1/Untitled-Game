@@ -87,10 +87,13 @@ constexpr Index3D<intType> operator*(intType n, const Index3D<intType>& index)
            static_cast<intType>(n * index.k) };
 }
 
-template<typename intType>
-inline std::ostream& operator<<(std::ostream& os, const Index3D<intType>& index)
+namespace std
 {
-  return os << "(" << index.i << ", " << index.j << ", " << index.k << ")";
+  template<typename intType>
+  inline ostream& operator<<(ostream& os, const Index3D<intType>& index)
+  {
+    return os << '(' << index.i << ", " << index.j << ", " << index.k << ')';
+  }
 }
 
 using blockIndex_t = int8_t;

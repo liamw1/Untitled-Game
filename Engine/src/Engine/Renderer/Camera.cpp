@@ -7,6 +7,26 @@ namespace Engine
   enum class OrthoParams { Aspect, Size, NearClip, FarClip };
   enum class PerspectParams { Aspect, FOV, NearClip, FarClip };
 
+  Angle Camera::getFOV() const
+  {
+    EN_ASSERT(!m_Orthographic, "An orthographic camera does not have a FOV!");
+    return Angle::FromRad(m_CameraParameters[static_cast<int>(PerspectParams::FOV)]);
+  }
+
+  void Camera::changeFOV(Angle fov)
+  {
+    EN_ASSERT(!m_Orthographic, "An orthographic camera does not have a FOV!");
+    m_CameraParameters[static_cast<int>(PerspectParams::FOV)] = fov.rad();
+
+    recalculatePerspectiveProjection();
+  }
+
+  void Camera::changeAspectRatio(float aspectRatio)
+  {
+    m_CameraParameters[static_cast<int>(PerspectParams::Aspect)] = aspectRatio;
+    recalculatePerspectiveProjection();
+  }
+
   void Camera::setOrthographic(float aspectRatio, float size, float nearClip, float farClip)
   {
     m_CameraParameters[static_cast<int>(OrthoParams::Aspect)] = aspectRatio;
