@@ -28,7 +28,7 @@ namespace Player
   */
   void UpdateEnd();
 
-  const Vec3 Position();
+  const Vec3& Position();
   void SetPosition(const Vec3& position);
 
   const Vec3& Velocity();

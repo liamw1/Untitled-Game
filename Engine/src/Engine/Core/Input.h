@@ -11,7 +11,7 @@ namespace Engine
 {
   namespace Input
   {
-    bool IsKeyPressed(Key keyCode);
+    bool IsKeyPressed(Key key);
     bool IsMouseButtonPressed(Mouse button);
 
     Float2 GetMousePosition();

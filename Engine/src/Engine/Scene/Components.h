@@ -14,25 +14,12 @@ namespace Component
 
   struct Transform
   {
-    Mat4 transform = Mat4(1.0);
+    Vec3 position{};
+    Vec3 rotation{};          // Rotation around x,y,z axis
+    Vec3 scale = Vec3(1.0);
 
-    Vec3 getPosition() const { return Vec3(transform[3]); }
-    void setPosition(const Vec3& newPosition) { transform[3] = Vec4(newPosition, transform[3][3]); }
-  };
-
-  struct Orientation
-  {
-    Angle roll = Angle(0.0f);     // Rotation around x-axis
-    Angle pitch = Angle(0.0f);    // Rotation around y-axis
-    Angle yaw = Angle(-90.0f);    // Rotation around z-axis
-
-    // Converts from rotation angle coordinates to Cartesian coordinates
-    Vec3 orientationDirection() const
-    {
-      return { cos(yaw.rad()) * cos(pitch.rad()),
-              -sin(yaw.rad()) * cos(pitch.rad()),
-              -sin(pitch.rad()) };
-    }
+    Vec3 orientationDirection() const;
+    Mat4 calculateTransform() const;
   };
 
   struct SpriteRenderer

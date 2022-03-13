@@ -19,50 +19,29 @@ namespace Engine
   void Scene::OnUpdate(Timestep timestep)
   {
     // Update scripts
-    {
-      s_Registry.view<Component::NativeScript>().each([=](entt::entity entityID, Component::NativeScript& nsc)
-        {
-          // TODO: Move to Scene::OnScenePlay
-          if (!nsc.instance)
-          {
-            nsc.instance = nsc.instantiateScript();
-            nsc.instance->entity = Entity(s_Registry, entityID);
-            nsc.instance->onCreate();
-          }
-
-          nsc.instance->onUpdate(timestep);
-        });
-    }
-
-    // Find active camera
-    Camera* mainCamera = nullptr;
-    Mat4 viewProj{};
-    {
-      auto view = s_Registry.view<Component::Camera>();
-      for (entt::entity entityID : view)
+    s_Registry.view<Component::NativeScript>().each([=](entt::entity entityID, Component::NativeScript& nsc)
       {
-        Component::Camera& cameraComponent = view.get<Component::Camera>(entityID);
-        if (cameraComponent.isActive)
+        // TODO: Move to Scene::OnScenePlay
+        if (!nsc.instance)
         {
-          mainCamera = &cameraComponent.camera;
-
-          viewProj = mainCamera->getProjection();
-          if (s_Registry.any_of<Component::Transform>(entityID))
-            viewProj *= glm::inverse(s_Registry.get<Component::Transform>(entityID).transform);
-
-          break;
+          nsc.instance = nsc.instantiateScript();
+          nsc.instance->entity = Entity(s_Registry, entityID);
+          nsc.instance->onCreate();
         }
-      }
-    }
+
+        nsc.instance->onUpdate(timestep);
+      });
 
     // Render 2D
-    if (mainCamera)
+    auto view = s_Registry.view<Component::Transform, Component::SpriteRenderer>();
+    if (view.size_hint() > 0)
     {
+      Mat4 viewProj = ActiveCameraViewProjection();
+
       Renderer2D::BeginScene(viewProj);
-      auto view = s_Registry.view<Component::Transform, Component::SpriteRenderer>();
       for (entt::entity entityID : view)
       {
-        const Mat4& transform = view.get<Component::Transform>(entityID).transform;
+        Mat4 transform = view.get<Component::Transform>(entityID).calculateTransform();
         const Float4& color = view.get<Component::SpriteRenderer>(entityID).color;
 
         Renderer2D::DrawQuad(transform, color);
@@ -100,16 +79,16 @@ namespace Engine
         
         Mat4 viewMatrix{};
         Entity entity(s_Registry, entityID);
-        if (entity.has<Component::Orientation>())
+        if (cameraComponent.camera.getProjectionType() == Camera::ProjectionType::Perspective)
         {
-          Vec3 viewDirection = entity.get<Component::Orientation>().orientationDirection();
-          Vec3 position = entity.get<Component::Transform>().getPosition();
+          Vec3 viewDirection = entity.get<Component::Transform>().orientationDirection();
+          const Vec3& position = entity.get<Component::Transform>().position;
           viewMatrix = glm::lookAt(position, position + viewDirection, s_UpDirection);
         }
-        else if (entity.has<Component::Transform>())
-          viewMatrix = entity.get<Component::Transform>().transform;
+        else if (cameraComponent.camera.getProjectionType() == Camera::ProjectionType::Orthographic)
+          viewMatrix = glm::inverse(entity.get<Component::Transform>().calculateTransform());
         else
-          EN_WARN("Active camera has no transform!");
+          EN_CORE_ERROR("Unknown camera projection type!");
 
         return projection * viewMatrix;
       }

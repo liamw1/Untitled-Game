@@ -23,18 +23,23 @@ namespace Engine
     framebufferSpecification.height = 720;
     m_Framebuffer = Framebuffer::Create(framebufferSpecification);
 
-    m_SquareEntity = Scene::CreateEntity("Square");
-    m_SquareEntity.add<Component::Transform>();
-    m_SquareEntity.add<Component::SpriteRenderer>(Vec4(0.0, 1.0, 0.0, 1.0));
+    m_GreenSquareEntity = Scene::CreateEntity("Green Square");
+    m_GreenSquareEntity.add<Component::Transform>();
+    m_GreenSquareEntity.add<Component::SpriteRenderer>(Vec4(0.0, 1.0, 0.0, 1.0));
+
+    m_RedSquareEntity = Scene::CreateEntity("Red Square");
+    m_RedSquareEntity.add<Component::Transform>().position = Vec3(0.0, 1.0, 0.0);
+    m_RedSquareEntity.add<Component::SpriteRenderer>(Vec4(1.0, 0.0, 0.0, 1.0));
 
     m_CameraEntity = Scene::CreateEntity("Primary Camera");
     m_CameraEntity.add<Component::Transform>();
     m_CameraEntity.add<Component::Camera>().isActive = true;
-    m_CameraEntity.get<Component::Camera>().camera.setOrthographic(1.0f, 3.0f, -1.0f, 1.0f);
+    m_CameraEntity.get<Component::Camera>().camera.setOrthographic(1.0f, 5.0f, -1.0f, 1.0f);
 
     m_SecondCamera = Scene::CreateEntity("Secondary Camera");
-    m_SecondCamera.add<Component::Transform>();
-    m_SecondCamera.add<Component::Camera>().camera.setOrthographic(1.0f, 3.0f, -1.0f, 1.0f);
+    m_SecondCamera.add<Component::Transform>().position = Vec3(0.0, 0.0, 5.0);
+    m_SecondCamera.get<Component::Transform>().rotation = Vec3(0, Angle(90.0f).rad(), Angle(90.0f).rad());
+    m_SecondCamera.add<Component::Camera>().camera.setPerspective(1.0f, Angle(80.0f), 0.01f, 1000.0f);
 
     class CameraController : public ScriptableEntity
     {
@@ -44,9 +49,7 @@ namespace Engine
         seconds dt = timestep.sec();
         length_t speed = 5.0;
 
-        Component::Transform& transformComponent = get<Component::Transform>();
-
-        Vec3 position = transformComponent.getPosition();
+        Vec3& position = get<Component::Transform>().position;
         if (Input::IsKeyPressed(Key::A))
           position.x -= speed * dt;
         if (Input::IsKeyPressed(Key::D))
@@ -55,7 +58,6 @@ namespace Engine
           position.y += speed * dt;
         if (Input::IsKeyPressed(Key::S))
           position.y -= speed * dt;
-        transformComponent.setPosition(position);
       }
     };
 
@@ -176,20 +178,7 @@ namespace Engine
     ImGui::Text("Vertices: %d", stats.getTotalVertexCount());
     ImGui::Text("Indices: %d", stats.getTotatlIndexCount());
 
-    {
-      ImGui::Separator();
-      const std::string& name = m_SquareEntity.get<Component::Tag>().name;
-      ImGui::Text("%s", name.c_str());
-
-      Float4& squareColor = m_SquareEntity.get<Component::SpriteRenderer>().color;
-      ImGui::ColorEdit4("Square Color", glm::value_ptr(squareColor));
-      ImGui::Separator();
-    }
-
-    Vec3 cameraPosition = m_CameraEntity.get<Component::Transform>().getPosition();
-    ImGui::DragFloat3("Camera Transform", glm::value_ptr(cameraPosition));
-    m_CameraEntity.get<Component::Transform>().setPosition(cameraPosition);
-
+    // Camera selection
     bool primaryCamera = m_CameraEntity.get<Component::Camera>().isActive;
     if (ImGui::Checkbox("Camera A", &primaryCamera))
     {

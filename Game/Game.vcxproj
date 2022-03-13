@@ -178,7 +178,6 @@
     </ClCompile>
     <ClCompile Include="src\GameApp.cpp" />
     <ClCompile Include="src\GameSandbox.cpp" />
-    <ClCompile Include="src\InteractionScripts\CameraController.cpp" />
     <ClCompile Include="src\Player\Player.cpp" />
     <ClCompile Include="src\Util\Noise.cpp" />
     <ClCompile Include="src\World\Chunk.cpp" />

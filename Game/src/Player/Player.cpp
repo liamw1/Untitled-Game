@@ -38,7 +38,7 @@ public:
   void onUpdate(Timestep timestep) override
   {
     const seconds dt = timestep.sec();  // Time between frames in seconds
-    Vec3 viewDirection = get<Component::Orientation>().orientationDirection();
+    Vec3 viewDirection = get<Component::Transform>().orientationDirection();
     Vec2 planarViewDirection = glm::normalize(Vec2(viewDirection));
     
     // Update player velocity
@@ -57,8 +57,7 @@ public:
       velocity.z -= s_TranslationSpeed;
     
     // Update player position
-    Vec3 newPosition = get<Component::Transform>().getPosition() + velocity * dt;
-    get<Component::Transform>().setPosition(newPosition);
+    get<Component::Transform>().position += velocity * dt;
 
     // TODO: Remove
     Player::SetVelocity(velocity);
@@ -74,11 +73,12 @@ public:
 private:
   bool onMouseMove(Engine::MouseMoveEvent& event)
   {
-    auto& cameraComponent = get<Component::Camera>();
-    auto& orientationComponent = get<Component::Orientation>();
-    Angle& roll = orientationComponent.roll;
-    Angle& pitch = orientationComponent.pitch;
-    Angle& yaw = orientationComponent.yaw;
+    Component::Transform& transformComponent = get<Component::Transform>();
+
+    const Vec3& rotation = transformComponent.rotation;
+    Angle roll = Angle::FromRad(rotation.x);
+    Angle pitch = Angle::FromRad(rotation.y);
+    Angle yaw = Angle::FromRad(rotation.z);
 
     // Adjust view angles based on mouse movement
     yaw += Angle((event.getX() - s_LastMousePosition.x) * s_CameraSensitivity);
@@ -86,6 +86,8 @@ private:
 
     pitch = std::max(pitch, s_MinPitch);
     pitch = std::min(pitch, s_MaxPitch);
+
+    transformComponent.rotation = Vec3(roll.rad(), pitch.rad(), yaw.rad());
 
     s_LastMousePosition.x = event.getX();
     s_LastMousePosition.y = event.getY();
@@ -143,8 +145,7 @@ void Player::Initialize(const GlobalIndex& initialChunkIndex, const Vec3& initia
 
   s_PlayerEntity = Engine::Scene::CreateEntity();
   s_PlayerEntity.add<Component::NativeScript>().bind<CameraController>();
-  s_PlayerEntity.add<Component::Transform>().setPosition(initialLocalPosition);
-  s_PlayerEntity.add<Component::Orientation>();
+  s_PlayerEntity.add<Component::Transform>().position = initialLocalPosition;
   s_PlayerEntity.add<Component::Camera>();
 }
 
@@ -165,7 +166,7 @@ void Player::UpdateEnd()
     s_OriginIndex[i] += chunkIndexOffset;
     newLocalPosition[i] -= chunkIndexOffset * Chunk::Length();
   }
-  s_PlayerEntity.get<Component::Transform>().setPosition(newLocalPosition);
+  s_PlayerEntity.get<Component::Transform>().position = newLocalPosition;
 
   // const Vec3& viewDirection = s_CameraController.getViewDirection();
   // Vec2 planarViewDirection = glm::normalize(Vec2(viewDirection));
@@ -178,8 +179,8 @@ void Player::UpdateEnd()
   // s_PlayerEntity.get<Component::Camera>().camera.setProjection(s_CameraController.getViewProjectionMatrix());
 }
 
-const Vec3 Player::Position() { return s_PlayerEntity.get<Component::Transform>().getPosition(); }
-void Player::SetPosition(const Vec3& position) { s_PlayerEntity.get<Component::Transform>().setPosition(position); }
+const Vec3& Player::Position() { return s_PlayerEntity.get<Component::Transform>().position; }
+void Player::SetPosition(const Vec3& position) { s_PlayerEntity.get<Component::Transform>().position = position; }
 
 const Vec3& Player::Velocity() { return s_Velocity; }
 void Player::SetVelocity(const Vec3& velocity) { s_Velocity = velocity; }

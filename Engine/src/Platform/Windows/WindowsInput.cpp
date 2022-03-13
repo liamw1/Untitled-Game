@@ -5,10 +5,10 @@
 
 namespace Engine
 {
-  bool Input::IsKeyPressed(Key keyCode)
+  bool Input::IsKeyPressed(Key key)
   {
     auto* window = static_cast<GLFWwindow*>(Application::Get().getWindow().getNativeWindow());
-    auto state = glfwGetKey(window, static_cast<int>(keyCode));
+    auto state = glfwGetKey(window, static_cast<int>(key));
     return state == GLFW_PRESS || state == GLFW_REPEAT;
   }
 

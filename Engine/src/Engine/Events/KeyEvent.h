@@ -9,13 +9,13 @@ namespace Engine
   public:
     EventCategory getCategoryFlags() const override { return EventCategory::Keyboard | EventCategory::Input; }
 
-    Key getKeyCode() const { return m_KeyCode; }
+    Key getKeyCode() const { return m_Key; }
 
   protected:
     KeyEvent(Key keycode)
-      : m_KeyCode(keycode) {}
+      : m_Key(keycode) {}
 
-    Key m_KeyCode;
+    Key m_Key;
   };
 
   class KeyPressEvent : public KeyEvent
@@ -33,7 +33,7 @@ namespace Engine
     std::string toString() const override
     {
       std::stringstream ss;
-      ss << "KeyPressEvent: " << static_cast<keyCode>(m_KeyCode) << " (" << m_RepeatCount << " repeats)";
+      ss << "KeyPressEvent: " << static_cast<keyCode>(m_Key) << " (" << m_RepeatCount << " repeats)";
       return ss.str();
     }
 
@@ -54,7 +54,7 @@ namespace Engine
     std::string toString() const override
     {
       std::stringstream ss;
-      ss << "KeyReleaseEvent: " << static_cast<keyCode>(m_KeyCode);
+      ss << "KeyReleaseEvent: " << static_cast<keyCode>(m_Key);
       return ss.str();
     }
   };
@@ -72,7 +72,7 @@ namespace Engine
     std::string toString() const override
     {
       std::stringstream ss;
-      ss << "KeyTypeEvent: " << static_cast<keyCode>(m_KeyCode);
+      ss << "KeyTypeEvent: " << static_cast<keyCode>(m_Key);
       return ss.str();
     }
   };

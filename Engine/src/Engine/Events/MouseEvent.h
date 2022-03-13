@@ -57,7 +57,7 @@ namespace Engine
   class MouseButtonEvent : public Event
   {
   public:
-    EventCategory getCategoryFlags() const override { return EventCategory::Mouse | EventCategory::Input; }
+    EventCategory getCategoryFlags() const override { return EventCategory::Mouse | EventCategory::Input | EventCategory::MouseButton; }
 
     Mouse getMouseButton() const { return m_Button; }
 

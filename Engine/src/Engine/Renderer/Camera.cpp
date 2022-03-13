@@ -4,79 +4,81 @@
 
 namespace Engine
 {
-  enum class OrthoParams { Aspect, Size, NearClip, FarClip };
-  enum class PerspectParams { Aspect, FOV, NearClip, FarClip };
-
   Angle Camera::getFOV() const
   {
-    EN_ASSERT(!m_Orthographic, "An orthographic camera does not have a FOV!");
-    return Angle::FromRad(m_CameraParameters[static_cast<int>(PerspectParams::FOV)]);
+    EN_ASSERT(m_ProjectionType == ProjectionType::Perspective, "An orthographic camera does not have a FOV!");
+    return m_FOV;
   }
 
   void Camera::changeFOV(Angle fov)
   {
-    EN_ASSERT(!m_Orthographic, "An orthographic camera does not have a FOV!");
-    m_CameraParameters[static_cast<int>(PerspectParams::FOV)] = fov.rad();
-
+    EN_ASSERT(m_ProjectionType == ProjectionType::Perspective, "An orthographic camera does not have a FOV!");
+    m_FOV = fov;
     recalculatePerspectiveProjection();
   }
 
   void Camera::changeAspectRatio(float aspectRatio)
   {
-    m_CameraParameters[static_cast<int>(PerspectParams::Aspect)] = aspectRatio;
+    m_AspectRatio = aspectRatio;
     recalculatePerspectiveProjection();
+  }
+
+  float Camera::getOrthographicSize() const
+  {
+    EN_ASSERT(m_ProjectionType == ProjectionType::Orthographic, "A perspective camera does not have an orthographic size!");
+    return m_OrthographicSize;
   }
 
   void Camera::setOrthographic(float aspectRatio, float size, float nearClip, float farClip)
   {
-    m_CameraParameters[static_cast<int>(OrthoParams::Aspect)] = aspectRatio;
-    m_CameraParameters[static_cast<int>(OrthoParams::Size)] = size;
-    m_CameraParameters[static_cast<int>(OrthoParams::NearClip)] = nearClip;
-    m_CameraParameters[static_cast<int>(OrthoParams::FarClip)] = farClip;
-    m_Orthographic = true;
+    m_AspectRatio = aspectRatio;
+    m_OrthographicSize = size;
+    m_NearClip = nearClip;
+    m_FarClip = farClip;
+    m_ProjectionType = ProjectionType::Orthographic;
 
     recalculateOrthographicProjection();
   }
 
   void Camera::setPerspective(float aspectRatio, Angle fov, float nearClip, float farClip)
   {
-    m_CameraParameters[static_cast<int>(PerspectParams::Aspect)] = aspectRatio;
-    m_CameraParameters[static_cast<int>(PerspectParams::FOV)] = fov.rad();
-    m_CameraParameters[static_cast<int>(PerspectParams::NearClip)] = nearClip;
-    m_CameraParameters[static_cast<int>(PerspectParams::FarClip)] = farClip;
-    m_Orthographic = false;
+    m_AspectRatio = aspectRatio;
+    m_FOV = fov;
+    m_NearClip = nearClip;
+    m_FarClip = farClip;
+    m_ProjectionType = ProjectionType::Perspective;
 
     recalculatePerspectiveProjection();
   }
 
   void Camera::setViewportSize(uint32_t width, uint32_t height)
   {
-    m_CameraParameters[static_cast<int>(OrthoParams::Aspect)] = height > 0 ? static_cast<float>(width) / height : 0.0f;
-    m_Orthographic ? recalculateOrthographicProjection() : recalculatePerspectiveProjection();
+    m_AspectRatio = height > 0 ? static_cast<float>(width) / height : 0.0f;
+    recalculateProjection();
+  }
+
+  void Camera::recalculateProjection()
+  {
+    switch (m_ProjectionType)
+    {
+      case ProjectionType::Orthographic: recalculateOrthographicProjection(); break;
+      case ProjectionType::Perspective:  recalculatePerspectiveProjection();  break;
+      default: EN_CORE_ERROR("Unknown projection type!");
+    }
   }
 
   void Camera::recalculateOrthographicProjection()
   {
-    const float& aspectRatio = m_CameraParameters[static_cast<int>(OrthoParams::Aspect)];
-    const float& orthographicSize = m_CameraParameters[static_cast<int>(OrthoParams::Size)];
-    const float& nearClip = m_CameraParameters[static_cast<int>(OrthoParams::NearClip)];
-    const float& farClip = m_CameraParameters[static_cast<int>(OrthoParams::FarClip)];
+    float left = -m_OrthographicSize * m_AspectRatio / 2;
+    float right = m_OrthographicSize * m_AspectRatio / 2;
+    float bottom = -m_OrthographicSize / 2;
+    float top = m_OrthographicSize / 2;
 
-    float left = -orthographicSize * aspectRatio / 2;
-    float right = orthographicSize * aspectRatio / 2;
-    float bottom = -orthographicSize / 2;
-    float top = orthographicSize / 2;
-
-    m_Projection = glm::ortho(left, right, bottom, top, nearClip, farClip);
+    m_Projection = glm::ortho(left, right, bottom, top, m_NearClip, m_FarClip);
   }
 
   void Camera::recalculatePerspectiveProjection()
   {
-    const float& aspectRatio = m_CameraParameters[static_cast<int>(PerspectParams::Aspect)];
-    const float& FOV = m_CameraParameters[static_cast<int>(PerspectParams::FOV)];
-    const float& nearClip = m_CameraParameters[static_cast<int>(PerspectParams::NearClip)];
-    const float& farClip = m_CameraParameters[static_cast<int>(PerspectParams::FarClip)];
-
-    m_Projection = glm::perspective(FOV, aspectRatio, nearClip, farClip);
+    m_Projection = glm::perspective(m_FOV.rad(), m_AspectRatio, m_NearClip, m_FarClip);
   }
 }

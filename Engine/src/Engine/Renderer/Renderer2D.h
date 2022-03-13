@@ -26,8 +26,8 @@ namespace Engine
       uint32_t drawCalls = 0;
       uint32_t quadCount = 0;
 
-      uint32_t getTotalVertexCount() { return quadCount * 4; }
-      uint32_t getTotatlIndexCount() { return quadCount * 6; }
+      uint32_t getTotalVertexCount() const { return quadCount * 4; }
+      uint32_t getTotatlIndexCount() const { return quadCount * 6; }
     };
     Statistics GetStats();
     void ResetStats();

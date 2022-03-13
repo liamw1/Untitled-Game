@@ -47,17 +47,21 @@ namespace Engine
 
 
 
-  static void flushAndReset()
+  static void startBatch()
   {
-    Renderer2D::EndScene();
-
     s_QuadIndexCount = 0;
     s_QuadVertexBufferPtr = s_QuadVertexBufferBase;
 
     s_TextureSlotIndex = 1;
   }
+  
+  static void nextBatch()
+  {
+    Renderer2D::Flush();
+    startBatch();
+  }
 
-  static float getTextureIndex(const Shared<Texture2D>& texture)
+  static int getTextureIndex(const Shared<Texture2D>& texture)
   {
     uint32_t textureIndex = 0;  // White texture index by default
     if (texture != nullptr)
@@ -72,7 +76,7 @@ namespace Engine
       if (textureIndex == 0)
       {
         if (s_TextureSlotIndex > s_MaxTextureSlots - 1)
-          flushAndReset();
+          nextBatch();
 
         textureIndex = s_TextureSlotIndex;
         s_TextureSlots[textureIndex] = texture;
@@ -80,7 +84,7 @@ namespace Engine
       }
     }
 
-    return static_cast<float>(textureIndex);
+    return textureIndex;
   }
 
 
@@ -148,18 +152,11 @@ namespace Engine
     s_TextureShader->bind();
     s_TextureShader->setMat4("u_ViewProjection", viewProjection);
 
-    s_QuadIndexCount = 0;
-    s_QuadVertexBufferPtr = s_QuadVertexBufferBase;
-
-    s_TextureSlotIndex = 1;
+    startBatch();
   }
 
   void Renderer2D::EndScene()
   {
-    // Cast to 1-byte value to determine number of bytes in vertexBufferPtr
-    uintptr_t dataSize = (uint8_t*)s_QuadVertexBufferPtr - (uint8_t*)s_QuadVertexBufferBase;
-    s_QuadVertexBuffer->setData(s_QuadVertexBufferBase, dataSize);
-
     Flush();
   }
 
@@ -167,6 +164,9 @@ namespace Engine
   {
     if (s_QuadIndexCount == 0)
       return; // Nothing to draw
+
+    uintptr_t dataSize = (s_QuadVertexBufferPtr - s_QuadVertexBufferBase) * sizeof(QuadVertex);
+    s_QuadVertexBuffer->setData(s_QuadVertexBufferBase, dataSize);
 
     // Bind textures
     for (uint32_t i = 0; i < s_TextureSlotIndex; ++i)
@@ -184,16 +184,14 @@ namespace Engine
                                                       {0.0f, 1.0f} };
 
     if (s_QuadIndexCount >= s_MaxIndices)
-      flushAndReset();
-
-    float textureIndex = getTextureIndex(texture);
+      nextBatch();
 
     for (int i = 0; i < 4; ++i)
     {
       s_QuadVertexBufferPtr->position = transform * s_QuadVertexPositions[i];
       s_QuadVertexBufferPtr->tintColor = tintColor;
       s_QuadVertexBufferPtr->texCoord = textureCoordinates[i];
-      s_QuadVertexBufferPtr->textureIndex = textureIndex;
+      s_QuadVertexBufferPtr->textureIndex = static_cast<float>(getTextureIndex(texture));
       s_QuadVertexBufferPtr->scalingFactor = textureScalingFactor;
       s_QuadVertexBufferPtr++;
     }
@@ -210,20 +208,18 @@ namespace Engine
                                                       {0.0f, 1.0f} };
 
     if (s_QuadIndexCount >= s_MaxIndices)
-      flushAndReset();
+      nextBatch();
 
     Mat4 transform = glm::translate(Mat4(1.0), position)
-      * glm::rotate(Mat4(1.0), rotation.rad(), Vec3(0.0, 0.0, 1.0))
-      * glm::scale(Mat4(1.0), Vec3(size, 1.0));
-
-    float textureIndex = getTextureIndex(texture);
+                   * glm::rotate(Mat4(1.0), rotation.rad(), Vec3(0.0, 0.0, 1.0))
+                   * glm::scale(Mat4(1.0), Vec3(size, 1.0));
 
     for (int i = 0; i < 4; ++i)
     {
       s_QuadVertexBufferPtr->position = transform * s_QuadVertexPositions[i];
       s_QuadVertexBufferPtr->tintColor = tintColor;
       s_QuadVertexBufferPtr->texCoord = textureCoordinates[i];
-      s_QuadVertexBufferPtr->textureIndex = textureIndex;
+      s_QuadVertexBufferPtr->textureIndex = static_cast<float>(getTextureIndex(texture));
       s_QuadVertexBufferPtr->scalingFactor = textureScalingFactor;
       s_QuadVertexBufferPtr++;
     }
