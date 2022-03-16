@@ -191,10 +191,7 @@ void ChunkManager::renderLODs()
                                               glm::length(Vec3(frustumPlanes[static_cast<int>(FrustumPlane::Far)])), };
 
   ChunkRenderer::BeginScene(viewProjection);
-  for (auto it = leaves.begin(); it != leaves.end(); ++it)
-  {
-    LOD::Octree::Node* node = *it;
-
+  for (const auto& node : leaves)
     if (node->data->primaryMesh.vertexArray != nullptr)
     {
       // Shift each plane by distance equal to radius of sphere that circumscribes LOD
@@ -206,7 +203,6 @@ void ChunkManager::renderLODs()
       if (isInFrustum(node->center(), shiftedFrustumPlanes) && !isInRange(node->anchor, s_RenderDistance - 1))
         ChunkRenderer::DrawLOD(node);
     }
-  }
   ChunkRenderer::EndScene();
 }
 
@@ -220,10 +216,8 @@ void ChunkManager::manageLODs()
   if (treeModified)
   {
     leaves = m_LODTree.getLeaves();
-    for (auto it = leaves.begin(); it != leaves.end(); ++it)
+    for (auto& node : leaves)
     {
-      LOD::Octree::Node* node = *it;
-
       if (!node->data->meshGenerated)
         LOD::GenerateMesh(node);
 
@@ -487,9 +481,8 @@ void ChunkManager::initializeLODs()
 
   // Generate meshes for all LODs
   leaves = m_LODTree.getLeaves();
-  for (auto it = leaves.begin(); it != leaves.end(); ++it)
+  for (auto& node : leaves)
   {
-    LOD::Octree::Node* node = *it;
     LOD::GenerateMesh(node);
     LOD::UpdateMesh(m_LODTree, node);
   }
@@ -526,10 +519,7 @@ bool ChunkManager::combineLODs(std::vector<LOD::Octree::Node*>& leaves)
 {
   // Search for nodes to combine
   std::vector<LOD::Octree::Node*> cannibalNodes{};
-  for (auto it = leaves.begin(); it != leaves.end(); ++it)
-  {
-    LOD::Octree::Node* node = *it;
-
+  for (auto& node : leaves)
     if (node->depth > 0)
     {
       int64_t combineRange = pow2(node->LODLevel() + 2) - 1 + s_RenderDistance;
@@ -538,7 +528,6 @@ bool ChunkManager::combineLODs(std::vector<LOD::Octree::Node*>& leaves)
       if (!LOD::Intersection(rangeBoundingBox, node->parent->boundingBox()))
         cannibalNodes.push_back(node->parent);
     }
-  }
 
   // Combine nodes
   for (int i = 0; i < cannibalNodes.size(); ++i)

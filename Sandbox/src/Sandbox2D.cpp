@@ -15,7 +15,6 @@ void Sandbox2D::onAttach()
   m_CheckerboardTexture = Engine::Texture2D::Create("assets/textures/Checkerboard.png");
 
   m_CameraEntity = Engine::Scene::CreateEntity();
-  m_CameraEntity.add<Component::Transform>();
   m_CameraEntity.add<Component::Camera>().isActive = true;
   m_CameraEntity.get<Component::Camera>().camera.setOrthographic(1.0f, 10.0f, 0.0f, 1.0f);
 }

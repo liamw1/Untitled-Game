@@ -6,23 +6,80 @@ namespace Engine
 {
   static Entity s_SelectionContext;
   static char s_TextBuffer[256];
+  static constexpr ImGuiTreeNodeFlags s_TreeNodeFlags = ImGuiTreeNodeFlags_DefaultOpen |
+                                                        ImGuiTreeNodeFlags_Framed |
+                                                        ImGuiTreeNodeFlags_SpanAvailWidth |
+                                                        ImGuiTreeNodeFlags_AllowItemOverlap |
+                                                        ImGuiTreeNodeFlags_FramePadding;
 
   static void drawEntityNode(const Entity& entity)
   {
     const std::string& name = entity.get<Component::Tag>().name;
     const uintptr_t entityID = entity.id();
 
-    ImGuiTreeNodeFlags flags = ((s_SelectionContext == entity) ? ImGuiTreeNodeFlags_Selected : 0) | ImGuiTreeNodeFlags_OpenOnArrow;
+    ImGuiTreeNodeFlags flags = (s_SelectionContext == entity) ? ImGuiTreeNodeFlags_Selected : 0;
+    flags |= ImGuiTreeNodeFlags_OpenOnArrow;
+    flags |= ImGuiTreeNodeFlags_SpanAvailWidth;
+
     bool opened = ImGui::TreeNodeEx(reinterpret_cast<void*>(entityID), flags, name.c_str());
     if (ImGui::IsItemClicked())
       s_SelectionContext = entity;
+
+    if (ImGui::BeginPopupContextItem())
+    {
+      if (ImGui::MenuItem("Delete Entity"))
+        Scene::DestroyEntity(entity);
+
+      ImGui::EndPopup();
+    }
 
     if (opened)
       ImGui::TreePop();
   }
 
+  template<typename T, typename UIFunction>
+  static void drawComponent(const std::string& name, Entity entity, UIFunction uiFunction)
+  {
+    if (entity.has<T>())
+    {
+      T& component = entity.get<T>();
+      float contentRegionAvailalbeWidth = ImGui::GetContentRegionAvailWidth();
+
+      ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(4, 4));
+      float lineHeight = GImGui->Font->FontSize + 2.0f * GImGui->Style.FramePadding.y;
+      ImGui::Separator();
+      bool open = ImGui::TreeNodeEx(reinterpret_cast<void*>(typeid(T).hash_code()), s_TreeNodeFlags, name.c_str());
+      ImGui::PopStyleVar();
+
+      ImGui::SameLine(contentRegionAvailalbeWidth - lineHeight / 2);
+      if (ImGui::Button("...", ImVec2(lineHeight, lineHeight)))
+        ImGui::OpenPopup("ComponentSettings");
+
+      bool componentMarkedForRemoval = false;
+      if (ImGui::BeginPopup("ComponentSettings"))
+      {
+        if (ImGui::MenuItem("Remove Component"))
+          componentMarkedForRemoval = true;
+
+        ImGui::EndPopup();
+      }
+
+      if (open)
+      {
+        uiFunction(component);
+        ImGui::TreePop();
+      }
+
+      if (componentMarkedForRemoval)
+        s_SelectionContext.remove<T>();
+    }
+  }
+
   static void drawVec3Control(const std::string& label, Vec3& values, float resetValue = 0.0f, float columnWidth = 100.0f)
   {
+    ImGuiIO& io = ImGui::GetIO();
+    ImFont* boldFont = io.Fonts->Fonts[0];
+
     ImGui::PushID(label.c_str());
 
     ImGui::Columns(2);
@@ -36,26 +93,30 @@ namespace Engine
     float lineHeight = GImGui->Font->FontSize + 2.0f * GImGui->Style.FramePadding.y;
     ImVec2 buttonSize(lineHeight + 3.0f, lineHeight);
 
-    static constexpr char* buttonLabels[3] = { "X", "Y", "Z" };
-    static constexpr char* dragFloatLabels[3] = { "##X", "##Y", "##Z" };
+    static const std::string buttonLabels[3] = { "X", "Y", "Z" };
     static const ImVec4 buttonColors[3] = { ImVec4(0.9f, 0.2f, 0.2f, 1.0f), 
                                             ImVec4(0.3f, 0.8f, 0.3f, 1.0f), 
                                             ImVec4(0.2f, 0.35f, 0.9f, 1.0f) };
     for (int i = 0; i < 3; ++i)
     {
       static constexpr float dim = 0.85f;
-      ImVec4 inactiveButtonColor = ImVec4(dim * buttonColors[i].x, dim * buttonColors[i].y, dim * buttonColors[i].z, 1.0f);
-      ImGui::PushStyleColor(ImGuiCol_Button, inactiveButtonColor);
+      ImVec4 dimButtonColor = ImVec4(dim * buttonColors[i].x, dim * buttonColors[i].y, dim * buttonColors[i].z, 1.0f);
+      ImGui::PushStyleColor(ImGuiCol_Button, dimButtonColor);
       ImGui::PushStyleColor(ImGuiCol_ButtonHovered, buttonColors[i]);
-      ImGui::PushStyleColor(ImGuiCol_ButtonActive, inactiveButtonColor);
-      if (ImGui::Button(buttonLabels[i], buttonSize))
+      ImGui::PushStyleColor(ImGuiCol_ButtonActive, dimButtonColor);
+
+      ImGui::PushFont(boldFont);
+      if (ImGui::Button(buttonLabels[i].c_str(), buttonSize))
         values[i] = resetValue;
+      ImGui::PopFont();
       ImGui::PopStyleColor(3);
 
       ImGui::SameLine();
-      ImGui::DragFloat(dragFloatLabels[i], &values[i], 0.1f, 0.0f, 0.0f, "%.2f");
+      std::string dragFloatLabel = "##" + buttonLabels[i];
+      ImGui::DragFloat(dragFloatLabel.c_str(), &values[i], 0.1f, 0.0f, 0.0f, "%.2f");
       ImGui::PopItemWidth();
-      ImGui::SameLine();
+      if (i < 2)
+        ImGui::SameLine();
     }
 
     ImGui::PopStyleVar();
@@ -73,12 +134,46 @@ namespace Engine
 
       memset(s_TextBuffer, 0, sizeof(s_TextBuffer));
       strcpy_s(s_TextBuffer, sizeof(s_TextBuffer), name.c_str());
-      if (ImGui::InputText("Tag", s_TextBuffer, sizeof(s_TextBuffer)))
+      if (ImGui::InputText("##Tag", s_TextBuffer, sizeof(s_TextBuffer)))
         name = std::string(s_TextBuffer);
     }
 
+    ImGui::SameLine();
+    ImGui::PushItemWidth(-1);
+
+    if (ImGui::Button("Add Component"))
+      ImGui::OpenPopup("AddComponent");
+
+    if (ImGui::BeginPopup("AddComponent"))
+    {
+      if (ImGui::MenuItem("Camera"))
+      {
+        if (!s_SelectionContext.has<Component::Camera>())
+        {
+          s_SelectionContext.add<Component::Camera>();
+          ImGui::CloseCurrentPopup();
+        }
+        else
+          EN_CORE_WARN("Entity already has camera component");
+      }
+
+      if (ImGui::MenuItem("Sprite Renderer"))
+      {
+        if (!s_SelectionContext.has<Component::SpriteRenderer>())
+        {
+          s_SelectionContext.add<Component::SpriteRenderer>();
+          ImGui::CloseCurrentPopup();
+        }
+        else
+          EN_CORE_WARN("Entity already has sprite renderer component");
+      }
+
+      ImGui::EndPopup();
+    }
+    ImGui::PopItemWidth();
+
     if (entity.has<Component::Transform>())
-      if (ImGui::TreeNodeEx(reinterpret_cast<void*>(typeid(Component::Transform).hash_code()), ImGuiTreeNodeFlags_DefaultOpen, "Transform"))
+      if (ImGui::TreeNodeEx(reinterpret_cast<void*>(typeid(Component::Transform).hash_code()), s_TreeNodeFlags, "Transform"))
       {
         Component::Transform& transformComponent = entity.get<Component::Transform>();
 
@@ -91,10 +186,9 @@ namespace Engine
         ImGui::TreePop();
       }
 
-    if (entity.has<Component::Camera>())
-      if (ImGui::TreeNodeEx(reinterpret_cast<void*>(typeid(Component::Camera).hash_code()), ImGuiTreeNodeFlags_DefaultOpen, "Camera"))
+    drawComponent<Component::Camera>("Camera", entity, [](auto& component)
       {
-        Camera& camera = entity.get<Component::Camera>().camera;
+        Camera& camera = component.camera;
 
         static constexpr char* projectionTypeStrings[2] = { "Perspective", "Orthographic" };
         const char* currentProjectionTypeString = projectionTypeStrings[static_cast<int>(camera.getProjectionType())];
@@ -131,17 +225,12 @@ namespace Engine
         }
         else
           EN_CORE_ERROR("Unknown camera projection type!");
+      });
 
-        ImGui::TreePop();
-      }
-
-    if (entity.has<Component::SpriteRenderer>())
-      if (ImGui::TreeNodeEx(reinterpret_cast<void*>(typeid(Component::SpriteRenderer).hash_code()), ImGuiTreeNodeFlags_DefaultOpen, "Sprite Renderer"))
+    drawComponent<Component::SpriteRenderer>("Sprite renderer", entity, [](auto& component)
       {
-        Component::SpriteRenderer& spriteRendererComponent = entity.get<Component::SpriteRenderer>();
-        ImGui::ColorEdit4("Color", glm::value_ptr(spriteRendererComponent.color));
-        ImGui::TreePop();
-      }
+        ImGui::ColorEdit4("Color", glm::value_ptr(component.color));
+      });
   }
 
   void SceneHierarchyPanel::OnImGuiRender()
@@ -158,11 +247,22 @@ namespace Engine
     if (ImGui::IsMouseDown(static_cast<mouseCode>(Mouse::Button0)) && ImGui::IsWindowHovered())
       s_SelectionContext = {};
 
+    // Right-click on blank space
+    if (ImGui::BeginPopupContextWindow(0, 1, false))
+    {
+      if (ImGui::MenuItem("Create Empty Entity"))
+        Scene::CreateEntity("Empty Entity");
+
+      ImGui::EndPopup();
+    }
+
     ImGui::End();
 
     ImGui::Begin("Properties");
     if (s_SelectionContext.isValid())
+    {
       drawComponents(s_SelectionContext);
+    }
     ImGui::End();
   }
 }

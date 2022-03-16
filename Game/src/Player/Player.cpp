@@ -143,9 +143,8 @@ void Player::Initialize(const GlobalIndex& initialChunkIndex, const Vec3& initia
   s_OriginIndex = initialChunkIndex;
   s_Velocity = Vec3(0.0);
 
-  s_PlayerEntity = Engine::Scene::CreateEntity();
+  s_PlayerEntity = Engine::Scene::CreateEntity(initialLocalPosition);
   s_PlayerEntity.add<Component::NativeScript>().bind<CameraController>();
-  s_PlayerEntity.add<Component::Transform>().position = initialLocalPosition;
   s_PlayerEntity.add<Component::Camera>();
 }
 

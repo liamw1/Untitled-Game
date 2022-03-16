@@ -2,10 +2,10 @@
 #include "Engine/Core/Log.h"
 #include "Engine/Events/Event.h"
 
-#pragma warning( push )
-#pragma warning ( disable : ALL_CODE_ANALYSIS_WARNINGS )
+#pragma warning(push)
+#pragma warning (disable : ALL_CODE_ANALYSIS_WARNINGS)
 #include <entt/entt.hpp>
-#pragma warning( pop )
+#pragma warning(pop)
 
 namespace Engine
 {
@@ -55,6 +55,8 @@ namespace Engine
     uint32_t id() const { return static_cast<uint32_t>(m_Handle.entity()); }
 
     bool isValid() const { return static_cast<bool>(m_Handle); }
+
+    operator entt::entity() const { return m_Handle.entity(); }
 
     bool operator==(const Entity& other) const { return m_Handle == other.m_Handle; }
     bool operator!=(const Entity& other) const { return m_Handle != other.m_Handle; }

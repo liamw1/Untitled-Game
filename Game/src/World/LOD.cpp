@@ -653,8 +653,8 @@ namespace LOD
 
     // Adjust coorindates of boundary cells on primary LOD mesh
     if (node->data->transitionFaces != 0)
-      for (auto it = LODMesh.begin(); it != LODMesh.end(); ++it)
-        adjustVertex(*it, cellLength, node->data->transitionFaces);
+      for (auto& vertex : LODMesh)
+        adjustVertex(vertex, cellLength, node->data->transitionFaces);
     return LODMesh;
   }
 
@@ -669,10 +669,8 @@ namespace LOD
 
     // Adjust coorindates of boundary cells on transition mesh
     if (node->data->transitionFaces != 0)
-      for (auto it = LODMesh.begin(); it != LODMesh.end(); ++it)
+      for (auto& vertex : LODMesh)
       {
-        Vertex& vertex = *it;
-
         // If Vertex is on low-resolution side, skip.  If on high-resolution side, move vertex to LOD face
         if (vertex.position[coordID] < LNGTH_EPSILON * node->length() || vertex.position[coordID] > (1.0 - LNGTH_EPSILON) * node->length())
           continue;

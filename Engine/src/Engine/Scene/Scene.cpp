@@ -11,9 +11,20 @@ namespace Engine
   
   Entity Scene::CreateEntity(const std::string& name)
   {
+    return CreateEntity(Vec3(0.0), name);
+  }
+
+  Entity Scene::CreateEntity(const Vec3& initialPosition, const std::string& name)
+  {
     Entity entity(s_Registry, s_Registry.create());
     entity.add<Component::Tag>().name = name.empty() ? "Unnamed Entity" : name;
+    entity.add<Component::Transform>().position = initialPosition;
     return entity;
+  }
+
+  void Scene::DestroyEntity(Entity entity)
+  {
+    s_Registry.destroy(entity);
   }
 
   void Scene::OnUpdate(Timestep timestep)
@@ -33,15 +44,15 @@ namespace Engine
       });
 
     // Render 2D
-    auto view = s_Registry.view<Component::Transform, Component::SpriteRenderer>();
-    if (view.size_hint() > 0)
+    auto view = s_Registry.view<Component::SpriteRenderer>();
+    if (view.size() > 0)
     {
       Mat4 viewProj = ActiveCameraViewProjection();
 
       Renderer2D::BeginScene(viewProj);
       for (entt::entity entityID : view)
       {
-        Mat4 transform = view.get<Component::Transform>(entityID).calculateTransform();
+        Mat4 transform = s_Registry.get<Component::Transform>(entityID).calculateTransform();
         const Float4& color = view.get<Component::SpriteRenderer>(entityID).color;
 
         Renderer2D::DrawQuad(transform, color);

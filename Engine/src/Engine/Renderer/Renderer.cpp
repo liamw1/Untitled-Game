@@ -80,7 +80,7 @@ namespace Engine
     Shared<IndexBuffer> cubeFrameIB = IndexBuffer::Create(s_CubeFrameIndices, sizeof(s_CubeFrameIndices) / sizeof(uint32_t));
     s_CubeFrameVertexArray->setIndexBuffer(cubeFrameIB);
 
-    s_CubeFrameShader = Shader::Create("assets/shaders/CubeFrame.glsl");
+    s_CubeFrameShader = Shader::Create("../Engine/assets/shaders/CubeFrame.glsl");
 
     /* Cube Initialization */
     s_CubeVertexArray = VertexArray::Create();
@@ -109,7 +109,7 @@ namespace Engine
     uint32_t whiteTextureData = 0xffffffff;
     s_WhiteTexture->setData(&whiteTextureData, sizeof(uint32_t));
 
-    s_TextureShader = Shader::Create("assets/shaders/CubeTexture.glsl");
+    s_TextureShader = Shader::Create("../Engine/assets/shaders/CubeTexture.glsl");
     s_TextureShader->bind();
     s_TextureShader->setInt("u_Texture", 0);
   }

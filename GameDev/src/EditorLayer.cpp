@@ -24,20 +24,16 @@ namespace Engine
     m_Framebuffer = Framebuffer::Create(framebufferSpecification);
 
     m_GreenSquareEntity = Scene::CreateEntity("Green Square");
-    m_GreenSquareEntity.add<Component::Transform>();
     m_GreenSquareEntity.add<Component::SpriteRenderer>(Vec4(0.0, 1.0, 0.0, 1.0));
 
-    m_RedSquareEntity = Scene::CreateEntity("Red Square");
-    m_RedSquareEntity.add<Component::Transform>().position = Vec3(0.0, 1.0, 0.0);
+    m_RedSquareEntity = Scene::CreateEntity(Vec3(0.0, 1.0, 0.0), "Red Square");
     m_RedSquareEntity.add<Component::SpriteRenderer>(Vec4(1.0, 0.0, 0.0, 1.0));
 
     m_CameraEntity = Scene::CreateEntity("Primary Camera");
-    m_CameraEntity.add<Component::Transform>();
     m_CameraEntity.add<Component::Camera>().isActive = true;
     m_CameraEntity.get<Component::Camera>().camera.setOrthographic(1.0f, 5.0f, -1.0f, 1.0f);
 
-    m_SecondCamera = Scene::CreateEntity("Secondary Camera");
-    m_SecondCamera.add<Component::Transform>().position = Vec3(0.0, 0.0, 5.0);
+    m_SecondCamera = Scene::CreateEntity(Vec3(0.0, 0.0, 5.0), "Secondary Camera");
     m_SecondCamera.get<Component::Transform>().rotation = Vec3(0, Angle(90.0f).rad(), Angle(90.0f).rad());
     m_SecondCamera.add<Component::Camera>().camera.setPerspective(1.0f, Angle(80.0f), 0.01f, 1000.0f);
 
@@ -144,11 +140,15 @@ namespace Engine
 
     // DockSpace
     ImGuiIO& io = ImGui::GetIO();
+    ImGuiStyle& style = ImGui::GetStyle();
+    float minWindowSize = style.WindowMinSize.x;
+    style.WindowMinSize.x = 370.0f;
     if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable)
     {
       ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
       ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
     }
+    style.WindowMinSize.x = minWindowSize;
 
     if (ImGui::BeginMenuBar())
     {

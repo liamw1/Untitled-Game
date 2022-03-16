@@ -21,5 +21,7 @@ namespace Engine
   private:
     bool m_BlockEvents = true;
     seconds m_Time = 0.0f;
+
+    void setDarkThemeColors();
   };
 }

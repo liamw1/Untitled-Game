@@ -135,7 +135,7 @@ namespace Engine
     for (int i = 0; i < s_MaxTextureSlots; ++i)
       samplers[i] = i;
 
-    s_TextureShader = Shader::Create("assets/shaders/Texture.glsl");
+    s_TextureShader = Shader::Create("../Engine/assets/shaders/Texture.glsl");
     s_TextureShader->bind();
     s_TextureShader->setIntArray("u_Textures", samplers, s_MaxTextureSlots);
 
