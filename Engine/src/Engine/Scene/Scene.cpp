@@ -2,6 +2,7 @@
 #include "Scene.h"
 #include "Components.h"
 #include "Engine/Renderer/Renderer2D.h"
+#include "Engine/Renderer/DevCamera.h"
 #include <glm/gtc/matrix_transform.hpp>
 
 namespace Engine
@@ -50,6 +51,24 @@ namespace Engine
       Mat4 viewProj = ActiveCameraViewProjection();
 
       Renderer2D::BeginScene(viewProj);
+      for (entt::entity entityID : view)
+      {
+        Mat4 transform = s_Registry.get<Component::Transform>(entityID).calculateTransform();
+        const Float4& color = view.get<Component::SpriteRenderer>(entityID).color;
+
+        Renderer2D::DrawQuad(transform, color);
+      }
+      Renderer2D::EndScene();
+    }
+  }
+
+  void Scene::OnUpdateDev(Timestep timestep)
+  {
+    // Render 2D
+    auto view = s_Registry.view<Component::SpriteRenderer>();
+    if (view.size() > 0)
+    {
+      Renderer2D::BeginScene(DevCamera::ViewProjection());
       for (entt::entity entityID : view)
       {
         Mat4 transform = s_Registry.get<Component::Transform>(entityID).calculateTransform();

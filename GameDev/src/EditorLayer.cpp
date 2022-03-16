@@ -1,6 +1,7 @@
 #include "GDpch.h"
 #include "EditorLayer.h"
 #include "Panels/SceneHierarchyPanel.h"
+#include "Engine/Renderer/DevCamera.h"
 
 namespace Engine
 {
@@ -78,7 +79,11 @@ namespace Engine
 
       m_Framebuffer->resize(viewportWidth, viewportHeight);
       Scene::OnViewportResize(viewportWidth, viewportHeight);
+      DevCamera::SetViewportSize(viewportWidth, viewportHeight);
     }
+
+    if (m_ViewportFocused)
+      DevCamera::OnUpdate(timestep);
 
     // Render
     Renderer2D::ResetStats();
@@ -86,7 +91,7 @@ namespace Engine
     RenderCommand::Clear(Float4(0.1f, 0.1f, 0.1f, 1.0f));
 
     // Update scene
-    Scene::OnUpdate(timestep);
+    Scene::OnUpdateDev(timestep);
 
     m_Framebuffer->unbind();
   }
@@ -210,5 +215,6 @@ namespace Engine
   void EditorLayer::onEvent(Event& event)
   {
     Scene::OnEvent(event);
+    DevCamera::OnEvent(event);
   }
 }

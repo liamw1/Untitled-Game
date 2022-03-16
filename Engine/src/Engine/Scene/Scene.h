@@ -15,6 +15,7 @@ namespace Engine
     void DestroyEntity(Entity entity);
 
     void OnUpdate(Timestep timestep);
+    void OnUpdateDev(Timestep timestep);
     void OnEvent(Event& event);
 
     Mat4 ActiveCameraViewProjection();
