@@ -17,9 +17,8 @@ namespace Engine
   {
     EN_PROFILE_FUNCTION();
 
-    m_CheckerboardTexture = Texture2D::Create("assets/textures/Checkerboard.png");
-
     FramebufferSpecification framebufferSpecification;
+    framebufferSpecification.attachments = { FramebufferTextureFormat::RGBA8, FramebufferTextureFormat::Depth };
     framebufferSpecification.width = 1280;
     framebufferSpecification.height = 720;
     m_Framebuffer = Framebuffer::Create(framebufferSpecification);
@@ -82,9 +81,6 @@ namespace Engine
       DevCamera::SetViewportSize(viewportWidth, viewportHeight);
     }
 
-    if (m_ViewportFocused)
-      DevCamera::OnUpdate(timestep);
-
     // Render
     Renderer2D::ResetStats();
     m_Framebuffer->bind();
@@ -92,6 +88,7 @@ namespace Engine
 
     // Update scene
     Scene::OnUpdateDev(timestep);
+    DevCamera::OnUpdate(timestep);
 
     m_Framebuffer->unbind();
   }
@@ -204,7 +201,7 @@ namespace Engine
     ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
     m_ViewportSize = Float2(viewportPanelSize.x, viewportPanelSize.y );
 
-    uintptr_t textureID = m_Framebuffer->getColorAttachmentRendererID();
+    uintptr_t textureID = m_Framebuffer->getColorAttachmentRendererID(1);
     ImGui::Image(reinterpret_cast<void*>(textureID), ImVec2(m_ViewportSize.x, m_ViewportSize.y), ImVec2(0, 1), ImVec2(1, 0));
     ImGui::End();
     ImGui::PopStyleVar();

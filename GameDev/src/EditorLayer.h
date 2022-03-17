@@ -16,7 +16,6 @@ namespace Engine
     void onEvent(Event& event) override;
 
   private:
-    Shared<Texture2D> m_CheckerboardTexture;
     Shared<Framebuffer> m_Framebuffer;
 
     Entity m_GreenSquareEntity;

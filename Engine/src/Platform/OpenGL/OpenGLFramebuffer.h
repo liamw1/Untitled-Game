@@ -13,7 +13,7 @@ namespace Engine
     void unbind() override;
 
     const FramebufferSpecification& getSpecification() const override { return m_Specification; }
-    uint32_t getColorAttachmentRendererID() const { return m_ColorAttachment; }
+    uint32_t getColorAttachmentRendererID(uint32_t index = 0) const;
 
     void invalidate();
 
@@ -21,8 +21,12 @@ namespace Engine
 
   private:
     uint32_t m_RendererID = 0;
-    uint32_t m_ColorAttachment = 0;
-    uint32_t m_DepthAttachment = 0;
     FramebufferSpecification m_Specification;
+
+    std::vector<FramebufferTextureSpecification> m_ColorAttachmentSpecifications;
+    FramebufferTextureSpecification m_DepthAttachmentSpecification = FramebufferTextureFormat::None;
+
+    std::vector<uint32_t> m_ColorAttachments;
+    uint32_t m_DepthAttachment = 0;
   };
 }

@@ -2,13 +2,42 @@
 
 namespace Engine
 {
+  enum class FramebufferTextureFormat
+  {
+    None = 0,
+
+    // Color
+    RGBA8,
+
+    // Depth/stencil
+    DEPTH24STENCIL8,
+
+    // Defaults
+    Depth = DEPTH24STENCIL8
+  };
+
+  struct FramebufferTextureSpecification
+  {
+    FramebufferTextureSpecification() = default;
+    FramebufferTextureSpecification(FramebufferTextureFormat format)
+      : textureFormat(format) {}
+
+    FramebufferTextureFormat textureFormat = FramebufferTextureFormat::None;
+    // TODO: Filtering/wrap
+  };
+
   struct FramebufferSpecification
   {
+    FramebufferSpecification() = default;
+    FramebufferSpecification(const std::initializer_list<FramebufferTextureSpecification>&attachmentList)
+      : attachments(attachmentList) {}
+
     uint32_t width = 0;
     uint32_t height = 0;
     uint32_t samples = 1;
-
     bool swapChainTarget = false;
+
+    std::vector<FramebufferTextureSpecification> attachments;
   };
 
   class Framebuffer
@@ -20,7 +49,7 @@ namespace Engine
     virtual void unbind() = 0;
 
     virtual const FramebufferSpecification& getSpecification() const = 0;
-    virtual uint32_t getColorAttachmentRendererID() const = 0;
+    virtual uint32_t getColorAttachmentRendererID(uint32_t index = 0) const = 0;
 
     virtual void resize(uint32_t width, uint32_t height) = 0;
 
