@@ -27,6 +27,7 @@ void main()
 #version 330 core
 
 layout(location = 0) out vec4 color;
+layout(location = 1) out int entityID;
 
 in vec4 v_TintColor;
 in vec2 v_TexCoord;
@@ -37,4 +38,5 @@ uniform sampler2D u_Textures[32];
 void main()
 {
   color = texture(u_Textures[int(v_TextureIndex)], v_TexCoord) * v_TintColor;
+  entityID = 50;
 }

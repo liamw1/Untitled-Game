@@ -10,7 +10,7 @@ namespace Engine
   static void createTextures(bool multiSampled, uint32_t* outID, uint32_t count) { glCreateTextures(textureTarget(multiSampled), count, outID); }
   static void bindTexture(bool multiSampled, uint32_t id) { glBindTexture(textureTarget(multiSampled), id); }
 
-  static void attachColorTexture(uint32_t id, const FramebufferSpecification& fbSpecs, GLenum format, int index)
+  static void attachColorTexture(uint32_t id, const FramebufferSpecification& fbSpecs, GLenum internalFormat, GLenum format, int index)
   {
     const uint32_t& samples = fbSpecs.samples;
     const uint32_t& width = fbSpecs.width;
@@ -18,10 +18,10 @@ namespace Engine
 
     bool multisampled = samples > 1;
     if (multisampled)
-      glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, samples, format, width, height, GL_FALSE);
+      glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, samples, internalFormat, width, height, GL_FALSE);
     else
     {
-      glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+      glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format, GL_UNSIGNED_BYTE, nullptr);
 
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -131,8 +131,11 @@ namespace Engine
         bindTexture(multiSample, m_ColorAttachments[i]);
         switch (m_ColorAttachmentSpecifications[i].textureFormat)
         {
+          case FramebufferTextureFormat::RED_INTEGER:
+            attachColorTexture(m_ColorAttachments[i], m_Specification, GL_R32I, GL_RED_INTEGER, i);
+            break;
           case FramebufferTextureFormat::RGBA8: 
-            attachColorTexture(m_ColorAttachments[i], m_Specification, GL_RGBA8, i);
+            attachColorTexture(m_ColorAttachments[i], m_Specification, GL_RGBA8, GL_RGBA, i);
             break;
         }
       }
@@ -176,5 +179,14 @@ namespace Engine
     m_Specification.width = width;
     m_Specification.height = height;
     invalidate();
+  }
+
+  int OpenGLFramebuffer::readPixel(uint32_t attachmentIndex, int x, int y)
+  {
+    EN_CORE_ASSERT(attachmentIndex < m_ColorAttachments.size(), "Color attachment index is out of bounds!");
+    glReadBuffer(GL_COLOR_ATTACHMENT0 + attachmentIndex);
+    int pixelData;
+    glReadPixels(x, y, 1, 1, GL_RED_INTEGER, GL_INT, &pixelData);
+    return pixelData;
   }
 }

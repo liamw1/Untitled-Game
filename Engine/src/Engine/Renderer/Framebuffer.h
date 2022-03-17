@@ -7,6 +7,7 @@ namespace Engine
     None = 0,
 
     // Color
+    RED_INTEGER,
     RGBA8,
 
     // Depth/stencil
@@ -52,6 +53,7 @@ namespace Engine
     virtual uint32_t getColorAttachmentRendererID(uint32_t index = 0) const = 0;
 
     virtual void resize(uint32_t width, uint32_t height) = 0;
+    virtual int readPixel(uint32_t attachmentIndex, int x, int y) = 0;
 
     static Shared<Framebuffer> Create(const FramebufferSpecification& specification);
   };

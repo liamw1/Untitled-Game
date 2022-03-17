@@ -18,6 +18,7 @@ namespace Engine
     void invalidate();
 
     void resize(uint32_t width, uint32_t height) override;
+    int readPixel(uint32_t attachmentIndex, int x, int y) override;
 
   private:
     uint32_t m_RendererID = 0;

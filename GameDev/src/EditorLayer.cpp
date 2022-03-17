@@ -18,7 +18,9 @@ namespace Engine
     EN_PROFILE_FUNCTION();
 
     FramebufferSpecification framebufferSpecification;
-    framebufferSpecification.attachments = { FramebufferTextureFormat::RGBA8, FramebufferTextureFormat::Depth };
+    framebufferSpecification.attachments = { FramebufferTextureFormat::RGBA8, 
+                                             FramebufferTextureFormat::RED_INTEGER,
+                                             FramebufferTextureFormat::Depth };
     framebufferSpecification.width = 1280;
     framebufferSpecification.height = 720;
     m_Framebuffer = Framebuffer::Create(framebufferSpecification);
@@ -89,6 +91,22 @@ namespace Engine
     // Update scene
     Scene::OnUpdateDev(timestep);
     DevCamera::OnUpdate(timestep);
+
+    ImVec2 mousePos = ImGui::GetMousePos();
+    mousePos.x -= m_ViewportBounds[0].x;
+    mousePos.y -= m_ViewportBounds[0].y;
+    Float2 viewportSize = m_ViewportBounds[1] - m_ViewportBounds[0];
+    mousePos.y = viewportSize.y - mousePos.y;
+
+    int mouseX = static_cast<int>(mousePos.x);
+    int mouseY = static_cast<int>(mousePos.y);
+
+    if (0 < mouseX && mouseX < static_cast<int>(viewportSize.x) &&
+        0 < mouseY && mouseY < static_cast<int>(viewportSize.y))
+    {
+      int pixelData = m_Framebuffer->readPixel(1, mouseX, mouseY);
+      EN_CORE_INFO("Entity ID: {0}", pixelData);
+    }
 
     m_Framebuffer->unbind();
   }
@@ -192,6 +210,7 @@ namespace Engine
 
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
     ImGui::Begin("Viewport");
+    ImVec2 viewportOffset = ImGui::GetCursorPos();  // Includes tab bar
 
     m_ViewportFocused = ImGui::IsWindowFocused();
     m_ViewportHovered = ImGui::IsWindowHovered();
@@ -201,8 +220,18 @@ namespace Engine
     ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
     m_ViewportSize = Float2(viewportPanelSize.x, viewportPanelSize.y );
 
-    uintptr_t textureID = m_Framebuffer->getColorAttachmentRendererID(1);
+    uintptr_t textureID = m_Framebuffer->getColorAttachmentRendererID(0);
     ImGui::Image(reinterpret_cast<void*>(textureID), ImVec2(m_ViewportSize.x, m_ViewportSize.y), ImVec2(0, 1), ImVec2(1, 0));
+    
+    ImVec2 windowSize = ImGui::GetWindowSize();
+    ImVec2 minBound = ImGui::GetWindowPos();
+    minBound.x += viewportOffset.x;
+    minBound.y += viewportOffset.y;
+
+    ImVec2 maxBound = ImVec2(minBound.x + windowSize.x, minBound.y + windowSize.y);
+    m_ViewportBounds[0] = { minBound.x, minBound.y };
+    m_ViewportBounds[1] = { maxBound.x, maxBound.y };
+    
     ImGui::End();
     ImGui::PopStyleVar();
 
