@@ -215,13 +215,14 @@ void ChunkManager::manageLODs()
 
   if (treeModified)
   {
-    leaves = m_LODTree.getLeaves();
-    for (auto& node : leaves)
+    std::vector<LOD::Octree::Node*> leaves = m_LODTree.getLeaves();
+    for (LOD::Octree::Node* leaf : leaves)
     {
-      if (!node->data->meshGenerated)
-        LOD::GenerateMesh(node);
+      if (!leaf->data->meshGenerated)
+        LOD::GenerateMesh(leaf);
 
-      LOD::UpdateMesh(m_LODTree, node);
+      if (leaf->data->needsUpdate && leaf->data->primaryMesh.vertices.size() > 0)
+        LOD::UpdateMesh(m_LODTree, leaf);
     }
   }
 }
@@ -481,10 +482,12 @@ void ChunkManager::initializeLODs()
 
   // Generate meshes for all LODs
   leaves = m_LODTree.getLeaves();
-  for (auto& node : leaves)
+  for (auto& leaf : leaves)
   {
-    LOD::GenerateMesh(node);
-    LOD::UpdateMesh(m_LODTree, node);
+    LOD::GenerateMesh(leaf);
+
+    if (leaf->data->primaryMesh.vertices.size() > 0)
+      LOD::UpdateMesh(m_LODTree, leaf);
   }
 }
 
@@ -503,15 +506,18 @@ bool ChunkManager::splitLODs(std::vector<LOD::Octree::Node*>& leaves)
       if (LOD::Intersection(splitRangeBoundingBox, node->boundingBox()))
       {
         m_LODTree.splitNode(node);
-        treeModified = true;
+        for (int i = 0; i < 8; ++i)
+          LOD::MessageNeighbors(m_LODTree, node->children[i]);
 
         it = leaves.erase(it);
+        treeModified = true;
         continue;
       }
     }
 
     it++;
   }
+
   return treeModified;
 }
 
@@ -519,7 +525,7 @@ bool ChunkManager::combineLODs(std::vector<LOD::Octree::Node*>& leaves)
 {
   // Search for nodes to combine
   std::vector<LOD::Octree::Node*> cannibalNodes{};
-  for (auto& node : leaves)
+  for (LOD::Octree::Node* node : leaves)
     if (node->depth > 0)
     {
       int64_t combineRange = pow2(node->LODLevel() + 2) - 1 + s_RenderDistance;
@@ -530,8 +536,11 @@ bool ChunkManager::combineLODs(std::vector<LOD::Octree::Node*>& leaves)
     }
 
   // Combine nodes
-  for (int i = 0; i < cannibalNodes.size(); ++i)
-    m_LODTree.combineChildren(cannibalNodes[i]);
+  for (LOD::Octree::Node* node : cannibalNodes)
+  {
+    m_LODTree.combineChildren(node);
+    LOD::MessageNeighbors(m_LODTree, node);
+  }
 
   return cannibalNodes.size() > 0;
 }

@@ -96,9 +96,6 @@
     <ClInclude Include="src\Util\Array2D.h">
       <Filter>src\Util</Filter>
     </ClInclude>
-    <ClInclude Include="src\Util\Container.h">
-      <Filter>src\Util</Filter>
-    </ClInclude>
     <ClInclude Include="src\Util\Noise.h">
       <Filter>src\Util</Filter>
     </ClInclude>

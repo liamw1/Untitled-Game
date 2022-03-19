@@ -39,7 +39,7 @@ namespace LOD
 
     uint8_t transitionFaces = 0;
     bool meshGenerated = false;
-    bool needsUpdate = false;
+    bool needsUpdate = true;
   };
 
   class Octree
@@ -162,12 +162,6 @@ namespace LOD
   bool Intersection(AABB boxA, AABB boxB);
 
   /*
-    Checks if an LOD is bordered by lower resolution LOD and updates
-    given node with that information.
-  */
-  void DetermineTransitionFaces(LOD::Octree& tree, LOD::Octree::Node* node);
-
-  /*
     Generates primary and transition meshes for the given node
     using terrain noise.  LOD needs to be updated before these
     meshes are uploaded to the GPU.
@@ -181,4 +175,6 @@ namespace LOD
     NOTE: Needs to be made faster.
   */
   void UpdateMesh(LOD::Octree& tree, LOD::Octree::Node* node);
+
+  void MessageNeighbors(LOD::Octree& tree, LOD::Octree::Node* node);
 }

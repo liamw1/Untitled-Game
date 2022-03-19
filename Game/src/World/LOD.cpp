@@ -140,7 +140,7 @@ namespace LOD
   // LOD smoothness parameter, must be in the range [0.0, 1.0]
   static constexpr float smoothnessLevel(int LODLevel)
   {
-#if 1
+#if 0
     return std::min(0.15f * (LODLevel) + 0.3f, 1.0f);
 #else
     return 1.0f;
@@ -155,14 +155,12 @@ namespace LOD
     return (1 - s) * (q0 + q1) / 2 + s * ((1 - t) * q0 + t * q1);
   }
 
-  static Array2D<length_t> generateNoise(LOD::Octree::Node* node)
+  static Array2D<length_t, s_NumCells + 1> generateNoise(LOD::Octree::Node* node)
   {
-    EN_PROFILE_FUNCTION();
-
     const length_t cellLength = node->length() / s_NumCells;
     const Vec2 LODAnchorXY = Chunk::Length() * static_cast<Vec2>(node->anchor);
 
-    Array2D<length_t> noiseValues = Array2D<length_t>(s_NumCells + 1);
+    Array2D<length_t, s_NumCells + 1> noiseValues{};
     for (int i = 0; i < s_NumCells + 1; ++i)
       for (int j = 0; j < s_NumCells + 1; ++j)
       {
@@ -174,7 +172,7 @@ namespace LOD
     return noiseValues;
   }
 
-  static bool needsMesh(LOD::Octree::Node* node, const Array2D<length_t>& noiseValues)
+  static bool needsMesh(LOD::Octree::Node* node, const Array2D<length_t, s_NumCells + 1>& noiseValues)
   {
     const length_t LODFloor = node->anchor.k * Chunk::Length();
     const length_t LODCeiling = LODFloor + node->length();
@@ -197,13 +195,13 @@ namespace LOD
     return needsMesh;
   }
 
-  static Array2D<Vec3> calcNoiseNormals(LOD::Octree::Node* node, const Array2D<length_t>& noiseValues)
+  static Array2D<Vec3, s_NumCells + 1> calcNoiseNormals(LOD::Octree::Node* node, const Array2D<length_t, s_NumCells + 1>& noiseValues)
   {
     const length_t cellLength = node->length() / s_NumCells;
     const Vec2 LODAnchorXY = Chunk::Length() * static_cast<Vec2>(node->anchor);
 
     // Calculate normals using central differences
-    Array2D<Vec3> noiseNormals(s_NumCells + 1);
+    Array2D<Vec3, s_NumCells + 1> noiseNormals{};
     for (int i = 0; i < s_NumCells + 1; ++i)
       for (int j = 0; j < s_NumCells + 1; ++j)
       {
@@ -252,7 +250,7 @@ namespace LOD
     return noiseNormals;
   }
 
-  static NoiseData interpolateNoiseData(LOD::Octree::Node* node, const Array2D<length_t>& noiseValues, const Array2D<Vec3>& noiseNormals, const BlockIndex& cornerA, const BlockIndex& cornerB, float s)
+  static NoiseData interpolateNoiseData(LOD::Octree::Node* node, const Array2D<length_t, s_NumCells + 1>& noiseValues, const Array2D<Vec3, s_NumCells + 1>& noiseNormals, const BlockIndex& cornerA, const BlockIndex& cornerB, float s)
   {
     const length_t LODFloor = node->anchor.k * Chunk::Length();
     const length_t cellLength = node->length() / s_NumCells;
@@ -282,7 +280,7 @@ namespace LOD
   }
 
   // Generate primary LOD mesh using Marching Cubes algorithm
-  static void generatePrimaryMesh(LOD::Octree::Node* node, const Array2D<length_t>& noiseValues, const Array2D<Vec3>& noiseNormals)
+  static void generatePrimaryMesh(LOD::Octree::Node* node, const Array2D<length_t, s_NumCells + 1>& noiseValues, const Array2D<Vec3, s_NumCells + 1>& noiseNormals)
   {
     EN_PROFILE_FUNCTION();
 
@@ -299,10 +297,10 @@ namespace LOD
     int vertexCount = 0;
     std::vector<uint32_t> primaryMeshIndices{};
     std::vector<LOD::Vertex> primaryMeshVertices{};
-    Array2D<VertexReuseData> prevLayer(s_NumCells);
+    Array2D<VertexReuseData, s_NumCells> prevLayer{};
     for (int i = 0; i < s_NumCells; ++i)
     {
-      Array2D<VertexReuseData> currLayer(s_NumCells);
+      Array2D<VertexReuseData, s_NumCells> currLayer{};
 
       for (int j = 0; j < s_NumCells; ++j)
         for (int k = 0; k < s_NumCells; ++k)
@@ -405,7 +403,7 @@ namespace LOD
   }
 
   // Generate transition meshes using Transvoxel algorithm
-  static void generateTransitionMeshes(LOD::Octree::Node* node, const Array2D<length_t>& noiseValues, const Array2D<Vec3>& noiseNormals)
+  static void generateTransitionMeshes(LOD::Octree::Node* node, const Array2D<length_t, s_NumCells + 1>& noiseValues, const Array2D<Vec3, s_NumCells + 1>& noiseNormals)
   {
     EN_PROFILE_FUNCTION();
 
@@ -584,13 +582,13 @@ namespace LOD
     EN_PROFILE_FUNCTION();
 
     // Generate voxel data using heightmap
-    const Array2D<length_t> noiseValues = generateNoise(node);
+    const Array2D<length_t, s_NumCells + 1> noiseValues = generateNoise(node);
 
     if (!needsMesh(node, noiseValues))
       return;
 
     // Generate normal data from heightmap
-    const Array2D<Vec3> noiseNormals = calcNoiseNormals(node, noiseValues);
+    const Array2D<Vec3, s_NumCells + 1> noiseNormals = calcNoiseNormals(node, noiseValues);
 
     generatePrimaryMesh(node, noiseValues, noiseNormals);
     generateTransitionMeshes(node, noiseValues, noiseNormals);
@@ -682,7 +680,11 @@ namespace LOD
     return LODMesh;
   }
 
-  void DetermineTransitionFaces(LOD::Octree& tree, LOD::Octree::Node* node)
+  /*
+    Checks if an LOD is bordered by lower resolution LOD and updates
+    given node with that information.
+  */
+  static void determineTransitionFaces(LOD::Octree& tree, LOD::Octree::Node* node)
   {
     const GlobalIndex offsets[6] = { { node->size(), 0, 0 }, { -1, 0, 0 }, { 0, node->size(), 0 }, { 0, -1, 0 }, { 0, 0, node->size() }, { 0, 0, -1 } };
                                 //            East               West              North              South              Top                Bottom
@@ -702,11 +704,8 @@ namespace LOD
       else if (neighbor->LODLevel() - node->LODLevel() == 1)
         transitionFaces |= bit(faceID);
       else if (neighbor->LODLevel() - node->LODLevel() > 1)
-        EN_WARN("LOD neighbor is more than one level higher resolution");
+        EN_WARN("LOD neighbor is more than one level lower resolution");
     }
-
-    if (node->data->transitionFaces != transitionFaces)
-      node->data->needsUpdate = true;
 
     node->data->transitionFaces = transitionFaces;
   }
@@ -715,13 +714,7 @@ namespace LOD
   {
     EN_PROFILE_FUNCTION();
 
-    if (node->data->primaryMesh.vertices.size() == 0)
-      return;
-
-    DetermineTransitionFaces(tree, node);
-
-    if (!node->data->needsUpdate)
-      return;
+    determineTransitionFaces(tree, node);
 
     auto& primaryMesh = node->data->primaryMesh;
     Engine::Renderer::UploadMesh(primaryMesh.vertexArray, s_LODBufferLayout, calcAdjustedPrimaryMesh(node), primaryMesh.indices);
@@ -733,5 +726,43 @@ namespace LOD
       auto& transitionMesh = node->data->transitionMeshes[faceID];
       Engine::Renderer::UploadMesh(transitionMesh.vertexArray, s_LODBufferLayout, calcAdjustedTransitionMesh(node, face), transitionMesh.indices);
     }
+
+    node->data->needsUpdate = false;
+  }
+
+  void MessageNeighbors(LOD::Octree& tree, LOD::Octree::Node* node)
+  {
+    const GlobalIndex offsets[6] = { { node->size(), 0, 0 }, { -1, 0, 0 }, { 0, node->size(), 0 }, { 0, -1, 0 }, { 0, 0, node->size() }, { 0, 0, -1 } };
+                                //            East               West              North              South              Top                Bottom
+
+    // Tell LOD neighbors to update
+    for (BlockFace face : BlockFaceIterator())
+    {
+      const int faceID = static_cast<int>(face);
+      const int oppFaceID = static_cast<int>(!face);
+
+      // Relabel coordinates, u being the coordinate normal to face
+      const int u = faceID / 2;
+      const int v = (u + 1) % 3;
+      const int w = (u + 2) % 3;
+
+      int64_t neighborSize = 1;
+      GlobalIndex neighborIndex = node->anchor + offsets[faceID];
+      for (int64_t& i = neighborIndex[v]; i < (node->anchor + offsets[faceID])[v] + node->size(); i += neighborSize)
+        for (int64_t& j = neighborIndex[w]; j < (node->anchor + offsets[faceID])[w] + node->size(); j += neighborSize)
+        {
+          LOD::Octree::Node* neighbor = tree.findLeaf(neighborIndex);
+
+          if (neighbor != nullptr)
+          {
+            neighbor->data->needsUpdate = true;
+            neighborSize = neighbor->size();
+          }
+          else
+            neighborSize = node->size();
+        }
+    }
+
+    node->data->needsUpdate = true;
   }
 }
