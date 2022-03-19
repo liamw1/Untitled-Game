@@ -209,7 +209,7 @@ void World::playerWorldInteraction()
     Engine::Renderer::EndScene();
   }
 
-  if (Engine::Input::IsMouseButtonPressed(Mouse::Button0) || Engine::Input::IsMouseButtonPressed(Mouse::Button1))
+  if (Engine::Input::IsMouseButtonPressed(Mouse::ButtonLeft) || Engine::Input::IsMouseButtonPressed(Mouse::ButtonRight))
   {
     if (m_PlayerRayCast.distance <= maxInteractionDistance)
     {
@@ -220,7 +220,7 @@ void World::playerWorldInteraction()
 
       if (chunk != nullptr)
       {
-        if (Engine::Input::IsMouseButtonPressed(Mouse::Button0))
+        if (Engine::Input::IsMouseButtonPressed(Mouse::ButtonLeft))
         {
           chunk->removeBlock(blockIndex);
           m_ChunkManager.sendChunkUpdate(chunk);

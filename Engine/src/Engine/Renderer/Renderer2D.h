@@ -1,6 +1,7 @@
 #pragma once
 #include "Texture.h"
 #include "SubTexture.h"
+#include "Engine/Scene/Components.h"
 
 /*
   A general-purpose 2D renderer.
@@ -17,8 +18,10 @@ namespace Engine
     void Flush();
 
     // Primitives
-    void DrawQuad(const Mat4& transform, const Float4& tintColor = Float4(1.0), float textureScalingFactor = 1.0f, const Shared<Texture2D>& texture = nullptr);
-    void DrawQuad(const Vec3& position, const Vec2& size, const Float4& tintColor = Float4(1.0), float textureScalingFactor = 1.0f, const Shared<Texture2D>& texture = nullptr, Angle rotation = Angle(0.0f));
+    void DrawQuad(const Mat4& transform, const Float4& tintColor = Float4(1.0), float textureScalingFactor = 1.0f, const Shared<Texture2D>& texture = nullptr, int entityID = -1);
+    void DrawQuad(const Vec3& position, const Vec2& size, Angle rotation = Angle(0.0f), const Float4& tintColor = Float4(1.0), float textureScalingFactor = 1.0f, const Shared<Texture2D>& texture = nullptr, int entityID = -1);
+
+    void DrawSprite(const Mat4& transform, const Component::SpriteRenderer& sprite, int entityID);
 
     // Stats
     struct Statistics

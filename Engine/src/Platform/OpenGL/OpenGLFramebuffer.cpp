@@ -65,6 +65,16 @@ namespace Engine
     }
   }
 
+  static GLenum openGLTextureFormat(FramebufferTextureFormat format)
+  {
+    switch (format)
+    {
+      case Engine::FramebufferTextureFormat::RED_INTEGER: return GL_RED_INTEGER;
+      case Engine::FramebufferTextureFormat::RGBA8:       return GL_RGBA8;
+      default: EN_CORE_ERROR("Invalid texture format!");  return 0;
+    }
+  }
+
   OpenGLFramebuffer::OpenGLFramebuffer(const FramebufferSpecification& specification)
     : m_Specification(specification)
   {
@@ -188,5 +198,28 @@ namespace Engine
     int pixelData;
     glReadPixels(x, y, 1, 1, GL_RED_INTEGER, GL_INT, &pixelData);
     return pixelData;
+  }
+
+  template<typename T>
+  static void clear(uint32_t attachment, GLenum textureFormat, GLenum valueType, const std::any& value)
+  {
+    T typedValue = std::any_cast<T>(value);
+    glClearTexImage(attachment, 0, textureFormat, valueType, &typedValue);
+  }
+
+  void OpenGLFramebuffer::clearAttachment(uint32_t attachmentIndex, const std::any& value)
+  {
+    EN_CORE_ASSERT(attachmentIndex < m_ColorAttachments.size(), "Color attachment index is out of bounds!");
+    EN_CORE_ASSERT(value.has_value(), "No value given!");
+
+    const FramebufferTextureSpecification& spec = m_ColorAttachmentSpecifications[attachmentIndex];
+    uint32_t attachment = m_ColorAttachments[attachmentIndex];
+    GLenum textureFormat = openGLTextureFormat(spec.textureFormat);
+    std::string typeName = value.type().name();
+
+    if (typeName == "int")
+      clear<int>(attachment, textureFormat, GL_INT, value);
+    else
+      EN_CORE_ERROR("Unsupported value type!");
   }
 }

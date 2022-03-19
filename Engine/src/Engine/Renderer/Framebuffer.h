@@ -1,4 +1,5 @@
 #pragma once
+#include <any>
 
 namespace Engine
 {
@@ -54,6 +55,8 @@ namespace Engine
 
     virtual void resize(uint32_t width, uint32_t height) = 0;
     virtual int readPixel(uint32_t attachmentIndex, int x, int y) = 0;
+
+    virtual void clearAttachment(uint32_t attachmentIndex, const std::any& value) = 0;
 
     static Shared<Framebuffer> Create(const FramebufferSpecification& specification);
   };

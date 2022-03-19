@@ -15,6 +15,9 @@ namespace Engine
     Float2 texCoord;
     float textureIndex;
     float scalingFactor;
+
+    // Editor-only
+    int entityID;
   };
 
   /*
@@ -96,11 +99,12 @@ namespace Engine
     s_QuadVertexArray = VertexArray::Create();
 
     s_QuadVertexBuffer = VertexBuffer::Create(s_MaxVertices * sizeof(QuadVertex));
-    s_QuadVertexBuffer->setLayout({ { ShaderDataType::Float3, "a_Position" },
-                                    { ShaderDataType::Float4, "a_TintColor" },
-                                    { ShaderDataType::Float2, "a_TexCoord" },
-                                    { ShaderDataType::Float,  "a_TextureIndex" },
-                                    { ShaderDataType::Float,  "a_ScalingFactor" } });
+    s_QuadVertexBuffer->setLayout({ { ShaderDataType::Float3, "a_Position"      },
+                                    { ShaderDataType::Float4, "a_TintColor"     },
+                                    { ShaderDataType::Float2, "a_TexCoord"      },
+                                    { ShaderDataType::Float,  "a_TextureIndex"  },
+                                    { ShaderDataType::Float,  "a_TilingFactor"  },
+                                    { ShaderDataType::Int,    "a_EntityID"      } });
     s_QuadVertexArray->addVertexBuffer(s_QuadVertexBuffer);
 
     s_QuadVertexBufferBase = new QuadVertex[s_MaxVertices];
@@ -176,7 +180,7 @@ namespace Engine
     s_Stats.drawCalls++;
   }
 
-  void Renderer2D::DrawQuad(const Mat4& transform, const Float4& tintColor, float textureScalingFactor, const Shared<Texture2D>& texture)
+  void Renderer2D::DrawQuad(const Mat4& transform, const Float4& tintColor, float textureScalingFactor, const Shared<Texture2D>& texture, int entityID)
   {
     static constexpr Float2 textureCoordinates[4] = { {0.0f, 0.0f},
                                                       {1.0f, 0.0f},
@@ -193,6 +197,7 @@ namespace Engine
       s_QuadVertexBufferPtr->texCoord = textureCoordinates[i];
       s_QuadVertexBufferPtr->textureIndex = static_cast<float>(getTextureIndex(texture));
       s_QuadVertexBufferPtr->scalingFactor = textureScalingFactor;
+      s_QuadVertexBufferPtr->entityID = entityID;
       s_QuadVertexBufferPtr++;
     }
 
@@ -200,32 +205,18 @@ namespace Engine
     s_Stats.quadCount++;
   }
 
-  void Renderer2D::DrawQuad(const Vec3& position, const Vec2& size, const Float4& tintColor, float textureScalingFactor, const Shared<Texture2D>& texture, Angle rotation)
+  void Renderer2D::DrawQuad(const Vec3& position, const Vec2& size, Angle rotation, const Float4& tintColor, float textureScalingFactor, const Shared<Texture2D>& texture, int entityID)
   {
-    static constexpr Float2 textureCoordinates[4] = { {0.0f, 0.0f},
-                                                      {1.0f, 0.0f},
-                                                      {1.0f, 1.0f},
-                                                      {0.0f, 1.0f} };
-
-    if (s_QuadIndexCount >= s_MaxIndices)
-      nextBatch();
-
     Mat4 transform = glm::translate(Mat4(1.0), position)
                    * glm::rotate(Mat4(1.0), rotation.rad(), Vec3(0.0, 0.0, 1.0))
                    * glm::scale(Mat4(1.0), Vec3(size, 1.0));
 
-    for (int i = 0; i < 4; ++i)
-    {
-      s_QuadVertexBufferPtr->position = transform * s_QuadVertexPositions[i];
-      s_QuadVertexBufferPtr->tintColor = tintColor;
-      s_QuadVertexBufferPtr->texCoord = textureCoordinates[i];
-      s_QuadVertexBufferPtr->textureIndex = static_cast<float>(getTextureIndex(texture));
-      s_QuadVertexBufferPtr->scalingFactor = textureScalingFactor;
-      s_QuadVertexBufferPtr++;
-    }
+    DrawQuad(transform, tintColor, textureScalingFactor, texture, entityID);
+  }
 
-    s_QuadIndexCount += 6;
-    s_Stats.quadCount++;
+  void Renderer2D::DrawSprite(const Mat4& transform, const Component::SpriteRenderer& sprite, int entityID)
+  {
+    DrawQuad(transform, sprite.color, 1.0f, nullptr, entityID);
   }
 
 

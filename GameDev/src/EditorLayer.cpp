@@ -88,6 +88,9 @@ namespace Engine
     m_Framebuffer->bind();
     RenderCommand::Clear(Float4(0.1f, 0.1f, 0.1f, 1.0f));
 
+    // Clear entityID attachment to -1
+    m_Framebuffer->clearAttachment(1, -1);
+
     // Update scene
     Scene::OnUpdateDev(timestep);
     DevCamera::OnUpdate(timestep);
@@ -101,11 +104,14 @@ namespace Engine
     int mouseX = static_cast<int>(mousePos.x);
     int mouseY = static_cast<int>(mousePos.y);
 
-    if (0 < mouseX && mouseX < static_cast<int>(viewportSize.x) &&
-        0 < mouseY && mouseY < static_cast<int>(viewportSize.y))
+    if (0 <= mouseX && mouseX < static_cast<int>(viewportSize.x) &&
+        0 <= mouseY && mouseY < static_cast<int>(viewportSize.y))
     {
       int pixelData = m_Framebuffer->readPixel(1, mouseX, mouseY);
-      EN_CORE_INFO("Entity ID: {0}", pixelData);
+      if (pixelData >= 0)
+        m_HoveredEntity = Scene::GetEntity(pixelData);
+      else
+        m_HoveredEntity = {};
     }
 
     m_Framebuffer->unbind();
@@ -210,7 +216,11 @@ namespace Engine
 
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
     ImGui::Begin("Viewport");
-    ImVec2 viewportOffset = ImGui::GetCursorPos();  // Includes tab bar
+    ImVec2 viewportMinRegion = ImGui::GetWindowContentRegionMin();
+    ImVec2 viewportMaxRegion = ImGui::GetWindowContentRegionMax();
+    ImVec2 viewportOffset = ImGui::GetWindowPos();
+    m_ViewportBounds[0] = { viewportMinRegion.x + viewportOffset.x, viewportMinRegion.y + viewportOffset.y };
+    m_ViewportBounds[1] = { viewportMaxRegion.x + viewportOffset.x, viewportMaxRegion.y + viewportOffset.y };
 
     m_ViewportFocused = ImGui::IsWindowFocused();
     m_ViewportHovered = ImGui::IsWindowHovered();
@@ -223,15 +233,6 @@ namespace Engine
     uintptr_t textureID = m_Framebuffer->getColorAttachmentRendererID(0);
     ImGui::Image(reinterpret_cast<void*>(textureID), ImVec2(m_ViewportSize.x, m_ViewportSize.y), ImVec2(0, 1), ImVec2(1, 0));
     
-    ImVec2 windowSize = ImGui::GetWindowSize();
-    ImVec2 minBound = ImGui::GetWindowPos();
-    minBound.x += viewportOffset.x;
-    minBound.y += viewportOffset.y;
-
-    ImVec2 maxBound = ImVec2(minBound.x + windowSize.x, minBound.y + windowSize.y);
-    m_ViewportBounds[0] = { minBound.x, minBound.y };
-    m_ViewportBounds[1] = { maxBound.x, maxBound.y };
-    
     ImGui::End();
     ImGui::PopStyleVar();
 
@@ -242,5 +243,18 @@ namespace Engine
   {
     Scene::OnEvent(event);
     DevCamera::OnEvent(event);
+
+    EventDispatcher dispatcher(event);
+    dispatcher.dispatch<MouseButtonPressEvent>(EN_BIND_EVENT_FN(onMouseButtonPress));
+  }
+
+  bool EditorLayer::onMouseButtonPress(MouseButtonPressEvent& event)
+  {
+    if (event.getMouseButton() == Mouse::ButtonLeft && !Input::IsKeyPressed(Key::LeftAlt) && m_HoveredEntity.isValid())
+    {
+      SceneHierarchyPanel::SetSelectedEntity(m_HoveredEntity);
+      return true;
+    }
+    return false;
   }
 }

@@ -22,10 +22,13 @@ namespace Engine
     Entity m_RedSquareEntity;
     Entity m_CameraEntity;
     Entity m_SecondCamera;
+    Entity m_HoveredEntity;
 
     bool m_ViewportFocused = false;
     bool m_ViewportHovered = false;
     Float2 m_ViewportSize;
     std::array<Float2, 2> m_ViewportBounds{};
+
+    bool onMouseButtonPress(MouseButtonPressEvent& event);
   };
 }

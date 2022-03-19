@@ -1,11 +1,6 @@
 #pragma once
 #include "Entity.h"
 
-#pragma warning(push)
-#pragma warning(disable : ALL_CODE_ANALYSIS_WARNINGS)
-#include <entt/entt.hpp>
-#pragma warning(pop)
-
 namespace Engine
 {
   namespace Scene
@@ -13,6 +8,7 @@ namespace Engine
     Entity CreateEntity(const std::string& name = std::string());
     Entity CreateEntity(const Vec3& initialPosition, const std::string& name = std::string());
     void DestroyEntity(Entity entity);
+    Entity GetEntity(uint32_t entityID);
 
     void OnUpdate(Timestep timestep);
     void OnUpdateDev(Timestep timestep);
@@ -22,6 +18,6 @@ namespace Engine
 
     void OnViewportResize(uint32_t width, uint32_t height);
 
-    entt::registry& Registry();
+    void ForEachEntity(void (*func)(const Entity));
   };
 }

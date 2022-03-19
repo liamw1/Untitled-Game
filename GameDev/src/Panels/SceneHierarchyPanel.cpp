@@ -233,18 +233,19 @@ namespace Engine
       });
   }
 
+  void SceneHierarchyPanel::SetSelectedEntity(Entity entity)
+  {
+    s_SelectionContext = entity;
+  }
+
   void SceneHierarchyPanel::OnImGuiRender()
   {
     ImGui::Begin("Scene Hierarchy");
 
-    Scene::Registry().each([](entt::entity entityID)
-      {
-        Entity entity(Scene::Registry(), entityID);
-        drawEntityNode(entity);
-      });
+    Scene::ForEachEntity([](const Entity entity) { drawEntityNode(entity); });
 
     // Deselect panel selection
-    if (ImGui::IsMouseDown(static_cast<mouseCode>(Mouse::Button0)) && ImGui::IsWindowHovered())
+    if (ImGui::IsMouseDown(static_cast<mouseCode>(Mouse::ButtonLeft)) && ImGui::IsWindowHovered())
       s_SelectionContext = {};
 
     // Right-click on blank space

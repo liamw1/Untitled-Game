@@ -27,11 +27,10 @@
 // ================== Physical Units and Constants ================== //
 using length_t = float;
 using seconds = float;
+constexpr length_t PI = static_cast<length_t>(3.14159265358979323846264338327950288419716939937510L);
 
 // ======= Precision selection for floating point tolerance ========= //
-static constexpr length_t LNGTH_EPSILON = std::is_same<double, length_t>::value ? DBL_EPSILON : FLT_EPSILON;
-
-constexpr length_t PI = static_cast<length_t>(3.14159265358979323846264338327950288419716939937510L);
+constexpr length_t LNGTH_EPSILON = std::is_same<double, length_t>::value ? DBL_EPSILON : FLT_EPSILON;
 
 
 
@@ -48,18 +47,12 @@ constexpr uint64_t pow2(int n) { return bitUi64(n); }
 template<typename T>
 using Unique = std::unique_ptr<T>;
 template<typename T, typename ... Args>
-constexpr Unique<T> CreateUnique(Args&& ... args)
-{
-  return std::make_unique<T>(std::forward<Args>(args)...);
-}
+constexpr Unique<T> CreateUnique(Args&& ... args) { return std::make_unique<T>(std::forward<Args>(args)...); }
 
 template<typename T>
 using Shared = std::shared_ptr<T>;
 template<typename T, typename ... Args>
-constexpr Shared<T> CreateShared(Args&& ... args)
-{
-  return std::make_shared<T>(std::forward<Args>(args)...);
-}
+constexpr Shared<T> CreateShared(Args&& ... args) { return std::make_shared<T>(std::forward<Args>(args)...); }
 
 class Timestep
 {
@@ -124,18 +117,12 @@ private:
 
 // ==================== Enabling Bitmasking for Enum Classes ==================== //
 // Code borrowed from: https://wiggling-bits.net/using-enum-classes-as-type-safe-bitmasks/
-#define EN_ENABLE_BITMASK_OPERATORS(x)\
-template<>                            \
-struct EnableBitMaskOperators<x>      \
-{                                     \
-  static const bool enable = true;    \
-};                                    \
+#define EN_ENABLE_BITMASK_OPERATORS(x)  \
+template<>                              \
+struct EnableBitMaskOperators<x> { static const bool enable = true; };
 
 template<typename Enum>
-struct EnableBitMaskOperators
-{
-  static const bool enable = false;
-};
+struct EnableBitMaskOperators { static const bool enable = false; };
 
 template<typename Enum>
 typename std::enable_if<EnableBitMaskOperators<Enum>::enable, Enum>::type

@@ -92,6 +92,9 @@
     <ClInclude Include="src\Engine\Renderer\Camera.h">
       <Filter>Engine\Renderer</Filter>
     </ClInclude>
+    <ClInclude Include="src\Engine\Renderer\DevCamera.h">
+      <Filter>Engine\Renderer</Filter>
+    </ClInclude>
     <ClInclude Include="src\Engine\Renderer\Framebuffer.h">
       <Filter>Engine\Renderer</Filter>
     </ClInclude>
@@ -156,7 +159,6 @@
       <Filter>Platform\Windows</Filter>
     </ClInclude>
     <ClInclude Include="src\VecTypes.h" />
-    <ClInclude Include="src\Engine\Renderer\DevCamera.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\ENpch.cpp" />
@@ -185,6 +187,9 @@
       <Filter>Engine\Renderer</Filter>
     </ClCompile>
     <ClCompile Include="src\Engine\Renderer\Camera.cpp">
+      <Filter>Engine\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Engine\Renderer\DevCamera.cpp">
       <Filter>Engine\Renderer</Filter>
     </ClCompile>
     <ClCompile Include="src\Engine\Renderer\Framebuffer.cpp">
@@ -250,6 +255,5 @@
     <ClCompile Include="src\Platform\Windows\WindowsWindow.cpp">
       <Filter>Platform\Windows</Filter>
     </ClCompile>
-    <ClCompile Include="src\Engine\Renderer\DevCamera.cpp" />
   </ItemGroup>
 </Project>

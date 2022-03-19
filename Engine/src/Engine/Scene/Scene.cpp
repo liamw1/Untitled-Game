@@ -28,6 +28,17 @@ namespace Engine
     s_Registry.destroy(entity);
   }
 
+  Entity Scene::GetEntity(uint32_t entityID)
+  {
+    if (s_Registry.valid(static_cast<entt::entity>(entityID)))
+      return Entity(s_Registry, static_cast<entt::entity>(entityID));
+    else
+    {
+      EN_ERROR("Entity ID does not refer to a valid entity!");
+      return {};
+    }
+  }
+
   void Scene::OnUpdate(Timestep timestep)
   {
     // Update scripts
@@ -54,9 +65,9 @@ namespace Engine
       for (entt::entity entityID : view)
       {
         Mat4 transform = s_Registry.get<Component::Transform>(entityID).calculateTransform();
-        const Float4& color = view.get<Component::SpriteRenderer>(entityID).color;
+        const auto& sprite = view.get<Component::SpriteRenderer>(entityID);
 
-        Renderer2D::DrawQuad(transform, color);
+        Renderer2D::DrawSprite(transform, sprite, static_cast<int>(entityID));
       }
       Renderer2D::EndScene();
     }
@@ -72,9 +83,9 @@ namespace Engine
       for (entt::entity entityID : view)
       {
         Mat4 transform = s_Registry.get<Component::Transform>(entityID).calculateTransform();
-        const Float4& color = view.get<Component::SpriteRenderer>(entityID).color;
+        const auto& sprite = view.get<Component::SpriteRenderer>(entityID);
 
-        Renderer2D::DrawQuad(transform, color);
+        Renderer2D::DrawSprite(transform, sprite, static_cast<int>(entityID));
       }
       Renderer2D::EndScene();
     }
@@ -140,8 +151,12 @@ namespace Engine
     }
   }
 
-  entt::registry& Scene::Registry()
+  void Scene::ForEachEntity(void (*func)(const Entity))
   {
-    return s_Registry;
+    const size_t numEntities = s_Registry.size();
+    const entt::entity* entityIDs = s_Registry.data();
+
+    for (int i = 0; i < numEntities; ++i)
+      func(Entity(s_Registry, entityIDs[i]));
   }
 }
