@@ -200,7 +200,7 @@ void ChunkManager::renderLODs()
       for (int planeID = 0; planeID < 6; ++planeID)
         shiftedFrustumPlanes[planeID].w = frustumPlanes[planeID].w + LODSphereRadius * planeNormalMags[planeID];
 
-      if (isInFrustum(node->center(), shiftedFrustumPlanes) && !isInRange(node->anchor, s_RenderDistance - 1))
+      if (isInFrustum(node->center(), shiftedFrustumPlanes) && !isInRange(node->anchor, s_RenderDistance - 2))
         ChunkRenderer::DrawLOD(node);
     }
   ChunkRenderer::EndScene();
