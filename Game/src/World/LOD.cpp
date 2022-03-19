@@ -140,7 +140,7 @@ namespace LOD
   // LOD smoothness parameter, must be in the range [0.0, 1.0]
   static constexpr float smoothnessLevel(int LODLevel)
   {
-#if 0
+#if 1
     return std::min(0.15f * (LODLevel) + 0.3f, 1.0f);
 #else
     return 1.0f;
@@ -746,23 +746,22 @@ namespace LOD
       const int v = (u + 1) % 3;
       const int w = (u + 2) % 3;
 
-      int64_t neighborSize = 1;
-      GlobalIndex neighborIndex = node->anchor + offsets[faceID];
-      for (int64_t& i = neighborIndex[v]; i < (node->anchor + offsets[faceID])[v] + node->size(); i += neighborSize)
-        for (int64_t& j = neighborIndex[w]; j < (node->anchor + offsets[faceID])[w] + node->size(); j += neighborSize)
+      globalIndex_t neighborSize = node->size();
+      GlobalIndex neighborIndexBase = node->anchor + offsets[faceID];
+      for (globalIndex_t i = 0; i < node->size(); i += neighborSize)
+        for (globalIndex_t j = 0; j < node->size(); j += neighborSize)
         {
-          LOD::Octree::Node* neighbor = tree.findLeaf(neighborIndex);
+          GlobalIndex neighborIndex = neighborIndexBase;
+          neighborIndex[v] += i;
+          neighborIndex[w] += j;
 
+          LOD::Octree::Node* neighbor = tree.findLeaf(neighborIndex);
           if (neighbor != nullptr)
           {
             neighbor->data->needsUpdate = true;
             neighborSize = neighbor->size();
           }
-          else
-            neighborSize = node->size();
         }
     }
-
-    node->data->needsUpdate = true;
   }
 }

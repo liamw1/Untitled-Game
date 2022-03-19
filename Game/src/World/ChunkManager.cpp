@@ -506,8 +506,7 @@ bool ChunkManager::splitLODs(std::vector<LOD::Octree::Node*>& leaves)
       if (LOD::Intersection(splitRangeBoundingBox, node->boundingBox()))
       {
         m_LODTree.splitNode(node);
-        for (int i = 0; i < 8; ++i)
-          LOD::MessageNeighbors(m_LODTree, node->children[i]);
+        LOD::MessageNeighbors(m_LODTree, node);
 
         it = leaves.erase(it);
         treeModified = true;

@@ -13,7 +13,7 @@ static Shared<Engine::TextureArray> s_TextureArray;
 static constexpr int s_TextureSlot = 0;
 
 static constexpr float s_LODNearPlaneDistance = static_cast<float>(10 * Block::Length());
-static constexpr float s_LODFarPlaneDistance = static_cast<float>(1e6 * Block::Length());
+static constexpr float s_LODFarPlaneDistance = static_cast<float>(1e10 * Block::Length());
 
 
 void ChunkRenderer::Initialize()
