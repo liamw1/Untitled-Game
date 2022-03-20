@@ -155,12 +155,12 @@ namespace LOD
     return (1 - s) * (q0 + q1) / 2 + s * ((1 - t) * q0 + t * q1);
   }
 
-  static Array2D<length_t, s_NumCells + 1> generateNoise(LOD::Octree::Node* node)
+  static StackArray2D<length_t, s_NumCells + 1> generateNoise(LOD::Octree::Node* node)
   {
     const length_t cellLength = node->length() / s_NumCells;
     const Vec2 LODAnchorXY = Chunk::Length() * static_cast<Vec2>(node->anchor);
 
-    Array2D<length_t, s_NumCells + 1> noiseValues{};
+    StackArray2D<length_t, s_NumCells + 1> noiseValues{};
     for (int i = 0; i < s_NumCells + 1; ++i)
       for (int j = 0; j < s_NumCells + 1; ++j)
       {
@@ -172,7 +172,7 @@ namespace LOD
     return noiseValues;
   }
 
-  static bool needsMesh(LOD::Octree::Node* node, const Array2D<length_t, s_NumCells + 1>& noiseValues)
+  static bool needsMesh(LOD::Octree::Node* node, const StackArray2D<length_t, s_NumCells + 1>& noiseValues)
   {
     const length_t LODFloor = node->anchor.k * Chunk::Length();
     const length_t LODCeiling = LODFloor + node->length();
@@ -195,13 +195,13 @@ namespace LOD
     return needsMesh;
   }
 
-  static Array2D<Vec3, s_NumCells + 1> calcNoiseNormals(LOD::Octree::Node* node, const Array2D<length_t, s_NumCells + 1>& noiseValues)
+  static HeapArray2D<Vec3, s_NumCells + 1> calcNoiseNormals(LOD::Octree::Node* node, const StackArray2D<length_t, s_NumCells + 1>& noiseValues)
   {
     const length_t cellLength = node->length() / s_NumCells;
     const Vec2 LODAnchorXY = Chunk::Length() * static_cast<Vec2>(node->anchor);
 
     // Calculate normals using central differences
-    Array2D<Vec3, s_NumCells + 1> noiseNormals{};
+    HeapArray2D<Vec3, s_NumCells + 1> noiseNormals{};
     for (int i = 0; i < s_NumCells + 1; ++i)
       for (int j = 0; j < s_NumCells + 1; ++j)
       {
@@ -250,7 +250,7 @@ namespace LOD
     return noiseNormals;
   }
 
-  static NoiseData interpolateNoiseData(LOD::Octree::Node* node, const Array2D<length_t, s_NumCells + 1>& noiseValues, const Array2D<Vec3, s_NumCells + 1>& noiseNormals, const BlockIndex& cornerA, const BlockIndex& cornerB, float s)
+  static NoiseData interpolateNoiseData(LOD::Octree::Node* node, const StackArray2D<length_t, s_NumCells + 1>& noiseValues, const HeapArray2D<Vec3, s_NumCells + 1>& noiseNormals, const BlockIndex& cornerA, const BlockIndex& cornerB, float s)
   {
     const length_t LODFloor = node->anchor.k * Chunk::Length();
     const length_t cellLength = node->length() / s_NumCells;
@@ -280,7 +280,7 @@ namespace LOD
   }
 
   // Generate primary LOD mesh using Marching Cubes algorithm
-  static void generatePrimaryMesh(LOD::Octree::Node* node, const Array2D<length_t, s_NumCells + 1>& noiseValues, const Array2D<Vec3, s_NumCells + 1>& noiseNormals)
+  static void generatePrimaryMesh(LOD::Octree::Node* node, const StackArray2D<length_t, s_NumCells + 1>& noiseValues, const HeapArray2D<Vec3, s_NumCells + 1>& noiseNormals)
   {
     EN_PROFILE_FUNCTION();
 
@@ -297,10 +297,10 @@ namespace LOD
     int vertexCount = 0;
     std::vector<uint32_t> primaryMeshIndices{};
     std::vector<LOD::Vertex> primaryMeshVertices{};
-    Array2D<VertexReuseData, s_NumCells> prevLayer{};
+    HeapArray2D<VertexReuseData, s_NumCells> prevLayer{};
     for (int i = 0; i < s_NumCells; ++i)
     {
-      Array2D<VertexReuseData, s_NumCells> currLayer{};
+      HeapArray2D<VertexReuseData, s_NumCells> currLayer{};
 
       for (int j = 0; j < s_NumCells; ++j)
         for (int k = 0; k < s_NumCells; ++k)
@@ -387,7 +387,7 @@ namespace LOD
             cornerB.k = cornerIndexB & bit(2) ? k + 1 : k;
 
             NoiseData noiseData = interpolateNoiseData(node, noiseValues, noiseNormals, cornerA, cornerB, smoothness);
-            primaryMeshVertices.push_back({ noiseData.position, noiseData.normal, vert % 3 });
+            primaryMeshVertices.emplace_back(noiseData.position, noiseData.normal, vert % 3);
             primaryMeshIndices.push_back(vertexCount);
             prevCellVertexIndices[edgeIndex] = vertexCount;
 
@@ -403,7 +403,7 @@ namespace LOD
   }
 
   // Generate transition meshes using Transvoxel algorithm
-  static void generateTransitionMeshes(LOD::Octree::Node* node, const Array2D<length_t, s_NumCells + 1>& noiseValues, const Array2D<Vec3, s_NumCells + 1>& noiseNormals)
+  static void generateTransitionMeshes(LOD::Octree::Node* node, const StackArray2D<length_t, s_NumCells + 1>& noiseValues, const HeapArray2D<Vec3, s_NumCells + 1>& noiseNormals)
   {
     EN_PROFILE_FUNCTION();
 
@@ -547,7 +547,7 @@ namespace LOD
             if (!isOnLowResSide)
               noiseData.position -= transitionCellWidth * normals[faceID];
 
-            transitionMeshVertices.push_back({ noiseData.position, noiseData.normal, vert % 3 });
+            transitionMeshVertices.emplace_back(noiseData.position, noiseData.normal, vert % 3);
             transitionMeshIndices.push_back(vertexCount);
             prevCellVertexIndices[edgeIndex] = vertexCount;
 
@@ -582,13 +582,13 @@ namespace LOD
     EN_PROFILE_FUNCTION();
 
     // Generate voxel data using heightmap
-    const Array2D<length_t, s_NumCells + 1> noiseValues = generateNoise(node);
+    const StackArray2D<length_t, s_NumCells + 1> noiseValues = generateNoise(node);
 
     if (!needsMesh(node, noiseValues))
       return;
 
     // Generate normal data from heightmap
-    const Array2D<Vec3, s_NumCells + 1> noiseNormals = calcNoiseNormals(node, noiseValues);
+    const HeapArray2D<Vec3, s_NumCells + 1> noiseNormals = calcNoiseNormals(node, noiseValues);
 
     generatePrimaryMesh(node, noiseValues, noiseNormals);
     generateTransitionMeshes(node, noiseValues, noiseNormals);

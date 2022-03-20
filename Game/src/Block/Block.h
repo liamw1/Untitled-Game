@@ -1,5 +1,6 @@
 #pragma once
 #include "BlockIDs.h"
+#include "Util/Array2D.h"
 
 enum class BlockFace : int
 {
@@ -37,7 +38,7 @@ private:
   static constexpr int s_MaxBlockTextures = 6 * s_MaxBlockTypes;
   static bool s_Initialized;
 
-  static std::array<std::array<BlockTexture, 6>, s_MaxBlockTypes> s_TexIDs;
+  static StackArray2D<BlockTexture, s_MaxBlockTypes, 6> s_TexIDs;
   static std::array<std::string, s_MaxBlockTextures> s_TexturePaths;
 
   static void assignTextures(BlockType block, BlockTexture faceTextures);

@@ -20,6 +20,10 @@ namespace LOD
 
   struct Vertex
   {
+    Vertex() = delete;
+    Vertex(const Float3& position, const Float3& isoNormal, int quadIndex)
+      : position(position), isoNormal(isoNormal), quadIndex(quadIndex) {}
+
     Float3 position;
     Float3 isoNormal;
     int quadIndex;
@@ -141,7 +145,7 @@ namespace LOD
     static constexpr int MaxNodeDepth() { return s_MaxNodeDepth; }
 
   private:
-    static constexpr int s_MaxNodeDepth = 8;
+    static constexpr int s_MaxNodeDepth = 16;
     static constexpr uint64_t s_RootNodeSize = pow2(s_MaxNodeDepth);
     static constexpr GlobalIndex s_RootNodeAnchor = -static_cast<globalIndex_t>(s_RootNodeSize / 2) * GlobalIndex({ 1, 1, 1 });
 

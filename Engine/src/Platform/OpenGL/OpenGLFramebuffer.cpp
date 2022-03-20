@@ -215,9 +215,8 @@ namespace Engine
     const FramebufferTextureSpecification& spec = m_ColorAttachmentSpecifications[attachmentIndex];
     uint32_t attachment = m_ColorAttachments[attachmentIndex];
     GLenum textureFormat = openGLTextureFormat(spec.textureFormat);
-    std::string typeName = value.type().name();
 
-    if (typeName == "int")
+    if (value.type() == typeid(int))
       clear<int>(attachment, textureFormat, GL_INT, value);
     else
       EN_CORE_ERROR("Unsupported value type!");

@@ -6,7 +6,7 @@ struct HeightMap
 {
   globalIndex_t chunkI;
   globalIndex_t chunkJ;
-  std::array<std::array<length_t, 32>, 32> terrainHeights;
+  StackArray2D<length_t, 32> terrainHeights;  // NOTE: Chunk size is hard-coded here, should fix this
 
   length_t maxHeight;
 };

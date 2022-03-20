@@ -1,7 +1,7 @@
 #include "GMpch.h"
 #include "Block.h"
 
-std::array<std::array<BlockTexture, 6>, Block::s_MaxBlockTypes> Block::s_TexIDs{};
+StackArray2D<BlockTexture, Block::s_MaxBlockTypes, 6> Block::s_TexIDs{};
 std::array<std::string, Block::s_MaxBlockTextures> Block::s_TexturePaths{};
 
 bool Block::s_Initialized = false;
