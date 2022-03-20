@@ -100,7 +100,7 @@ private:
     Engine::Camera& camera = get<Component::Camera>().camera;
 
     Angle cameraFOV = camera.getFOV();
-    cameraFOV -= cameraFOV * s_CameraZoomSensitivity * event.getYOffset();
+    cameraFOV -= s_CameraZoomSensitivity * event.getYOffset() * cameraFOV;
     cameraFOV = std::max(cameraFOV, s_MinFOV);
     cameraFOV = std::min(cameraFOV, s_MaxFOV);
 

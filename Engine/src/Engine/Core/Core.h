@@ -113,6 +113,9 @@ private:
   float m_Degrees;
 };
 
+constexpr Angle operator*(int n, Angle theta) { return theta * n; }
+constexpr Angle operator*(float x, Angle theta) { return theta * x; }
+
 
 
 // ==================== Enabling Bitmasking for Enum Classes ==================== //
