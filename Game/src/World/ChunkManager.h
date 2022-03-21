@@ -65,7 +65,7 @@ private:
     float lightValue;
   };
 
-  static constexpr int s_RenderDistance = 4;
+  static constexpr int s_RenderDistance = 8;
   static constexpr int s_LoadDistance = s_RenderDistance + 2;
   static constexpr int s_UnloadDistance = s_LoadDistance;
   static constexpr int s_MaxChunks = (2 * s_UnloadDistance + 1) * (2 * s_UnloadDistance + 1) * (2 * s_UnloadDistance + 1);
@@ -75,22 +75,22 @@ private:
   std::vector<int> m_OpenChunkSlots;
 
   // Chunk pointers
-  std::array<llvm::DenseMap<int64_t, Chunk*>, 3> m_Chunks;
-  llvm::DenseMap<int64_t, Chunk*>& m_EmptyChunks = m_Chunks[static_cast<int>(MapType::Empty)];
-  llvm::DenseMap<int64_t, Chunk*>& m_BoundaryChunks = m_Chunks[static_cast<int>(MapType::Boundary)];
-  llvm::DenseMap<int64_t, Chunk*>& m_RenderableChunks = m_Chunks[static_cast<int>(MapType::Renderable)];
+  std::array<llvm::DenseMap<int, Chunk*>, 3> m_Chunks;
+  llvm::DenseMap<int, Chunk*>& m_EmptyChunks = m_Chunks[static_cast<int>(MapType::Empty)];
+  llvm::DenseMap<int, Chunk*>& m_BoundaryChunks = m_Chunks[static_cast<int>(MapType::Boundary)];
+  llvm::DenseMap<int, Chunk*>& m_RenderableChunks = m_Chunks[static_cast<int>(MapType::Renderable)];
 
   // LOD data
   LOD::Octree m_LODTree{};
 
   // Terrain data
-  llvm::DenseMap<int64_t, HeightMap> m_HeightMaps{};
+  llvm::DenseMap<int, HeightMap> m_HeightMaps{};
 
   /*
     Generates a (nearly) unique key for chunk hash maps.
   */
-  int64_t createKey(const GlobalIndex& chunkIndex) const;
-  int64_t createHeightMapKey(globalIndex_t chunkI, globalIndex_t chunkJ) const;
+  int createKey(const GlobalIndex& chunkIndex) const;
+  int createHeightMapKey(globalIndex_t chunkI, globalIndex_t chunkJ) const;
 
   bool isInRange(const GlobalIndex& chunkIndex, globalIndex_t range) const;
 

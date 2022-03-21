@@ -8,7 +8,7 @@ GameSandbox::GameSandbox()
   : Layer("GameSandbox")
 {
   Block::Initialize();
-  Player::Initialize({ 0, 0, 2 }, Block::Length() * Vec3(16.0));
+  Player::Initialize(GlobalIndex(0, 0, 2), Block::Length() * Vec3(16.0));
   Engine::RenderCommand::Initialize();
   Engine::Renderer::Initialize();
   Engine::Renderer2D::Initialize();

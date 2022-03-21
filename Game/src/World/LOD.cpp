@@ -51,7 +51,7 @@ namespace LOD
           int childIndex = i * bitUi32(2) + j * bitUi32(1) + k * bitUi32(0);
           EN_ASSERT(node->children[childIndex] == nullptr, "Child node already exists!");
 
-          GlobalIndex nodeChildAnchor = node->anchor + nodeChildSize * GlobalIndex({ i, j, k });
+          GlobalIndex nodeChildAnchor = node->anchor + nodeChildSize * GlobalIndex(i, j, k);
           node->children[childIndex] = new Node(node, node->depth + 1, nodeChildAnchor);
           node->children[childIndex]->data = new Data();
         }

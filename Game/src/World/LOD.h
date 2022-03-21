@@ -147,7 +147,7 @@ namespace LOD
   private:
     static constexpr int s_MaxNodeDepth = 16;
     static constexpr uint64_t s_RootNodeSize = pow2(s_MaxNodeDepth);
-    static constexpr GlobalIndex s_RootNodeAnchor = -static_cast<globalIndex_t>(s_RootNodeSize / 2) * GlobalIndex({ 1, 1, 1 });
+    static constexpr GlobalIndex s_RootNodeAnchor = -static_cast<globalIndex_t>(s_RootNodeSize / 2) * GlobalIndex(1, 1, 1);
 
     // Root node of the tree
     Node m_Root;

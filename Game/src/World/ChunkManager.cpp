@@ -46,12 +46,12 @@ void ChunkManager::clean()
     unloadChunk(chunksToRemove[i]);
 
   // Destroy heightmaps outside of unload range
-  std::vector<int64_t> heightMapsToRemove{};
+  std::vector<int> heightMapsToRemove{};
   for (auto& pair : m_HeightMaps)
   {
     const HeightMap& heightMap = pair.second;
 
-    if (!isInRange(GlobalIndex({ heightMap.chunkI, heightMap.chunkJ, Player::OriginIndex().k }), s_UnloadDistance))
+    if (!isInRange(GlobalIndex(heightMap.chunkI, heightMap.chunkJ, Player::OriginIndex().k), s_UnloadDistance))
       heightMapsToRemove.push_back(createHeightMapKey(heightMap.chunkI, heightMap.chunkJ));
   }
   for (int i = 0; i < heightMapsToRemove.size(); ++i)
@@ -132,7 +132,7 @@ bool ChunkManager::loadNewChunks(int maxNewChunks)
   for (int i = 0; i < newChunks.size(); ++i)
   {
     const GlobalIndex newChunkIndex = newChunks[i];
-    int64_t key = createKey(newChunkIndex);
+    int key = createKey(newChunkIndex);
 
     // Create key for hash map.  If chunk is already in a map, skip it
     bool isInMap = false;
@@ -230,7 +230,7 @@ void ChunkManager::manageLODs()
 Chunk* ChunkManager::findChunk(const LocalIndex& chunkIndex) const
 {
   GlobalIndex originChunk = Player::OriginIndex();
-  return findChunk(GlobalIndex({ originChunk.i + chunkIndex.i, originChunk.j + chunkIndex.j, originChunk.k + chunkIndex.k }));
+  return findChunk(GlobalIndex(originChunk.i + chunkIndex.i, originChunk.j + chunkIndex.j, originChunk.k + chunkIndex.k));
 }
 
 void ChunkManager::sendChunkUpdate(Chunk* const chunk)
@@ -238,7 +238,7 @@ void ChunkManager::sendChunkUpdate(Chunk* const chunk)
   if (chunk == nullptr)
     return;
 
-  int64_t key = createKey(chunk->getGlobalIndex());
+  int key = createKey(chunk->getGlobalIndex());
 
   // Find maptype of chunk
   bool foundChunk = false;
@@ -275,14 +275,14 @@ void ChunkManager::sendChunkUpdate(Chunk* const chunk)
   }
 }
 
-int64_t ChunkManager::createKey(const GlobalIndex& chunkIndex) const
+int ChunkManager::createKey(const GlobalIndex& chunkIndex) const
 {
-  return chunkIndex.i % bit(10) + bit(10) * (chunkIndex.j % bit(10)) + bit(20) * (chunkIndex.k % bit(10));
+  return chunkIndex.i % bitUi32(10) + bitUi32(10) * (chunkIndex.j % bitUi32(10)) + bitUi32(20) * (chunkIndex.k % bitUi32(10));
 }
 
-int64_t ChunkManager::createHeightMapKey(globalIndex_t chunkI, globalIndex_t chunkJ) const
+int ChunkManager::createHeightMapKey(globalIndex_t chunkI, globalIndex_t chunkJ) const
 {
-  return chunkI % bit(10) + bit(10) * (chunkJ % bit(10));
+  return createKey(GlobalIndex(chunkI, chunkJ, 0));
 }
 
 bool ChunkManager::isInRange(const GlobalIndex& chunkIndex, globalIndex_t range) const
@@ -349,7 +349,7 @@ Chunk* ChunkManager::loadChunk(const GlobalIndex& chunkIndex)
   m_OpenChunkSlots.pop_back();
 
   // Generate heightmap is none exists
-  int64_t heightMapKey = createHeightMapKey(chunkIndex.i, chunkIndex.j);
+  int heightMapKey = createHeightMapKey(chunkIndex.i, chunkIndex.j);
   if (m_HeightMaps.find(heightMapKey) == m_HeightMaps.end())
     m_HeightMaps.insert({ heightMapKey, generateHeightMap(chunkIndex.i, chunkIndex.j) });
 
@@ -367,7 +367,7 @@ Chunk* ChunkManager::loadChunk(const GlobalIndex& chunkIndex)
     const GlobalIndex neighborIndex = chunkIndex + GlobalIndex::OutwardNormal(face);
 
     // Find and add neighbor to new chunk, if it exists
-    int64_t key = createKey(neighborIndex);
+    int key = createKey(neighborIndex);
     for (MapType mapType : MapTypeIterator())
     {
       const int mapTypeID = static_cast<int>(mapType);
@@ -414,7 +414,7 @@ void ChunkManager::unloadChunk(Chunk* const chunk)
   }
 
   // Remove chunk pointer from m_BoundaryChunks
-  int64_t key = createKey(chunk->getGlobalIndex());
+  int key = createKey(chunk->getGlobalIndex());
   bool eraseSuccessful = m_BoundaryChunks.erase(key);
   EN_ASSERT(eraseSuccessful, "Chunk is not in map!");
 
@@ -429,7 +429,7 @@ void ChunkManager::unloadChunk(Chunk* const chunk)
 
 Chunk* ChunkManager::findChunk(const GlobalIndex& globalIndex) const
 {
-  const int64_t key = createKey(globalIndex);
+  const int key = createKey(globalIndex);
 
   for (MapType mapType : MapTypeIterator())
   {
@@ -446,7 +446,7 @@ void ChunkManager::addToMap(Chunk* const chunk, MapType mapType)
 {
   const int mapTypeID = static_cast<int>(mapType);
 
-  int64_t key = createKey(chunk->getGlobalIndex());
+  int key = createKey(chunk->getGlobalIndex());
   auto insertionResult = m_Chunks[mapTypeID].insert({ key, chunk });
   bool insertionSuccess = insertionResult.second;
   EN_ASSERT(insertionSuccess, "Chunk is already in map!");
@@ -456,7 +456,7 @@ void ChunkManager::moveToMap(Chunk* const chunk, MapType source, MapType destina
 {
   const int sourceTypeID = static_cast<int>(source);
 
-  int64_t key = createKey(chunk->getGlobalIndex());
+  int key = createKey(chunk->getGlobalIndex());
   addToMap(chunk, destination);
   m_Chunks[sourceTypeID].erase(key);
 }

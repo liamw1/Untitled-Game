@@ -6,7 +6,7 @@ Shared<Engine::IndexBuffer> Chunk::s_MeshIndexBuffer = nullptr;
 Engine::BufferLayout Chunk::s_MeshVertexBufferLayout = { { ShaderDataType::Uint32, "a_VertexData" } };
 
 Chunk::Chunk()
-  : m_GlobalIndex({ 0, 0, 0 })
+  : m_GlobalIndex(0, 0, 0)
 {
 }
 
@@ -233,7 +233,7 @@ bool Chunk::isBlockNeighborInAnotherChunk(const BlockIndex& blockIndex, BlockFac
 
 bool Chunk::isBlockNeighborTransparent(blockIndex_t i, blockIndex_t j, blockIndex_t k, BlockFace face)
 {
-  return isBlockNeighborTransparent({ i, j, k }, face);
+  return isBlockNeighborTransparent(BlockIndex(i, j, k), face);
 }
 
 bool Chunk::isBlockNeighborTransparent(const BlockIndex& blockIndex, BlockFace face)
@@ -270,9 +270,7 @@ bool Chunk::isBlockNeighborAir(const BlockIndex& blockIndex, BlockFace face)
 
 LocalIndex Chunk::LocalIndexFromPos(const Vec3& position)
 {
-  return { static_cast<localIndex_t>(floor(position.x / s_ChunkLength)),
-           static_cast<localIndex_t>(floor(position.y / s_ChunkLength)),
-           static_cast<localIndex_t>(floor(position.z / s_ChunkLength)) };
+  return LocalIndex::ToIndex(glm::floor(position / s_ChunkLength));
 }
 
 void Chunk::InitializeIndexBuffer()
@@ -440,8 +438,5 @@ BlockIndex Chunk::blockIndexFromPos(const Vec3& position) const
             localPosition.y >= 0.0 && localPosition.y <= s_ChunkLength &&
             localPosition.z >= 0.0 && localPosition.z <= s_ChunkLength, "Given position is not inside chunk!");
 
-  BlockIndex blockIndex = { static_cast<blockIndex_t>(localPosition.x / Block::Length()),
-                            static_cast<blockIndex_t>(localPosition.y / Block::Length()),
-                            static_cast<blockIndex_t>(localPosition.z / Block::Length()) };
-  return blockIndex;
+  return BlockIndex::ToIndex(localPosition / Block::Length());
 }

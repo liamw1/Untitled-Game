@@ -1,5 +1,6 @@
 #pragma once
 #include "Block/Block.h"
+#include <llvm/ADT/DenseMapInfo.h>
 
 /*
   Structs for indexing of blocks and chunks.
@@ -15,7 +16,11 @@ struct Index3D
   intType j;
   intType k;
 
-  intType& operator[](int index)
+  constexpr Index3D() = default;
+  constexpr Index3D(intType i, intType j, intType k)
+    : i(i), j(j), k(k) {}
+
+  constexpr intType& operator[](int index)
   {
     EN_ASSERT(index < 3, "Index is out of bounds!");
     switch (index)
@@ -27,7 +32,7 @@ struct Index3D
     }
   }
 
-  const intType& operator[](int index) const
+  constexpr const intType& operator[](int index) const
   {
     EN_ASSERT(index < 3, "Index is out of bounds!");
     switch (index)
@@ -39,7 +44,13 @@ struct Index3D
     }
   }
 
+  // Comparison operators define lexicographical ordering on 3D indices
   constexpr bool operator==(const Index3D<intType>& other) const { return i == other.i && j == other.j && k == other.k; }
+  constexpr bool operator!=(const Index3D<intType>& other) const { return !(*this == other); }
+  constexpr bool operator<(const Index3D<intType>& other) const { return i < other.i || (i == other.i && j < other.j) || (i == other.i && j == other.j && k < other.k); }
+  constexpr bool operator>(const Index3D<intType>& other) const { return i > other.i || (i == other.i && j > other.j) || (i == other.i && j == other.j && k > other.k); }
+  constexpr bool operator<=(const Index3D<intType>& other) const { return !(*this > other); }
+  constexpr bool operator>=(const Index3D<intType>& other) const { return !(*this < other); }
 
   constexpr Index3D<intType> operator+(const Index3D<intType>& other) const
   {
@@ -69,6 +80,13 @@ struct Index3D
 
   constexpr operator Vec2() const { return { i, j }; }
   constexpr operator Vec3() const { return { i, j, k }; }
+
+  static constexpr Index3D<intType> ToIndex(const Vec3& vec)
+  {
+    return { static_cast<intType>(vec.x),
+             static_cast<intType>(vec.y),
+             static_cast<intType>(vec.z) };
+  }
 
   static const Index3D<intType>& OutwardNormal(BlockFace face)  // NOTE: Can't declare this as contexpr, not sure why
   {
