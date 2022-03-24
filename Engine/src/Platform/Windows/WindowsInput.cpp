@@ -7,21 +7,21 @@ namespace Engine
 {
   bool Input::IsKeyPressed(Key key)
   {
-    auto* window = static_cast<GLFWwindow*>(Application::Get().getWindow().getNativeWindow());
-    auto state = glfwGetKey(window, static_cast<int>(key));
+    GLFWwindow* window = static_cast<GLFWwindow*>(Application::Get().getWindow().getNativeWindow());
+    int state = glfwGetKey(window, static_cast<int>(key));
     return state == GLFW_PRESS || state == GLFW_REPEAT;
   }
 
   bool Input::IsMouseButtonPressed(Mouse button)
   {
-    auto* window = static_cast<GLFWwindow*>(Application::Get().getWindow().getNativeWindow());
-    auto state = glfwGetMouseButton(window, static_cast<int>(button));
+    GLFWwindow* window = static_cast<GLFWwindow*>(Application::Get().getWindow().getNativeWindow());
+    int state = glfwGetMouseButton(window, static_cast<int>(button));
     return state == GLFW_PRESS;
   }
 
   Float2 Input::GetMousePosition()
   {
-    auto* window = static_cast<GLFWwindow*>(Application::Get().getWindow().getNativeWindow());
+    GLFWwindow* window = static_cast<GLFWwindow*>(Application::Get().getWindow().getNativeWindow());
     double xPos, yPos;
     glfwGetCursorPos(window, &xPos, &yPos);
     return { static_cast<float>(xPos), static_cast<float>(yPos) };

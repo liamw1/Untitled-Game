@@ -212,7 +212,7 @@ namespace Engine
 
       glDeleteProgram(m_RendererID);
 
-      for (auto id : glShaderIDs)
+      for (GLenum id : glShaderIDs)
       {
         glDetachShader(m_RendererID, id);
         glDeleteShader(id);
@@ -224,7 +224,7 @@ namespace Engine
     }
 
     // Always detach shaders after a successful link
-    for (auto id : glShaderIDs)
+    for (GLenum id : glShaderIDs)
       glDetachShader(m_RendererID, id);
   }
 

@@ -10,12 +10,29 @@ template<typename T, int N, int M = N>
 class Container
 {
 public:
-  Container()
-    : m_Data(new T[N * M]) {}
-  ~Container() { delete[] m_Data; }
-
   Container(const Container& other) = delete;
   Container& operator=(const Container& other) = delete;
+
+  T& operator[](int colIndex)
+  {
+    EN_ASSERT(colIndex < M, "Column index is out of bounds!");
+    return m_Data[m_RowIndex * M + colIndex];
+  }
+  const T& operator[](int colIndex) const
+  {
+    EN_ASSERT(colIndex < M, "Column index is out of bounds!");
+    return m_Data[m_RowIndex * M + colIndex];
+  }
+
+private:
+  mutable int m_RowIndex = 0;
+  T* m_Data = nullptr;
+
+  Container()
+    : m_Data(new T[N * M])
+  {
+  }
+  ~Container() { delete[] m_Data; }
 
   Container(Container&& other) noexcept
     : m_RowIndex(other.m_RowIndex)
@@ -36,21 +53,6 @@ public:
     }
     return *this;
   }
-
-  T& operator[](int colIndex) 
-  { 
-    EN_ASSERT(colIndex < M, "Column index is out of bounds!");
-    return m_Data[m_RowIndex * M + colIndex]; 
-  }
-  const T& operator[](int colIndex) const 
-  { 
-    EN_ASSERT(colIndex < M, "Column index is out of bounds!");
-    return m_Data[m_RowIndex * M + colIndex]; 
-  }
-
-private:
-  mutable int m_RowIndex = 0;
-  T* m_Data = nullptr;
 
   template<typename U, int N, int M>
   friend class HeapArray2D;
@@ -78,7 +80,9 @@ public:
   HeapArray2D& operator=(const HeapArray2D& other) = delete;
 
   HeapArray2D(HeapArray2D&& other) noexcept
-    : m_Container(std::move(other.m_Container)) {}
+    : m_Container(std::move(other.m_Container))
+  {
+  }
 
   HeapArray2D& operator=(HeapArray2D&& other) noexcept
   {

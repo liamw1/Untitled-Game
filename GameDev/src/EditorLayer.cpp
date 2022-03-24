@@ -197,7 +197,7 @@ namespace Engine
 
     ImGui::Begin("Statistics");
 
-    auto stats = Renderer2D::GetStats();
+    Renderer2D::Statistics stats = Renderer2D::GetStats();
     ImGui::Text("Renderer2D Stats:");
     ImGui::Text("Draw Calls: %d", stats.drawCalls);
     ImGui::Text("Quads: %d", stats.quadCount);

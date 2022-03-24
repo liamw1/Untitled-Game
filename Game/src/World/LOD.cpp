@@ -651,7 +651,7 @@ namespace LOD
 
     // Adjust coorindates of boundary cells on primary LOD mesh
     if (node->data->transitionFaces != 0)
-      for (auto& vertex : LODMesh)
+      for (LOD::Vertex& vertex : LODMesh)
         adjustVertex(vertex, cellLength, node->data->transitionFaces);
     return LODMesh;
   }
@@ -667,7 +667,7 @@ namespace LOD
 
     // Adjust coorindates of boundary cells on transition mesh
     if (node->data->transitionFaces != 0)
-      for (auto& vertex : LODMesh)
+      for (LOD::Vertex& vertex : LODMesh)
       {
         // If Vertex is on low-resolution side, skip.  If on high-resolution side, move vertex to LOD face
         if (vertex.position[coordID] < LNGTH_EPSILON * node->length() || vertex.position[coordID] > (1.0 - LNGTH_EPSILON) * node->length())
@@ -716,14 +716,14 @@ namespace LOD
 
     determineTransitionFaces(tree, node);
 
-    auto& primaryMesh = node->data->primaryMesh;
+    LOD::MeshData& primaryMesh = node->data->primaryMesh;
     Engine::Renderer::UploadMesh(primaryMesh.vertexArray, s_LODBufferLayout, calcAdjustedPrimaryMesh(node), primaryMesh.indices);
 
     for (BlockFace face : BlockFaceIterator())
     {
       const int faceID = static_cast<int>(face);
 
-      auto& transitionMesh = node->data->transitionMeshes[faceID];
+      LOD::MeshData& transitionMesh = node->data->transitionMeshes[faceID];
       Engine::Renderer::UploadMesh(transitionMesh.vertexArray, s_LODBufferLayout, calcAdjustedTransitionMesh(node, face), transitionMesh.indices);
     }
 

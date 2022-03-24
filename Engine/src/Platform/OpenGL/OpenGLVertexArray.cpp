@@ -51,7 +51,7 @@ namespace Engine
     glBindVertexArray(m_RendererID);
     vertexBuffer->bind();
 
-    const auto& layout = vertexBuffer->getLayout();
+    const BufferLayout& layout = vertexBuffer->getLayout();
     for (const auto& element : layout)
     {
       const int dataTypeID = static_cast<int>(element.type);

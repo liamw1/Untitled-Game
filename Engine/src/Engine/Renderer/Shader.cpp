@@ -28,8 +28,7 @@ namespace Engine
 
   void ShaderLibrary::add(const Shared<Shader>& shader)
   {
-    auto& name = shader->getName();
-    add(name, shader);
+    add(shader->getName(), shader);
   }
 
   void ShaderLibrary::add(const std::string& name, const Shared<Shader>& shader)

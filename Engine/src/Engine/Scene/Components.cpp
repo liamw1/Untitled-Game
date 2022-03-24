@@ -4,9 +4,9 @@
 
 Vec3 Component::Transform::orientationDirection() const
 {
-  const auto& roll = rotation.x;
-  const auto& pitch = rotation.y;
-  const auto& yaw = rotation.z;
+  const length_t& roll = rotation.x;
+  const length_t& pitch = rotation.y;
+  const length_t& yaw = rotation.z;
 
   return { cos(yaw) * cos(pitch),
           -sin(yaw) * cos(pitch),

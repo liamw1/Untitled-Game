@@ -191,17 +191,17 @@ void ChunkManager::renderLODs()
                                               glm::length(Vec3(frustumPlanes[static_cast<int>(FrustumPlane::Far)])), };
 
   ChunkRenderer::BeginScene(viewProjection);
-  for (const auto& node : leaves)
-    if (node->data->primaryMesh.vertexArray != nullptr)
+  for (LOD::Octree::Node* leaf : leaves)
+    if (leaf->data->primaryMesh.vertexArray != nullptr)
     {
       // Shift each plane by distance equal to radius of sphere that circumscribes LOD
       static constexpr float sqrt3 = 1.732050807568877f;
-      const length_t LODSphereRadius = sqrt3 * node->length() / 2;
+      const length_t LODSphereRadius = sqrt3 * leaf->length() / 2;
       for (int planeID = 0; planeID < 6; ++planeID)
         shiftedFrustumPlanes[planeID].w = frustumPlanes[planeID].w + LODSphereRadius * planeNormalMags[planeID];
 
-      if (isInFrustum(node->center(), shiftedFrustumPlanes) && !isInRange(node->anchor, s_RenderDistance - 2))
-        ChunkRenderer::DrawLOD(node);
+      if (isInFrustum(leaf->center(), shiftedFrustumPlanes) && !isInRange(leaf->anchor, s_RenderDistance - 2))
+        ChunkRenderer::DrawLOD(leaf);
     }
   ChunkRenderer::EndScene();
 }
@@ -482,7 +482,7 @@ void ChunkManager::initializeLODs()
 
   // Generate meshes for all LODs
   leaves = m_LODTree.getLeaves();
-  for (auto& leaf : leaves)
+  for (LOD::Octree::Node* leaf : leaves)
   {
     LOD::GenerateMesh(leaf);
 
