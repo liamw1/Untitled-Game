@@ -184,6 +184,11 @@ void Player::SetPosition(const Vec3& position) { s_PlayerEntity.get<Component::T
 const Vec3& Player::Velocity() { return s_Velocity; }
 void Player::SetVelocity(const Vec3& velocity) { s_Velocity = velocity; }
 
+Vec3 Player::ViewDirection()
+{
+  return s_PlayerEntity.get<Component::Transform>().orientationDirection();
+}
+
 const GlobalIndex& Player::OriginIndex() { return s_OriginIndex; }
 
 length_t Player::Width() { return s_Width; }

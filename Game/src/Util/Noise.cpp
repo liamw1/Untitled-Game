@@ -229,15 +229,14 @@ Vec4 Noise::Simplex3D(const Vec3& v)
   g3 *= norm.w;
 
   // Compute noise and gradient at P
-  Vec4 m = glm::max(Vec4(static_cast<length_t>(0.6)) - Vec4(glm::dot(x0, x0), glm::dot(x1, x1), glm::dot(x2, x2), glm::dot(x3, x3)), Vec4(0.0));
+  Vec4 m = glm::max(Vec4(0.6) - Vec4(glm::dot(x0, x0), glm::dot(x1, x1), glm::dot(x2, x2), glm::dot(x3, x3)), Vec4(0.0));
   Vec4 m2 = m * m;
   Vec4 m3 = m2 * m;
   Vec4 m4 = m2 * m2;
-  Vec3 grad =
-    -6 * m3.x * x0 * glm::dot(x0, g0) + m4.x * g0 +
-    -6 * m3.y * x1 * glm::dot(x1, g1) + m4.y * g1 +
-    -6 * m3.z * x2 * glm::dot(x2, g2) + m4.z * g2 +
-    -6 * m3.w * x3 * glm::dot(x3, g3) + m4.w * g3;
+  Vec3 grad = -6 * m3.x * x0 * glm::dot(x0, g0) + m4.x * g0 +
+              -6 * m3.y * x1 * glm::dot(x1, g1) + m4.y * g1 +
+              -6 * m3.z * x2 * glm::dot(x2, g2) + m4.z * g2 +
+              -6 * m3.w * x3 * glm::dot(x3, g3) + m4.w * g3;
   Vec4 px(glm::dot(x0, g0), glm::dot(x1, g1), glm::dot(x2, g2), glm::dot(x3, g3));
   return 42 * Vec4(grad, dot(m4, px));
 }

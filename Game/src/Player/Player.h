@@ -34,6 +34,8 @@ namespace Player
   const Vec3& Velocity();
   void SetVelocity(const Vec3& velocity);
 
+  Vec3 ViewDirection();
+
   const GlobalIndex& OriginIndex();
 
   length_t Width();

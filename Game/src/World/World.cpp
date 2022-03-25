@@ -197,11 +197,10 @@ void World::playerWorldInteraction()
 {
   static constexpr length_t maxInteractionDistance = 1000 * Block::Length();
 
-#if 0
-  m_PlayerRayCast = castRay(Player::Camera().getPosition(), Player::ViewDirection(), maxInteractionDistance);
+  m_PlayerRayCast = castRay(Player::Position(), Player::ViewDirection(), maxInteractionDistance);
   if (m_PlayerRayCast.distance <= maxInteractionDistance)
   {
-    Engine::Renderer::BeginScene(Engine::Scene::GetActiveCamera().getProjection());
+    Engine::Renderer::BeginScene(Engine::Scene::ActiveCameraViewProjection());
     const BlockIndex& blockIndex = m_PlayerRayCast.blockIndex;
     const LocalIndex& chunkIndex = m_PlayerRayCast.chunkIndex;
     const Vec3 blockCenter = Chunk::Length() * Vec3(chunkIndex.i, chunkIndex.j, chunkIndex.k) + Block::Length() * (Vec3(blockIndex.i, blockIndex.j, blockIndex.k) + Vec3(0.5));
@@ -245,7 +244,6 @@ void World::playerWorldInteraction()
       }
     }
   }
-#endif
 }
 
 void World::onEvent(Engine::Event& event)
