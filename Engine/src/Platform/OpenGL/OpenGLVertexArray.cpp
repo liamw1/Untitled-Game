@@ -53,7 +53,7 @@ namespace Engine
     glBindBuffer(GL_ARRAY_BUFFER, m_VertexBufferID);
 
     uint32_t vertexBufferIndex = 0;
-    for (const auto& element : layout)
+    for (const BufferElement& element : layout)
     {
       const int dataTypeID = static_cast<int>(element.type);
 

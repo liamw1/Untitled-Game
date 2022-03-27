@@ -38,13 +38,13 @@ void Sandbox2D::onUpdate(Timestep timestep)
   Engine::Renderer2D::DrawQuad(Vec3(0.0, 0.0, -0.1), Vec2(50.0), Angle(0.0f), Float4(1.0f), 10.0f, m_CheckerboardTexture);
   for (int i = 0; i < 5; ++i)
     for (int j = 0; j < 5; ++j)
-      Engine::Renderer2D::DrawQuad(Vec3(i - 2, j - 2, 0), Vec2(0.66), rotation, Float4(0.8f, 0.2f, 0.3f, 1.0f), 1.0f, m_CheckerboardTexture);
+      Engine::Renderer2D::DrawQuad(Vec3(i - 2, j - 2, 0), Vec2(static_cast<length_t>(0.66)), rotation, Float4(0.8f, 0.2f, 0.3f, 1.0f), 1.0f, m_CheckerboardTexture);
   
   for (float y = -5.0; y < 5.0; y += 0.5)
     for (float x = -5.0; x < 5.0; x += 0.5)
     {
       Float4 color((x + 5.0f) / 10, 0.4f, (y + 5.0f) / 10, 0.5f);
-      Engine::Renderer2D::DrawQuad(Vec3(x, y, 0), Vec2(0.45), Angle(0.0f), color);
+      Engine::Renderer2D::DrawQuad(Vec3(x, y, 0), Vec2(static_cast<length_t>(0.45)), Angle(0.0f), color);
     }
 
   Engine::Renderer2D::EndScene();

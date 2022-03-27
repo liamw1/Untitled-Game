@@ -3,16 +3,29 @@
 #include "LayerStack.h"
 #include "Engine/ImGui/ImGuiLayer.h"
 #include "Engine/Events/ApplicationEvent.h"
+#include "Log.h"
 
 // Entry point
 int main(int argc, char** argv);
 
 namespace Engine
 {
+  struct ApplicationCommandLineArgs
+  {
+    int count = 0;
+    char** args = nullptr;
+
+    const char* operator[](int index) const
+    {
+      EN_CORE_ASSERT(index < count, "Index is out of bounds!");
+      return args[index];
+    }
+  };
+
   class Application
   {
   public:
-    Application(const std::string& name = "Engine");
+    Application(const std::string& name = "Engine", ApplicationCommandLineArgs args = ApplicationCommandLineArgs());
     virtual ~Application();
 
     // Handler for all player input
@@ -26,10 +39,12 @@ namespace Engine
     ImGuiLayer* getImGuiLayer() { return m_ImGuiLayer; }
 
     Window& getWindow() { return *m_Window; }
+    const ApplicationCommandLineArgs& GetCommandLineArgs() const { return m_CommandLineArgs; }
     static Application& Get() { return *s_Instance; }
 
   private:
     static Application* s_Instance;
+    ApplicationCommandLineArgs m_CommandLineArgs;
     Unique<Window> m_Window;
     ImGuiLayer* m_ImGuiLayer;
     LayerStack m_LayerStack;
@@ -46,5 +61,5 @@ namespace Engine
   };
 
   // To be defined in CLIENT
-  Application* CreateApplication();
+  Application* CreateApplication(ApplicationCommandLineArgs args);
 }

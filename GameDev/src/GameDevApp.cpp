@@ -7,8 +7,8 @@ namespace Engine
   class GameDev : public Application
   {
   public:
-    GameDev()
-      : Application("GameDev")
+    GameDev(ApplicationCommandLineArgs args)
+      : Application("GameDev", args)
     {
       pushLayer(new EditorLayer());
     }
@@ -18,8 +18,8 @@ namespace Engine
     }
   };
 
-  Application* CreateApplication()
+  Application* CreateApplication(ApplicationCommandLineArgs args)
   {
-    return new GameDev();
+    return new GameDev(args);
   }
 }

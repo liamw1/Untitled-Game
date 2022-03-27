@@ -65,7 +65,7 @@ namespace Engine
       for (entt::entity entityID : view)
       {
         Mat4 transform = s_Registry.get<Component::Transform>(entityID).calculateTransform();
-        const auto& sprite = view.get<Component::SpriteRenderer>(entityID);
+        const Component::SpriteRenderer& sprite = view.get<Component::SpriteRenderer>(entityID);
 
         Renderer2D::DrawSprite(transform, sprite, static_cast<int>(entityID));
       }
@@ -83,7 +83,7 @@ namespace Engine
       for (entt::entity entityID : view)
       {
         Mat4 transform = s_Registry.get<Component::Transform>(entityID).calculateTransform();
-        const auto& sprite = view.get<Component::SpriteRenderer>(entityID);
+        const Component::SpriteRenderer& sprite = view.get<Component::SpriteRenderer>(entityID);
 
         Renderer2D::DrawSprite(transform, sprite, static_cast<int>(entityID));
       }

@@ -114,7 +114,7 @@ namespace Engine
     void calculateOffsetsAndStride()
     {
       m_Stride = 0;
-      for (auto& element : m_Elements)
+      for (BufferElement& element : m_Elements)
       {
         element.offset = m_Stride;
         m_Stride += element.size;

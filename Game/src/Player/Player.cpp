@@ -30,7 +30,7 @@ class CameraController : public Engine::ScriptableEntity
 public:
   void onCreate() override
   {
-    auto& cameraComponent = get<Component::Camera>();
+    Component::Camera& cameraComponent = get<Component::Camera>();
     cameraComponent.isActive = true;
     cameraComponent.camera.setPerspective(s_AspectRatio, s_FOV, s_NearClip, s_FarClip);
   }

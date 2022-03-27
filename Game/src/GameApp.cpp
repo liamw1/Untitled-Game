@@ -5,7 +5,8 @@
 class GameApp : public Engine::Application
 {
 public:
-  GameApp()
+  GameApp(Engine::ApplicationCommandLineArgs args)
+    : Application("Game", args)
   {
     pushLayer(new GameSandbox());
   }
@@ -15,7 +16,7 @@ public:
   }
 };
 
-Engine::Application* Engine::CreateApplication()
+Engine::Application* Engine::CreateApplication(ApplicationCommandLineArgs args)
 {
-  return new GameApp();
+  return new GameApp(args);
 }

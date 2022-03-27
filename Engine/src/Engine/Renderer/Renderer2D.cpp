@@ -2,12 +2,19 @@
 #include "Renderer2D.h"
 #include "VertexArray.h"
 #include "Shader.h"
+#include "UniformBuffer.h"
 #include "RenderCommand.h"
 #include "Engine/Scene/Scene.h"
+
 #include <glm/gtc/matrix_transform.hpp>
 
 namespace Engine
 {
+  struct CameraUniforms
+  {
+    glm::mat4 viewProjection;
+  };
+
   struct QuadVertex
   {
     Vec3 position;
@@ -46,6 +53,9 @@ namespace Engine
   static uint32_t s_TextureSlotIndex = 1;   // 0 = white texture
 
   static Renderer2D::Statistics s_Stats;
+
+  static CameraUniforms s_CameraUniforms;
+  static Unique<UniformBuffer> s_CameraUniformBuffer;
 
 
 
@@ -127,7 +137,7 @@ namespace Engine
     delete[] quadIndices;
 
     s_WhiteTexture = Texture2D::Create(1, 1);
-    uint32_t s_WhiteTextureData = 0xffffffff;
+    uint32_t s_WhiteTextureData = 0xFFFFFFFF;
     s_WhiteTexture->setData(&s_WhiteTextureData, sizeof(uint32_t));
 
     int samplers[s_MaxTextureSlots]{};
@@ -135,10 +145,10 @@ namespace Engine
       samplers[i] = i;
 
     s_TextureShader = Shader::Create("../Engine/assets/shaders/Texture.glsl");
-    s_TextureShader->bind();
-    s_TextureShader->setIntArray("u_Textures", samplers, s_MaxTextureSlots);
 
     s_TextureSlots[0] = s_WhiteTexture;
+
+    s_CameraUniformBuffer = UniformBuffer::Create(sizeof(CameraUniforms), 0);
   }
 
   void Renderer2D::Shutdown()
@@ -148,8 +158,8 @@ namespace Engine
 
   void Renderer2D::BeginScene(const Mat4& viewProjection)
   {
-    s_TextureShader->bind();
-    s_TextureShader->setMat4("u_ViewProjection", viewProjection);
+    s_CameraUniforms.viewProjection = viewProjection;
+    s_CameraUniformBuffer->setData(&s_CameraUniforms, sizeof(CameraUniforms));
 
     startBatch();
   }
@@ -171,6 +181,7 @@ namespace Engine
     for (uint32_t i = 0; i < s_TextureSlotIndex; ++i)
       s_TextureSlots[i]->bind(i);
 
+    s_TextureShader->bind();
     RenderCommand::DrawIndexed(*s_QuadVertexArray, s_QuadIndexCount);
     s_Stats.drawCalls++;
   }

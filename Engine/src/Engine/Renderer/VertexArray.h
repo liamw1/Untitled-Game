@@ -32,7 +32,6 @@ namespace Engine
 
     virtual uint32_t getIndexCount() const = 0;
 
-
     static Unique<VertexArray> Create();
   };
 }

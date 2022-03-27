@@ -229,7 +229,7 @@ Vec4 Noise::Simplex3D(const Vec3& v)
   g3 *= norm.w;
 
   // Compute noise and gradient at P
-  Vec4 m = glm::max(Vec4(0.6) - Vec4(glm::dot(x0, x0), glm::dot(x1, x1), glm::dot(x2, x2), glm::dot(x3, x3)), Vec4(0.0));
+  Vec4 m = glm::max(Vec4(static_cast<length_t>(0.6)) - Vec4(glm::dot(x0, x0), glm::dot(x1, x1), glm::dot(x2, x2), glm::dot(x3, x3)), Vec4(0.0));
   Vec4 m2 = m * m;
   Vec4 m3 = m2 * m;
   Vec4 m4 = m2 * m2;
