@@ -15,8 +15,8 @@ namespace Engine
   public:
     static void Initialize();
 
-    static std::shared_ptr<spdlog::logger>& GetCoreLogger() { return s_CoreLogger; }
-    static std::shared_ptr<spdlog::logger>& GetClientLogger() { return s_ClientLogger; }
+    static Shared<spdlog::logger>& GetCoreLogger() { return s_CoreLogger; }
+    static Shared<spdlog::logger>& GetClientLogger() { return s_ClientLogger; }
 
   private:
     static Shared<spdlog::logger> s_CoreLogger;

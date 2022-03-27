@@ -1,5 +1,5 @@
 #pragma once
-#include "Buffer.h"
+#include "BufferLayout.h"
 
 /*
   Abstract representation of a vertex array.
@@ -15,19 +15,24 @@ namespace Engine
     virtual void bind() const = 0;
     virtual void unBind() const = 0;
 
-    virtual void addVertexBuffer(const Shared<VertexBuffer>& vertexBuffer) = 0;
+    virtual void setLayout(const BufferLayout& layout) = 0;
+
+    /*
+      \param data Buffer of vertex data
+      \param size Size of buffer in bytes
+    */
+    virtual void setVertexData(const void* data, uintptr_t size) = 0;
 
     /*
       Sets an array of indices that represent the order in which vertices will be drawn.
       The count of this array should be a multiple of 3 (for drawing triangles).
       OpenGL expects vertices to be in counter-clockwise orientation.
     */
-    virtual void setIndexBuffer(const Shared<IndexBuffer>& indexBuffer) = 0;
+    virtual void setIndexBuffer(const uint32_t* indices, uint32_t count) = 0;
 
-    virtual const std::vector<Shared<VertexBuffer>>& getBuffers() const = 0;
-    virtual const Shared<IndexBuffer>& getIndexBuffer() const = 0;
+    virtual uint32_t getIndexCount() const = 0;
 
 
-    static Shared<VertexArray> Create();
+    static Unique<VertexArray> Create();
   };
 }

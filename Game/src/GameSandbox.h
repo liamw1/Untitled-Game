@@ -15,7 +15,6 @@ public:
   void onEvent(Engine::Event& event) override;
 
 private:
-  Shared<Engine::Texture2D> m_CheckerboardTexture;
   World m_World;
 
   bool onKeyPressEvent(Engine::KeyPressEvent& event);

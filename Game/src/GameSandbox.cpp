@@ -12,6 +12,7 @@ GameSandbox::GameSandbox()
   Engine::RenderCommand::Initialize();
   Engine::Renderer::Initialize();
   Engine::Renderer2D::Initialize();
+  Chunk::InitializeIndexBuffer();
   ChunkRenderer::Initialize();
   m_World.initialize();
 }

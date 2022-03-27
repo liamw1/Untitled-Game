@@ -27,11 +27,14 @@ namespace Engine
   OpenGLVertexArray::OpenGLVertexArray()
   {
     glCreateVertexArrays(1, &m_RendererID);
+    glCreateBuffers(1, &m_VertexBufferID);
   }
 
   OpenGLVertexArray::~OpenGLVertexArray()
   {
     glDeleteVertexArrays(1, &m_RendererID);
+    glDeleteBuffers(1, &m_VertexBufferID);
+    glDeleteBuffers(1, &m_IndexBufferID);
   }
 
   void OpenGLVertexArray::bind() const
@@ -44,77 +47,77 @@ namespace Engine
     glBindVertexArray(0);
   }
 
-  void OpenGLVertexArray::addVertexBuffer(const Shared<VertexBuffer>& vertexBuffer)
+  void OpenGLVertexArray::setLayout(const BufferLayout& layout)
   {
-    EN_CORE_ASSERT(vertexBuffer->getLayout().getElements().size() > 0, "Vertex Buffer has no layout!");
-
     glBindVertexArray(m_RendererID);
-    vertexBuffer->bind();
+    glBindBuffer(GL_ARRAY_BUFFER, m_VertexBufferID);
 
-    const BufferLayout& layout = vertexBuffer->getLayout();
+    uint32_t vertexBufferIndex = 0;
     for (const auto& element : layout)
     {
       const int dataTypeID = static_cast<int>(element.type);
 
       if (dataTypeID >= static_cast<int>(ShaderDataType::FloatTypeBegin) && dataTypeID <= static_cast<int>(ShaderDataType::FloatTypeEnd))
       {
-        glEnableVertexAttribArray(m_VertexBufferIndex);
-        glVertexAttribPointer(m_VertexBufferIndex,
+        glEnableVertexAttribArray(vertexBufferIndex);
+        glVertexAttribPointer(vertexBufferIndex,
           element.getComponentCount(),
           convertToOpenGLBaseType(element.type),
           element.normalized ? GL_TRUE : GL_FALSE,
           layout.getStride(),
           (const void*)(const size_t)element.offset);
-        m_VertexBufferIndex++;
+        vertexBufferIndex++;
       }
       else if (dataTypeID >= static_cast<int>(ShaderDataType::IntTypeBegin) && dataTypeID <= static_cast<int>(ShaderDataType::IntTypeEnd))
       {
-        glEnableVertexAttribArray(m_VertexBufferIndex);
-        glVertexAttribIPointer(m_VertexBufferIndex,
+        glEnableVertexAttribArray(vertexBufferIndex);
+        glVertexAttribIPointer(vertexBufferIndex,
           element.getComponentCount(),
           convertToOpenGLBaseType(element.type),
           layout.getStride(),
           (const void*)(const size_t)element.offset);
-        m_VertexBufferIndex++;
+        vertexBufferIndex++;
       }
       else if (dataTypeID >= static_cast<int>(ShaderDataType::MatTypeBegin) && dataTypeID <= static_cast<int>(ShaderDataType::MatTypeEnd))
       {
         int count = element.getComponentCount();
         for (int i = 0; i < count; ++i)
         {
-          glEnableVertexAttribArray(m_VertexBufferIndex);
-          glVertexAttribPointer(m_VertexBufferIndex,
+          glEnableVertexAttribArray(vertexBufferIndex);
+          glVertexAttribPointer(vertexBufferIndex,
             count,
             convertToOpenGLBaseType(element.type),
             element.normalized ? GL_TRUE : GL_FALSE,
             layout.getStride(),
             (const void*)(const size_t)(element.offset + sizeof(float) * count * i));
-          glVertexAttribDivisor(m_VertexBufferIndex, 1);
-          m_VertexBufferIndex++;
+          glVertexAttribDivisor(vertexBufferIndex, 1);
+          vertexBufferIndex++;
         }
       }
       else
         EN_CORE_ASSERT(false, ("Unknown shader data type!"));
     }
-
-    m_VertexBuffers.push_back(vertexBuffer);
   }
 
-  void OpenGLVertexArray::setIndexBuffer(const Shared<IndexBuffer>& indexBuffer)
+  void OpenGLVertexArray::setVertexData(const void* data, uintptr_t size)
   {
-    EN_CORE_ASSERT(indexBuffer->getCount() % 3 == 0, "Index buffer count is not a multiple of three!");
+    glBindBuffer(GL_ARRAY_BUFFER, m_VertexBufferID);
+    glBufferData(GL_ARRAY_BUFFER, size, data, GL_DYNAMIC_DRAW);
+  }
 
+  void OpenGLVertexArray::setIndexBuffer(const uint32_t* indices, uint32_t indexCount)
+  {
     glBindVertexArray(m_RendererID);
-    indexBuffer->bind();
-    m_IndexBuffer = indexBuffer;
-  }
-  const std::vector<Shared<VertexBuffer>>& OpenGLVertexArray::getBuffers() const
-  {
-    return m_VertexBuffers;
-  }
 
-  const Shared<IndexBuffer>& OpenGLVertexArray::getIndexBuffer() const
-  {
-    return m_IndexBuffer;
+    glCreateBuffers(1, &m_IndexBufferID);
+
+    /*
+      GL_ELEMENT_ARRAY_BUFFER is not valid without an actively bound VAO.
+      Binding with GL_ARRAY_BUFFER allows the data to be loaded regardless of VAO state.
+    */
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_IndexBufferID);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexCount * sizeof(uint32_t), indices, GL_DYNAMIC_DRAW);
+
+    m_IndexCount = indexCount;
   }
 }

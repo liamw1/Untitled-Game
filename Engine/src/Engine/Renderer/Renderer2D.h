@@ -1,6 +1,5 @@
 #pragma once
 #include "Texture.h"
-#include "SubTexture.h"
 #include "Engine/Scene/Components.h"
 
 /*

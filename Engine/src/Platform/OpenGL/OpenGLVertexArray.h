@@ -12,16 +12,17 @@ namespace Engine
     void bind() const override;
     void unBind() const override;
 
-    void addVertexBuffer(const Shared<VertexBuffer>& vertexBuffer) override;
-    void setIndexBuffer(const Shared<IndexBuffer>& indexBuffer) override;
+    void setLayout(const BufferLayout& layout) override;
 
-    const std::vector<Shared<VertexBuffer>>& getBuffers() const override;
-    const Shared<IndexBuffer>& getIndexBuffer() const override;
+    void setVertexData(const void* data, uintptr_t size) override;
+    void setIndexBuffer(const uint32_t* indices, uint32_t indexCount) override;
+
+    uint32_t getIndexCount() const override { return m_IndexCount; }
 
   private:
     uint32_t m_RendererID;
-    uint32_t m_VertexBufferIndex = 0;
-    std::vector<Shared<VertexBuffer>> m_VertexBuffers;
-    Shared<IndexBuffer> m_IndexBuffer;
+    uint32_t m_VertexBufferID;
+    uint32_t m_IndexBufferID = 0;
+    uint32_t m_IndexCount = 0;
   };
 }

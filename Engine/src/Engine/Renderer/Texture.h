@@ -15,7 +15,7 @@ namespace Engine
 
     virtual void addTexture(const std::string& path) = 0;
 
-    static Shared<TextureArray> Create(uint32_t textureCount, uint32_t textureSize);
+    static Unique<TextureArray> Create(uint32_t textureCount, uint32_t textureSize);
   };
 
   class Texture
@@ -46,7 +46,7 @@ namespace Engine
   class Texture2D : public Texture
   {
   public:
-    static Shared<Texture2D> Create(uint32_t width, uint32_t height);
-    static Shared<Texture2D> Create(const std::string& path);
+    static Unique<Texture2D> Create(uint32_t width, uint32_t height);
+    static Unique<Texture2D> Create(const std::string& path);
   };
 }

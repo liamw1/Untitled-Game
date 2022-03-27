@@ -2,7 +2,7 @@
 #include "Chunk.h"
 #include "Player/Player.h"
 
-Shared<Engine::IndexBuffer> Chunk::s_MeshIndexBuffer = nullptr;
+std::array<uint32_t, Chunk::MaxIndices()> Chunk::s_MeshIndexBuffer{};
 Engine::BufferLayout Chunk::s_MeshVertexBufferLayout = { { ShaderDataType::Uint32, "a_VertexData" } };
 
 Chunk::Chunk()
@@ -13,8 +13,6 @@ Chunk::Chunk()
 Chunk::Chunk(const GlobalIndex& chunkIndex)
   : m_GlobalIndex(chunkIndex)
 {
-  if (s_MeshIndexBuffer == nullptr)
-    InitializeIndexBuffer();
 }
 
 Chunk::~Chunk()
@@ -25,7 +23,7 @@ Chunk::~Chunk()
 Chunk::Chunk(Chunk&& other) noexcept
   : m_GlobalIndex(std::move(other.m_GlobalIndex)),
     m_ChunkComposition(std::move(other.m_ChunkComposition)),
-    m_FaceIsOpaque(std::move(other.m_FaceIsOpaque)),
+  m_NonOpaqueFaces(std::move(other.m_NonOpaqueFaces)),
     m_MeshState(std::move(other.m_MeshState)),
     m_QuadCount(std::move(other.m_QuadCount)),
     m_MeshVertexArray(std::move(other.m_MeshVertexArray))
@@ -45,7 +43,7 @@ Chunk& Chunk::operator=(Chunk&& other) noexcept
   {
     m_GlobalIndex = std::move(other.m_GlobalIndex);
     m_ChunkComposition = std::move(other.m_ChunkComposition);
-    m_FaceIsOpaque = std::move(other.m_FaceIsOpaque);
+    m_NonOpaqueFaces = std::move(other.m_NonOpaqueFaces);
     m_MeshState = std::move(other.m_MeshState);
     m_QuadCount = std::move(other.m_QuadCount);
     m_MeshVertexArray = std::move(other.m_MeshVertexArray);
@@ -140,7 +138,7 @@ void Chunk::reset()
 {
   // Reset data to default values
   m_ChunkComposition.reset();
-  m_FaceIsOpaque = { true, true, true, true, true, true };
+  m_NonOpaqueFaces = 0;
   m_MeshState = MeshState::NotGenerated;
   m_QuadCount = 0;
   m_MeshVertexArray.reset();
@@ -275,28 +273,21 @@ LocalIndex Chunk::LocalIndexFromPos(const Vec3& position)
 
 void Chunk::InitializeIndexBuffer()
 {
-  static constexpr uint32_t maxIndices = 6 * 3 * TotalBlocks();
-
-  uint32_t* meshIndices = new uint32_t[maxIndices];
-
   uint32_t offset = 0;
-  for (uint32_t i = 0; i < maxIndices; i += 6)
+  for (uint32_t i = 0; i < s_MaxIndices; i += 6)
   {
     // Triangle 1
-    meshIndices[i + 0] = offset + 0;
-    meshIndices[i + 1] = offset + 1;
-    meshIndices[i + 2] = offset + 2;
+    s_MeshIndexBuffer[i + 0] = offset + 0;
+    s_MeshIndexBuffer[i + 1] = offset + 1;
+    s_MeshIndexBuffer[i + 2] = offset + 2;
 
     // Triangle 2
-    meshIndices[i + 3] = offset + 2;
-    meshIndices[i + 4] = offset + 3;
-    meshIndices[i + 5] = offset + 0;
+    s_MeshIndexBuffer[i + 3] = offset + 2;
+    s_MeshIndexBuffer[i + 4] = offset + 3;
+    s_MeshIndexBuffer[i + 5] = offset + 0;
 
     offset += 4;
   }
-  s_MeshIndexBuffer = Engine::IndexBuffer::Create(meshIndices, maxIndices);
-
-  delete[] meshIndices;
 }
 
 
@@ -349,7 +340,7 @@ void Chunk::generateMesh()
 
   // NOTE: Potential optimization by using reserve() for mesh vector
 
-  Engine::Renderer::UploadMesh(m_MeshVertexArray, s_MeshVertexBufferLayout, mesh, s_MeshIndexBuffer);
+  Engine::Renderer::UploadMesh(m_MeshVertexArray, s_MeshVertexBufferLayout, mesh, s_MeshIndexBuffer.data(), 6 * m_QuadCount);
 }
 
 void Chunk::setBlockType(blockIndex_t i, blockIndex_t j, blockIndex_t k, BlockType blockType)
@@ -388,7 +379,7 @@ void Chunk::determineOpacity()
 
         if (Block::HasTransparency(getBlockType(blockIndex)))
         {
-          m_FaceIsOpaque[faceID] = false;
+          m_NonOpaqueFaces |= bit(faceID);
           goto nextFace;
         }
       }
@@ -425,8 +416,7 @@ void Chunk::excise()
 void Chunk::markAsEmpty()
 {
   m_ChunkComposition.reset();
-  for (BlockFace face : BlockFaceIterator())
-    m_FaceIsOpaque[static_cast<int>(face)] = false;
+  m_NonOpaqueFaces = 0xFF;
   m_MeshState = MeshState::NotGenerated;
 }
 

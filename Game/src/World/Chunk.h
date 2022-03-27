@@ -106,10 +106,10 @@ public:
   void setNeighbor(BlockFace face, Chunk* chunk);
 
   int getQuadCount() const { return m_QuadCount; }
-  const Shared<Engine::VertexArray>& getVertexArray() const { return m_MeshVertexArray; }
+  const Unique<Engine::VertexArray>& getVertexArray() const { return m_MeshVertexArray; }
 
   bool isEmpty() const { return m_ChunkComposition == nullptr; }
-  bool isFaceOpaque(BlockFace face) const { return m_FaceIsOpaque[static_cast<int>(face)]; }
+  bool isFaceOpaque(BlockFace face) const { return !(m_NonOpaqueFaces & bit(static_cast<int>(face))); }
 
   bool isBlockNeighborInAnotherChunk(const BlockIndex& blockIndex, BlockFace face);
   bool isBlockNeighborTransparent(blockIndex_t i, blockIndex_t j, blockIndex_t k, BlockFace face);
@@ -119,8 +119,10 @@ public:
   static constexpr blockIndex_t Size() { return s_ChunkSize; }
   static constexpr length_t Length() { return s_ChunkLength; }
   static constexpr uint32_t TotalBlocks() { return s_ChunkTotalBlocks; }
+  static constexpr uint32_t MaxIndices() { return s_MaxIndices; }
   static LocalIndex LocalIndexFromPos(const Vec3& position);
 
+  // NOTE: Should replace with compile-time initialization at some point
   static void InitializeIndexBuffer();
 
 private:
@@ -141,17 +143,18 @@ private:
   static constexpr blockIndex_t s_ChunkSize = 32;
   static constexpr length_t s_ChunkLength = s_ChunkSize * Block::Length();
   static constexpr uint32_t s_ChunkTotalBlocks = s_ChunkSize * s_ChunkSize * s_ChunkSize;
+  static constexpr uint32_t s_MaxIndices = 3 * 6 * s_ChunkTotalBlocks;
 
   // Position and composition
   GlobalIndex m_GlobalIndex;
   Unique<BlockType[]> m_ChunkComposition = nullptr;
-  std::array<bool, 6> m_FaceIsOpaque = { true, true, true, true, true, true };
+  uint8_t m_NonOpaqueFaces = 0;
 
   // Mesh data
   MeshState m_MeshState = MeshState::NotGenerated;
   uint16_t m_QuadCount;
-  Shared<Engine::VertexArray> m_MeshVertexArray;
-  static Shared<Engine::IndexBuffer> s_MeshIndexBuffer;
+  Unique<Engine::VertexArray> m_MeshVertexArray;
+  static std::array<uint32_t, s_MaxIndices> s_MeshIndexBuffer;
   static Engine::BufferLayout s_MeshVertexBufferLayout;
 
   // Chunk neighbor data

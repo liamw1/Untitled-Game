@@ -34,9 +34,8 @@ namespace Engine
   static constexpr uint32_t s_MaxIndices = 6 * s_MaxQuads;
   static constexpr uint32_t s_MaxTextureSlots = 32;   // TODO: RenderCapabilities
 
-  static Shared<VertexArray> s_QuadVertexArray;
-  static Shared<VertexBuffer> s_QuadVertexBuffer;
-  static Shared<Shader> s_TextureShader;
+  static Unique<VertexArray> s_QuadVertexArray;
+  static Unique<Shader> s_TextureShader;
   static Shared<Texture2D> s_WhiteTexture;
 
   static uint32_t s_QuadIndexCount = 0;
@@ -97,15 +96,12 @@ namespace Engine
     EN_PROFILE_FUNCTION();
 
     s_QuadVertexArray = VertexArray::Create();
-
-    s_QuadVertexBuffer = VertexBuffer::Create(s_MaxVertices * sizeof(QuadVertex));
-    s_QuadVertexBuffer->setLayout({ { ShaderDataType::Float3, "a_Position"      },
-                                    { ShaderDataType::Float4, "a_TintColor"     },
-                                    { ShaderDataType::Float2, "a_TexCoord"      },
-                                    { ShaderDataType::Float,  "a_TextureIndex"  },
-                                    { ShaderDataType::Float,  "a_TilingFactor"  },
-                                    { ShaderDataType::Int,    "a_EntityID"      } });
-    s_QuadVertexArray->addVertexBuffer(s_QuadVertexBuffer);
+    s_QuadVertexArray->setLayout({ { ShaderDataType::Float3, "a_Position"      },
+                                   { ShaderDataType::Float4, "a_TintColor"     },
+                                   { ShaderDataType::Float2, "a_TexCoord"      },
+                                   { ShaderDataType::Float,  "a_TextureIndex"  },
+                                   { ShaderDataType::Float,  "a_TilingFactor"  },
+                                   { ShaderDataType::Int,    "a_EntityID"      } });
 
     s_QuadVertexBufferBase = new QuadVertex[s_MaxVertices];
 
@@ -127,8 +123,7 @@ namespace Engine
       offset += 4;
     }
 
-    Shared<IndexBuffer> quadIB = IndexBuffer::Create(quadIndices, s_MaxIndices);
-    s_QuadVertexArray->setIndexBuffer(quadIB);
+    s_QuadVertexArray->setIndexBuffer(quadIndices, s_MaxIndices);
     delete[] quadIndices;
 
     s_WhiteTexture = Texture2D::Create(1, 1);
@@ -170,13 +165,13 @@ namespace Engine
       return; // Nothing to draw
 
     uintptr_t dataSize = (s_QuadVertexBufferPtr - s_QuadVertexBufferBase) * sizeof(QuadVertex);
-    s_QuadVertexBuffer->setData(s_QuadVertexBufferBase, dataSize);
+    s_QuadVertexArray->setVertexData(s_QuadVertexBufferBase, dataSize);
 
     // Bind textures
     for (uint32_t i = 0; i < s_TextureSlotIndex; ++i)
       s_TextureSlots[i]->bind(i);
 
-    RenderCommand::DrawIndexed(s_QuadVertexArray, s_QuadIndexCount);
+    RenderCommand::DrawIndexed(*s_QuadVertexArray, s_QuadIndexCount);
     s_Stats.drawCalls++;
   }
 

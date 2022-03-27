@@ -16,7 +16,7 @@ namespace Engine
     void onEvent(Event& event) override;
 
   private:
-    Shared<Framebuffer> m_Framebuffer;
+    Unique<Framebuffer> m_Framebuffer;
 
     Entity m_GreenSquareEntity;
     Entity m_RedSquareEntity;

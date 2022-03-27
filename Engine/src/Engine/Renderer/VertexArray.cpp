@@ -5,12 +5,12 @@
 
 namespace Engine
 {
-  Shared<VertexArray> VertexArray::Create()
+  Unique<VertexArray> VertexArray::Create()
   {
     switch (Renderer::GetAPI())
     {
       case RendererAPI::API::None:    EN_CORE_ASSERT(false, "RendererAPI::None is currently not supported!"); return nullptr;
-      case RendererAPI::API::OpenGL:  return CreateShared<OpenGLVertexArray>();
+      case RendererAPI::API::OpenGL:  return CreateUnique<OpenGLVertexArray>();
       default:                        EN_CORE_ASSERT(false, "Unknown RendererAPI!"); return nullptr;
     }
   }
