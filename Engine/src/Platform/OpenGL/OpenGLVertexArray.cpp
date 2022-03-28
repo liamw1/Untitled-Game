@@ -4,6 +4,40 @@
 
 namespace Engine
 {
+  OpenGLIndexBuffer::OpenGLIndexBuffer(const uint32_t* indices, uint32_t count)
+    : m_Count(count)
+  {
+    glCreateBuffers(1, &m_RendererID);
+
+    /*
+      GL_ELEMENT_ARRAY_BUFFER is not valid without an actively bound VAO.
+      Binding with GL_ARRAY_BUFFER allows the data to be loaded regardless of VAO state.
+    */
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_RendererID);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(uint32_t) * count, indices, GL_DYNAMIC_DRAW);
+
+#if EN_DEBUG
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+#endif
+  }
+
+  OpenGLIndexBuffer::~OpenGLIndexBuffer()
+  {
+    glDeleteBuffers(1, &m_RendererID);
+  }
+
+  void OpenGLIndexBuffer::bind() const
+  {
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_RendererID);
+  }
+
+  void OpenGLIndexBuffer::unBind() const
+  {
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+  }
+
+
+
   static GLenum convertToOpenGLBaseType(ShaderDataType type)
   {
     switch (type)
@@ -34,12 +68,14 @@ namespace Engine
   {
     glDeleteVertexArrays(1, &m_RendererID);
     glDeleteBuffers(1, &m_VertexBufferID);
-    glDeleteBuffers(1, &m_IndexBufferID);
   }
 
   void OpenGLVertexArray::bind() const
   {
     glBindVertexArray(m_RendererID);
+
+    if (m_IndexBuffer != nullptr)
+      m_IndexBuffer->bind();
   }
 
   void OpenGLVertexArray::unBind() const
@@ -97,27 +133,34 @@ namespace Engine
       else
         EN_CORE_ASSERT(false, ("Unknown shader data type!"));
     }
+
+#if EN_DEBUG
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
+#endif
   }
 
-  void OpenGLVertexArray::setVertexData(const void* data, uintptr_t size)
-  {
-    glBindBuffer(GL_ARRAY_BUFFER, m_VertexBufferID);
-    glBufferData(GL_ARRAY_BUFFER, size, data, GL_DYNAMIC_DRAW);
-  }
-
-  void OpenGLVertexArray::setIndexBuffer(const uint32_t* indices, uint32_t indexCount)
+  void OpenGLVertexArray::setVertexBuffer(const void* data, uintptr_t size)
   {
     glBindVertexArray(m_RendererID);
+    glBindBuffer(GL_ARRAY_BUFFER, m_VertexBufferID);
+    glBufferData(GL_ARRAY_BUFFER, size, data, GL_DYNAMIC_DRAW);
 
-    glCreateBuffers(1, &m_IndexBufferID);
+#if EN_DEBUG
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
+#endif
+  }
 
-    /*
-      GL_ELEMENT_ARRAY_BUFFER is not valid without an actively bound VAO.
-      Binding with GL_ARRAY_BUFFER allows the data to be loaded regardless of VAO state.
-    */
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_IndexBufferID);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexCount * sizeof(uint32_t), indices, GL_DYNAMIC_DRAW);
+  void OpenGLVertexArray::setIndexBuffer(const Shared<IndexBuffer>& indexBuffer)
+  {
+    glBindVertexArray(m_RendererID);
+    indexBuffer->bind();
+    m_IndexBuffer = indexBuffer;
 
-    m_IndexCount = indexCount;
+#if EN_DEBUG
+    m_IndexBuffer->unBind();
+    glBindVertexArray(0);
+#endif
   }
 }

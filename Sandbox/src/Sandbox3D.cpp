@@ -32,7 +32,7 @@ void Sandbox3D::onUpdate(Timestep timestep)
   Engine::Renderer::BeginScene(Engine::Scene::ActiveCameraViewProjection());
   for (int i = 0; i < 3; ++i)
     for (int j = 0; j < 3; ++j)
-      Engine::Renderer::DrawCube(Vec3(static_cast<length_t>((i - 1) * 1.25), 2.0, static_cast<length_t>((j + 1) * 1.25)), Vec3(1.0f), m_CheckerboardTexture);
+      Engine::Renderer::DrawCube(Vec3(static_cast<length_t>((i - 1) * 1.25), 2.0, static_cast<length_t>((j + 1) * 1.25)), Vec3(1.0f), m_CheckerboardTexture.get());
   Engine::Renderer::EndScene();
 }
 

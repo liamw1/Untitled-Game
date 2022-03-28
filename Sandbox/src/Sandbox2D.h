@@ -14,7 +14,7 @@ public:
   void onEvent(Engine::Event& event) override;
 
 private:
-  Shared<Engine::Texture2D> m_CheckerboardTexture;
+  Unique<Engine::Texture2D> m_CheckerboardTexture;
 
   Engine::Entity m_CameraEntity;
 };

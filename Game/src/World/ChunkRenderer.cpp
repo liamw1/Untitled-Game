@@ -60,7 +60,7 @@ void ChunkRenderer::DrawChunk(const Chunk* chunk)
   chunk->bindBuffers();
   s_BlockFaceShader->bind();
   s_BlockFaceShader->setFloat3("u_ChunkPosition", chunk->anchorPosition());
-  Engine::RenderCommand::DrawIndexed(*chunk->getVertexArray(), meshIndexCount);
+  Engine::RenderCommand::DrawIndexed(chunk->getVertexArray().get(), meshIndexCount);
 }
 
 // NOTE: Should use glMultiDrawArrays to draw primary mesh and transition meshes in single draw call
@@ -77,7 +77,7 @@ void ChunkRenderer::DrawLOD(const LOD::Octree::Node* node)
   s_LODShader->bind();
   s_LODShader->setFloat("u_TextureScaling", static_cast<float>(bit(node->LODLevel())));
   s_LODShader->setFloat3("u_LODPosition", localAnchorPosition);
-  Engine::RenderCommand::DrawIndexed(*node->data->primaryMesh.vertexArray, primaryMeshIndexCount);
+  Engine::RenderCommand::DrawIndexed(node->data->primaryMesh.vertexArray.get(), primaryMeshIndexCount);
 
   for (BlockFace face : BlockFaceIterator())
   {
@@ -89,6 +89,6 @@ void ChunkRenderer::DrawLOD(const LOD::Octree::Node* node)
       continue;
 
     node->data->transitionMeshes[faceID].vertexArray->bind();
-    Engine::RenderCommand::DrawIndexed(*node->data->transitionMeshes[faceID].vertexArray, transitionMeshIndexCount);
+    Engine::RenderCommand::DrawIndexed(node->data->transitionMeshes[faceID].vertexArray.get(), transitionMeshIndexCount);
   }
 }

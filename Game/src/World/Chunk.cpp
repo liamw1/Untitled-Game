@@ -2,7 +2,7 @@
 #include "Chunk.h"
 #include "Player/Player.h"
 
-std::array<uint32_t, Chunk::MaxIndices()> Chunk::s_MeshIndexBuffer{};
+Shared<Engine::IndexBuffer> Chunk::s_MeshIndexBuffer = nullptr;
 Engine::BufferLayout Chunk::s_MeshVertexBufferLayout = { { ShaderDataType::Uint32, "a_VertexData" } };
 
 Chunk::Chunk()
@@ -13,6 +13,9 @@ Chunk::Chunk()
 Chunk::Chunk(const GlobalIndex& chunkIndex)
   : m_GlobalIndex(chunkIndex)
 {
+  m_MeshVertexArray = Engine::VertexArray::Create();
+  m_MeshVertexArray->setLayout(s_MeshVertexBufferLayout);
+  m_MeshVertexArray->setIndexBuffer(s_MeshIndexBuffer);
 }
 
 Chunk::~Chunk()
@@ -23,7 +26,7 @@ Chunk::~Chunk()
 Chunk::Chunk(Chunk&& other) noexcept
   : m_GlobalIndex(std::move(other.m_GlobalIndex)),
     m_ChunkComposition(std::move(other.m_ChunkComposition)),
-  m_NonOpaqueFaces(std::move(other.m_NonOpaqueFaces)),
+    m_NonOpaqueFaces(std::move(other.m_NonOpaqueFaces)),
     m_MeshState(std::move(other.m_MeshState)),
     m_QuadCount(std::move(other.m_QuadCount)),
     m_MeshVertexArray(std::move(other.m_MeshVertexArray))
@@ -273,21 +276,26 @@ LocalIndex Chunk::LocalIndexFromPos(const Vec3& position)
 
 void Chunk::InitializeIndexBuffer()
 {
+  constexpr uint32_t maxIndices = 3 * 6 * TotalBlocks();
+
   uint32_t offset = 0;
-  for (uint32_t i = 0; i < s_MaxIndices; i += 6)
+  uint32_t* indices = new uint32_t[maxIndices];
+  for (uint32_t i = 0; i < maxIndices; i += 6)
   {
     // Triangle 1
-    s_MeshIndexBuffer[i + 0] = offset + 0;
-    s_MeshIndexBuffer[i + 1] = offset + 1;
-    s_MeshIndexBuffer[i + 2] = offset + 2;
+    indices[i + 0] = offset + 0;
+    indices[i + 1] = offset + 1;
+    indices[i + 2] = offset + 2;
 
     // Triangle 2
-    s_MeshIndexBuffer[i + 3] = offset + 2;
-    s_MeshIndexBuffer[i + 4] = offset + 3;
-    s_MeshIndexBuffer[i + 5] = offset + 0;
+    indices[i + 3] = offset + 2;
+    indices[i + 4] = offset + 3;
+    indices[i + 5] = offset + 0;
 
     offset += 4;
   }
+
+  s_MeshIndexBuffer = Engine::IndexBuffer::Create(indices, maxIndices);
 }
 
 
@@ -297,6 +305,8 @@ void Chunk::generateMesh()
   // If chunk is empty, no need to generate mesh
   if (isEmpty())
     return;
+
+  EN_PROFILE_FUNCTION();
 
   static constexpr int8_t offsets[6][4][3]
     = { { {1, 0, 0}, {1, 1, 0}, {1, 1, 1}, {1, 0, 1} },    /*  East Face   */
@@ -338,9 +348,9 @@ void Chunk::generateMesh()
   if (m_QuadCount == 0)
     return;
 
-  // NOTE: Potential optimization by using reserve() for mesh vector
+  // NOTE: Potential optimization by reusing static buffer for mesh creation
 
-  Engine::Renderer::UploadMesh(m_MeshVertexArray, s_MeshVertexBufferLayout, mesh, s_MeshIndexBuffer.data(), 6 * m_QuadCount);
+  m_MeshVertexArray->setVertexBuffer(mesh.data(), sizeof(uint32_t) * mesh.size());
 }
 
 void Chunk::setBlockType(blockIndex_t i, blockIndex_t j, blockIndex_t k, BlockType blockType)

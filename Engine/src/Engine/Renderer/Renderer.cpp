@@ -73,8 +73,8 @@ namespace Engine
     /* Cube Frame Initialization */
     s_CubeFrameVertexArray = VertexArray::Create();
     s_CubeFrameVertexArray->setLayout({ { ShaderDataType::Float3, "a_Position" } });
-    s_CubeFrameVertexArray->setVertexData(s_CubeFrameVertices, sizeof(s_CubeFrameVertices));
-    s_CubeFrameVertexArray->setIndexBuffer(s_CubeFrameIndices, sizeof(s_CubeFrameIndices) / sizeof(uint32_t));
+    s_CubeFrameVertexArray->setVertexBuffer(s_CubeFrameVertices, sizeof(s_CubeFrameVertices));
+    s_CubeFrameVertexArray->setIndexBuffer(IndexBuffer::Create(s_CubeFrameIndices, sizeof(s_CubeFrameIndices) / sizeof(uint32_t)));
 
     s_CubeFrameShader = Shader::Create("../Engine/assets/shaders/CubeFrame.glsl");
 
@@ -82,7 +82,7 @@ namespace Engine
     s_CubeVertexArray = VertexArray::Create();
     s_CubeVertexArray->setLayout({ { ShaderDataType::Float3, "a_Position" },
                         { ShaderDataType::Float2, "a_TexCoord" } });
-    s_CubeVertexArray->setVertexData(s_CubeVertices, sizeof(s_CubeVertices));
+    s_CubeVertexArray->setVertexBuffer(s_CubeVertices, sizeof(s_CubeVertices));
 
     uint32_t cubeIndices[36]{};
     for (int face = 0; face < 6; ++face)
@@ -95,7 +95,7 @@ namespace Engine
       cubeIndices[6 * face + 4] = 3 + 4 * face;
       cubeIndices[6 * face + 5] = 0 + 4 * face;
     }
-    s_CubeVertexArray->setIndexBuffer(cubeIndices, sizeof(cubeIndices) / sizeof(uint32_t));
+    s_CubeVertexArray->setIndexBuffer(IndexBuffer::Create(cubeIndices, sizeof(cubeIndices) / sizeof(uint32_t)));
 
     /* Texture Initialization */
     s_WhiteTexture = Texture2D::Create(1, 1);
@@ -124,7 +124,7 @@ namespace Engine
   {
   }
 
-  void Renderer::DrawCube(const Vec3& position, const Vec3& size, Shared<Texture2D> texture)
+  void Renderer::DrawCube(const Vec3& position, const Vec3& size, const Texture2D* texture)
   {
     texture == nullptr ? s_WhiteTexture->bind() : texture->bind();
 
@@ -132,7 +132,7 @@ namespace Engine
     s_TextureShader->setMat4("u_Transform", transform);
 
     s_CubeVertexArray->bind();
-    RenderCommand::DrawIndexed(*s_CubeVertexArray);
+    RenderCommand::DrawIndexed(s_CubeVertexArray.get());
   }
 
   void Renderer::DrawCubeFrame(const Vec3& position, const Vec3& size, const Float4& color)
@@ -144,22 +144,11 @@ namespace Engine
     s_CubeFrameShader->setFloat4("u_Color", color);
 
     s_CubeFrameVertexArray->bind();
-    RenderCommand::DrawIndexedLines(*s_CubeFrameVertexArray);
+    RenderCommand::DrawIndexedLines(s_CubeFrameVertexArray.get());
   }
 
   void Renderer::OnWindowResize(uint32_t width, uint32_t height)
   {
     RenderCommand::SetViewport(0, 0, width, height);
-  }
-
-  void Renderer::UploadMesh(Unique<VertexArray>& target, const BufferLayout& bufferLayout, const void* data, uintptr_t dataSize, const uint32_t* meshIndices, uint32_t indexCount)
-  {
-    // Generate vertex array
-    Unique<VertexArray> vertexArray = VertexArray::Create();
-    vertexArray->setLayout(bufferLayout);
-    vertexArray->setVertexData(data, dataSize);
-    vertexArray->setIndexBuffer(meshIndices, indexCount);
-
-    target = std::move(vertexArray);
   }
 }

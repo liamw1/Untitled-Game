@@ -201,13 +201,13 @@ namespace Engine
   }
 
   template<typename T>
-  static void clear(uint32_t attachment, GLenum textureFormat, GLenum valueType, const std::any& value)
+  static void clear(uint32_t attachment, GLenum textureFormat, GLenum valueType, const std::variant<int, float>& value)
   {
     T typedValue = std::any_cast<T>(value);
     glClearTexImage(attachment, 0, textureFormat, valueType, &typedValue);
   }
 
-  void OpenGLFramebuffer::clearAttachment(uint32_t attachmentIndex, const std::any& value)
+  void OpenGLFramebuffer::clearAttachment(uint32_t attachmentIndex, const std::variant<int, float>& value)
   {
     EN_CORE_ASSERT(attachmentIndex < m_ColorAttachments.size(), "Color attachment index is out of bounds!");
     EN_CORE_ASSERT(value.has_value(), "No value given!");
@@ -216,9 +216,11 @@ namespace Engine
     uint32_t attachment = m_ColorAttachments[attachmentIndex];
     GLenum textureFormat = openGLTextureFormat(spec.textureFormat);
 
-    if (value.type() == typeid(int))
-      clear<int>(attachment, textureFormat, GL_INT, value);
-    else
-      EN_CORE_ERROR("Unsupported value type!");
+    switch (value.index())
+    {
+      case 0: glClearTexImage(attachment, 0, textureFormat, GL_INT, std::get_if<int>(&value));     break;
+      case 1: glClearTexImage(attachment, 0, textureFormat, GL_FLOAT, std::get_if<float>(&value)); break;
+      default: EN_CORE_ERROR("Unsupported clear value type!");
+    }
   }
 }

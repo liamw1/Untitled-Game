@@ -36,22 +36,28 @@ namespace Engine
     enableFaceCulling ? glEnable(GL_CULL_FACE) : glDisable(GL_CULL_FACE);
   }
 
-  void OpenGLRendererAPI::drawVertices(const VertexArray& vertexArray, uint32_t vertexCount)
+  void OpenGLRendererAPI::drawVertices(const VertexArray* vertexArray, uint32_t vertexCount)
   {
+    EN_ASSERT(vertexArray != nullptr, "Vertex array has not been initialized!");
+
     glDrawArrays(GL_TRIANGLES, 0, vertexCount);
     glBindTexture(GL_TEXTURE_2D, 0);
   }
 
-  void OpenGLRendererAPI::drawIndexed(const VertexArray& vertexArray, uint32_t indexCount)
+  void OpenGLRendererAPI::drawIndexed(const VertexArray* vertexArray, uint32_t indexCount)
   {
-    uint32_t count = indexCount == 0 ? vertexArray.getIndexCount() : indexCount;
+    EN_ASSERT(vertexArray != nullptr, "Vertex array has not been initialized!");
+
+    uint32_t count = indexCount == 0 ? vertexArray->getIndexBuffer()->getCount() : indexCount;
     glDrawElements(GL_TRIANGLES, count, GL_UNSIGNED_INT, nullptr);
     glBindTexture(GL_TEXTURE_2D, 0);
   }
 
-  void OpenGLRendererAPI::drawIndexedLines(const VertexArray& vertexArray, uint32_t indexCount)
+  void OpenGLRendererAPI::drawIndexedLines(const VertexArray* vertexArray, uint32_t indexCount)
   {
-    uint32_t count = indexCount == 0 ? vertexArray.getIndexCount() : indexCount;
+    EN_ASSERT(vertexArray != nullptr, "Vertex array has not been initialized!");
+
+    uint32_t count = indexCount == 0 ? vertexArray->getIndexBuffer()->getCount() : indexCount;
     glDrawElements(GL_LINES, count, GL_UNSIGNED_INT, nullptr);
   }
 

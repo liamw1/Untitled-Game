@@ -31,15 +31,25 @@ namespace LOD
 
   struct MeshData
   {
+    MeshData()
+      : vertices(), indices()
+    {
+      vertexArray = Engine::VertexArray::Create();
+      vertexArray->setLayout(s_LODBufferLayout);
+    }
+
     std::vector<Vertex> vertices;
     std::vector<uint32_t> indices;
     Unique<Engine::VertexArray> vertexArray;
+
+  private:
+    static const Engine::BufferLayout s_LODBufferLayout;
   };
 
   struct Data 
   {
-    MeshData primaryMesh;
-    std::array<MeshData, 6> transitionMeshes;
+    MeshData primaryMesh{};
+    std::array<MeshData, 6> transitionMeshes{};
 
     uint8_t transitionFaces = 0;
     bool meshGenerated = false;
@@ -56,7 +66,6 @@ namespace LOD
     */
     struct Node
     {
-    public:
       Node* const parent;
       std::array<Node*, 8> children{};
       const int depth;

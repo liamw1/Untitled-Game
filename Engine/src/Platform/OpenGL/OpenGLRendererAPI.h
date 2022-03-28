@@ -13,9 +13,9 @@ namespace Engine
     void wireFrameToggle(bool enableWireFrame) override;
     void faceCullToggle(bool enableFaceCulling) override;
 
-    void drawVertices(const VertexArray& vertexArray, uint32_t vertexCount) override;
-    void drawIndexed(const VertexArray& vertexArray, uint32_t indexCount) override;
-    void drawIndexedLines(const VertexArray& vertexArray, uint32_t indexCount) override;
+    void drawVertices(const VertexArray* vertexArray, uint32_t vertexCount) override;
+    void drawIndexed(const VertexArray* vertexArray, uint32_t indexCount) override;
+    void drawIndexedLines(const VertexArray* vertexArray, uint32_t indexCount) override;
 
     void clearDepthBuffer() override;
   };

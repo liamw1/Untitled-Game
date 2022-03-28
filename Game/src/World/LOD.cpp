@@ -19,9 +19,13 @@ namespace LOD
   // Width of a transition cell as a fraction of regular cell width
   static constexpr length_t s_TCFractionalWidth = 0.5f;
 
+  const Engine::BufferLayout MeshData::s_LODBufferLayout({ { ShaderDataType::Float3, "a_Position" },
+                                                           { ShaderDataType::Float3, "a_IsoNormal"},
+                                                           { ShaderDataType::Int,    "a_QuadIndex"} });
+
   static const Engine::BufferLayout s_LODBufferLayout({ { ShaderDataType::Float3, "a_Position" },
-                                                         { ShaderDataType::Float3, "a_IsoNormal"},
-                                                         { ShaderDataType::Int,    "a_QuadIndex"} });
+                                                        { ShaderDataType::Float3, "a_IsoNormal"},
+                                                        { ShaderDataType::Int,    "a_QuadIndex"} });
 
   Vec3 Octree::Node::anchorPosition() const
   {
@@ -717,14 +721,14 @@ namespace LOD
     determineTransitionFaces(tree, node);
 
     LOD::MeshData& primaryMesh = node->data->primaryMesh;
-    Engine::Renderer::UploadMesh(primaryMesh.vertexArray, s_LODBufferLayout, calcAdjustedPrimaryMesh(node), primaryMesh.indices);
+    Engine::Renderer::UploadMesh(primaryMesh.vertexArray.get(), calcAdjustedPrimaryMesh(node), primaryMesh.indices);
 
     for (BlockFace face : BlockFaceIterator())
     {
       const int faceID = static_cast<int>(face);
 
       LOD::MeshData& transitionMesh = node->data->transitionMeshes[faceID];
-      Engine::Renderer::UploadMesh(transitionMesh.vertexArray, s_LODBufferLayout, calcAdjustedTransitionMesh(node, face), transitionMesh.indices);
+      Engine::Renderer::UploadMesh(transitionMesh.vertexArray.get(), calcAdjustedTransitionMesh(node, face), transitionMesh.indices);
     }
 
     node->data->needsUpdate = false;

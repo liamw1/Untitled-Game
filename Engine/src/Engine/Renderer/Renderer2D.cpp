@@ -133,7 +133,7 @@ namespace Engine
       offset += 4;
     }
 
-    s_QuadVertexArray->setIndexBuffer(quadIndices, s_MaxIndices);
+    s_QuadVertexArray->setIndexBuffer(IndexBuffer::Create(quadIndices, s_MaxIndices));
     delete[] quadIndices;
 
     s_WhiteTexture = Texture2D::Create(1, 1);
@@ -175,14 +175,14 @@ namespace Engine
       return; // Nothing to draw
 
     uintptr_t dataSize = (s_QuadVertexBufferPtr - s_QuadVertexBufferBase) * sizeof(QuadVertex);
-    s_QuadVertexArray->setVertexData(s_QuadVertexBufferBase, dataSize);
+    s_QuadVertexArray->setVertexBuffer(s_QuadVertexBufferBase, dataSize);
 
     // Bind textures
     for (uint32_t i = 0; i < s_TextureSlotIndex; ++i)
       s_TextureSlots[i]->bind(i);
 
     s_TextureShader->bind();
-    RenderCommand::DrawIndexed(*s_QuadVertexArray, s_QuadIndexCount);
+    RenderCommand::DrawIndexed(s_QuadVertexArray.get(), s_QuadIndexCount);
     s_Stats.drawCalls++;
   }
 

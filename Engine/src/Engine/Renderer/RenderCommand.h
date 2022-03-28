@@ -13,9 +13,9 @@ namespace Engine
     static void WireFrameToggle(bool enableWireFrame) { s_RendererAPI->wireFrameToggle(enableWireFrame); }
     static void FaceCullToggle(bool enableFaceCulling) { s_RendererAPI->faceCullToggle(enableFaceCulling); }
     
-    static void DrawVertices(const VertexArray& vertexArray, uint32_t vertexCount) { return s_RendererAPI->drawVertices(vertexArray, vertexCount); }
-    static void DrawIndexed(const VertexArray& vertexArray, uint32_t indexCount = 0) { return s_RendererAPI->drawIndexed(vertexArray, indexCount); }
-    static void DrawIndexedLines(const VertexArray& vertexArray, uint32_t indexCount = 0) { return s_RendererAPI->drawIndexedLines(vertexArray, indexCount); }
+    static void DrawVertices(const VertexArray* vertexArray, uint32_t vertexCount) { return s_RendererAPI->drawVertices(vertexArray, vertexCount); }
+    static void DrawIndexed(const VertexArray* vertexArray, uint32_t indexCount = 0) { return s_RendererAPI->drawIndexed(vertexArray, indexCount); }
+    static void DrawIndexedLines(const VertexArray* vertexArray, uint32_t indexCount = 0) { return s_RendererAPI->drawIndexedLines(vertexArray, indexCount); }
 
     static void ClearDepthBuffer() { return s_RendererAPI->clearDepthBuffer(); }
 

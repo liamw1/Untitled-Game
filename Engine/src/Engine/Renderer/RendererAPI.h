@@ -25,9 +25,9 @@ namespace Engine
     virtual void wireFrameToggle(bool enableWireFrame) = 0;
     virtual void faceCullToggle(bool enableFaceCulling) = 0;
 
-    virtual void drawVertices(const VertexArray& vertexArray, uint32_t vertexCount) = 0;
-    virtual void drawIndexed(const VertexArray& vertexArray, uint32_t indexCount) = 0;
-    virtual void drawIndexedLines(const VertexArray& vertexArray, uint32_t indexCount) = 0;
+    virtual void drawVertices(const VertexArray* vertexArray, uint32_t vertexCount) = 0;
+    virtual void drawIndexed(const VertexArray* vertexArray, uint32_t indexCount) = 0;
+    virtual void drawIndexedLines(const VertexArray* vertexArray, uint32_t indexCount) = 0;
 
     virtual void clearDepthBuffer() = 0;
 

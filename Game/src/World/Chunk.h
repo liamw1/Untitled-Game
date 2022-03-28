@@ -119,7 +119,6 @@ public:
   static constexpr blockIndex_t Size() { return s_ChunkSize; }
   static constexpr length_t Length() { return s_ChunkLength; }
   static constexpr uint32_t TotalBlocks() { return s_ChunkTotalBlocks; }
-  static constexpr uint32_t MaxIndices() { return s_MaxIndices; }
   static LocalIndex LocalIndexFromPos(const Vec3& position);
 
   // NOTE: Should replace with compile-time initialization at some point
@@ -143,7 +142,6 @@ private:
   static constexpr blockIndex_t s_ChunkSize = 32;
   static constexpr length_t s_ChunkLength = s_ChunkSize * Block::Length();
   static constexpr uint32_t s_ChunkTotalBlocks = s_ChunkSize * s_ChunkSize * s_ChunkSize;
-  static constexpr uint32_t s_MaxIndices = 3 * 6 * s_ChunkTotalBlocks;
 
   // Position and composition
   GlobalIndex m_GlobalIndex;
@@ -154,7 +152,7 @@ private:
   MeshState m_MeshState = MeshState::NotGenerated;
   uint16_t m_QuadCount;
   Unique<Engine::VertexArray> m_MeshVertexArray;
-  static std::array<uint32_t, s_MaxIndices> s_MeshIndexBuffer;
+  static Shared<Engine::IndexBuffer> s_MeshIndexBuffer;
   static Engine::BufferLayout s_MeshVertexBufferLayout;
 
   // Chunk neighbor data
