@@ -182,6 +182,7 @@ namespace Engine
       s_TextureSlots[i]->bind(i);
 
     s_TextureShader->bind();
+    s_QuadVertexArray->bind();
     RenderCommand::DrawIndexed(s_QuadVertexArray.get(), s_QuadIndexCount);
     s_Stats.drawCalls++;
   }
