@@ -8,7 +8,7 @@ class PremakeConfiguration:
     premakeVersion = "5.0.0-alpha16"
     premakeZipUrls = f"https://github.com/premake/premake-core/releases/download/v{premakeVersion}/premake-{premakeVersion}-windows.zip"
     premakeLicenseUrl = "https://raw.githubusercontent.com/premake/premake-core/master/LICENSE.txt"
-    premakeDirectory = "./premake"
+    premakeDirectory = "./premake/bin"
 
     @classmethod
     def Validate(cls):

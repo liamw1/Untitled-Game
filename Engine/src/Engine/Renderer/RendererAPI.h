@@ -13,7 +13,8 @@ namespace Engine
     enum class API
     {
       None,
-      OpenGL
+      OpenGL,
+      OpenGL_Legacy
     };
 
     virtual ~RendererAPI() = default;

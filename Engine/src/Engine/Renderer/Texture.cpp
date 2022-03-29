@@ -9,9 +9,10 @@ namespace Engine
   {
     switch (Renderer::GetAPI())
     {
-      case RendererAPI::API::None:    EN_CORE_ASSERT(false, "RendererAPI::None is currently not supported!"); return nullptr;
-      case RendererAPI::API::OpenGL:  return CreateUnique<OpenGLTextureArray>(textureCount, textureSize);
-      default:                        EN_CORE_ASSERT(false, "Unknown RendererAPI!"); return nullptr;
+      case RendererAPI::API::None:          EN_CORE_ASSERT(false, "RendererAPI::None is currently not supported!"); return nullptr;
+      case RendererAPI::API::OpenGL:        return CreateUnique<OpenGLTextureArray>(textureCount, textureSize);
+      case RendererAPI::API::OpenGL_Legacy: return CreateUnique<OpenGLTextureArray>(textureCount, textureSize);
+      default:                              EN_CORE_ASSERT(false, "Unknown RendererAPI!"); return nullptr;
     }
   }
 
@@ -19,9 +20,10 @@ namespace Engine
   {
     switch (Renderer::GetAPI())
     {
-      case RendererAPI::API::None:    EN_CORE_ASSERT(false, "RendererAPI::None is currently not supported!"); return nullptr;
-      case RendererAPI::API::OpenGL:  return CreateUnique<OpenGLTexture2D>(width, height);
-      default:                        EN_CORE_ASSERT(false, "Unknown RendererAPI!"); return nullptr;
+      case RendererAPI::API::None:          EN_CORE_ASSERT(false, "RendererAPI::None is currently not supported!"); return nullptr;
+      case RendererAPI::API::OpenGL:        return CreateUnique<OpenGLTexture2D>(width, height);
+      case RendererAPI::API::OpenGL_Legacy: return CreateUnique<OpenGLTexture2D>(width, height);
+      default:                              EN_CORE_ASSERT(false, "Unknown RendererAPI!"); return nullptr;
     }
   }
 
@@ -29,9 +31,10 @@ namespace Engine
   {
     switch (Renderer::GetAPI())
     {
-      case RendererAPI::API::None:    EN_CORE_ASSERT(false, "RendererAPI::None is currently not supported!"); return nullptr;
-      case RendererAPI::API::OpenGL:  return CreateUnique<OpenGLTexture2D>(path);
-      default:                        EN_CORE_ASSERT(false, "Unknown RendererAPI!"); return nullptr;
+      case RendererAPI::API::None:          EN_CORE_ASSERT(false, "RendererAPI::None is currently not supported!"); return nullptr;
+      case RendererAPI::API::OpenGL:        return CreateUnique<OpenGLTexture2D>(path);
+      case RendererAPI::API::OpenGL_Legacy: return CreateUnique<OpenGLTexture2D>(path);
+      default:                              EN_CORE_ASSERT(false, "Unknown RendererAPI!"); return nullptr;
     }
   }
 }

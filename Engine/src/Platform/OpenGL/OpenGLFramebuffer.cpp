@@ -75,6 +75,8 @@ namespace Engine
     }
   }
 
+
+
   OpenGLFramebuffer::OpenGLFramebuffer(const FramebufferSpecification& specification)
     : m_Specification(specification)
   {
@@ -210,7 +212,6 @@ namespace Engine
   void OpenGLFramebuffer::clearAttachment(uint32_t attachmentIndex, const std::variant<int, float>& value)
   {
     EN_CORE_ASSERT(attachmentIndex < m_ColorAttachments.size(), "Color attachment index is out of bounds!");
-    EN_CORE_ASSERT(value.has_value(), "No value given!");
 
     const FramebufferTextureSpecification& spec = m_ColorAttachmentSpecifications[attachmentIndex];
     uint32_t attachment = m_ColorAttachments[attachmentIndex];

@@ -9,9 +9,10 @@ namespace Engine
   {
     switch (Renderer::GetAPI())
     {
-      case RendererAPI::API::None:    EN_CORE_ASSERT(false, "RendererAPI::None is currently not supported!"); return nullptr;
-      case RendererAPI::API::OpenGL:  return CreateUnique<OpenGLFramebuffer>(specification);
-      default:                        EN_CORE_ASSERT(false, "Unknown RendererAPI!"); return nullptr;
+      case RendererAPI::API::None:          EN_CORE_ASSERT(false, "RendererAPI::None is currently not supported!"); return nullptr;
+      case RendererAPI::API::OpenGL:        return CreateUnique<OpenGLFramebuffer>(specification);
+      case RendererAPI::API::OpenGL_Legacy: return CreateUnique<OpenGLFramebuffer>(specification);
+      default:                              EN_CORE_ASSERT(false, "Unknown RendererAPI!"); return nullptr;
     }
   }
 }

@@ -81,7 +81,7 @@ namespace Engine
     /* Cube Initialization */
     s_CubeVertexArray = VertexArray::Create();
     s_CubeVertexArray->setLayout({ { ShaderDataType::Float3, "a_Position" },
-                        { ShaderDataType::Float2, "a_TexCoord" } });
+                                   { ShaderDataType::Float2, "a_TexCoord" } });
     s_CubeVertexArray->setVertexBuffer(s_CubeVertices, sizeof(s_CubeVertices));
 
     uint32_t cubeIndices[36]{};

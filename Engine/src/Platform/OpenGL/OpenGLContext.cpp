@@ -40,10 +40,7 @@ namespace Engine
     EN_CORE_INFO("  Renderer:  {0}", glGetString(GL_RENDERER));
     EN_CORE_INFO("  Version:   {0}", glGetString(GL_VERSION));
     
-    // Version check
-    #ifdef EN_ENABLE_ASSERTS
-      EN_CORE_ASSERT(GLVersion.major > 4 || (GLVersion.major == 4 && GLVersion.minor >= 5), "Hazel requires at least OpenGL version 4.5!");
-    #endif
+    EN_CORE_ASSERT(GLVersion.major > 4 || (GLVersion.major == 4 && GLVersion.minor >= 5), "Hazel requires at least OpenGL version 4.5!");
 
     #ifdef EN_DEBUG
       // Initialize OpenGL debugging

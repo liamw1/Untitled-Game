@@ -84,7 +84,7 @@ namespace Engine
       EN_PROFILE_SCOPE("glfwCreateWindow");
 
       #if defined(EN_DEBUG)
-        if (Renderer::GetAPI() == RendererAPI::API::OpenGL)
+        if (Renderer::GetAPI() == RendererAPI::API::OpenGL || Renderer::GetAPI() == RendererAPI::API::OpenGL_Legacy)
           glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
       #endif
       m_Window = glfwCreateWindow(static_cast<int>(properties.width), static_cast<int>(properties.height), m_Data.title.c_str(), nullptr, nullptr);

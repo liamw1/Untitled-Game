@@ -7,12 +7,12 @@ typedef int GLint;
 
 namespace Engine
 {
-  class OpenGLShader : public Shader
+  class OpenGL_LegacyShader : public Shader
   {
   public:
-    OpenGLShader(const std::string& filepath);
-    OpenGLShader(const std::string& name, const std::string& vertexSource, const std::string& fragmentSource);
-    ~OpenGLShader();
+    OpenGL_LegacyShader(const std::string& filepath);
+    OpenGL_LegacyShader(const std::string& name, const std::string& vertexSource, const std::string& fragmentSource);
+    ~OpenGL_LegacyShader();
 
     const std::string& getName() const override { return m_Name; }
 
@@ -31,20 +31,11 @@ namespace Engine
   private:
     uint32_t m_RendererID = 0;
     std::string m_Name;
-    std::string m_FilePath;
     mutable std::unordered_map<std::string, GLint> m_UniformLocationCache;
-
-    std::unordered_map<GLenum, std::vector<uint32_t>> m_VulkanSPIRV;
-    std::unordered_map<GLenum, std::vector<uint32_t>> m_OpenGLSPIRV;
-    std::unordered_map<GLenum, std::string> m_OpenGLSourceCode;
 
     std::string readFile(const std::string& filepath);
     std::unordered_map<GLenum, std::string> preProcess(const std::string& source);
-
-    void compileOrGetVulkanBinaries(const std::unordered_map<GLenum, std::string>& shaderSources);
-    void compileOrGetOpenGLBinaries();
-    void createProgram();
-    void reflect(GLenum stage, const std::vector<uint32_t>& shaderData);
+    void compile(const std::unordered_map<GLenum, std::string>& shaderSources);
 
     /*
       NOTE: Temporary function for retrieving uniform locations more

@@ -7,16 +7,21 @@
 EngineProfile-*
 
 # Directories
-premake
 Engine/lib/VulkanSDK
 GameDev/assets/cache
-scripts/__pycache__ 
+scripts/__pycache__
+
+# Visual Studio files and folder
+.vs/
+**.sln
+**.vcxproj
+**.vcxproj.filters
+*.vcxproj.user
 
 # User-specific files
 *.rsuser
 *.suo
 *.user
-*.vcxproj.user
 *.userosscache
 *.sln.docstates
 
@@ -37,9 +42,6 @@ bld/
 [Oo]bj/
 [Ll]og/
 [Ll]ogs/
-
-# Visual Studio 2015/2017 cache/options directory
-.vs/
 
 # Files built by Visual Studio
 *_i.c
