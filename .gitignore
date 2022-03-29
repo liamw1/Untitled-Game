@@ -6,6 +6,12 @@
 # Profiling results
 EngineProfile-*
 
+# Directories
+premake
+Engine/lib/VulkanSDK
+GameDev/assets/cache
+scripts/__pycache__ 
+
 # User-specific files
 *.rsuser
 *.suo

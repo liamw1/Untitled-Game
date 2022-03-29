@@ -58,21 +58,21 @@
     <IntDir>..\obj\Debug-windows-x86_64\Engine\</IntDir>
     <TargetName>Engine</TargetName>
     <TargetExt>.lib</TargetExt>
-    <IncludePath>lib\spdlog\include;lib\GLFW\include;lib\GLad\include;lib\imgui;lib\glm;lib\stb_image;lib\EnTT\single_include;$(IncludePath)</IncludePath>
+    <IncludePath>lib\spdlog\include;lib\GLFW\include;lib\GLad\include;lib\imgui;lib\glm;lib\stb_image;lib\EnTT\single_include;C:\VulkanSDK\1.2.170.0\Include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>..\bin\Release-windows-x86_64\Engine\</OutDir>
     <IntDir>..\obj\Release-windows-x86_64\Engine\</IntDir>
     <TargetName>Engine</TargetName>
     <TargetExt>.lib</TargetExt>
-    <IncludePath>lib\spdlog\include;lib\GLFW\include;lib\GLad\include;lib\imgui;lib\glm;lib\stb_image;lib\EnTT\single_include;$(IncludePath)</IncludePath>
+    <IncludePath>lib\spdlog\include;lib\GLFW\include;lib\GLad\include;lib\imgui;lib\glm;lib\stb_image;lib\EnTT\single_include;C:\VulkanSDK\1.2.170.0\Include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Dist|x64'">
     <OutDir>..\bin\Dist-windows-x86_64\Engine\</OutDir>
     <IntDir>..\obj\Dist-windows-x86_64\Engine\</IntDir>
     <TargetName>Engine</TargetName>
     <TargetExt>.lib</TargetExt>
-    <IncludePath>lib\spdlog\include;lib\GLFW\include;lib\GLad\include;lib\imgui;lib\glm;lib\stb_image;lib\EnTT\single_include;$(IncludePath)</IncludePath>
+    <IncludePath>lib\spdlog\include;lib\GLFW\include;lib\GLad\include;lib\imgui;lib\glm;lib\stb_image;lib\EnTT\single_include;C:\VulkanSDK\1.2.170.0\Include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -93,7 +93,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <Lib>
-      <AdditionalDependencies>opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>opengl32.lib;lib\VulkanSDK\Lib\shaderc_sharedd.lib;lib\VulkanSDK\Lib\spirv-cross-cored.lib;lib\VulkanSDK\Lib\spirv-cross-glsld.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -118,7 +118,7 @@
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
     <Lib>
-      <AdditionalDependencies>opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>opengl32.lib;C:\VulkanSDK\1.2.170.0\Lib\shaderc_shared.lib;C:\VulkanSDK\1.2.170.0\Lib\spirv-cross-core.lib;C:\VulkanSDK\1.2.170.0\Lib\spirv-cross-glsl.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Dist|x64'">
@@ -143,7 +143,7 @@
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
     <Lib>
-      <AdditionalDependencies>opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>opengl32.lib;C:\VulkanSDK\1.2.170.0\Lib\shaderc_shared.lib;C:\VulkanSDK\1.2.170.0\Lib\spirv-cross-core.lib;C:\VulkanSDK\1.2.170.0\Lib\spirv-cross-glsl.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
