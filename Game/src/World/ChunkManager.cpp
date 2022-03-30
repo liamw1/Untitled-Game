@@ -27,33 +27,22 @@ void ChunkManager::clean()
 
   // If no boundary chunks exist, move chunks to boundary chunk map
   if (m_BoundaryChunks.size() == 0)
-    for (auto& pair : m_RenderableChunks)
-    {
-      Chunk* chunk = pair.second;
+    for (auto& [key, chunk] : m_RenderableChunks)
       moveToMap(chunk, MapType::Renderable, MapType::Boundary);
-    }
 
   // Destroy boundary chunks outside of unload range
   std::vector<Chunk*> chunksToRemove{};
-  for (auto& pair : m_BoundaryChunks)
-  {
-    Chunk* chunk = pair.second;
-
+  for (auto& [key, chunk] : m_BoundaryChunks)
     if (!isInRange(chunk->getGlobalIndex(), s_UnloadDistance))
       chunksToRemove.push_back(chunk);
-  }
   for (int i = 0; i < chunksToRemove.size(); ++i)
     unloadChunk(chunksToRemove[i]);
 
   // Destroy heightmaps outside of unload range
   std::vector<int> heightMapsToRemove{};
-  for (auto& pair : m_HeightMaps)
-  {
-    const HeightMap& heightMap = pair.second;
-
+  for (auto& [key, heightMap] : m_HeightMaps)
     if (!isInRange(GlobalIndex(heightMap.chunkI, heightMap.chunkJ, Player::OriginIndex().k), s_UnloadDistance))
       heightMapsToRemove.push_back(createHeightMapKey(heightMap.chunkI, heightMap.chunkJ));
-  }
   for (int i = 0; i < heightMapsToRemove.size(); ++i)
     m_HeightMaps.erase(heightMapsToRemove[i]);
 }
@@ -80,16 +69,10 @@ void ChunkManager::render() const
 
   // Render chunks in view frustum
   ChunkRenderer::BeginScene(viewProjection);
-  for (auto& pair : m_RenderableChunks)
-  {
-    Chunk* chunk = pair.second;
-
+  for (auto& [key, chunk] : m_RenderableChunks)
     if (isInRange(chunk->getGlobalIndex(), s_RenderDistance))
-    {
       if (isInFrustum(chunk->center(), frustumPlanes))
         ChunkRenderer::DrawChunk(chunk);
-    }
-  }
   ChunkRenderer::EndScene();
 }
 
@@ -107,10 +90,8 @@ bool ChunkManager::loadNewChunks(int maxNewChunks)
 
   // Find new chunks to generate
   std::vector<GlobalIndex> newChunks{};
-  for (auto& pair : m_BoundaryChunks)
+  for (auto& [key, chunk] : m_BoundaryChunks)
   {
-    Chunk* chunk = pair.second;
-
     for (BlockFace face : BlockFaceIterator())
       if (chunk->getNeighbor(face) == nullptr && !chunk->isFaceOpaque(face))
       {
@@ -158,10 +139,7 @@ bool ChunkManager::loadNewChunks(int maxNewChunks)
   }
 
   // Move chunk pointers out of m_BoundaryChunks when all their neighbors are accounted for
-  for (auto& pair : m_BoundaryChunks)
-  {
-    Chunk* chunk = pair.second;
-
+  for (auto& [key, chunk] : m_BoundaryChunks)
     if (!isOnBoundary(chunk))
     {
       MapType destination = chunk->isEmpty() ? MapType::Empty : MapType::Renderable;
@@ -169,7 +147,6 @@ bool ChunkManager::loadNewChunks(int maxNewChunks)
 
       chunk->update();
     }
-  }
 
   return newChunks.size() > 0;
 }
@@ -471,6 +448,8 @@ bool ChunkManager::isOnBoundary(const Chunk* const chunk) const
 
 void ChunkManager::initializeLODs()
 {
+  EN_PROFILE_FUNCTION();
+
   std::vector<LOD::Octree::Node*> leaves{};
 
   bool treeModified = true;

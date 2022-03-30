@@ -152,7 +152,7 @@ namespace Engine
 #endif
   }
 
-  void OpenGLVertexArray::setIndexBuffer(const Shared<IndexBuffer>& indexBuffer)
+  void OpenGLVertexArray::setIndexBuffer(const Shared<const IndexBuffer>& indexBuffer)
   {
     glBindVertexArray(m_RendererID);
     indexBuffer->bind();

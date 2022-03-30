@@ -25,6 +25,7 @@
 #include "Engine/Renderer/BufferLayout.h"
 #include "Engine/Renderer/FrameBuffer.h"
 #include "Engine/Renderer/Shader.h"
+#include "Engine/Renderer/UniformBuffer.h"
 #include "Engine/Renderer/Texture.h"
 #include "Engine/Renderer/VertexArray.h"
 #include "Engine/Renderer/Camera.h"

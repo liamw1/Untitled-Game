@@ -17,4 +17,6 @@ private:
   Unique<Engine::Texture2D> m_CheckerboardTexture;
 
   Engine::Entity m_CameraEntity;
+
+  bool onKeyPressEvent(Engine::KeyPressEvent& event);
 };

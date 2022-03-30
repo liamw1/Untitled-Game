@@ -1,9 +1,8 @@
 #include "ENpch.h"
 #include "Renderer2D.h"
-#include "VertexArray.h"
+#include "RenderCommand.h"
 #include "Shader.h"
 #include "UniformBuffer.h"
-#include "RenderCommand.h"
 #include "Engine/Scene/Scene.h"
 
 #include <glm/gtc/matrix_transform.hpp>
@@ -12,15 +11,15 @@ namespace Engine
 {
   struct CameraUniforms
   {
-    glm::mat4 viewProjection;
+    Float4x4 viewProjection;
   };
 
   struct QuadVertex
   {
-    Vec3 position;
+    Float3 position;
     Float4 tintColor;
     Float2 texCoord;
-    float textureIndex;
+    int textureIndex;
     float scalingFactor;
 
     // Editor-only
@@ -109,7 +108,7 @@ namespace Engine
     s_QuadVertexArray->setLayout({ { ShaderDataType::Float3, "a_Position"      },
                                    { ShaderDataType::Float4, "a_TintColor"     },
                                    { ShaderDataType::Float2, "a_TexCoord"      },
-                                   { ShaderDataType::Float,  "a_TextureIndex"  },
+                                   { ShaderDataType::Int,    "a_TextureIndex"  },
                                    { ShaderDataType::Float,  "a_TilingFactor"  },
                                    { ShaderDataType::Int,    "a_EntityID"      } });
 
@@ -202,7 +201,7 @@ namespace Engine
       s_QuadVertexBufferPtr->position = transform * s_QuadVertexPositions[i];
       s_QuadVertexBufferPtr->tintColor = tintColor;
       s_QuadVertexBufferPtr->texCoord = textureCoordinates[i];
-      s_QuadVertexBufferPtr->textureIndex = static_cast<float>(getTextureIndex(texture));
+      s_QuadVertexBufferPtr->textureIndex = getTextureIndex(texture);
       s_QuadVertexBufferPtr->scalingFactor = textureScalingFactor;
       s_QuadVertexBufferPtr->entityID = entityID;
       s_QuadVertexBufferPtr++;

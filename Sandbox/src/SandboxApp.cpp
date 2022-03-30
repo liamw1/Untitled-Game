@@ -10,8 +10,8 @@ public:
   Sandbox(Engine::ApplicationCommandLineArgs args)
     : Application("Sandbox", args)
   {
-    pushLayer(new Sandbox2D());
-    // pushLayer(new Sandbox3D());
+    // pushLayer(new Sandbox2D());
+    pushLayer(new Sandbox3D());
   }
 
   ~Sandbox()

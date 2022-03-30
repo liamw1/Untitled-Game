@@ -33,13 +33,13 @@ namespace Engine
     void setLayout(const BufferLayout& layout) override;
 
     void setVertexBuffer(const void* data, uintptr_t size) override;
-    void setIndexBuffer(const Shared<IndexBuffer>& indexBuffer) override;
+    void setIndexBuffer(const Shared<const IndexBuffer>& indexBuffer) override;
 
-    const Shared<IndexBuffer>& getIndexBuffer() const override { return m_IndexBuffer; }
+    const Shared<const IndexBuffer>& getIndexBuffer() const override { return m_IndexBuffer; }
 
   private:
     uint32_t m_RendererID;
     uint32_t m_VertexBufferID;
-    Shared<IndexBuffer> m_IndexBuffer;
+    Shared<const IndexBuffer> m_IndexBuffer;
   };
 }

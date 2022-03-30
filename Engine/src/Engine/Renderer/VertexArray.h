@@ -52,9 +52,9 @@ namespace Engine
       The count of this array should be a multiple of 3 (for drawing triangles).
       OpenGL expects vertices to be in counter-clockwise orientation.
     */
-    virtual void setIndexBuffer(const Shared<IndexBuffer>& indexBuffer) = 0;
+    virtual void setIndexBuffer(const Shared<const IndexBuffer>& indexBuffer) = 0;
 
-    virtual const Shared<IndexBuffer>& getIndexBuffer() const = 0;
+    virtual const Shared<const IndexBuffer>& getIndexBuffer() const = 0;
 
     static Unique<VertexArray> Create();
   };

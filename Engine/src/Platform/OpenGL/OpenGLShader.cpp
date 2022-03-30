@@ -1,5 +1,6 @@
 #include "ENpch.h"
 #include "OpenGLShader.h"
+#include "Engine/Debug/Timer.h"
 
 #include <codeanalysis\warnings.h> // Disable intellisense warnings
 #pragma warning(push)
@@ -89,14 +90,12 @@ namespace Engine
     std::string source = readFile(filepath);
     std::unordered_map<uint32_t, std::string> shaderSources = preProcess(source);
 
-    {
-      // TODO: Add timer
-      // Timer timer;
-      compileOrGetVulkanBinaries(shaderSources);
-      compileOrGetOpenGLBinaries();
-      createProgram();
-      EN_CORE_INFO("Shader creation took ? ms");
-    }
+    Timer timer("Shader creation");
+    timer.timeStart();
+    compileOrGetVulkanBinaries(shaderSources);
+    compileOrGetOpenGLBinaries();
+    createProgram();
+    timer.timeStop();
 
     // Extract name from filepath
     size_t lastSlash = filepath.find_last_of("/\\");
@@ -135,54 +134,6 @@ namespace Engine
   void OpenGLShader::unBind() const
   {
     glUseProgram(0);
-  }
-
-  void OpenGLShader::setInt(const std::string& name, int value)
-  {
-    GLint location = getUniformLocation(name);
-    glUniform1i(location, value);
-  }
-
-  void OpenGLShader::setIntArray(const std::string& name, int* values, uint32_t count)
-  {
-    GLint location = getUniformLocation(name);
-    glUniform1iv(location, count, values);
-  }
-
-  void OpenGLShader::setFloat(const std::string& name, float value)
-  {
-    GLint location = getUniformLocation(name);
-    glUniform1f(location, value);
-  }
-
-  void OpenGLShader::setFloat2(const std::string& name, const Float2& values)
-  {
-    GLint location = getUniformLocation(name);
-    glUniform2f(location, values.x, values.y);
-  }
-
-  void OpenGLShader::setFloat3(const std::string& name, const Float3& values)
-  {
-    GLint location = getUniformLocation(name);
-    glUniform3f(location, values.x, values.y, values.z);
-  }
-
-  void OpenGLShader::setFloat4(const std::string& name, const Float4& values)
-  {
-    GLint location = getUniformLocation(name);
-    glUniform4f(location, values.x, values.y, values.z, values.w);
-  }
-
-  void OpenGLShader::setMat3(const std::string& name, const Float3x3& matrix)
-  {
-    GLint location = getUniformLocation(name);
-    glUniformMatrix3fv(location, 1, GL_FALSE, glm::value_ptr(matrix));
-  }
-
-  void OpenGLShader::setMat4(const std::string& name, const Float4x4& matrix)
-  {
-    GLint location = getUniformLocation(name);
-    glUniformMatrix4fv(location, 1, GL_FALSE, glm::value_ptr(matrix));
   }
 
   std::string OpenGLShader::readFile(const std::string& filepath)

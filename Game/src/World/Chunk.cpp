@@ -2,13 +2,11 @@
 #include "Chunk.h"
 #include "Player/Player.h"
 
-Shared<Engine::IndexBuffer> Chunk::s_MeshIndexBuffer = nullptr;
+Shared<const Engine::IndexBuffer> Chunk::s_MeshIndexBuffer = nullptr;
 Engine::BufferLayout Chunk::s_MeshVertexBufferLayout = { { ShaderDataType::Uint32, "a_VertexData" } };
 
 Chunk::Chunk()
-  : m_GlobalIndex(0, 0, 0)
-{
-}
+  : m_GlobalIndex(0, 0, 0) {}
 
 Chunk::Chunk(const GlobalIndex& chunkIndex)
   : m_GlobalIndex(chunkIndex)
@@ -276,7 +274,7 @@ LocalIndex Chunk::LocalIndexFromPos(const Vec3& position)
 
 void Chunk::InitializeIndexBuffer()
 {
-  constexpr uint32_t maxIndices = 3 * 6 * TotalBlocks();
+  constexpr uint32_t maxIndices = 6 * 6 * TotalBlocks();
 
   uint32_t offset = 0;
   uint32_t* indices = new uint32_t[maxIndices];
@@ -294,19 +292,18 @@ void Chunk::InitializeIndexBuffer()
 
     offset += 4;
   }
-
   s_MeshIndexBuffer = Engine::IndexBuffer::Create(indices, maxIndices);
+
+  delete[] indices;
 }
 
 
 
 void Chunk::generateMesh()
 {
-  // If chunk is empty, no need to generate mesh
-  if (isEmpty())
-    return;
-
-  EN_PROFILE_FUNCTION();
+  // NOTE: Should probably replace with custom memory allocation system
+  static constexpr int maxVertices = 4 * 6 * TotalBlocks();
+  static uint32_t* const meshData = new uint32_t[maxVertices];
 
   static constexpr int8_t offsets[6][4][3]
     = { { {1, 0, 0}, {1, 1, 0}, {1, 1, 1}, {1, 0, 1} },    /*  East Face   */
@@ -316,7 +313,13 @@ void Chunk::generateMesh()
         { {0, 0, 1}, {1, 0, 1}, {1, 1, 1}, {0, 1, 1} },    /*  Top Face    */
         { {0, 1, 0}, {1, 1, 0}, {1, 0, 0}, {0, 0, 0} } };  /*  Bottom Face */
 
-  std::vector<uint32_t> mesh{};
+  // If chunk is empty, no need to generate mesh
+  if (isEmpty())
+    return;
+
+  EN_PROFILE_FUNCTION();
+
+  m_QuadCount = 0;
   for (blockIndex_t i = 0; i < s_ChunkSize; ++i)
     for (blockIndex_t j = 0; j < s_ChunkSize; ++j)
       for (blockIndex_t k = 0; k < s_ChunkSize; ++k)
@@ -339,18 +342,16 @@ void Chunk::generateMesh()
                 vertexData |= v << 21;                              // Quad vertex index
                 vertexData |= textureID << 23;                      // TextureID
 
-                mesh.push_back(vertexData);
+                meshData[4 * m_QuadCount + v] = vertexData;
               }
+              m_QuadCount++;
             }
   m_MeshState = MeshState::Simple;
-  m_QuadCount = static_cast<uint16_t>(mesh.size() / 4);
 
   if (m_QuadCount == 0)
     return;
 
-  // NOTE: Potential optimization by reusing static buffer for mesh creation
-
-  m_MeshVertexArray->setVertexBuffer(mesh.data(), sizeof(uint32_t) * mesh.size());
+  m_MeshVertexArray->setVertexBuffer(meshData, 4 * sizeof(uint32_t) * m_QuadCount);
 }
 
 void Chunk::setBlockType(blockIndex_t i, blockIndex_t j, blockIndex_t k, BlockType blockType)

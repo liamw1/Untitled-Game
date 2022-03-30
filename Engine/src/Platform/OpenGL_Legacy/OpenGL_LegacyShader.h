@@ -19,15 +19,6 @@ namespace Engine
     void bind() const override;
     void unBind() const override;
 
-    void setInt(const std::string& name, int value) override;
-    void setIntArray(const std::string& name, int* values, uint32_t count) override;
-    void setFloat(const std::string& name, float value) override;
-    void setFloat2(const std::string& name, const Float2& values) override;
-    void setFloat3(const std::string& name, const Float3& values) override;
-    void setFloat4(const std::string& name, const Float4& values) override;
-    void setMat3(const std::string& name, const Float3x3& matrix) override;
-    void setMat4(const std::string& name, const Float4x4& matrix) override;
-
   private:
     uint32_t m_RendererID = 0;
     std::string m_Name;

@@ -1,88 +1,140 @@
 #include "ENpch.h"
 #include "Renderer.h"
 #include "RenderCommand.h"
+#include "UniformBuffer.h"
 #include "Engine/Scene/Scene.h"
+
 #include <glm/gtc/matrix_transform.hpp>
 
 namespace Engine
 {
+  struct CameraUniforms
+  {
+    Float4x4 viewProjection;
+  };
+
+  struct WireVertex
+  {
+    Float3 position;
+    Float4 color;
+  };
+
+  struct QuadVertex
+  {
+    Float3 position;
+    Float4 tintColor;
+    Float2 texCoord;
+    int textureIndex;
+    float scalingFactor;
+
+    // Editor-only
+    int entityID;
+  };
+
   /*
     Renderer data
   */
   static Unique<VertexArray> s_CubeVertexArray;
-  static Unique<VertexArray> s_CubeFrameVertexArray;
+  static Unique<VertexArray> s_WireFrameVertexArray;
   static Unique<Shader> s_TextureShader;
-  static Unique<Shader> s_CubeFrameShader;
+  static Unique<Shader> s_WireFrameShader;
   static Unique<Texture2D> s_WhiteTexture;
+
+  static CameraUniforms s_CameraUniforms;
+  static Unique<UniformBuffer> s_CameraUniformBuffer;
   
-  static constexpr float s_CubeFrameVertices[24 * 3] = { -0.5f, -0.5f, -0.5f,
-                                                          0.5f, -0.5f, -0.5f,
-                                                          0.5f, -0.5f,  0.5f,
-                                                         -0.5f, -0.5f,  0.5f,
-                                                          0.5f,  0.5f, -0.5f,
-                                                         -0.5f,  0.5f, -0.5f,
-                                                         -0.5f,  0.5f,  0.5f,
-                                                          0.5f,  0.5f,  0.5f };
+  static constexpr Float4 s_CubeFrameVertexPositions[8] = { { -0.5f, -0.5f, -0.5f, 1.0f },
+                                                            {  0.5f, -0.5f, -0.5f, 1.0f },
+                                                            {  0.5f, -0.5f,  0.5f, 1.0f },
+                                                            { -0.5f, -0.5f,  0.5f, 1.0f },
+                                                            {  0.5f,  0.5f, -0.5f, 1.0f },
+                                                            { -0.5f,  0.5f, -0.5f, 1.0f },
+                                                            { -0.5f,  0.5f,  0.5f, 1.0f },
+                                                            {  0.5f,  0.5f,  0.5f, 1.0f } };
 
   static constexpr uint32_t s_CubeFrameIndices[24] = { 0, 1, 1, 2, 2, 3, 3, 0,
                                                        4, 5, 5, 6, 6, 7, 7, 4,
                                                        1, 4, 2, 7, 0, 5, 3, 6 };
 
-  static constexpr float s_CubeVertices[24 * 5] = {  // Front face
-                                                    -0.5f, -0.5f, -2.0f, 0.0f, 0.0f,
-                                                     0.5f, -0.5f, -2.0f, 1.0f, 0.0f,
-                                                     0.5f,  0.5f, -2.0f, 1.0f, 1.0f,
-                                                    -0.5f,  0.5f, -2.0f, 0.0f, 1.0f,
+  static constexpr Float4 s_CubeVertexPositions[6][4] = { { {  0.5f, -0.5f,  0.5f, 1.0f },
+                                                            {  0.5f, -0.5f, -0.5f, 1.0f },
+                                                            {  0.5f,  0.5f, -0.5f, 1.0f },
+                                                            {  0.5f,  0.5f,  0.5f, 1.0f } },
 
-                                                     // Right face
-                                                     0.5f, -0.5f, -2.0f, 0.0f, 0.0f,
-                                                     0.5f, -0.5f, -3.0f, 1.0f, 0.0f,
-                                                     0.5f,  0.5f, -3.0f, 1.0f, 1.0f,
-                                                     0.5f,  0.5f, -2.0f, 0.0f, 1.0f,
+                                                          { { -0.5f, -0.5f, -0.5f, 1.0f },
+                                                            { -0.5f, -0.5f,  0.5f, 1.0f },
+                                                            { -0.5f,  0.5f,  0.5f, 1.0f },
+                                                            { -0.5f,  0.5f, -0.5f, 1.0f } },
+                                                          
+                                                          { { -0.5f,  0.5f,  0.5f, 1.0f },
+                                                            {  0.5f,  0.5f,  0.5f, 1.0f },
+                                                            {  0.5f,  0.5f, -0.5f, 1.0f },
+                                                            { -0.5f,  0.5f, -0.5f, 1.0f } },
+                                                          
+                                                          { { -0.5f, -0.5f, -0.5f, 1.0f },
+                                                            {  0.5f, -0.5f, -0.5f, 1.0f },
+                                                            {  0.5f, -0.5f,  0.5f, 1.0f },
+                                                            { -0.5f, -0.5f,  0.5f, 1.0f } },
+                                                          
+                                                          { { -0.5f, -0.5f,  0.5f, 1.0f },
+                                                            {  0.5f, -0.5f,  0.5f, 1.0f },
+                                                            {  0.5f,  0.5f,  0.5f, 1.0f },
+                                                            { -0.5f,  0.5f,  0.5f, 1.0f } },
+                                                          
+                                                          { {  0.5f, -0.5f, -0.5f, 1.0f },
+                                                            { -0.5f, -0.5f, -0.5f, 1.0f },
+                                                            { -0.5f,  0.5f, -0.5f, 1.0f },
+                                                            {  0.5f,  0.5f, -0.5f, 1.0f } } };
 
-                                                     // Back face
-                                                     0.5f, -0.5f, -3.0f, 0.0f, 0.0f,
-                                                    -0.5f, -0.5f, -3.0f, 1.0f, 0.0f,
-                                                    -0.5f,  0.5f, -3.0f, 1.0f, 1.0f,
-                                                     0.5f,  0.5f, -3.0f, 0.0f, 1.0f,
+  static constexpr Float2 s_CubeTexCoords[6][4] = { { { 0.0f, 0.0f },
+                                                      { 1.0f, 0.0f },
+                                                      { 1.0f, 1.0f },
+                                                      { 0.0f, 1.0f } },
 
-                                                     // Left face
-                                                    -0.5f, -0.5f, -3.0f, 0.0f, 0.0f,
-                                                    -0.5f, -0.5f, -2.0f, 1.0f, 0.0f,
-                                                    -0.5f,  0.5f, -2.0f, 1.0f, 1.0f,
-                                                    -0.5f,  0.5f, -3.0f, 0.0f, 1.0f,
+                                                    { { 0.0f, 0.0f },
+                                                      { 1.0f, 0.0f },
+                                                      { 1.0f, 1.0f },
+                                                      { 0.0f, 1.0f } },
 
-                                                     // Top face
-                                                    -0.5f,  0.5f, -2.0f, 0.0f, 0.0f,
-                                                     0.5f,  0.5f, -2.0f, 1.0f, 0.0f,
-                                                     0.5f,  0.5f, -3.0f, 1.0f, 1.0f,
-                                                    -0.5f,  0.5f, -3.0f, 0.0f, 1.0f,
+                                                    { { 0.0f, 0.0f },
+                                                      { 1.0f, 0.0f },
+                                                      { 1.0f, 1.0f },
+                                                      { 0.0f, 1.0f } },
 
-                                                     // Bottom face
-                                                    -0.5f, -0.5f, -3.0f, 0.0f, 0.0f,
-                                                     0.5f, -0.5f, -3.0f, 1.0f, 0.0f,
-                                                     0.5f, -0.5f, -2.0f, 1.0f, 1.0f,
-                                                    -0.5f, -0.5f, -2.0f, 0.0f, 1.0f };
+                                                    { { 0.0f, 0.0f },
+                                                      { 1.0f, 0.0f },
+                                                      { 1.0f, 1.0f },
+                                                      { 0.0f, 1.0f } },
 
 
+                                                    { { 0.0f, 0.0f },
+                                                      { 1.0f, 0.0f },
+                                                      { 1.0f, 1.0f },
+                                                      { 0.0f, 1.0f } },
+
+                                                    { { 0.0f, 0.0f },
+                                                      { 1.0f, 0.0f },
+                                                      { 1.0f, 1.0f },
+                                                      { 0.0f, 1.0f } } };
 
   void Renderer::Initialize()
   {
     EN_PROFILE_FUNCTION();
     
-    /* Cube Frame Initialization */
-    s_CubeFrameVertexArray = VertexArray::Create();
-    s_CubeFrameVertexArray->setLayout({ { ShaderDataType::Float3, "a_Position" } });
-    s_CubeFrameVertexArray->setVertexBuffer(s_CubeFrameVertices, sizeof(s_CubeFrameVertices));
-    s_CubeFrameVertexArray->setIndexBuffer(IndexBuffer::Create(s_CubeFrameIndices, sizeof(s_CubeFrameIndices) / sizeof(uint32_t)));
-
-    s_CubeFrameShader = Shader::Create("../Engine/assets/shaders/CubeFrame.glsl");
+    /* Wire Frame Initialization */
+    s_WireFrameVertexArray = VertexArray::Create();
+    s_WireFrameVertexArray->setLayout({ { ShaderDataType::Float3, "a_Position"  },
+                                        { ShaderDataType::Float4, "a_Color"     } });
+    s_WireFrameVertexArray->setIndexBuffer(IndexBuffer::Create(s_CubeFrameIndices, 24));
 
     /* Cube Initialization */
     s_CubeVertexArray = VertexArray::Create();
-    s_CubeVertexArray->setLayout({ { ShaderDataType::Float3, "a_Position" },
-                                   { ShaderDataType::Float2, "a_TexCoord" } });
-    s_CubeVertexArray->setVertexBuffer(s_CubeVertices, sizeof(s_CubeVertices));
+    s_CubeVertexArray->setLayout({ { ShaderDataType::Float3, "a_Position"      },
+                                   { ShaderDataType::Float4, "a_TintColor"     },
+                                   { ShaderDataType::Float2, "a_TexCoord"      },
+                                   { ShaderDataType::Int,    "a_TextureIndex"  },
+                                   { ShaderDataType::Float,  "a_TilingFactor"  },
+                                   { ShaderDataType::Int,    "a_EntityID"      } });
 
     uint32_t cubeIndices[36]{};
     for (int face = 0; face < 6; ++face)
@@ -95,16 +147,17 @@ namespace Engine
       cubeIndices[6 * face + 4] = 3 + 4 * face;
       cubeIndices[6 * face + 5] = 0 + 4 * face;
     }
-    s_CubeVertexArray->setIndexBuffer(IndexBuffer::Create(cubeIndices, sizeof(cubeIndices) / sizeof(uint32_t)));
+    s_CubeVertexArray->setIndexBuffer(IndexBuffer::Create(cubeIndices, 36));
 
     /* Texture Initialization */
     s_WhiteTexture = Texture2D::Create(1, 1);
     uint32_t whiteTextureData = 0xffffffff;
     s_WhiteTexture->setData(&whiteTextureData, sizeof(uint32_t));
 
-    s_TextureShader = Shader::Create("../Engine/assets/shaders/CubeTexture.glsl");
-    s_TextureShader->bind();
-    s_TextureShader->setInt("u_Texture", 0);
+    s_TextureShader = Shader::Create("../Engine/assets/shaders/Texture.glsl");
+    s_WireFrameShader = Shader::Create("../Engine/assets/shaders/WireFrame.glsl");
+
+    s_CameraUniformBuffer = UniformBuffer::Create(sizeof(CameraUniforms), 0);
   }
 
   void Renderer::Shutdown()
@@ -113,11 +166,8 @@ namespace Engine
 
   void Renderer::BeginScene(const Mat4& viewProjection)
   {
-    s_CubeFrameShader->bind();
-    s_CubeFrameShader->setMat4("u_ViewProjection", viewProjection);
-
-    s_TextureShader->bind();
-    s_TextureShader->setMat4("u_ViewProjection", viewProjection);
+    s_CameraUniforms.viewProjection = viewProjection;
+    s_CameraUniformBuffer->setData(&s_CameraUniforms, sizeof(CameraUniforms));
   }
 
   void Renderer::EndScene()
@@ -128,23 +178,40 @@ namespace Engine
   {
     texture == nullptr ? s_WhiteTexture->bind() : texture->bind();
 
+    std::array<QuadVertex, 24> vertices{};
     Mat4 transform = glm::translate(Mat4(1.0), position) * glm::scale(Mat4(1.0), size);
-    s_TextureShader->setMat4("u_Transform", transform);
+    for (int faceID = 0; faceID < 6; ++faceID)
+      for (int i = 0; i < 4; ++i)
+      {
+        int vertexIndex = 4 * faceID + i;
+        vertices[vertexIndex].position = transform * s_CubeVertexPositions[faceID][i];
+        vertices[vertexIndex].tintColor = Float4(1.0f);
+        vertices[vertexIndex].texCoord = s_CubeTexCoords[faceID][i];
+        vertices[vertexIndex].textureIndex = 0;
+        vertices[vertexIndex].scalingFactor = 1.0f;
+        vertices[vertexIndex].entityID = -1;
+      }
+    s_CubeVertexArray->setVertexBuffer(vertices.data(), vertices.size() * sizeof(QuadVertex));
 
+    s_TextureShader->bind();
     s_CubeVertexArray->bind();
     RenderCommand::DrawIndexed(s_CubeVertexArray.get());
   }
 
   void Renderer::DrawCubeFrame(const Vec3& position, const Vec3& size, const Float4& color)
   {
-    s_CubeFrameShader->bind();
-
+    std::array<WireVertex, 8> vertices{};
     Mat4 transform = glm::translate(Mat4(1.0), position) * glm::scale(Mat4(1.0), size);
-    s_CubeFrameShader->setMat4("u_Transform", transform);
-    s_CubeFrameShader->setFloat4("u_Color", color);
+    for (int i = 0; i < 8; ++i)
+    {
+      vertices[i].position = transform * s_CubeFrameVertexPositions[i];
+      vertices[i].color = color;
+    }
+    s_WireFrameVertexArray->setVertexBuffer(vertices.data(), vertices.size() * sizeof(WireVertex));
 
-    s_CubeFrameVertexArray->bind();
-    RenderCommand::DrawIndexedLines(s_CubeFrameVertexArray.get());
+    s_WireFrameShader->bind();
+    s_WireFrameVertexArray->bind();
+    RenderCommand::DrawIndexedLines(s_WireFrameVertexArray.get());
   }
 
   void Renderer::OnWindowResize(uint32_t width, uint32_t height)

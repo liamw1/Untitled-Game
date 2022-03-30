@@ -59,54 +59,6 @@ namespace Engine
     glUseProgram(0);
   }
 
-  void OpenGL_LegacyShader::setInt(const std::string& name, int value)
-  {
-    GLint location = getUniformLocation(name);
-    glUniform1i(location, value);
-  }
-
-  void OpenGL_LegacyShader::setIntArray(const std::string& name, int* values, uint32_t count)
-  {
-    GLint location = getUniformLocation(name);
-    glUniform1iv(location, count, values);
-  }
-
-  void OpenGL_LegacyShader::setFloat(const std::string& name, float value)
-  {
-    GLint location = getUniformLocation(name);
-    glUniform1f(location, value);
-  }
-
-  void OpenGL_LegacyShader::setFloat2(const std::string& name, const Float2& values)
-  {
-    GLint location = getUniformLocation(name);
-    glUniform2f(location, values.x, values.y);
-  }
-
-  void OpenGL_LegacyShader::setFloat3(const std::string& name, const Float3& values)
-  {
-    GLint location = getUniformLocation(name);
-    glUniform3f(location, values.x, values.y, values.z);
-  }
-
-  void OpenGL_LegacyShader::setFloat4(const std::string& name, const Float4& values)
-  {
-    GLint location = getUniformLocation(name);
-    glUniform4f(location, values.x, values.y, values.z, values.w);
-  }
-
-  void OpenGL_LegacyShader::setMat3(const std::string& name, const Float3x3& matrix)
-  {
-    GLint location = getUniformLocation(name);
-    glUniformMatrix3fv(location, 1, GL_FALSE, glm::value_ptr(matrix));
-  }
-
-  void OpenGL_LegacyShader::setMat4(const std::string& name, const Float4x4& matrix)
-  {
-    GLint location = getUniformLocation(name);
-    glUniformMatrix4fv(location, 1, GL_FALSE, glm::value_ptr(matrix));
-  }
-
   std::string OpenGL_LegacyShader::readFile(const std::string& filepath)
   {
     EN_PROFILE_FUNCTION();

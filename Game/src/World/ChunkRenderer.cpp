@@ -4,46 +4,64 @@
 #include "Block/Block.h"
 #include "Player/Player.h"
 
+static constexpr int s_TextureSlot = 0;
+static constexpr float s_LODNearPlaneDistance = static_cast<float>(10 * Block::Length());
+static constexpr float s_LODFarPlaneDistance = static_cast<float>(1e10 * Block::Length());
+
+struct CameraUniforms
+{
+  Float4x4 viewProjection;
+};
+struct ChunkUniforms
+{
+  Float3 anchor;
+  const float blockLength = Block::Length();
+  const int textureSlot = s_TextureSlot;
+};
+struct LODUniforms
+{
+  Float3 anchor;
+  float textureScaling;
+  float nearPlaneDistance = s_LODNearPlaneDistance;
+  float farPlaneDistance = s_LODFarPlaneDistance;
+};
+
 /*
   Renderer data
 */
 static Unique<Engine::Shader> s_BlockFaceShader;
 static Unique<Engine::Shader> s_LODShader;
-static Unique<Engine::TextureArray> s_TextureArray;
-static constexpr int s_TextureSlot = 0;
+static Unique<Engine::UniformBuffer> s_CameraUniformBuffer;
+static Unique<Engine::UniformBuffer> s_ChunkUniformBuffer;
+static Unique<Engine::UniformBuffer> s_LODUniformBuffer;
+static CameraUniforms s_CameraUniforms{};
+static ChunkUniforms s_ChunkUniforms{};
+static LODUniforms s_LODUniforms{};
 
-static constexpr float s_LODNearPlaneDistance = static_cast<float>(10 * Block::Length());
-static constexpr float s_LODFarPlaneDistance = static_cast<float>(1e10 * Block::Length());
+static Unique<Engine::TextureArray> s_TextureArray;
 
 
 void ChunkRenderer::Initialize()
 {
   EN_PROFILE_FUNCTION();
 
-  s_BlockFaceShader = Engine::Shader::Create("assets/shaders/BlockFace.glsl");
-  s_BlockFaceShader->bind();
-  s_BlockFaceShader->setInt("u_TextureArray", s_TextureSlot);
+  s_BlockFaceShader = Engine::Shader::Create("assets/shaders/Chunk.glsl");
+  s_LODShader = Engine::Shader::Create("assets/shaders/ChunkLOD.glsl");
 
   s_TextureArray = Engine::TextureArray::Create(16, 128);
   for (BlockTexture texture : BlockTextureIterator())
     s_TextureArray->addTexture(Block::GetTexturePath(texture));
 
-  s_LODShader = Engine::Shader::Create("assets/shaders/ChunkLOD.glsl");
-  s_LODShader->bind();
-  s_LODShader->setInt("u_TextureArray", s_TextureSlot);
-  s_LODShader->setFloat("u_NearPlaneDistance", s_LODNearPlaneDistance);
-  s_LODShader->setFloat("u_FarPlaneDistance", s_LODFarPlaneDistance);
+  s_CameraUniformBuffer = Engine::UniformBuffer::Create(sizeof(CameraUniforms), 1);
+  s_ChunkUniformBuffer = Engine::UniformBuffer::Create(sizeof(ChunkUniforms), 2);
+  s_LODUniformBuffer = Engine::UniformBuffer::Create(sizeof(LODUniforms), 3);
 }
 
 void ChunkRenderer::BeginScene(const Mat4& viewProjection)
 {
-  s_BlockFaceShader->bind();
-  s_BlockFaceShader->setFloat("u_BlockLength", static_cast<float>(Block::Length()));
-  s_BlockFaceShader->setMat4("u_ViewProjection", viewProjection);
+  s_CameraUniforms.viewProjection = viewProjection;
+  s_CameraUniformBuffer->setData(&s_CameraUniforms, sizeof(CameraUniforms));
   s_TextureArray->bind(s_TextureSlot);
-
-  s_LODShader->bind();
-  s_LODShader->setMat4("u_ViewProjection", viewProjection);
 }
 
 void ChunkRenderer::EndScene()
@@ -57,9 +75,11 @@ void ChunkRenderer::DrawChunk(const Chunk* chunk)
   if (meshIndexCount == 0)
     return; // Nothing to draw
 
-  chunk->bindBuffers();
+  s_ChunkUniforms.anchor = chunk->anchorPosition();
+  s_ChunkUniformBuffer->setData(&s_ChunkUniforms, sizeof(ChunkUniforms));
+
   s_BlockFaceShader->bind();
-  s_BlockFaceShader->setFloat3("u_ChunkPosition", chunk->anchorPosition());
+  chunk->bindBuffers();
   Engine::RenderCommand::DrawIndexed(chunk->getVertexArray().get(), meshIndexCount);
 }
 
@@ -71,12 +91,13 @@ void ChunkRenderer::DrawLOD(const LOD::Octree::Node* node)
   if (primaryMeshIndexCount == 0)
     return; // Nothing to draw
 
-  Vec3 localAnchorPosition = Chunk::Length() * static_cast<Vec3>(node->anchor - Player::OriginIndex());
+  // Set local anchor position and texture scaling
+  s_LODUniforms.anchor = Chunk::Length() * static_cast<Vec3>(node->anchor - Player::OriginIndex());
+  s_LODUniforms.textureScaling = static_cast<float>(bit(node->LODLevel()));
+  s_LODUniformBuffer->setData(&s_LODUniforms, sizeof(LODUniforms));
 
-  node->data->primaryMesh.vertexArray->bind();
   s_LODShader->bind();
-  s_LODShader->setFloat("u_TextureScaling", static_cast<float>(bit(node->LODLevel())));
-  s_LODShader->setFloat3("u_LODPosition", localAnchorPosition);
+  node->data->primaryMesh.vertexArray->bind();
   Engine::RenderCommand::DrawIndexed(node->data->primaryMesh.vertexArray.get(), primaryMeshIndexCount);
 
   for (BlockFace face : BlockFaceIterator())

@@ -152,7 +152,7 @@ private:
   MeshState m_MeshState = MeshState::NotGenerated;
   uint16_t m_QuadCount;
   Unique<Engine::VertexArray> m_MeshVertexArray;
-  static Shared<Engine::IndexBuffer> s_MeshIndexBuffer;
+  static Shared<const Engine::IndexBuffer> s_MeshIndexBuffer;
   static Engine::BufferLayout s_MeshVertexBufferLayout;
 
   // Chunk neighbor data
