@@ -1,6 +1,5 @@
 #include "GMpch.h"
 #include "ChunkManager.h"
-#include "ChunkRenderer.h"
 #include "Player/Player.h"
 #include "Util/Noise.h"
 
@@ -68,12 +67,11 @@ void ChunkManager::render() const
   }
 
   // Render chunks in view frustum
-  ChunkRenderer::BeginScene(viewProjection);
+  Chunk::BindBuffers();
   for (auto& [key, chunk] : m_RenderableChunks)
     if (isInRange(chunk->getGlobalIndex(), s_RenderDistance))
       if (isInFrustum(chunk->center(), frustumPlanes))
-        ChunkRenderer::DrawChunk(chunk);
-  ChunkRenderer::EndScene();
+        chunk->draw();
 }
 
 bool ChunkManager::loadNewChunks(int maxNewChunks)
@@ -167,7 +165,7 @@ void ChunkManager::renderLODs()
                                               glm::length(Vec3(frustumPlanes[static_cast<int>(FrustumPlane::Near)])),
                                               glm::length(Vec3(frustumPlanes[static_cast<int>(FrustumPlane::Far)])), };
 
-  ChunkRenderer::BeginScene(viewProjection);
+  LOD::BindBuffers();
   for (LOD::Octree::Node* leaf : leaves)
     if (leaf->data->primaryMesh.vertexArray != nullptr)
     {
@@ -178,9 +176,8 @@ void ChunkManager::renderLODs()
         shiftedFrustumPlanes[planeID].w = frustumPlanes[planeID].w + LODSphereRadius * planeNormalMags[planeID];
 
       if (isInFrustum(leaf->center(), shiftedFrustumPlanes) && !isInRange(leaf->anchor, s_RenderDistance - 2))
-        ChunkRenderer::DrawLOD(leaf);
+        LOD::Draw(leaf);
     }
-  ChunkRenderer::EndScene();
 }
 
 void ChunkManager::manageLODs()
@@ -479,7 +476,7 @@ bool ChunkManager::splitLODs(std::vector<LOD::Octree::Node*>& leaves)
 
     if (node->LODLevel() > 1)
     {
-      int64_t splitRange = pow2(node->LODLevel() + 1) - 1 + s_RenderDistance;
+      globalIndex_t splitRange = 2 * node->size() - 1 + s_RenderDistance;
       LOD::AABB splitRangeBoundingBox = { Player::OriginIndex() - splitRange, Player::OriginIndex() + splitRange };
 
       if (LOD::Intersection(splitRangeBoundingBox, node->boundingBox()))
@@ -506,7 +503,7 @@ bool ChunkManager::combineLODs(std::vector<LOD::Octree::Node*>& leaves)
   for (LOD::Octree::Node* node : leaves)
     if (node->depth > 0)
     {
-      int64_t combineRange = pow2(node->LODLevel() + 2) - 1 + s_RenderDistance;
+      globalIndex_t combineRange = 4 * node->size() - 1 + s_RenderDistance;
       LOD::AABB rangeBoundingBox = { Player::OriginIndex() - combineRange, Player::OriginIndex() + combineRange };
 
       if (!LOD::Intersection(rangeBoundingBox, node->parent->boundingBox()))

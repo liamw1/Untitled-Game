@@ -1,6 +1,5 @@
 #include "GMpch.h"
 #include "World.h"
-#include "ChunkRenderer.h"
 #include "Engine/Renderer/Renderer.h"
 
 static constexpr uint8_t modulo(int64_t a, uint8_t b)
@@ -26,6 +25,7 @@ void World::onUpdate(Timestep timestep)
   Player::UpdateEnd();
 
   /* Rendering stage */
+  Engine::Renderer::BeginScene(Engine::Scene::ActiveCameraViewProjection());
   if (!m_RenderingPaused)
   {
     m_ChunkManager.manageLODs();
@@ -43,6 +43,7 @@ void World::onUpdate(Timestep timestep)
   }
 
   playerWorldInteraction();
+  Engine::Renderer::EndScene();
 }
 
 RayIntersection World::castRaySegment(const Vec3& pointA, const Vec3& pointB) const
@@ -204,9 +205,7 @@ void World::playerWorldInteraction()
     const LocalIndex& chunkIndex = m_PlayerRayCast.chunkIndex;
     const Vec3 blockCenter = Chunk::Length() * static_cast<Vec3>(chunkIndex) + Block::Length() * (static_cast<Vec3>(blockIndex) + Vec3(0.5));
 
-    Engine::Renderer::BeginScene(Engine::Scene::ActiveCameraViewProjection());
     Engine::Renderer::DrawCubeFrame(blockCenter, 1.01 * Block::Length() * Vec3(1.0), Float4(0.1f, 0.1f, 0.1f, 1.0f));
-    Engine::Renderer::EndScene();
   }
 
   if (Engine::Input::IsMouseButtonPressed(Mouse::ButtonLeft) || Engine::Input::IsMouseButtonPressed(Mouse::ButtonRight))

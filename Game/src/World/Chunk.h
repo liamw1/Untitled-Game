@@ -56,10 +56,7 @@ public:
   */
   void update();
 
-  /*
-    Binds buffers necessary for rendering.
-  */
-  void bindBuffers() const;
+  void draw();
 
   /*
     Restors chunk to default state.
@@ -106,7 +103,7 @@ public:
   void setNeighbor(BlockFace face, Chunk* chunk);
 
   int getQuadCount() const { return m_QuadCount; }
-  const Unique<Engine::VertexArray>& getVertexArray() const { return m_MeshVertexArray; }
+  const Unique<Engine::VertexArray>& getVertexArray() const { return m_VertexArray; }
 
   bool isEmpty() const { return m_ChunkComposition == nullptr; }
   bool isFaceOpaque(BlockFace face) const { return !(m_NonOpaqueFaces & bit(static_cast<int>(face))); }
@@ -121,8 +118,9 @@ public:
   static constexpr uint32_t TotalBlocks() { return s_ChunkTotalBlocks; }
   static LocalIndex LocalIndexFromPos(const Vec3& position);
 
-  // NOTE: Should replace with compile-time initialization at some point
-  static void InitializeIndexBuffer();
+  static void BindBuffers();
+
+  static void Initialize(const Shared<Engine::TextureArray>& textureArray);
 
 private:
   enum class MeshState : uint8_t
@@ -138,6 +136,12 @@ private:
     Float3 position;
   };
 
+  struct Uniforms
+  {
+    Float3 anchorPosition;
+    const float blockLength = static_cast<float>(Block::Length());
+  };
+
   // Size and dimension
   static constexpr blockIndex_t s_ChunkSize = 32;
   static constexpr length_t s_ChunkLength = s_ChunkSize * Block::Length();
@@ -151,9 +155,13 @@ private:
   // Mesh data
   MeshState m_MeshState = MeshState::NotGenerated;
   uint16_t m_QuadCount;
-  Unique<Engine::VertexArray> m_MeshVertexArray;
-  static Shared<const Engine::IndexBuffer> s_MeshIndexBuffer;
-  static Engine::BufferLayout s_MeshVertexBufferLayout;
+  Unique<Engine::VertexArray> m_VertexArray;
+  static Unique<Engine::Shader> s_Shader;
+  static Shared<Engine::TextureArray> s_TextureArray;
+  static Unique<Engine::UniformBuffer> s_UniformBuffer;
+  static Shared<const Engine::IndexBuffer> s_IndexBuffer;
+  static const Engine::BufferLayout s_VertexBufferLayout;
+  static constexpr int s_TextureSlot = 0;
 
   // Chunk neighbor data
   std::array<Chunk*, 6> m_Neighbors{};

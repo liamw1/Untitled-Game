@@ -1,7 +1,7 @@
 #include "GDpch.h"
 #include "EditorLayer.h"
 #include "Panels/SceneHierarchyPanel.h"
-#include "Engine/Renderer/DevCamera.h"
+#include "Engine/Scene/DevCamera.h"
 
 namespace Engine
 {

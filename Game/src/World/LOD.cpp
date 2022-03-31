@@ -5,27 +5,39 @@
 #include "Util/Array2D.h"
 #include "Util/TransVoxel.h"
 
-struct NoiseData
-{
-  Vec3 position;
-  Vec3 normal;
-};
-
 namespace LOD
 {
+  static constexpr int s_TextureSlot = 0;
+  static constexpr float s_LODNearPlaneDistance = static_cast<float>(10 * Block::Length());
+  static constexpr float s_LODFarPlaneDistance = static_cast<float>(1e10 * Block::Length());
+
   // Number of cells in each direction
   static constexpr int s_NumCells = Chunk::Size();
 
   // Width of a transition cell as a fraction of regular cell width
   static constexpr length_t s_TCFractionalWidth = 0.5f;
 
+  static Unique<Engine::Shader> s_LODShader = nullptr;
+  static Shared<Engine::TextureArray> s_LODTextureArray = nullptr;
+  static Unique<Engine::UniformBuffer> s_LODUniformBuffer = nullptr;
+
   const Engine::BufferLayout MeshData::s_LODBufferLayout({ { ShaderDataType::Float3, "a_Position" },
                                                            { ShaderDataType::Float3, "a_IsoNormal"},
                                                            { ShaderDataType::Int,    "a_QuadIndex"} });
 
-  static const Engine::BufferLayout s_LODBufferLayout({ { ShaderDataType::Float3, "a_Position" },
-                                                        { ShaderDataType::Float3, "a_IsoNormal"},
-                                                        { ShaderDataType::Int,    "a_QuadIndex"} });
+  struct NoiseData
+  {
+    Vec3 position;
+    Vec3 normal;
+  };
+
+  struct LODUniforms
+  {
+    Float3 anchor;
+    float textureScaling;
+    float nearPlaneDistance = s_LODNearPlaneDistance;
+    float farPlaneDistance = s_LODFarPlaneDistance;
+  };
 
   Vec3 Octree::Node::anchorPosition() const
   {
@@ -45,7 +57,7 @@ namespace LOD
     EN_ASSERT(node->isLeaf(), "Node must be a leaf node!");
     EN_ASSERT(node->depth != s_MaxNodeDepth, "Node is already at max depth!");
 
-    const int64_t nodeChildSize = bit(s_MaxNodeDepth - node->depth - 1);
+    const globalIndex_t nodeChildSize = node->size() / 2;
 
     // Divide node into 8 equal-sized child nodes
     for (int i = 0; i < 2; ++i)
@@ -132,6 +144,47 @@ namespace LOD
     }
   }
 
+
+
+  void Initialize(const Shared<Engine::TextureArray>& textureArray)
+  {
+    s_LODShader = Engine::Shader::Create("assets/shaders/ChunkLOD.glsl");
+    s_LODTextureArray = textureArray;
+    s_LODUniformBuffer = Engine::UniformBuffer::Create(sizeof(LODUniforms), 2);
+  }
+
+  void BindBuffers()
+  {
+    s_LODShader->bind();
+    s_LODTextureArray->bind(s_TextureSlot);
+  }
+
+  void Draw(const Octree::Node* leaf)
+  {
+    uint32_t primaryMeshIndexCount = static_cast<uint32_t>(leaf->data->primaryMesh.indices.size());
+
+    if (primaryMeshIndexCount == 0)
+      return; // Nothing to draw
+
+    // Set local anchor position and texture scaling
+    LODUniforms uniforms{};
+    uniforms.anchor = Chunk::Length() * static_cast<Vec3>(leaf->anchor - Player::OriginIndex());
+    uniforms.textureScaling = static_cast<float>(bit(leaf->LODLevel()));
+
+    Engine::Renderer::DrawMesh(leaf->data->primaryMesh.vertexArray.get(), primaryMeshIndexCount, s_LODUniformBuffer.get(), uniforms);
+    for (BlockFace face : BlockFaceIterator())
+    {
+      int faceID = static_cast<int>(face);
+
+      uint32_t transitionMeshIndexCount = static_cast<uint32_t>(leaf->data->transitionMeshes[faceID].indices.size());
+
+      if (transitionMeshIndexCount == 0 || !(leaf->data->transitionFaces & bit(faceID)))
+        continue;
+
+      Engine::Renderer::DrawMesh(leaf->data->transitionMeshes[faceID].vertexArray.get(), transitionMeshIndexCount, s_LODUniformBuffer.get(), uniforms);
+    }
+  }
+
   bool Intersection(AABB boxA, AABB boxB)
   {
     return boxA.min.i < boxB.max.i && boxA.max.i > boxB.min.i &&
@@ -154,7 +207,7 @@ namespace LOD
   // Calculate quantity based on values at corners that compose an edge.  The smoothness parameter s is used to interpolate between 
   // roughest iso-surface (vertex is always chosen at edge midpoint) and the smooth iso-surface interpolation used by Paul Bourke.
   template<typename T>
-  static T LODInterpolation(float t, float s, const T& q0, const T& q1)
+  static T LODInterpolation(length_t t, float s, const T& q0, const T& q1)
   {
     return (1 - s) * (q0 + q1) / 2 + s * ((1 - t) * q0 + t * q1);
   }
@@ -677,7 +730,7 @@ namespace LOD
         if (vertex.position[coordID] < LNGTH_EPSILON * node->length() || vertex.position[coordID] > (1.0 - LNGTH_EPSILON) * node->length())
           continue;
         else
-          vertex.position[coordID] = facingPositiveDir ? node->length() : static_cast<length_t>(0.0);
+          vertex.position[coordID] = static_cast<float>(facingPositiveDir ? node->length() : 0.0);
 
         adjustVertex(vertex, cellLength, node->data->transitionFaces);
       }

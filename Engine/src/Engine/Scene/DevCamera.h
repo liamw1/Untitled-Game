@@ -20,7 +20,7 @@ namespace Engine
 		Vec3 RightDirection();
 		Vec3 ForwardDirection();
 		const Vec3& Position();
-		glm::quat Orientation();
+    Quat Orientation();
 
 		Angle Pitch();
 	  Angle Yaw();

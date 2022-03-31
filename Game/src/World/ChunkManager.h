@@ -79,6 +79,7 @@ private:
   llvm::DenseMap<int, Chunk*>& m_EmptyChunks = m_Chunks[static_cast<int>(MapType::Empty)];
   llvm::DenseMap<int, Chunk*>& m_BoundaryChunks = m_Chunks[static_cast<int>(MapType::Boundary)];
   llvm::DenseMap<int, Chunk*>& m_RenderableChunks = m_Chunks[static_cast<int>(MapType::Renderable)];
+  // NOTE: Should switch to more cache-friendly map, such as tsl::sparse_map
 
   // LOD data
   LOD::Octree m_LODTree{};

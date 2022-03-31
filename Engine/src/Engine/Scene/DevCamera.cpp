@@ -4,9 +4,6 @@
 #include "Engine/Events/MouseEvent.h"
 #include <glm/gtc/matrix_transform.hpp>
 
-#define GLM_ENABLE_EXPERIMENTAL
-#include <glm/gtx/quaternion.hpp>
-
 namespace Engine
 {
 	namespace DevCamera
@@ -38,7 +35,7 @@ namespace Engine
 		static void updateProjection()
 		{
 			s_AspectRatio = static_cast<float>(s_ViewportWidth) / s_ViewportHeight;
-			s_Projection = glm::perspective(s_FOV.rad(), s_AspectRatio, s_NearClip, s_FarClip);
+			s_Projection = glm::perspective(s_FOV.radf(), s_AspectRatio, s_NearClip, s_FarClip);
 		}
 
 		static void updateView()
@@ -46,7 +43,7 @@ namespace Engine
 			// s_Yaw = s_Pitch = 0.0f; // Lock the camera's rotation
 			s_Position = calculatePosition();
 
-			glm::quat orientation = Orientation();
+			Quat orientation = Orientation();
 			s_ViewMatrix = glm::translate(Mat4(1.0f), s_Position) * glm::toMat4(orientation);
 			s_ViewMatrix = glm::inverse(s_ViewMatrix);
 		}
@@ -64,10 +61,10 @@ namespace Engine
 
 		static float zoomSpeed()
 		{
-			length_t distance = s_Distance * 0.2f;
+			float distance = static_cast<float>(s_Distance) * 0.2f;
 			distance = std::max(distance, 0.0f);
 
-			length_t speed = distance * distance;
+      float speed = distance * distance;
 			speed = std::min(speed, 100.0f); // max speed = 100
 			return speed;
 		}
@@ -108,8 +105,8 @@ namespace Engine
 		{
 			if (Input::IsKeyPressed(Key::LeftAlt))
 			{
-				const glm::vec2& mouse{ Input::GetMouseX(), Input::GetMouseY() };
-				glm::vec2 delta = (mouse - s_InitialMousePosition) * 0.003f;
+				const Float2& mouse = Input::GetMousePosition();
+				Float2 delta = (mouse - s_InitialMousePosition) * 0.003f;
 				s_InitialMousePosition = mouse;
 
 				if (Input::IsMouseButtonPressed(Mouse::ButtonMiddle))
@@ -142,11 +139,11 @@ namespace Engine
 		const Mat4& ViewMatrix() { return s_ViewMatrix; }
 		Mat4 ViewProjection() { return s_Projection * s_ViewMatrix; }
 
-		Vec3 UpDirection() { return glm::rotate(Orientation(), Vec3(0.0f, 1.0f, 0.0f)); }
-		Vec3 RightDirection() { return glm::rotate(Orientation(), Vec3(1.0f, 0.0f, 0.0f)); }
-		Vec3 ForwardDirection() { return glm::rotate(Orientation(), Vec3(0.0f, 0.0f, -1.0f)); }
+		Vec3 UpDirection() { return glm::rotate(Orientation(), Vec3(0.0, 1.0, 0.0)); }
+		Vec3 RightDirection() { return glm::rotate(Orientation(), Vec3(1.0, 0.0, 0.0)); }
+		Vec3 ForwardDirection() { return glm::rotate(Orientation(), Vec3(0.0, 0.0, -1.0)); }
 		const Vec3& Position() { return s_Position; }
-		glm::quat Orientation() { return glm::quat(Vec3(-s_Pitch.rad(), -s_Yaw.rad(), 0.0f)); }
+    Quat Orientation() { return Quat(Vec3(-s_Pitch.rad(), -s_Yaw.rad(), 0.0)); }
 
 		Angle Pitch() { return s_Pitch; }
 		Angle Yaw() { return s_Yaw; }

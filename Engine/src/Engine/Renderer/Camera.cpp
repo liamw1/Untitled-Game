@@ -79,6 +79,6 @@ namespace Engine
 
   void Camera::recalculatePerspectiveProjection()
   {
-    m_Projection = glm::perspective(m_FOV.rad(), m_AspectRatio, m_NearClip, m_FarClip);
+    m_Projection = glm::perspective(m_FOV.radf(), m_AspectRatio, m_NearClip, m_FarClip);
   }
 }

@@ -114,9 +114,18 @@ namespace std
   }
 }
 
+
+
+// =========== Precision selection for Indices ============= //
+
+template <bool isDoublePrecision> struct GlobalIndexSelector;
+
+template<> struct GlobalIndexSelector<true> { using type = typename int64_t; };
+template<> struct GlobalIndexSelector<false> { using type = typename int32_t; };
+
 using blockIndex_t = int8_t;
 using localIndex_t = int16_t;
-using globalIndex_t = int64_t;
+using globalIndex_t = typename GlobalIndexSelector<std::is_same<double, length_t>::value>::type;
 
 using BlockIndex = Index3D<blockIndex_t>;
 using LocalIndex = Index3D<localIndex_t>;

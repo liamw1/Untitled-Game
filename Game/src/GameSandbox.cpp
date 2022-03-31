@@ -1,19 +1,23 @@
 #include "GMpch.h"
 #include "GameSandbox.h"
-#include "World/ChunkRenderer.h"
 #include "World/World.h"
 #include "World/LOD.h"
 
 GameSandbox::GameSandbox()
   : Layer("GameSandbox")
 {
-  Block::Initialize();
   Player::Initialize(GlobalIndex(0, 0, 2), Block::Length() * Vec3(16.0));
   Engine::RenderCommand::Initialize();
   Engine::Renderer::Initialize();
-  Engine::Renderer2D::Initialize();
-  Chunk::InitializeIndexBuffer();
-  ChunkRenderer::Initialize();
+
+  Block::Initialize();
+
+  Shared<Engine::TextureArray> textureArray = Engine::TextureArray::Create(16, 128);
+  for (BlockTexture texture : BlockTextureIterator())
+    textureArray->addTexture(Block::GetTexturePath(texture));
+
+  Chunk::Initialize(textureArray);
+  LOD::Initialize(textureArray);
   m_World.initialize();
 }
 

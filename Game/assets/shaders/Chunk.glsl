@@ -8,13 +8,13 @@ const vec2 s_TexCoords[4] = vec2[4]( vec2(0.0f,	0.0f),
 
 const float s_LightValues[6] = float[6]( 0.9f, 0.6f, 0.7f, 0.8f, 1.0f, 0.5f);
 
-layout(std140, binding = 1) uniform Camera
+layout(std140, binding = 0) uniform Camera
 {
 	mat4 u_ViewProjection;
 };
-layout(std140, binding = 2) uniform Chunk
+layout(std140, binding = 1) uniform Chunk
 {
-	vec3 u_Anchor;
+	vec3 u_AnchorPosition;
   float u_BlockLength;
 };
 
@@ -37,7 +37,7 @@ void main()
   uint layer = (a_VertexData & 0xFF800000u) >> 23u;
   v_TexCoord = vec3(s_TexCoords[quadIndex], float(layer));
 
-  gl_Position = u_ViewProjection * vec4(u_Anchor + relPos, 1.0f);
+  gl_Position = u_ViewProjection * vec4(u_AnchorPosition + relPos, 1.0f);
 }
 
 

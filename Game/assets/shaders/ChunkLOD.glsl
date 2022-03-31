@@ -6,11 +6,11 @@ const vec2 s_TexCoords[4] = vec2[4]( vec2(0.0f,	0.0f),
 									                   vec2(1.0f, 1.0f),
 									                   vec2(0.0f, 1.0f) );
 
-layout(std140, binding = 1) uniform Camera
+layout(std140, binding = 0) uniform Camera
 {
 	mat4 u_ViewProjection;
 };
-layout(std140, binding = 3) uniform LOD
+layout(std140, binding = 2) uniform LOD
 {
 	vec3 u_Anchor;
   float u_TextureScaling;

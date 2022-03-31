@@ -2,6 +2,7 @@
 #include "RendererAPI.h"
 #include "Shader.h"
 #include "Texture.h"
+#include "UniformBuffer.h"
 
 /*
   A general-purpose renderer for 3D objects/effects.
@@ -28,9 +29,21 @@ namespace Engine
     {
       EN_ASSERT(target != nullptr, "Vertex array has not been initialized!");
 
-      uintptr_t dataSize = sizeof(Vertex) * vertices.size();
+      uintptr_t dataSize = vertices.size() * sizeof(Vertex);
       target->setVertexBuffer(vertices.data(), dataSize);
       target->setIndexBuffer(IndexBuffer::Create(indices.data(), static_cast<uint32_t>(indices.size())));
+    }
+
+    // Important: Shader must be bound before mesh can be drawn!
+    template<typename Uniforms>
+    void DrawMesh(const VertexArray* vertexArray, uint32_t indexCount, UniformBuffer* uniformBuffer, const Uniforms& uniforms)
+    {
+      EN_ASSERT(vertexArray != nullptr, "Vertex array has not been initialized!");
+      EN_ASSERT(uniformBuffer != nullptr, "Uniform buffer has not been initialized!");
+
+      uniformBuffer->setData(&uniforms, sizeof(Uniforms));
+      vertexArray->bind();
+      RenderCommand::DrawIndexed(vertexArray, indexCount);
     }
   };
 }

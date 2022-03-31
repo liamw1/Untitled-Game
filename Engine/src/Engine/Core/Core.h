@@ -26,8 +26,9 @@
 
 // ================== Physical Units and Constants ================== //
 using length_t = float;
+using rad_t = length_t;
 using seconds = float;
-constexpr length_t PI = static_cast<length_t>(3.14159265358979323846264338327950288419716939937510L);
+constexpr length_t PI = static_cast<length_t>(3.1415926535897932384626433832795028841971693993751L);
 
 // ======= Precision selection for floating point tolerance ========= //
 constexpr length_t LNGTH_EPSILON = std::is_same<double, length_t>::value ? DBL_EPSILON : FLT_EPSILON;
@@ -74,13 +75,16 @@ class Angle
 public:
   Angle() = default;
 
-  constexpr explicit Angle(float degrees)
+  constexpr explicit Angle(rad_t degrees)
     : m_Degrees(degrees) {}
 
-  constexpr float deg() const { return m_Degrees; }
-  constexpr float rad() const { return 0.01745329238f * m_Degrees; }
+  constexpr rad_t deg() const { return m_Degrees; }
+  constexpr rad_t rad() const { return degreeToRadFac * m_Degrees; }
 
-  operator float& () = delete;
+  constexpr float degf() const { return static_cast<float>(m_Degrees); }
+  constexpr float radf() const { return static_cast<float>(degreeToRadFac * m_Degrees); }
+
+  operator rad_t& () = delete;
 
   constexpr bool operator>(Angle other) const { return m_Degrees > other.m_Degrees; }
   constexpr bool operator<(Angle other) const { return m_Degrees < other.m_Degrees; }
@@ -91,7 +95,8 @@ public:
   constexpr Angle operator-() const { return Angle(-m_Degrees); }
 
   constexpr Angle operator*(int n) const { return Angle(n * m_Degrees); }
-  constexpr Angle operator*(float x) const { return Angle(x * m_Degrees); }
+  constexpr Angle operator*(float x) const { return Angle(static_cast<rad_t>(x) * m_Degrees); }
+  constexpr Angle operator*(double x) const { return Angle(static_cast<rad_t>(x) * m_Degrees); }
   constexpr Angle operator*(Angle other) const { return Angle(m_Degrees * other.m_Degrees); }
 
   constexpr Angle& operator+=(Angle other)
@@ -106,15 +111,19 @@ public:
     return *this;
   }
 
-  static constexpr Angle PI() { return Angle(180.0f); }
-  static constexpr Angle FromRad(float rad) { return Angle(57.2957795f * rad); }
+  static constexpr Angle PI() { return Angle(180.0); }
+  static constexpr Angle FromRad(rad_t rad) { return Angle(radToDegreeFac * rad); }
 
 private:
-  float m_Degrees;
+  rad_t m_Degrees;
+
+  static constexpr length_t degreeToRadFac = static_cast<rad_t>(0.0174532925199432957692369076848861271344287188854L);
+  static constexpr length_t radToDegreeFac = static_cast<rad_t>(57.295779513082320876798154814105170332405472466564L);
 };
 
 constexpr Angle operator*(int n, Angle theta) { return theta * n; }
 constexpr Angle operator*(float x, Angle theta) { return theta * x; }
+constexpr Angle operator*(double x, Angle theta) { return theta * x; }
 
 
 

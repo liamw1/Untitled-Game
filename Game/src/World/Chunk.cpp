@@ -2,8 +2,11 @@
 #include "Chunk.h"
 #include "Player/Player.h"
 
-Shared<const Engine::IndexBuffer> Chunk::s_MeshIndexBuffer = nullptr;
-Engine::BufferLayout Chunk::s_MeshVertexBufferLayout = { { ShaderDataType::Uint32, "a_VertexData" } };
+Unique<Engine::Shader> Chunk::s_Shader = nullptr;
+Shared<Engine::TextureArray> Chunk::s_TextureArray = nullptr;
+Unique<Engine::UniformBuffer> Chunk::s_UniformBuffer = nullptr;
+Shared<const Engine::IndexBuffer> Chunk::s_IndexBuffer = nullptr;
+const Engine::BufferLayout Chunk::s_VertexBufferLayout = { { ShaderDataType::Uint32, "a_VertexData" } };
 
 Chunk::Chunk()
   : m_GlobalIndex(0, 0, 0) {}
@@ -11,9 +14,9 @@ Chunk::Chunk()
 Chunk::Chunk(const GlobalIndex& chunkIndex)
   : m_GlobalIndex(chunkIndex)
 {
-  m_MeshVertexArray = Engine::VertexArray::Create();
-  m_MeshVertexArray->setLayout(s_MeshVertexBufferLayout);
-  m_MeshVertexArray->setIndexBuffer(s_MeshIndexBuffer);
+  m_VertexArray = Engine::VertexArray::Create();
+  m_VertexArray->setLayout(s_VertexBufferLayout);
+  m_VertexArray->setIndexBuffer(s_IndexBuffer);
 }
 
 Chunk::~Chunk()
@@ -27,7 +30,7 @@ Chunk::Chunk(Chunk&& other) noexcept
     m_NonOpaqueFaces(std::move(other.m_NonOpaqueFaces)),
     m_MeshState(std::move(other.m_MeshState)),
     m_QuadCount(std::move(other.m_QuadCount)),
-    m_MeshVertexArray(std::move(other.m_MeshVertexArray))
+    m_VertexArray(std::move(other.m_VertexArray))
 {
   // Transfer neighbor pointers
   m_Neighbors = other.m_Neighbors;
@@ -47,7 +50,7 @@ Chunk& Chunk::operator=(Chunk&& other) noexcept
     m_NonOpaqueFaces = std::move(other.m_NonOpaqueFaces);
     m_MeshState = std::move(other.m_MeshState);
     m_QuadCount = std::move(other.m_QuadCount);
-    m_MeshVertexArray = std::move(other.m_MeshVertexArray);
+    m_VertexArray = std::move(other.m_VertexArray);
 
     // Transfer neighbor pointers
     m_Neighbors = other.m_Neighbors;
@@ -130,9 +133,17 @@ void Chunk::update()
     markAsEmpty();
 }
 
-void Chunk::bindBuffers() const
+void Chunk::draw()
 {
-  m_MeshVertexArray->bind();
+  uint32_t meshIndexCount = 6 * static_cast<uint32_t>(m_QuadCount);
+
+  if (meshIndexCount == 0)
+    return; // Nothing to draw
+
+  Uniforms uniforms{};
+  uniforms.anchorPosition = anchorPosition();
+
+  Engine::Renderer::DrawMesh(m_VertexArray.get(), meshIndexCount, s_UniformBuffer.get(), uniforms);
 }
 
 void Chunk::reset()
@@ -142,7 +153,7 @@ void Chunk::reset()
   m_NonOpaqueFaces = 0;
   m_MeshState = MeshState::NotGenerated;
   m_QuadCount = 0;
-  m_MeshVertexArray.reset();
+  m_VertexArray.reset();
 
   // Ensure no further communication between other chunks
   excise();
@@ -272,7 +283,13 @@ LocalIndex Chunk::LocalIndexFromPos(const Vec3& position)
   return LocalIndex::ToIndex(glm::floor(position / s_ChunkLength));
 }
 
-void Chunk::InitializeIndexBuffer()
+void Chunk::BindBuffers()
+{
+  s_Shader->bind();
+  s_TextureArray->bind(s_TextureSlot);
+}
+
+void Chunk::Initialize(const Shared<Engine::TextureArray>& textureArray)
 {
   constexpr uint32_t maxIndices = 6 * 6 * TotalBlocks();
 
@@ -292,7 +309,11 @@ void Chunk::InitializeIndexBuffer()
 
     offset += 4;
   }
-  s_MeshIndexBuffer = Engine::IndexBuffer::Create(indices, maxIndices);
+  s_IndexBuffer = Engine::IndexBuffer::Create(indices, maxIndices);
+
+  s_Shader = Engine::Shader::Create("assets/shaders/Chunk.glsl");
+  s_TextureArray = textureArray;
+  s_UniformBuffer = Engine::UniformBuffer::Create(sizeof(Uniforms), 1);
 
   delete[] indices;
 }
@@ -351,7 +372,7 @@ void Chunk::generateMesh()
   if (m_QuadCount == 0)
     return;
 
-  m_MeshVertexArray->setVertexBuffer(meshData, 4 * sizeof(uint32_t) * m_QuadCount);
+  m_VertexArray->setVertexBuffer(meshData, 4 * sizeof(uint32_t) * m_QuadCount);
 }
 
 void Chunk::setBlockType(blockIndex_t i, blockIndex_t j, blockIndex_t k, BlockType blockType)

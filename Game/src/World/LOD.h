@@ -95,7 +95,7 @@ namespace LOD
       /*
         \returns Size of LOD in each direction, given in units of chunks.
       */
-      int64_t size() const { return pow2(LODLevel()); }
+      globalIndex_t size() const { return static_cast<globalIndex_t>(pow2(LODLevel())); }
 
       /*
         \returns The length of LOD in each direction, given in physical units.
@@ -167,6 +167,12 @@ namespace LOD
     void getLeavesPriv(Node* branch, std::vector<Node*>& leaves);
     Node* findLeafPriv(Node* branch, const GlobalIndex& index);
   };
+
+  void Initialize(const Shared<Engine::TextureArray>& textureArray);
+
+  void BindBuffers();
+
+  void Draw(const Octree::Node* leaf);
 
   /*
     \returns True if the given AABBs intersect.  Two AABBs sharing

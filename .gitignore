@@ -8,7 +8,7 @@ EngineProfile-*
 
 # Directories
 Engine/lib/VulkanSDK
-GameDev/assets/cache
+cache/
 scripts/__pycache__
 
 # Visual Studio files and folder
