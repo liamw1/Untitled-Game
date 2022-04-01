@@ -55,7 +55,7 @@ static Vec2 rgrad2(Vec2 v, Angle rot)
 #endif
 }
 
-Noise::SurfaceData::SurfaceData(length_t surfaceHeight, BlockType blockType)
+Noise::SurfaceData::SurfaceData(length_t surfaceHeight, Block::Type blockType)
   : m_Height(surfaceHeight), m_Composition()
 {
   m_Composition[0] = { blockType, 1.0 };
@@ -63,6 +63,8 @@ Noise::SurfaceData::SurfaceData(length_t surfaceHeight, BlockType blockType)
 
 Noise::SurfaceData Noise::SurfaceData::operator+(const SurfaceData& other) const
 {
+  // NOTE: This function can probably be made more efficient
+
   std::array<Component, 2 * s_NumTypes> combinedComposition{};
   for (int i = 0; i < s_NumTypes; ++i)
     combinedComposition[i] = m_Composition[i];
@@ -110,8 +112,8 @@ std::array<int, 2> Noise::SurfaceData::getTextureIndices() const
 {
   std::array<int, 2> textureIndices{};
 
-  textureIndices[0] = static_cast<int>(Block::GetTexture(m_Composition[0].type, BlockFace::Top));
-  textureIndices[1] = static_cast<int>(Block::GetTexture(m_Composition[1].type, BlockFace::Top));
+  textureIndices[0] = static_cast<int>(Block::GetTexture(m_Composition[0].type, Block::Face::Top));
+  textureIndices[1] = static_cast<int>(Block::GetTexture(m_Composition[1].type, Block::Face::Top));
 
   return textureIndices;
 }
@@ -308,11 +310,11 @@ Noise::SurfaceData Noise::FastTerrainNoise2D(const Vec2& pointXY)
   length_t octave3 = 5 * Block::Length() * glm::simplex(pointXY / 100.0 / Block::Length());
 
   length_t surfaceHeight = octave1 + octave2 + octave3;
-  BlockType blockType = BlockType::Grass;
-  if (surfaceHeight > 50 * Block::Length())
-    blockType = BlockType::Snow;
-  else if (surfaceHeight > 40 * Block::Length())
-    blockType = BlockType::Dirt;
+  Block::Type blockType = Block::Type::Grass;
+  if (surfaceHeight > 50 * Block::Length() + octave2)
+    blockType = Block::Type::Snow;
+  else if (surfaceHeight > 30 * Block::Length() + octave3)
+    blockType = Block::Type::Stone;
 
   return SurfaceData(surfaceHeight, blockType);
 }

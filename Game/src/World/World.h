@@ -5,7 +5,7 @@
 struct RayIntersection
 {
   length_t distance = std::numeric_limits<length_t>::infinity();
-  BlockFace face;
+  Block::Face face;
   BlockIndex blockIndex;
   LocalIndex chunkIndex;
 };

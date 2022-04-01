@@ -97,7 +97,7 @@ bool ChunkManager::loadNewChunks(int maxNewChunks)
   std::vector<GlobalIndex> newChunks{};
   for (auto& [key, chunk] : m_BoundaryChunks)
   {
-    for (BlockFace face : BlockFaceIterator())
+    for (Block::Face face : Block::FaceIterator())
       if (chunk->getNeighbor(face) == nullptr && !chunk->isFaceOpaque(face))
       {
         // Store index of potential new chunk
@@ -182,7 +182,7 @@ void ChunkManager::renderLODs()
       for (int planeID = 0; planeID < 6; ++planeID)
         shiftedFrustumPlanes[planeID].w = frustumPlanes[planeID].w + LODSphereRadius * planeNormalMags[planeID];
 
-      if (isInFrustum(leaf->center(), shiftedFrustumPlanes) && !isInRange(leaf->anchor, s_RenderDistance - 2))
+      if (isInFrustum(leaf->center(), shiftedFrustumPlanes) && !isInRange(leaf->anchor, s_RenderDistance - 1))
         LOD::Draw(leaf);
     }
 }
@@ -342,7 +342,7 @@ Chunk* ChunkManager::loadChunk(const GlobalIndex& chunkIndex)
   addToMap(newChunk, MapType::Boundary);
 
   // Set neighbors in all directions
-  for (BlockFace face : BlockFaceIterator())
+  for (Block::Face face : Block::FaceIterator())
   {
     const GlobalIndex neighborIndex = chunkIndex + GlobalIndex::OutwardNormal(face);
 
@@ -375,7 +375,7 @@ void ChunkManager::unloadChunk(Chunk* const chunk)
   EN_ASSERT(m_BoundaryChunks.find(createKey(chunk->getGlobalIndex())) != m_BoundaryChunks.end(), "Chunk is not in boundary chunk map!");
 
   // Move neighbors to m_BoundaryChunks
-  for (BlockFace face : BlockFaceIterator())
+  for (Block::Face face : Block::FaceIterator())
   {
     Chunk* chunkNeighbor = chunk->getNeighbor(face);
 
@@ -443,7 +443,7 @@ void ChunkManager::moveToMap(Chunk* const chunk, MapType source, MapType destina
 
 bool ChunkManager::isOnBoundary(const Chunk* const chunk) const
 {
-  for (BlockFace face : BlockFaceIterator())
+  for (Block::Face face : Block::FaceIterator())
     if (chunk->getNeighbor(face) == nullptr && !chunk->isFaceOpaque(face))
       return true;
   return false;
@@ -480,7 +480,7 @@ bool ChunkManager::splitLODs(std::vector<LOD::Octree::Node*>& leaves)
   {
     LOD::Octree::Node* node = *it;
 
-    if (node->LODLevel() > 1)
+    if (node->LODLevel() > 0)
     {
       globalIndex_t splitRange = 2 * node->size() - 1 + s_RenderDistance;
       LOD::AABB splitRangeBoundingBox = { Player::OriginIndex() - splitRange, Player::OriginIndex() + splitRange };

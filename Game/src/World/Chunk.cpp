@@ -34,7 +34,7 @@ Chunk::Chunk(Chunk&& other) noexcept
 {
   // Transfer neighbor pointers
   m_Neighbors = other.m_Neighbors;
-  for (BlockFace face : BlockFaceIterator())
+  for (Block::Face face : Block::FaceIterator())
     other.m_Neighbors[static_cast<int>(face)] = nullptr;
 
   // Since the address of 'other' has moved, we must update its neighbors about the change
@@ -54,7 +54,7 @@ Chunk& Chunk::operator=(Chunk&& other) noexcept
 
     // Transfer neighbor pointers
     m_Neighbors = other.m_Neighbors;
-    for (BlockFace face : BlockFaceIterator())
+    for (Block::Face face : Block::FaceIterator())
       other.m_Neighbors[static_cast<int>(face)] = nullptr;
 
     // Since the address of 'other' has moved, we must update its neighbors about the change
@@ -63,7 +63,7 @@ Chunk& Chunk::operator=(Chunk&& other) noexcept
   return *this;
 }
 
-void Chunk::load(HeightMap heightMap)
+void Chunk::load(const HeightMap& heightMap)
 {
   const length_t chunkHeight = s_ChunkLength * getGlobalIndex().k;
 
@@ -73,24 +73,24 @@ void Chunk::load(HeightMap heightMap)
     return;
   }
 
-  m_ChunkComposition = CreateUnique<BlockType[]>(s_ChunkTotalBlocks);
+  m_ChunkComposition = CreateUnique<Block::Type[]>(s_ChunkTotalBlocks);
 
   bool isEmpty = true;
   for (blockIndex_t i = 0; i < s_ChunkSize; ++i)
     for (blockIndex_t j = 0; j < s_ChunkSize; ++j)
     {
       const length_t& terrainHeight = heightMap.surfaceData[i][j].getHeight();
-      const BlockType& surfaceBlockType = heightMap.surfaceData[i][j].getPrimaryBlockType();
+      const Block::Type& surfaceBlockType = heightMap.surfaceData[i][j].getPrimaryBlockType();
 
       if (terrainHeight < chunkHeight)
       {
         for (blockIndex_t k = 0; k < s_ChunkSize; ++k)
-          setBlockType(i, j, k, BlockType::Air);
+          setBlockType(i, j, k, Block::Type::Air);
       }
       else if (terrainHeight > chunkHeight + s_ChunkLength + Block::Length())
       {
         for (blockIndex_t k = 0; k < s_ChunkSize; ++k)
-          setBlockType(i, j, k, BlockType::Dirt);
+          setBlockType(i, j, k, Block::Type::Dirt);
         isEmpty = false;
       }
       else
@@ -105,11 +105,11 @@ void Chunk::load(HeightMap heightMap)
           }
           else if (k < terrainHeightIndex)
           {
-            setBlockType(i, j, k, BlockType::Dirt);
+            setBlockType(i, j, k, Block::Type::Dirt);
             isEmpty = false;
           }
           else
-            setBlockType(i, j, k, BlockType::Air);
+            setBlockType(i, j, k, Block::Type::Air);
         }
       }
     }
@@ -130,7 +130,7 @@ void Chunk::update()
   if (m_MeshState == MeshState::NotGenerated || m_MeshState == MeshState::NeedsUpdate)
     generateMesh();
 
-  if (m_ChunkComposition[0] == BlockType::Air && m_QuadCount == 0)
+  if (m_ChunkComposition[0] == Block::Type::Air && m_QuadCount == 0)
     markAsEmpty();
 }
 
@@ -172,29 +172,29 @@ LocalIndex Chunk::getLocalIndex() const
            static_cast<localIndex_t>(m_GlobalIndex.k - Player::OriginIndex().k) };
 }
 
-BlockType Chunk::getBlockType(blockIndex_t i, blockIndex_t j, blockIndex_t k) const
+Block::Type Chunk::getBlockType(blockIndex_t i, blockIndex_t j, blockIndex_t k) const
 {
   static constexpr uint64_t chunkSize = static_cast<uint64_t>(s_ChunkSize);
   EN_ASSERT(0 <= i && i < chunkSize && 0 <= j && j < chunkSize && 0 <= k && k < chunkSize, "Index is out of bounds!");
-  return isEmpty() ? BlockType::Air : m_ChunkComposition[i * chunkSize * chunkSize + j * chunkSize + k];
+  return isEmpty() ? Block::Type::Air : m_ChunkComposition[i * chunkSize * chunkSize + j * chunkSize + k];
 }
 
-BlockType Chunk::getBlockType(const BlockIndex& blockIndex) const
+Block::Type Chunk::getBlockType(const BlockIndex& blockIndex) const
 {
   return getBlockType(blockIndex.i, blockIndex.j, blockIndex.k);
 }
 
-BlockType Chunk::getBlockType(const Vec3& position) const
+Block::Type Chunk::getBlockType(const Vec3& position) const
 {
   return getBlockType(blockIndexFromPos(position));
 }
 
 void Chunk::removeBlock(const BlockIndex& blockIndex)
 {
-  setBlockType(blockIndex, BlockType::Air);
+  setBlockType(blockIndex, Block::Type::Air);
 
   m_MeshState = MeshState::NeedsUpdate;
-  for (BlockFace face : BlockFaceIterator())
+  for (Block::Face face : Block::FaceIterator())
   {
     const int faceID = static_cast<int>(face);
 
@@ -203,12 +203,12 @@ void Chunk::removeBlock(const BlockIndex& blockIndex)
   }
 }
 
-void Chunk::placeBlock(const BlockIndex& blockIndex, BlockFace face, BlockType blockType)
+void Chunk::placeBlock(const BlockIndex& blockIndex, Block::Face face, Block::Type blockType)
 {
   EN_ASSERT(!isEmpty(), "Place block cannot be called on an empty chunk!");
 
   // If trying to place an air block or trying to place a block in a space occupied by another block, do nothing
-  if (blockType == BlockType::Air || !isBlockNeighborAir(blockIndex, face))
+  if (blockType == Block::Type::Air || !isBlockNeighborAir(blockIndex, face))
     return;
 
   const int faceID = static_cast<int>(face);
@@ -217,7 +217,7 @@ void Chunk::placeBlock(const BlockIndex& blockIndex, BlockFace face, BlockType b
     if (m_Neighbors[faceID] == nullptr)
       return;
     else if (m_Neighbors[faceID]->isEmpty())
-      m_Neighbors[faceID]->m_ChunkComposition = CreateUnique<BlockType[]>(s_ChunkTotalBlocks);
+      m_Neighbors[faceID]->m_ChunkComposition = CreateUnique<Block::Type[]>(s_ChunkTotalBlocks);
 
     m_Neighbors[faceID]->setBlockType(blockIndex - static_cast<blockIndex_t>(s_ChunkSize - 1) * BlockIndex::OutwardNormal(face), blockType);
     m_Neighbors[faceID]->m_MeshState = MeshState::NeedsUpdate;
@@ -227,13 +227,13 @@ void Chunk::placeBlock(const BlockIndex& blockIndex, BlockFace face, BlockType b
   m_MeshState = MeshState::NeedsUpdate;
 }
 
-void Chunk::setNeighbor(BlockFace face, Chunk* chunk)
+void Chunk::setNeighbor(Block::Face face, Chunk* chunk)
 {
   m_Neighbors[static_cast<int>(face)] = chunk;
   m_MeshState = MeshState::NeedsUpdate;
 }
 
-bool Chunk::isBlockNeighborInAnotherChunk(const BlockIndex& blockIndex, BlockFace face)
+bool Chunk::isBlockNeighborInAnotherChunk(const BlockIndex& blockIndex, Block::Face face)
 {
   static constexpr blockIndex_t chunkLimits[2] = { s_ChunkSize - 1, 0 };
   const int faceID = static_cast<int>(face);
@@ -242,12 +242,12 @@ bool Chunk::isBlockNeighborInAnotherChunk(const BlockIndex& blockIndex, BlockFac
   return blockIndex[coordID] == chunkLimits[faceID % 2];
 }
 
-bool Chunk::isBlockNeighborTransparent(blockIndex_t i, blockIndex_t j, blockIndex_t k, BlockFace face)
+bool Chunk::isBlockNeighborTransparent(blockIndex_t i, blockIndex_t j, blockIndex_t k, Block::Face face)
 {
   return isBlockNeighborTransparent(BlockIndex(i, j, k), face);
 }
 
-bool Chunk::isBlockNeighborTransparent(const BlockIndex& blockIndex, BlockFace face)
+bool Chunk::isBlockNeighborTransparent(const BlockIndex& blockIndex, Block::Face face)
 {
   const int faceID = static_cast<int>(face);
   if (isBlockNeighborInAnotherChunk(blockIndex, face))
@@ -263,7 +263,7 @@ bool Chunk::isBlockNeighborTransparent(const BlockIndex& blockIndex, BlockFace f
     return Block::HasTransparency(getBlockType(blockIndex + BlockIndex::OutwardNormal(face)));
 }
 
-bool Chunk::isBlockNeighborAir(const BlockIndex& blockIndex, BlockFace face)
+bool Chunk::isBlockNeighborAir(const BlockIndex& blockIndex, Block::Face face)
 {
   const int faceID = static_cast<int>(face);
   if (isBlockNeighborInAnotherChunk(blockIndex, face))
@@ -273,10 +273,10 @@ bool Chunk::isBlockNeighborAir(const BlockIndex& blockIndex, BlockFace face)
     else if (m_Neighbors[faceID]->isEmpty())
       return true;
 
-    return m_Neighbors[faceID]->getBlockType(blockIndex - static_cast<blockIndex_t>(s_ChunkSize - 1) * BlockIndex::OutwardNormal(face)) == BlockType::Air;
+    return m_Neighbors[faceID]->getBlockType(blockIndex - static_cast<blockIndex_t>(s_ChunkSize - 1) * BlockIndex::OutwardNormal(face)) == Block::Type::Air;
   }
   else
-    return getBlockType(blockIndex + BlockIndex::OutwardNormal(face)) == BlockType::Air;
+    return getBlockType(blockIndex + BlockIndex::OutwardNormal(face)) == Block::Type::Air;
 }
 
 LocalIndex Chunk::LocalIndexFromPos(const Vec3& position)
@@ -345,8 +345,8 @@ void Chunk::generateMesh()
   for (blockIndex_t i = 0; i < s_ChunkSize; ++i)
     for (blockIndex_t j = 0; j < s_ChunkSize; ++j)
       for (blockIndex_t k = 0; k < s_ChunkSize; ++k)
-        if (getBlockType(i, j, k) != BlockType::Air)
-          for (BlockFace face : BlockFaceIterator())
+        if (getBlockType(i, j, k) != Block::Type::Air)
+          for (Block::Face face : Block::FaceIterator())
             if (isBlockNeighborTransparent(i, j, k, face))
             {
               const int faceID = static_cast<int>(face);
@@ -376,7 +376,7 @@ void Chunk::generateMesh()
   m_VertexArray->setVertexBuffer(meshData, 4 * sizeof(uint32_t) * m_QuadCount);
 }
 
-void Chunk::setBlockType(blockIndex_t i, blockIndex_t j, blockIndex_t k, BlockType blockType)
+void Chunk::setBlockType(blockIndex_t i, blockIndex_t j, blockIndex_t k, Block::Type blockType)
 {
   static constexpr uint64_t chunkSize = static_cast<uint64_t>(s_ChunkSize);
 
@@ -386,14 +386,14 @@ void Chunk::setBlockType(blockIndex_t i, blockIndex_t j, blockIndex_t k, BlockTy
   m_ChunkComposition[i * chunkSize * chunkSize + j * chunkSize + k] = blockType;
 }
 
-void Chunk::setBlockType(const BlockIndex& blockIndex, BlockType blockType)
+void Chunk::setBlockType(const BlockIndex& blockIndex, Block::Type blockType)
 {
   setBlockType(blockIndex.i, blockIndex.j, blockIndex.k, blockType);
 }
 
 void Chunk::determineOpacity()
 {
-  for (BlockFace face : BlockFaceIterator())
+  for (Block::Face face : Block::FaceIterator())
   {
     const int faceID = static_cast<int>(face);
 
@@ -422,7 +422,7 @@ void Chunk::determineOpacity()
 
 void Chunk::sendAddressUpdate()
 {
-  for (BlockFace face : BlockFaceIterator())
+  for (Block::Face face : Block::FaceIterator())
   {
     int faceID = static_cast<int>(face);
     if (m_Neighbors[faceID] != nullptr)
@@ -435,7 +435,7 @@ void Chunk::sendAddressUpdate()
 
 void Chunk::excise()
 {
-  for (BlockFace face : BlockFaceIterator())
+  for (Block::Face face : Block::FaceIterator())
   {
     int faceID = static_cast<int>(face);
     if (m_Neighbors[faceID] != nullptr)

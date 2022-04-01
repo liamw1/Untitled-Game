@@ -2,46 +2,32 @@
 #include "BlockIDs.h"
 #include "Util/Array2D.h"
 
-enum class BlockFace : int
+namespace Block
 {
-  East, West, North, South, Top, Bottom,
-  First = East, Last = Bottom
-};
-using BlockFaceIterator = Iterator<BlockFace, BlockFace::First, BlockFace::Last>;
+  enum class Face : int
+  {
+    East, West, North, South, Top, Bottom,
+    First = East, Last = Bottom
+  };
+  using FaceIterator = Iterator<Face, Face::First, Face::Last>;
+  
+  /*
+    \returns The face directly opposite the given face.
+  */
+  inline Face operator!(const Face& face)
+  {
+    const int faceID = static_cast<int>(face);
+    Face oppFace = static_cast<Face>(faceID % 2 == 0 ? faceID + 1 : faceID - 1);
+    return oppFace;
+  }
 
-/*
-  \returns The face directly opposite the given face.
-*/
-inline BlockFace operator!(const BlockFace& face)
-{
-  const int faceID = static_cast<int>(face);
-  BlockFace oppFace = static_cast<BlockFace>(faceID % 2 == 0 ? faceID + 1 : faceID - 1);
-  return oppFace;
-}
+  void Initialize();
 
-class Block
-{
-public:
-  static void Initialize();
+  Texture GetTexture(Type block, Face face);
+  std::string GetTexturePath(Texture texture);
 
-  static BlockTexture GetTexture(BlockType block, BlockFace face);
-  static std::string GetTexturePath(BlockTexture texture);
+  bool HasTransparency(Type block);
+  bool HasCollision(Type block);
 
-  static bool HasTransparency(BlockType block);
-  static bool HasCollision(BlockType block);
-
-  static constexpr length_t Length() { return s_BlockLength; }
-
-private:
-  static constexpr length_t s_BlockLength = static_cast<length_t>(0.5);
-  static constexpr int s_MaxBlockTypes = std::numeric_limits<blockID>::max() + 1;
-  static constexpr int s_MaxBlockTextures = 6 * s_MaxBlockTypes;
-  static bool s_Initialized;
-
-  static StackArray2D<BlockTexture, s_MaxBlockTypes, 6> s_TexIDs;
-  static std::array<std::string, s_MaxBlockTextures> s_TexturePaths;
-
-  static void assignTextures(BlockType block, BlockTexture faceTextures);
-  static void assignTextures(BlockType block, BlockTexture topBotTextures, BlockTexture sideTextures);
-  static void assignTextures(BlockType block, BlockTexture topTexture, BlockTexture sideTextures, BlockTexture bottomTexture);
+  constexpr length_t Length() { return 0.5; }
 };

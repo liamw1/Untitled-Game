@@ -116,7 +116,7 @@ RayIntersection World::castRaySegment(const Vec3& pointA, const Vec3& pointB) co
           const int faceID = 2 * u + alignedWithPositiveAxis;
           tmin = t;
 
-          firstIntersection.face = static_cast<BlockFace>(faceID);
+          firstIntersection.face = static_cast<Block::Face>(faceID);
           firstIntersection.blockIndex = blockIndex;
           firstIntersection.chunkIndex = chunkIndex;
 
@@ -212,7 +212,7 @@ void World::playerWorldInteraction()
     {
       const LocalIndex& chunkIndex = m_PlayerRayCast.chunkIndex;
       const BlockIndex& blockIndex = m_PlayerRayCast.blockIndex;
-      const BlockFace& rayCastFace = m_PlayerRayCast.face;
+      const Block::Face& rayCastFace = m_PlayerRayCast.face;
       Chunk* const chunk = m_ChunkManager.findChunk(chunkIndex);
 
       if (chunk != nullptr)
@@ -222,7 +222,7 @@ void World::playerWorldInteraction()
           chunk->removeBlock(blockIndex);
           m_ChunkManager.sendChunkUpdate(chunk);
 
-          for (BlockFace face : BlockFaceIterator())
+          for (Block::Face face : Block::FaceIterator())
           {
             const int faceID = static_cast<int>(face);
             const int coordID = faceID / 2;
@@ -233,7 +233,7 @@ void World::playerWorldInteraction()
         }
         else if (m_PlayerRayCast.distance > 2.5 * Block::Length())
         {
-          chunk->placeBlock(blockIndex, rayCastFace, BlockType::Snow);
+          chunk->placeBlock(blockIndex, rayCastFace, Block::Type::Snow);
           m_ChunkManager.sendChunkUpdate(chunk);
 
           if (chunk->isBlockNeighborInAnotherChunk(blockIndex, rayCastFace))

@@ -174,7 +174,7 @@ void LOD::Draw(const Octree::Node* leaf)
   uniforms.textureScaling = static_cast<float>(bit(leaf->LODLevel()));
 
   Engine::Renderer::DrawMesh(leaf->data->primaryMesh.vertexArray.get(), primaryMeshIndexCount, s_LODUniformBuffer.get(), uniforms);
-  for (BlockFace face : BlockFaceIterator())
+  for (Block::Face face : Block::FaceIterator())
   {
     int faceID = static_cast<int>(face);
 
@@ -214,12 +214,12 @@ static T LODInterpolation(float t, float s, const T& q0, const T& q1)
   return ((1 - s) / 2 + s * (1 - t)) * q0 + ((1 - s) / 2 + s * t) * q1;
 }
 
-static StackArray2D<Noise::SurfaceData, s_NumCells + 1> generateNoise(LOD::Octree::Node* node)
+static HeapArray2D<Noise::SurfaceData, s_NumCells + 1> generateNoise(LOD::Octree::Node* node)
 {
   const length_t cellLength = node->length() / s_NumCells;
   const Vec2 LODAnchorXY = Chunk::Length() * static_cast<Vec2>(node->anchor);
 
-  StackArray2D<Noise::SurfaceData, s_NumCells + 1> noiseValues{};
+  HeapArray2D<Noise::SurfaceData, s_NumCells + 1> noiseValues{};
   for (int i = 0; i < s_NumCells + 1; ++i)
     for (int j = 0; j < s_NumCells + 1; ++j)
     {
@@ -230,7 +230,7 @@ static StackArray2D<Noise::SurfaceData, s_NumCells + 1> generateNoise(LOD::Octre
   return noiseValues;
 }
 
-static bool needsMesh(LOD::Octree::Node* node, const StackArray2D<Noise::SurfaceData, s_NumCells + 1>& noiseValues)
+static bool needsMesh(LOD::Octree::Node* node, const HeapArray2D<Noise::SurfaceData, s_NumCells + 1>& noiseValues)
 {
   const length_t LODFloor = node->anchor.k * Chunk::Length();
   const length_t LODCeiling = LODFloor + node->length();
@@ -253,7 +253,7 @@ endCheck:;
   return needsMesh;
 }
 
-static HeapArray2D<Vec3, s_NumCells + 1> calcNoiseNormals(LOD::Octree::Node* node, const StackArray2D<Noise::SurfaceData, s_NumCells + 1>& noiseValues)
+static HeapArray2D<Vec3, s_NumCells + 1> calcNoiseNormals(LOD::Octree::Node* node, const HeapArray2D<Noise::SurfaceData, s_NumCells + 1>& noiseValues)
 {
   const length_t cellLength = node->length() / s_NumCells;
   const Vec2 LODAnchorXY = Chunk::Length() * static_cast<Vec2>(node->anchor);
@@ -308,7 +308,7 @@ static HeapArray2D<Vec3, s_NumCells + 1> calcNoiseNormals(LOD::Octree::Node* nod
   return noiseNormals;
 }
 
-static NoiseData interpolateNoiseData(LOD::Octree::Node* node, const StackArray2D<Noise::SurfaceData, s_NumCells + 1>& noiseValues, const HeapArray2D<Vec3, s_NumCells + 1>& noiseNormals, const BlockIndex& cornerA, const BlockIndex& cornerB, float s)
+static NoiseData interpolateNoiseData(LOD::Octree::Node* node, const HeapArray2D<Noise::SurfaceData, s_NumCells + 1>& noiseValues, const HeapArray2D<Vec3, s_NumCells + 1>& noiseNormals, const BlockIndex& cornerA, const BlockIndex& cornerB, float s)
 {
   const length_t LODFloor = node->anchor.k * Chunk::Length();
   const length_t cellLength = node->length() / s_NumCells;
@@ -342,7 +342,7 @@ static NoiseData interpolateNoiseData(LOD::Octree::Node* node, const StackArray2
 }
 
 // Generate primary LOD mesh using Marching Cubes algorithm
-static void generatePrimaryMesh(LOD::Octree::Node* node, const StackArray2D<Noise::SurfaceData, s_NumCells + 1>& noiseValues, const HeapArray2D<Vec3, s_NumCells + 1>& noiseNormals)
+static void generatePrimaryMesh(LOD::Octree::Node* node, const HeapArray2D<Noise::SurfaceData, s_NumCells + 1>& noiseValues, const HeapArray2D<Vec3, s_NumCells + 1>& noiseNormals)
 {
   EN_PROFILE_FUNCTION();
 
@@ -466,7 +466,7 @@ static void generatePrimaryMesh(LOD::Octree::Node* node, const StackArray2D<Nois
 }
 
 // Generate transition meshes using Transvoxel algorithm
-static void generateTransitionMeshes(LOD::Octree::Node* node, const StackArray2D<Noise::SurfaceData, s_NumCells + 1>& noiseValues, const HeapArray2D<Vec3, s_NumCells + 1>& noiseNormals)
+static void generateTransitionMeshes(LOD::Octree::Node* node, const HeapArray2D<Noise::SurfaceData, s_NumCells + 1>& noiseValues, const HeapArray2D<Vec3, s_NumCells + 1>& noiseNormals)
 {
   EN_PROFILE_FUNCTION();
 
@@ -483,7 +483,7 @@ static void generateTransitionMeshes(LOD::Octree::Node* node, const StackArray2D
   const length_t cellLength = node->length() / s_NumCells;
   const length_t transitionCellWidth = s_TCFractionalWidth * cellLength;
 
-  for (BlockFace face : BlockFaceIterator())
+  for (Block::Face face : Block::FaceIterator())
   {
     const int faceID = static_cast<int>(face);
 
@@ -645,7 +645,7 @@ void LOD::GenerateMesh(LOD::Octree::Node* node)
   EN_PROFILE_FUNCTION();
 
   // Generate voxel data using heightmap
-  const StackArray2D<Noise::SurfaceData, s_NumCells + 1> noiseValues = generateNoise(node);
+  const HeapArray2D<Noise::SurfaceData, s_NumCells + 1> noiseValues = generateNoise(node);
 
   if (!needsMesh(node, noiseValues))
     return;
@@ -679,7 +679,7 @@ static void adjustVertex(LOD::Vertex& vertex, length_t cellLength, uint8_t trans
 {
   Vec3 vertexAdjustment{};
   bool isNearSameResolutionLOD = false;
-  for (BlockFace face : BlockFaceIterator())
+  for (Block::Face face : Block::FaceIterator())
   {
     const int faceID = static_cast<int>(face);
     const int coordID = faceID / 2;
@@ -719,7 +719,7 @@ static std::vector<LOD::Vertex> calcAdjustedPrimaryMesh(LOD::Octree::Node* node)
   return LODMesh;
 }
 
-static std::vector<LOD::Vertex> calcAdjustedTransitionMesh(LOD::Octree::Node* node, BlockFace face)
+static std::vector<LOD::Vertex> calcAdjustedTransitionMesh(LOD::Octree::Node* node, Block::Face face)
 {
   const int faceID = static_cast<int>(face);
   const int coordID = faceID / 2;
@@ -754,7 +754,7 @@ static void determineTransitionFaces(LOD::Octree& tree, LOD::Octree::Node* node)
 
   // Determine which faces transition to a lower resolution LOD
   uint8_t transitionFaces = 0;
-  for (BlockFace face : BlockFaceIterator())
+  for (Block::Face face : Block::FaceIterator())
   {
     const int faceID = static_cast<int>(face);
 
@@ -782,7 +782,7 @@ void LOD::UpdateMesh(LOD::Octree& tree, LOD::Octree::Node* node)
   LOD::MeshData& primaryMesh = node->data->primaryMesh;
   Engine::Renderer::UploadMesh(primaryMesh.vertexArray.get(), calcAdjustedPrimaryMesh(node), primaryMesh.indices);
 
-  for (BlockFace face : BlockFaceIterator())
+  for (Block::Face face : Block::FaceIterator())
   {
     const int faceID = static_cast<int>(face);
 
@@ -799,7 +799,7 @@ void LOD::MessageNeighbors(LOD::Octree& tree, LOD::Octree::Node* node)
                               //            East               West              North              South              Top                Bottom
 
   // Tell LOD neighbors to update
-  for (BlockFace face : BlockFaceIterator())
+  for (Block::Face face : Block::FaceIterator())
   {
     const int faceID = static_cast<int>(face);
     const int oppFaceID = static_cast<int>(!face);

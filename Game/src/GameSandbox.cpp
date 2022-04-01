@@ -13,7 +13,7 @@ GameSandbox::GameSandbox()
   Block::Initialize();
 
   Shared<Engine::TextureArray> textureArray = Engine::TextureArray::Create(16, 128);
-  for (BlockTexture texture : BlockTextureIterator())
+  for (Block::Texture texture : Block::TextureIterator())
     textureArray->addTexture(Block::GetTexturePath(texture));
 
   Chunk::Initialize(textureArray);

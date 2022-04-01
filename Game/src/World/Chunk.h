@@ -7,7 +7,7 @@ struct HeightMap
 {
   globalIndex_t chunkI;
   globalIndex_t chunkJ;
-  StackArray2D<Noise::SurfaceData, 32> surfaceData;  // NOTE: Chunk size is hard-coded here, should fix this
+  HeapArray2D<Noise::SurfaceData, 32> surfaceData;  // NOTE: Chunk size is hard-coded here, should fix this
 
   length_t maxHeight;
 };
@@ -32,12 +32,12 @@ public:
   Chunk(Chunk&& other) noexcept;
   Chunk& operator=(Chunk&& other) noexcept;
 
-  BlockType getBlockType(blockIndex_t i, blockIndex_t j, blockIndex_t k) const;
-  BlockType getBlockType(const BlockIndex& blockIndex) const;
-  BlockType getBlockType(const Vec3& position) const;
+  Block::Type getBlockType(blockIndex_t i, blockIndex_t j, blockIndex_t k) const;
+  Block::Type getBlockType(const BlockIndex& blockIndex) const;
+  Block::Type getBlockType(const Vec3& position) const;
 
   void removeBlock(const BlockIndex& blockIndex);
-  void placeBlock(const BlockIndex& blockIndex, BlockFace face, BlockType blockType);
+  void placeBlock(const BlockIndex& blockIndex, Block::Face face, Block::Type blockType);
 
   /*
     \returns The local block index of the block that the given position
@@ -49,7 +49,7 @@ public:
     Creates and fills composition array with blocks based on the given height map.
     Deletes composition array if all blocks are air.
   */
-  void load(HeightMap heightMap);
+  void load(const HeightMap& heightMap);
 
   /*
     Applies necessary updates to chunk.  
@@ -95,24 +95,24 @@ public:
     
     Neighbor is allowed to be modified, use this power responsibly!
   */
-  Chunk* const getNeighbor(BlockFace face) const { return m_Neighbors[static_cast<int>(face)]; }
+  Chunk* const getNeighbor(Block::Face face) const { return m_Neighbors[static_cast<int>(face)]; }
 
   /*
     Sets neighboring chunk in the specified direction.
     Upon use, a flag is set to re-mesh chunk when appropriate.
   */
-  void setNeighbor(BlockFace face, Chunk* chunk);
+  void setNeighbor(Block::Face face, Chunk* chunk);
 
   int getQuadCount() const { return m_QuadCount; }
   const Unique<Engine::VertexArray>& getVertexArray() const { return m_VertexArray; }
 
   bool isEmpty() const { return m_ChunkComposition == nullptr; }
-  bool isFaceOpaque(BlockFace face) const { return !(m_NonOpaqueFaces & bit(static_cast<int>(face))); }
+  bool isFaceOpaque(Block::Face face) const { return !(m_NonOpaqueFaces & bit(static_cast<int>(face))); }
 
-  bool isBlockNeighborInAnotherChunk(const BlockIndex& blockIndex, BlockFace face);
-  bool isBlockNeighborTransparent(blockIndex_t i, blockIndex_t j, blockIndex_t k, BlockFace face);
-  bool isBlockNeighborTransparent(const BlockIndex& blockIndex, BlockFace face);
-  bool isBlockNeighborAir(const BlockIndex& blockIndex, BlockFace face);
+  bool isBlockNeighborInAnotherChunk(const BlockIndex& blockIndex, Block::Face face);
+  bool isBlockNeighborTransparent(blockIndex_t i, blockIndex_t j, blockIndex_t k, Block::Face face);
+  bool isBlockNeighborTransparent(const BlockIndex& blockIndex, Block::Face face);
+  bool isBlockNeighborAir(const BlockIndex& blockIndex, Block::Face face);
 
   static constexpr blockIndex_t Size() { return s_ChunkSize; }
   static constexpr length_t Length() { return s_ChunkLength; }
@@ -150,7 +150,7 @@ private:
 
   // Position and composition
   GlobalIndex m_GlobalIndex;
-  Unique<BlockType[]> m_ChunkComposition = nullptr;
+  Unique<Block::Type[]> m_ChunkComposition = nullptr;
   uint8_t m_NonOpaqueFaces = 0;
 
   // Mesh data
@@ -179,8 +179,8 @@ private:
   */
   void generateMesh();
 
-  void setBlockType(blockIndex_t i, blockIndex_t j, blockIndex_t k, BlockType blockType);
-  void setBlockType(const BlockIndex& blockIndex, BlockType blockType);
+  void setBlockType(blockIndex_t i, blockIndex_t j, blockIndex_t k, Block::Type blockType);
+  void setBlockType(const BlockIndex& blockIndex, Block::Type blockType);
 
   void determineOpacity();
 

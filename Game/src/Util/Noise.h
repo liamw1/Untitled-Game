@@ -7,15 +7,15 @@ namespace Noise
   {
   public:
     SurfaceData() = default;
-    SurfaceData(length_t surfaceHeight, BlockType blockType);
+    SurfaceData(length_t surfaceHeight, Block::Type blockType);
 
     SurfaceData operator+(const SurfaceData& other) const;
     SurfaceData operator*(float x) const;
 
     length_t getHeight() const { return m_Height; }
 
-    BlockType getPrimaryBlockType() const { return m_Composition[0].type; }
-    int getPrimaryTextureIndex() const { return static_cast<int>(Block::GetTexture(m_Composition[0].type, BlockFace::Top)); }
+    Block::Type getPrimaryBlockType() const { return m_Composition[0].type; }
+    int getPrimaryTextureIndex() const { return static_cast<int>(Block::GetTexture(m_Composition[0].type, Block::Face::Top)); }
 
     std::array<int, 2> getTextureIndices() const;
     Float2 getTextureWeights() const { return { m_Composition[0].weight, m_Composition[1].weight }; }
@@ -23,7 +23,7 @@ namespace Noise
   private:
     struct Component
     {
-      BlockType type = BlockType::Air;
+      Block::Type type = Block::Type::Air;
       float weight = 0.0;
     };
     static constexpr int s_NumTypes = 4;

@@ -1,86 +1,88 @@
 #include "GMpch.h"
 #include "Block.h"
 
-StackArray2D<BlockTexture, Block::s_MaxBlockTypes, 6> Block::s_TexIDs{};
-std::array<std::string, Block::s_MaxBlockTextures> Block::s_TexturePaths{};
+static constexpr int s_MaxBlockTypes = std::numeric_limits<blockID>::max() + 1;
+static constexpr int s_MaxBlockTextures = 6 * s_MaxBlockTypes;
+static bool s_Initialized = false;
 
-bool Block::s_Initialized = false;
+static StackArray2D<Block::Texture, s_MaxBlockTypes, 6> s_TexIDs{};
+static std::array<std::string, s_MaxBlockTextures> s_TexturePaths{};
+
+static void assignTextures(Block::Type block, Block::Texture topTexture, Block::Texture sideTextures, Block::Texture bottomTexture)
+{
+  const blockID ID = static_cast<blockID>(block);
+
+  for (Block::Face face : Block::FaceIterator())
+  {
+    const int faceID = static_cast<int>(face);
+    switch (face)
+    {
+      case Block::Face::Top:    s_TexIDs[ID][faceID] = topTexture;      break;
+      case Block::Face::Bottom: s_TexIDs[ID][faceID] = bottomTexture;   break;
+      default:                s_TexIDs[ID][faceID] = sideTextures;
+    }
+  }
+}
+
+static void assignTextures(Block::Type block, Block::Texture faceTextures)
+{
+  for (Block::Face face : Block::FaceIterator())
+    s_TexIDs[static_cast<blockID>(block)][static_cast<int>(face)] = faceTextures;
+}
+
+static void assignTextures(Block::Type block, Block::Texture topBotTextures, Block::Texture sideTextures)
+{
+  assignTextures(block, topBotTextures, sideTextures, topBotTextures);
+}
 
 void Block::Initialize()
 {
-  s_TexturePaths[static_cast<blockTexID>(BlockTexture::GrassTop)] = "assets/textures/voxel-pack/PNG/Tiles/grass_top.png";
-  s_TexturePaths[static_cast<blockTexID>(BlockTexture::GrassSide)] = "assets/textures/voxel-pack/PNG/Tiles/grass_top.png";
-  s_TexturePaths[static_cast<blockTexID>(BlockTexture::Dirt)] = "assets/textures/voxel-pack/PNG/Tiles/dirt.png";
-  s_TexturePaths[static_cast<blockTexID>(BlockTexture::Clay)] = "assets/textures/voxel-pack/PNG/Tiles/greysand.png";
-  s_TexturePaths[static_cast<blockTexID>(BlockTexture::Gravel)] = "assets/textures/voxel-pack/PNG/Tiles/gravel_stone.png";
-  s_TexturePaths[static_cast<blockTexID>(BlockTexture::Sand)] = "assets/textures/voxel-pack/PNG/Tiles/sand.png";
-  s_TexturePaths[static_cast<blockTexID>(BlockTexture::Snow)] = "assets/textures/voxel-pack/PNG/Tiles/snow.png";
-  s_TexturePaths[static_cast<blockTexID>(BlockTexture::Stone)] = "assets/textures/voxel-pack/PNG/Tiles/Stone.png";
-  s_TexturePaths[static_cast<blockTexID>(BlockTexture::OakLogTop)] = "assets/textures/voxel-pack/PNG/Tiles/trunk_top.png";
-  s_TexturePaths[static_cast<blockTexID>(BlockTexture::OakLogSide)] = "assets/textures/voxel-pack/PNG/Tiles/trunk_side.png";
-  s_TexturePaths[static_cast<blockTexID>(BlockTexture::OakLeaves)] = "assets/textures/voxel-pack/PNG/Tiles/leaves_transparent.png";
+  s_TexturePaths[static_cast<blockTexID>(Block::Texture::GrassTop)] = "assets/textures/voxel-pack/PNG/Tiles/grass_top.png";
+  s_TexturePaths[static_cast<blockTexID>(Block::Texture::GrassSide)] = "assets/textures/voxel-pack/PNG/Tiles/grass_top.png";
+  s_TexturePaths[static_cast<blockTexID>(Block::Texture::Dirt)] = "assets/textures/voxel-pack/PNG/Tiles/dirt.png";
+  s_TexturePaths[static_cast<blockTexID>(Block::Texture::Clay)] = "assets/textures/voxel-pack/PNG/Tiles/greysand.png";
+  s_TexturePaths[static_cast<blockTexID>(Block::Texture::Gravel)] = "assets/textures/voxel-pack/PNG/Tiles/gravel_stone.png";
+  s_TexturePaths[static_cast<blockTexID>(Block::Texture::Sand)] = "assets/textures/voxel-pack/PNG/Tiles/sand.png";
+  s_TexturePaths[static_cast<blockTexID>(Block::Texture::Snow)] = "assets/textures/voxel-pack/PNG/Tiles/snow.png";
+  s_TexturePaths[static_cast<blockTexID>(Block::Texture::Stone)] = "assets/textures/voxel-pack/PNG/Tiles/Stone.png";
+  s_TexturePaths[static_cast<blockTexID>(Block::Texture::OakLogTop)] = "assets/textures/voxel-pack/PNG/Tiles/trunk_top.png";
+  s_TexturePaths[static_cast<blockTexID>(Block::Texture::OakLogSide)] = "assets/textures/voxel-pack/PNG/Tiles/trunk_side.png";
+  s_TexturePaths[static_cast<blockTexID>(Block::Texture::OakLeaves)] = "assets/textures/voxel-pack/PNG/Tiles/leaves_transparent.png";
 
-  assignTextures(BlockType::Air, BlockTexture::Invisible);
-  assignTextures(BlockType::Grass, BlockTexture::GrassTop, BlockTexture::GrassSide, BlockTexture::Dirt);
-  assignTextures(BlockType::Dirt, BlockTexture::Dirt);
-  assignTextures(BlockType::Clay, BlockTexture::Clay);
-  assignTextures(BlockType::Gravel, BlockTexture::Gravel);
-  assignTextures(BlockType::Sand, BlockTexture::Sand);
-  assignTextures(BlockType::Snow, BlockTexture::Snow);
-  assignTextures(BlockType::Stone, BlockTexture::Stone);
-  assignTextures(BlockType::OakLog, BlockTexture::OakLogTop, BlockTexture::OakLogSide);
-  assignTextures(BlockType::OakLeaves, BlockTexture::OakLeaves);
+  assignTextures(Block::Type::Air, Block::Texture::Invisible);
+  assignTextures(Block::Type::Grass, Block::Texture::GrassTop, Block::Texture::GrassSide, Block::Texture::Dirt);
+  assignTextures(Block::Type::Dirt, Block::Texture::Dirt);
+  assignTextures(Block::Type::Clay, Block::Texture::Clay);
+  assignTextures(Block::Type::Gravel, Block::Texture::Gravel);
+  assignTextures(Block::Type::Sand, Block::Texture::Sand);
+  assignTextures(Block::Type::Snow, Block::Texture::Snow);
+  assignTextures(Block::Type::Stone, Block::Texture::Stone);
+  assignTextures(Block::Type::OakLog, Block::Texture::OakLogTop, Block::Texture::OakLogSide);
+  assignTextures(Block::Type::OakLeaves, Block::Texture::OakLeaves);
 
   s_Initialized = true;
 }
 
-BlockTexture Block::GetTexture(BlockType block, BlockFace face)
+Block::Texture Block::GetTexture(Type block, Face face)
 {
   EN_ASSERT(s_Initialized, "Block class has not been initialized!");
   return s_TexIDs[static_cast<blockID>(block)][static_cast<int>(face)];
 }
 
-std::string Block::GetTexturePath(BlockTexture texture)
+std::string Block::GetTexturePath(Texture texture)
 {
   EN_ASSERT(s_Initialized, "Block class has not been initialized!");
   return s_TexturePaths[static_cast<blockTexID>(texture)];
 }
 
-bool Block::HasTransparency(BlockType block)
+bool Block::HasTransparency(Type block)
 {
   EN_ASSERT(s_Initialized, "Block class has not been initialized!");
-  return block == BlockType::Air || block == BlockType::OakLeaves;
+  return block == Block::Type::Air || block == Block::Type::OakLeaves;
 }
 
-bool Block::HasCollision(BlockType block)
+bool Block::HasCollision(Type block)
 {
   EN_ASSERT(s_Initialized, "Block class has not been initialized!");
-  return block != BlockType::Air;
-}
-
-void Block::assignTextures(BlockType block, BlockTexture faceTextures)
-{
-  for (BlockFace face : BlockFaceIterator())
-    s_TexIDs[static_cast<blockID>(block)][static_cast<int>(face)] = faceTextures;
-}
-
-void Block::assignTextures(BlockType block, BlockTexture topBotTextures, BlockTexture sideTextures)
-{
-  assignTextures(block, topBotTextures, sideTextures, topBotTextures);
-}
-
-void Block::assignTextures(BlockType block, BlockTexture topTexture, BlockTexture sideTextures, BlockTexture bottomTexture)
-{
-  const blockID ID = static_cast<blockID>(block);
-
-  for (BlockFace face : BlockFaceIterator())
-  {
-    const int faceID = static_cast<int>(face);
-    switch (face)
-    {
-      case BlockFace::Top:    s_TexIDs[ID][faceID] = topTexture;      break;
-      case BlockFace::Bottom: s_TexIDs[ID][faceID] = bottomTexture;   break;
-      default:                s_TexIDs[ID][faceID] = sideTextures;
-    }
-  }
+  return block != Block::Type::Air;
 }
