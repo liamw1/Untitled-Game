@@ -19,15 +19,18 @@ static Unique<Engine::Shader> s_LODShader = nullptr;
 static Shared<Engine::TextureArray> s_LODTextureArray = nullptr;
 static Unique<Engine::UniformBuffer> s_LODUniformBuffer = nullptr;
 
-const Engine::BufferLayout LOD::MeshData::s_LODBufferLayout({ { ShaderDataType::Float3, "a_Position"     },
-                                                              { ShaderDataType::Float3, "a_IsoNormal"    },
-                                                              { ShaderDataType::Int,    "a_TextureIndex" },
-                                                              { ShaderDataType::Int,    "a_QuadIndex"    } });
+const Engine::BufferLayout LOD::MeshData::s_LODBufferLayout({ { ShaderDataType::Float3, "a_Position"        },
+                                                              { ShaderDataType::Float3, "a_IsoNormal"       },
+                                                              { ShaderDataType::Int2,   "a_TextureIndices"  },
+                                                              { ShaderDataType::Float2, "a_TextureWeighs"   },
+                                                              { ShaderDataType::Int,    "a_QuadIndex"       } });
 
 struct NoiseData
 {
   Vec3 position;
   Vec3 normal;
+
+  Noise::SurfaceData surfaceData;
 };
 
 struct LODUniforms
@@ -206,9 +209,9 @@ static constexpr float smoothnessLevel(int LODLevel)
 // Calculate quantity based on values at corners that compose an edge.  The smoothness parameter s is used to interpolate between 
 // roughest iso-surface (vertex is always chosen at edge midpoint) and the smooth iso-surface interpolation used by Paul Bourke.
 template<typename T>
-static T LODInterpolation(length_t t, float s, const T& q0, const T& q1)
+static T LODInterpolation(float t, float s, const T& q0, const T& q1)
 {
-  return (1 - s) * (q0 + q1) / 2 + s * ((1 - t) * q0 + t * q1);
+  return ((1 - s) / 2 + s * (1 - t)) * q0 + ((1 - s) / 2 + s * t) * q1;
 }
 
 static StackArray2D<Noise::SurfaceData, s_NumCells + 1> generateNoise(LOD::Octree::Node* node)
@@ -237,7 +240,7 @@ static bool needsMesh(LOD::Octree::Node* node, const StackArray2D<Noise::Surface
   for (int i = 0; i < s_NumCells + 1; ++i)
     for (int j = 0; j < s_NumCells + 1; ++j)
     {
-      length_t terrainHeight = noiseValues[i][j].height;
+      length_t terrainHeight = noiseValues[i][j].getHeight();
 
       if (LODFloor <= terrainHeight && terrainHeight <= LODCeiling)
       {
@@ -266,34 +269,34 @@ static HeapArray2D<Vec3, s_NumCells + 1> calcNoiseNormals(LOD::Octree::Node* nod
       if (i == 0)
       {
         Vec2 pointXY = LODAnchorXY + cellLength * Vec2(i - 1, j);
-        fLC = Noise::FastTerrainNoise2D(pointXY).height;
+        fLC = Noise::FastTerrainNoise2D(pointXY).getHeight();
       }
       else
-        fLC = noiseValues[i - 1][j].height;
+        fLC = noiseValues[i - 1][j].getHeight();
 
       if (i == s_NumCells)
       {
         Vec2 pointXY = LODAnchorXY + cellLength * Vec2(i + 1, j);
-        fUC = Noise::FastTerrainNoise2D(pointXY).height;
+        fUC = Noise::FastTerrainNoise2D(pointXY).getHeight();
       }
       else
-        fUC = noiseValues[i + 1][j].height;
+        fUC = noiseValues[i + 1][j].getHeight();
 
       if (j == 0)
       {
         Vec2 pointXY = LODAnchorXY + cellLength * Vec2(i, j - 1);
-        fCL = Noise::FastTerrainNoise2D(pointXY).height;
+        fCL = Noise::FastTerrainNoise2D(pointXY).getHeight();
       }
       else
-        fCL = noiseValues[i][j - 1].height;
+        fCL = noiseValues[i][j - 1].getHeight();
 
       if (j == s_NumCells)
       {
         Vec2 pointXY = LODAnchorXY + cellLength * Vec2(i, j + 1);
-        fCU = Noise::FastTerrainNoise2D(pointXY).height;
+        fCU = Noise::FastTerrainNoise2D(pointXY).getHeight();
       }
       else
-        fCU = noiseValues[i][j + 1].height;
+        fCU = noiseValues[i][j + 1].getHeight();
 
       Vec2 gradient{};
       gradient.x = (fUC - fLC) / (2 * cellLength);
@@ -317,21 +320,25 @@ static NoiseData interpolateNoiseData(LOD::Octree::Node* node, const StackArray2
   length_t zA = LODFloor + cornerA.k * cellLength;
   length_t zB = LODFloor + cornerB.k * cellLength;
 
+  const Noise::SurfaceData& surfaceDataA = noiseValues[cornerA.i][cornerA.j];
+  const Noise::SurfaceData& surfaceDataB = noiseValues[cornerB.i][cornerB.j];
+
   // Isovalues of corners A and B
-  length_t tA = noiseValues[cornerA.i][cornerA.j].height - zA;
-  length_t tB = noiseValues[cornerB.i][cornerB.j].height - zB;
+  length_t tA = surfaceDataA.getHeight() - zA;
+  length_t tB = surfaceDataB.getHeight() - zB;
 
   // Fraction of distance along edge vertex should be placed
   length_t t = tA / (tA - tB);
 
   Vec3 vertexPosition = LODInterpolation(t, s, posA, posB);
+  Noise::SurfaceData surfaceData = LODInterpolation(t, s, surfaceDataA, surfaceDataB);
 
   // Estimate isosurface normal using linear interpolation between corners
   const Vec3& n0 = noiseNormals[cornerA.i][cornerA.j];
   const Vec3& n1 = noiseNormals[cornerB.i][cornerB.j];
   Vec3 isoNormal = LODInterpolation(t, s, n0, n1);
 
-  return { vertexPosition, isoNormal };
+  return { vertexPosition, isoNormal, surfaceData };
 }
 
 // Generate primary LOD mesh using Marching Cubes algorithm
@@ -370,7 +377,7 @@ static void generatePrimaryMesh(LOD::Octree::Node* node, const StackArray2D<Nois
           int K = v & bit(2) ? k + 1 : k;
           length_t Z = LODFloor + K * cellLength;
 
-          if (noiseValues[I][J].height > Z)
+          if (noiseValues[I][J].getHeight() > Z)
             cellCase |= bit(v);
         }
         if (cellCase == 0 || cellCase == 255)
@@ -442,7 +449,8 @@ static void generatePrimaryMesh(LOD::Octree::Node* node, const StackArray2D<Nois
           cornerB.k = cornerIndexB & bit(2) ? k + 1 : k;
 
           NoiseData noiseData = interpolateNoiseData(node, noiseValues, noiseNormals, cornerA, cornerB, smoothness);
-          primaryMeshVertices.emplace_back(noiseData.position, noiseData.normal, static_cast<int>(noiseValues[i][j].blockType), vert % 3);
+
+          primaryMeshVertices.emplace_back(noiseData.position, noiseData.normal, noiseData.surfaceData.getTextureIndices(), noiseData.surfaceData.getTextureWeights(), vert % 3);
           primaryMeshIndices.push_back(vertexCount);
           prevCellVertexIndices[edgeIndex] = vertexCount;
 
@@ -515,7 +523,7 @@ static void generateTransitionMeshes(LOD::Octree::Node* node, const StackArray2D
           const int& K = sample.k;
           length_t Z = LODFloor + K * cellLength;
 
-          if (noiseValues[I][J].height > Z)
+          if (noiseValues[I][J].getHeight() > Z)
             cellCase |= bit(sampleIndexToBitFlip[p]);
         }
         if (cellCase == 0 || cellCase == 511)
@@ -602,7 +610,7 @@ static void generateTransitionMeshes(LOD::Octree::Node* node, const StackArray2D
           if (!isOnLowResSide)
             noiseData.position -= transitionCellWidth * normals[faceID];
 
-          transitionMeshVertices.emplace_back(noiseData.position, noiseData.normal, static_cast<int>(noiseValues[sampleA.i][sampleA.j].blockType), vert % 3);
+          transitionMeshVertices.emplace_back(noiseData.position, noiseData.normal, noiseData.surfaceData.getTextureIndices(), noiseData.surfaceData.getTextureWeights(), vert % 3);
           transitionMeshIndices.push_back(vertexCount);
           prevCellVertexIndices[edgeIndex] = vertexCount;
 

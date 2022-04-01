@@ -10,14 +10,21 @@ ChunkManager::ChunkManager()
   m_OpenChunkSlots.reserve(s_MaxChunks);
   for (int i = 0; i < s_MaxChunks; ++i)
     m_OpenChunkSlots.push_back(i);
-
-  initializeLODs();
 }
 
 ChunkManager::~ChunkManager()
 {
   delete[] m_ChunkArray;
   m_ChunkArray = nullptr;
+}
+
+void ChunkManager::initialize()
+{
+  while (loadNewChunks(10000))
+  {
+  }
+
+  initializeLODs();
 }
 
 void ChunkManager::clean()
@@ -307,8 +314,8 @@ HeightMap ChunkManager::generateHeightMap(globalIndex_t chunkI, globalIndex_t ch
       Vec2 blockXY = Chunk::Length() * Vec2(chunkI, chunkJ) + Block::Length() * (Vec2(i, j) + Vec2(0.5));
       heightMap.surfaceData[i][j] = Noise::FastTerrainNoise2D(blockXY);
 
-      if (heightMap.surfaceData[i][j].height > heightMap.maxHeight)
-        heightMap.maxHeight = heightMap.surfaceData[i][j].height;
+      if (heightMap.surfaceData[i][j].getHeight() > heightMap.maxHeight)
+        heightMap.maxHeight = heightMap.surfaceData[i][j].getHeight();
     }
   return heightMap;
 }

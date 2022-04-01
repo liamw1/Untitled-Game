@@ -79,8 +79,8 @@ void Chunk::load(HeightMap heightMap)
   for (blockIndex_t i = 0; i < s_ChunkSize; ++i)
     for (blockIndex_t j = 0; j < s_ChunkSize; ++j)
     {
-      const length_t& terrainHeight = heightMap.surfaceData[i][j].height;
-      const BlockType& surfaceBlockType = heightMap.surfaceData[i][j].blockType;
+      const length_t& terrainHeight = heightMap.surfaceData[i][j].getHeight();
+      const BlockType& surfaceBlockType = heightMap.surfaceData[i][j].getPrimaryBlockType();
 
       if (terrainHeight < chunkHeight)
       {

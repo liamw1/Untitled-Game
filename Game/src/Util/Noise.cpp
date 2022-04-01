@@ -55,6 +55,67 @@ static Vec2 rgrad2(Vec2 v, Angle rot)
 #endif
 }
 
+Noise::SurfaceData::SurfaceData(length_t surfaceHeight, BlockType blockType)
+  : m_Height(surfaceHeight), m_Composition()
+{
+  m_Composition[0] = { blockType, 1.0 };
+}
+
+Noise::SurfaceData Noise::SurfaceData::operator+(const SurfaceData& other) const
+{
+  std::array<Component, 2 * s_NumTypes> combinedComposition{};
+  for (int i = 0; i < s_NumTypes; ++i)
+    combinedComposition[i] = m_Composition[i];
+
+  // Add like componets together and insert new components
+  for (int i = 0; i < s_NumTypes; ++i)
+  {
+    bool otherComponentPresent = false;
+    const Component& otherComponent = other.m_Composition[i];
+    for (int j = 0; j < s_NumTypes; ++j)
+      if (combinedComposition[j].type == otherComponent.type)
+      {
+        combinedComposition[j].weight += otherComponent.weight;
+        otherComponentPresent = true;
+        break;
+      }
+
+    if (!otherComponentPresent)
+      combinedComposition[s_NumTypes + i] = otherComponent;
+  }
+
+  std::sort(combinedComposition.begin(), combinedComposition.end(), [](Component a, Component b) { return a.weight > b.weight; });
+
+  SurfaceData sum{};
+  sum.m_Height = m_Height + other.m_Height;
+  for (int i = 0; i < s_NumTypes; ++i)
+    sum.m_Composition[i] = combinedComposition[i];
+
+  return sum;
+}
+
+Noise::SurfaceData Noise::SurfaceData::operator*(float x) const
+{
+  EN_ASSERT(x >= 0.0, "Surface data cannot be multiplied by a negative number!");
+
+  SurfaceData result = *this;
+  result.m_Height *= x;
+  for (int i = 0; i < s_NumTypes; ++i)
+    result.m_Composition[i].weight *= x;
+
+  return result;
+}
+
+std::array<int, 2> Noise::SurfaceData::getTextureIndices() const
+{
+  std::array<int, 2> textureIndices{};
+
+  textureIndices[0] = static_cast<int>(Block::GetTexture(m_Composition[0].type, BlockFace::Top));
+  textureIndices[1] = static_cast<int>(Block::GetTexture(m_Composition[1].type, BlockFace::Top));
+
+  return textureIndices;
+}
+
 length_t Noise::FastSimplex2D(const Vec2& v)
 {
   static constexpr length_t K1 = static_cast<length_t>(0.366025404); // (sqrt(3)-1)/2;
@@ -248,12 +309,12 @@ Noise::SurfaceData Noise::FastTerrainNoise2D(const Vec2& pointXY)
 
   length_t surfaceHeight = octave1 + octave2 + octave3;
   BlockType blockType = BlockType::Grass;
-  if (surfaceHeight > 80 * Block::Length())
+  if (surfaceHeight > 50 * Block::Length())
     blockType = BlockType::Snow;
   else if (surfaceHeight > 40 * Block::Length())
     blockType = BlockType::Dirt;
 
-  return { surfaceHeight, blockType };
+  return SurfaceData(surfaceHeight, blockType);
 }
 
 Vec4 Noise::TerrainNoise2D(const Vec2& pointXY)

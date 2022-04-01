@@ -10,9 +10,7 @@ static constexpr uint8_t modulo(int64_t a, uint8_t b)
 
 void World::initialize()
 {
-  while (m_ChunkManager.loadNewChunks(10000))
-  {
-  }
+  m_ChunkManager.initialize();
 }
 
 void World::onUpdate(Timestep timestep)

@@ -8,6 +8,8 @@ public:
   ChunkManager();
   ~ChunkManager();
 
+  void initialize();
+
   /*
     Unloads chunks on boundary as they go out of unload range.
   */
