@@ -14,6 +14,7 @@ void Block::Initialize()
   s_TexturePaths[static_cast<blockTexID>(BlockTexture::Clay)] = "assets/textures/voxel-pack/PNG/Tiles/greysand.png";
   s_TexturePaths[static_cast<blockTexID>(BlockTexture::Gravel)] = "assets/textures/voxel-pack/PNG/Tiles/gravel_stone.png";
   s_TexturePaths[static_cast<blockTexID>(BlockTexture::Sand)] = "assets/textures/voxel-pack/PNG/Tiles/sand.png";
+  s_TexturePaths[static_cast<blockTexID>(BlockTexture::Snow)] = "assets/textures/voxel-pack/PNG/Tiles/snow.png";
   s_TexturePaths[static_cast<blockTexID>(BlockTexture::Stone)] = "assets/textures/voxel-pack/PNG/Tiles/Stone.png";
   s_TexturePaths[static_cast<blockTexID>(BlockTexture::OakLogTop)] = "assets/textures/voxel-pack/PNG/Tiles/trunk_top.png";
   s_TexturePaths[static_cast<blockTexID>(BlockTexture::OakLogSide)] = "assets/textures/voxel-pack/PNG/Tiles/trunk_side.png";
@@ -25,6 +26,7 @@ void Block::Initialize()
   assignTextures(BlockType::Clay, BlockTexture::Clay);
   assignTextures(BlockType::Gravel, BlockTexture::Gravel);
   assignTextures(BlockType::Sand, BlockTexture::Sand);
+  assignTextures(BlockType::Snow, BlockTexture::Snow);
   assignTextures(BlockType::Stone, BlockTexture::Stone);
   assignTextures(BlockType::OakLog, BlockTexture::OakLogTop, BlockTexture::OakLogSide);
   assignTextures(BlockType::OakLeaves, BlockTexture::OakLeaves);
@@ -69,16 +71,16 @@ void Block::assignTextures(BlockType block, BlockTexture topBotTextures, BlockTe
 
 void Block::assignTextures(BlockType block, BlockTexture topTexture, BlockTexture sideTextures, BlockTexture bottomTexture)
 {
-  const blockID blckID = static_cast<blockID>(block);
+  const blockID ID = static_cast<blockID>(block);
 
   for (BlockFace face : BlockFaceIterator())
   {
     const int faceID = static_cast<int>(face);
     switch (face)
     {
-      case BlockFace::Top:    s_TexIDs[blckID][faceID] = topTexture;      break;
-      case BlockFace::Bottom: s_TexIDs[blckID][faceID] = bottomTexture;   break;
-      default:                s_TexIDs[blckID][faceID] = sideTextures;
+      case BlockFace::Top:    s_TexIDs[ID][faceID] = topTexture;      break;
+      case BlockFace::Bottom: s_TexIDs[ID][faceID] = bottomTexture;   break;
+      default:                s_TexIDs[ID][faceID] = sideTextures;
     }
   }
 }

@@ -12,6 +12,7 @@ enum class BlockType : blockID
   Clay,
   Gravel,
   Sand,
+  Snow,
   Stone,
   OakLog,
   OakLeaves
@@ -25,6 +26,7 @@ enum class BlockTexture : blockTexID
   Clay,
   Gravel,
   Sand,
+  Snow,
   Stone,
   OakLogTop,
   OakLogSide,

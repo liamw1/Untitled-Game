@@ -87,7 +87,10 @@ namespace Engine
       if (textureIndex == 0)
       {
         if (s_TextureSlotIndex > s_MaxTextureSlots - 1)
+        {
           nextBatch();
+          s_TextureSlotIndex = 1;
+        }
 
         textureIndex = s_TextureSlotIndex;
         s_TextureSlots[textureIndex] = texture;

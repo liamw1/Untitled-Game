@@ -305,11 +305,10 @@ HeightMap ChunkManager::generateHeightMap(globalIndex_t chunkI, globalIndex_t ch
     for (int j = 0; j < Chunk::Size(); ++j)
     {
       Vec2 blockXY = Chunk::Length() * Vec2(chunkI, chunkJ) + Block::Length() * (Vec2(i, j) + Vec2(0.5));
-      length_t terrainHeight = Noise::FastTerrainNoise2D(blockXY);
-      heightMap.terrainHeights[i][j] = terrainHeight;
+      heightMap.surfaceData[i][j] = Noise::FastTerrainNoise2D(blockXY);
 
-      if (terrainHeight > heightMap.maxHeight)
-        heightMap.maxHeight = terrainHeight;
+      if (heightMap.surfaceData[i][j].height > heightMap.maxHeight)
+        heightMap.maxHeight = heightMap.surfaceData[i][j].height;
     }
   return heightMap;
 }

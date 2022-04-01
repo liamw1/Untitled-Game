@@ -1,6 +1,5 @@
 #include "GMpch.h"
 #include "Noise.h"
-#include "Block/Block.h"
 
 // Operators for element-wise vector-vector multiplication
 constexpr Vec2 operator*(Vec2 v, Vec2 u) { return { v.x * u.x, v.y * u.y }; }
@@ -241,13 +240,20 @@ Vec4 Noise::Simplex3D(const Vec3& v)
   return 42 * Vec4(grad, dot(m4, px));
 }
 
-length_t Noise::FastTerrainNoise2D(const Vec2& pointXY)
+Noise::SurfaceData Noise::FastTerrainNoise2D(const Vec2& pointXY)
 {
   length_t octave1 = 150 * Block::Length() * glm::simplex(pointXY / 1280.0 / Block::Length());
   length_t octave2 = 25 * Block::Length() * glm::simplex(pointXY / 320.0 / Block::Length());
   length_t octave3 = 5 * Block::Length() * glm::simplex(pointXY / 100.0 / Block::Length());
 
-  return octave1 + octave2 + octave3;
+  length_t surfaceHeight = octave1 + octave2 + octave3;
+  BlockType blockType = BlockType::Grass;
+  if (surfaceHeight > 80 * Block::Length())
+    blockType = BlockType::Snow;
+  else if (surfaceHeight > 40 * Block::Length())
+    blockType = BlockType::Dirt;
+
+  return { surfaceHeight, blockType };
 }
 
 Vec4 Noise::TerrainNoise2D(const Vec2& pointXY)

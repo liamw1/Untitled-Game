@@ -21,11 +21,12 @@ namespace LOD
   struct Vertex
   {
     Vertex() = delete;
-    Vertex(const Float3& position, const Float3& isoNormal, int quadIndex)
-      : position(position), isoNormal(isoNormal), quadIndex(quadIndex) {}
+    Vertex(const Float3& position, const Float3& isoNormal, int textureIndex, int quadIndex)
+      : position(position), isoNormal(isoNormal), textureIndex(textureIndex), quadIndex(quadIndex) {}
 
     Float3 position;
     Float3 isoNormal;
+    int textureIndex;
     int quadIndex;
   };
 

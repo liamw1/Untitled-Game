@@ -1,12 +1,13 @@
 #pragma once
 #include "Block/Block.h"
 #include "Indexing.h"
+#include "Util/Noise.h"
 
 struct HeightMap
 {
   globalIndex_t chunkI;
   globalIndex_t chunkJ;
-  StackArray2D<length_t, 32> terrainHeights;  // NOTE: Chunk size is hard-coded here, should fix this
+  StackArray2D<Noise::SurfaceData, 32> surfaceData;  // NOTE: Chunk size is hard-coded here, should fix this
 
   length_t maxHeight;
 };

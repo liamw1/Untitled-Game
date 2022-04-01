@@ -1,7 +1,14 @@
 #pragma once
+#include "Block/Block.h"
 
 namespace Noise
 {
+  struct SurfaceData
+  {
+    length_t height;
+    BlockType blockType;
+  };
+
   /*
     Faster implementation of 2D noise.
     Gives value of noise only, without derivatives.
@@ -27,7 +34,7 @@ namespace Noise
   Vec4 Simplex3D(const Vec3& v);
 
   // NOTE: Replace these with more robust biome/terrain system
-  length_t FastTerrainNoise2D(const Vec2& pointXY);
+  SurfaceData FastTerrainNoise2D(const Vec2& pointXY);
   Vec4 TerrainNoise2D(const Vec2& pointXY);
   Vec4 TerrainNoise3D(const Vec3& position);
 }

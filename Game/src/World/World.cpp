@@ -235,7 +235,7 @@ void World::playerWorldInteraction()
         }
         else if (m_PlayerRayCast.distance > 2.5 * Block::Length())
         {
-          chunk->placeBlock(blockIndex, rayCastFace, BlockType::Sand);
+          chunk->placeBlock(blockIndex, rayCastFace, BlockType::Snow);
           m_ChunkManager.sendChunkUpdate(chunk);
 
           if (chunk->isBlockNeighborInAnotherChunk(blockIndex, rayCastFace))
