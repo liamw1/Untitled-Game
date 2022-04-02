@@ -26,9 +26,9 @@ void World::onUpdate(Timestep timestep)
   Engine::Renderer::BeginScene(Engine::Scene::ActiveCameraViewProjection());
   if (!m_RenderingPaused)
   {
-    m_ChunkManager.manageLODs();
-    m_ChunkManager.renderLODs();
-    Engine::RenderCommand::ClearDepthBuffer();
+    // m_ChunkManager.manageLODs();
+    // m_ChunkManager.renderLODs();
+    // Engine::RenderCommand::ClearDepthBuffer();
     m_ChunkManager.loadNewChunks(200);
     m_ChunkManager.render();
     m_ChunkManager.clean();

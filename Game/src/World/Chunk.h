@@ -95,7 +95,7 @@ public:
     
     Neighbor is allowed to be modified, use this power responsibly!
   */
-  Chunk* const getNeighbor(Block::Face face) const { return m_Neighbors[static_cast<int>(face)]; }
+  Chunk* getNeighbor(Block::Face face) const { return m_Neighbors[static_cast<int>(face)]; }
 
   /*
     Sets neighboring chunk in the specified direction.
@@ -111,8 +111,12 @@ public:
 
   bool isBlockNeighborInAnotherChunk(const BlockIndex& blockIndex, Block::Face face);
   bool isBlockNeighborTransparent(blockIndex_t i, blockIndex_t j, blockIndex_t k, Block::Face face);
+  bool isBlockNeighborTransparent(blockIndex_t i, blockIndex_t j, blockIndex_t k, Block::Face faceA, Block::Face faceB);
   bool isBlockNeighborTransparent(const BlockIndex& blockIndex, Block::Face face);
+  bool isBlockNeighborTransparent(const BlockIndex& blockIndex, Block::Face faceA, Block::Face faceB);
   bool isBlockNeighborAir(const BlockIndex& blockIndex, Block::Face face);
+
+  Block::Type getBlockNeighbor(const BlockIndex& blockIndex, Block::Face face);
 
   static constexpr blockIndex_t Size() { return s_ChunkSize; }
   static constexpr length_t Length() { return s_ChunkLength; }

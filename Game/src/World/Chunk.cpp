@@ -195,12 +195,8 @@ void Chunk::removeBlock(const BlockIndex& blockIndex)
 
   m_MeshState = MeshState::NeedsUpdate;
   for (Block::Face face : Block::FaceIterator())
-  {
-    const int faceID = static_cast<int>(face);
-
-    if (isBlockNeighborInAnotherChunk(blockIndex, face) && m_Neighbors[faceID] != nullptr)
-      m_Neighbors[faceID]->m_MeshState = MeshState::NeedsUpdate;
-  }
+    if (isBlockNeighborInAnotherChunk(blockIndex, face) && getNeighbor(face) != nullptr)
+      getNeighbor(face)->m_MeshState = MeshState::NeedsUpdate;
 }
 
 void Chunk::placeBlock(const BlockIndex& blockIndex, Block::Face face, Block::Type blockType)
@@ -211,16 +207,15 @@ void Chunk::placeBlock(const BlockIndex& blockIndex, Block::Face face, Block::Ty
   if (blockType == Block::Type::Air || !isBlockNeighborAir(blockIndex, face))
     return;
 
-  const int faceID = static_cast<int>(face);
   if (isBlockNeighborInAnotherChunk(blockIndex, face))
   {
-    if (m_Neighbors[faceID] == nullptr)
+    if (getNeighbor(face) == nullptr)
       return;
-    else if (m_Neighbors[faceID]->isEmpty())
-      m_Neighbors[faceID]->m_ChunkComposition = CreateUnique<Block::Type[]>(s_ChunkTotalBlocks);
+    else if (getNeighbor(face)->isEmpty())
+      getNeighbor(face)->m_ChunkComposition = CreateUnique<Block::Type[]>(s_ChunkTotalBlocks);
 
-    m_Neighbors[faceID]->setBlockType(blockIndex - static_cast<blockIndex_t>(s_ChunkSize - 1) * BlockIndex::OutwardNormal(face), blockType);
-    m_Neighbors[faceID]->m_MeshState = MeshState::NeedsUpdate;
+    getNeighbor(face)->setBlockType(blockIndex - static_cast<blockIndex_t>(s_ChunkSize - 1) * BlockIndex::OutwardNormal(face), blockType);
+    getNeighbor(face)->m_MeshState = MeshState::NeedsUpdate;
   }
   else
     setBlockType(blockIndex + BlockIndex::OutwardNormal(face), blockType);
@@ -247,36 +242,84 @@ bool Chunk::isBlockNeighborTransparent(blockIndex_t i, blockIndex_t j, blockInde
   return isBlockNeighborTransparent(BlockIndex(i, j, k), face);
 }
 
+bool Chunk::isBlockNeighborTransparent(blockIndex_t i, blockIndex_t j, blockIndex_t k, Block::Face faceA, Block::Face faceB)
+{
+  return isBlockNeighborTransparent(BlockIndex(i, j, k), faceA, faceB);
+}
+
 bool Chunk::isBlockNeighborTransparent(const BlockIndex& blockIndex, Block::Face face)
 {
-  const int faceID = static_cast<int>(face);
   if (isBlockNeighborInAnotherChunk(blockIndex, face))
   {
-    if (m_Neighbors[faceID] == nullptr)
+    if (getNeighbor(face) == nullptr)
       return false;
-    else if (m_Neighbors[faceID]->isEmpty())
+    else if (getNeighbor(face)->isEmpty())
       return true;
-
-    return Block::HasTransparency(m_Neighbors[faceID]->getBlockType(blockIndex - static_cast<blockIndex_t>(s_ChunkSize - 1) * BlockIndex::OutwardNormal(face)));
+    else
+      return Block::HasTransparency(getNeighbor(face)->getBlockType(blockIndex - static_cast<blockIndex_t>(s_ChunkSize - 1) * BlockIndex::OutwardNormal(face)));
   }
   else
     return Block::HasTransparency(getBlockType(blockIndex + BlockIndex::OutwardNormal(face)));
 }
 
+bool Chunk::isBlockNeighborTransparent(const BlockIndex& blockIndex, Block::Face faceA, Block::Face faceB)
+{
+  EN_ASSERT(static_cast<int>(faceA) / 2 != static_cast<int>(faceB) / 2, "Given faces cannot be on the same axis!");
+
+  bool isOnChunkBorderA = isBlockNeighborInAnotherChunk(blockIndex, faceA);
+  bool isOnChunkBorderB = isBlockNeighborInAnotherChunk(blockIndex, faceB);
+
+  if (isOnChunkBorderA && isOnChunkBorderB)
+  {
+    Chunk* edgeChunk = nullptr;
+    if (getNeighbor(faceA))
+      edgeChunk = getNeighbor(faceA)->getNeighbor(faceB);
+
+    if (edgeChunk)
+    {
+      if (edgeChunk->isEmpty())
+        return true;
+      else
+        return Block::HasTransparency(edgeChunk->getBlockType(blockIndex - static_cast<blockIndex_t>(s_ChunkSize - 1) * BlockIndex::OutwardNormal(faceA)
+                                                                         - static_cast<blockIndex_t>(s_ChunkSize - 1) * BlockIndex::OutwardNormal(faceB)));
+    }
+    else
+      return false;
+  }
+  else if (isOnChunkBorderA)
+    return isBlockNeighborTransparent(blockIndex + BlockIndex::OutwardNormal(faceB), faceA);
+  else if (isOnChunkBorderB)
+    return isBlockNeighborTransparent(blockIndex + BlockIndex::OutwardNormal(faceA), faceB);
+  else
+    return Block::HasTransparency(getBlockType(blockIndex + BlockIndex::OutwardNormal(faceA) + BlockIndex::OutwardNormal(faceB)));
+}
+
 bool Chunk::isBlockNeighborAir(const BlockIndex& blockIndex, Block::Face face)
 {
-  const int faceID = static_cast<int>(face);
   if (isBlockNeighborInAnotherChunk(blockIndex, face))
   {
-    if (m_Neighbors[faceID] == nullptr)
+    if (getNeighbor(face) == nullptr)
       return false;
-    else if (m_Neighbors[faceID]->isEmpty())
+    else if (getNeighbor(face)->isEmpty())
       return true;
-
-    return m_Neighbors[faceID]->getBlockType(blockIndex - static_cast<blockIndex_t>(s_ChunkSize - 1) * BlockIndex::OutwardNormal(face)) == Block::Type::Air;
+    else
+      return getNeighbor(face)->getBlockType(blockIndex - static_cast<blockIndex_t>(s_ChunkSize - 1) * BlockIndex::OutwardNormal(face)) == Block::Type::Air;
   }
   else
     return getBlockType(blockIndex + BlockIndex::OutwardNormal(face)) == Block::Type::Air;
+}
+
+Block::Type Chunk::getBlockNeighbor(const BlockIndex& blockIndex, Block::Face face)
+{
+  if (isBlockNeighborInAnotherChunk(blockIndex, face))
+  {
+    if (getNeighbor(face) == nullptr)
+      return Block::Type::Air;
+    else
+      return getNeighbor(face)->getBlockType(blockIndex - static_cast<blockIndex_t>(s_ChunkSize - 1) * BlockIndex::OutwardNormal(face));
+  }
+  else
+    return getBlockType(blockIndex + BlockIndex::OutwardNormal(face));
 }
 
 LocalIndex Chunk::LocalIndexFromPos(const Vec3& position)
@@ -327,7 +370,7 @@ void Chunk::generateMesh()
   static constexpr int maxVertices = 4 * 6 * TotalBlocks();
   static uint32_t* const meshData = new uint32_t[maxVertices];
 
-  static constexpr int8_t offsets[6][4][3]
+  static constexpr BlockIndex offsets[6][4]
     = { { {0, 1, 0}, {0, 0, 0}, {0, 0, 1}, {0, 1, 1} },    /*  West Face   */
         { {1, 0, 0}, {1, 1, 0}, {1, 1, 1}, {1, 0, 1} },    /*  East Face   */
         { {0, 0, 0}, {1, 0, 0}, {1, 0, 1}, {0, 0, 1} },    /*  South Face  */
@@ -335,39 +378,97 @@ void Chunk::generateMesh()
         { {0, 1, 0}, {1, 1, 0}, {1, 0, 0}, {0, 0, 0} },    /*  Bottom Face */
         { {0, 0, 1}, {1, 0, 1}, {1, 1, 1}, {0, 1, 1} } };  /*  Top Face    */
 
+  m_QuadCount = 0;
+
   // If chunk is empty, no need to generate mesh
   if (isEmpty())
     return;
 
   EN_PROFILE_FUNCTION();
 
-  m_QuadCount = 0;
   for (blockIndex_t i = 0; i < s_ChunkSize; ++i)
     for (blockIndex_t j = 0; j < s_ChunkSize; ++j)
       for (blockIndex_t k = 0; k < s_ChunkSize; ++k)
-        if (getBlockType(i, j, k) != Block::Type::Air)
+        if (Block::HasTransparency(getBlockType(i, j, k)))
           for (Block::Face face : Block::FaceIterator())
-            if (isBlockNeighborTransparent(i, j, k, face))
+          {
+            Block::Type blockType = getBlockNeighbor(BlockIndex(i, j, k), face);
+            if (blockType != Block::Type::Air)
             {
+              const int textureID = static_cast<blockIndex_t>(Block::GetTexture(blockType, !face));
               const int faceID = static_cast<int>(face);
-              const blockTexID textureID = static_cast<blockTexID>(Block::GetTexture(getBlockType(i, j, k), face));
+              const int u = faceID / 2;
+              const int v = (u + 1) % 3;
+              const int w = (u + 2) % 3;
 
-              for (uint8_t v = 0; v < 4; ++v)
+              for (int vert = 0; vert < 4; ++vert)
               {
-                // Add offsets to convert from block index to vertex index
-                const uint8_t vI = i + offsets[faceID][v][0];
-                const uint8_t vJ = j + offsets[faceID][v][1];
-                const uint8_t vK = k + offsets[faceID][v][2];
+                BlockIndex vertexIndex = BlockIndex(i, j, k) + offsets[faceID][vert];
 
-                uint32_t vertexData = vI + (vJ << 6) + (vK << 12);  // Local vertex coordinates
-                vertexData |= faceID << 18;                         // Face index
-                vertexData |= v << 21;                              // Quad vertex index
-                vertexData |= textureID << 23;                      // TextureID
+                Block::Face sideA = static_cast<Block::Face>(2 * v + offsets[faceID][vert][v]);
+                Block::Face sideB = static_cast<Block::Face>(2 * w + offsets[faceID][vert][w]);
 
-                meshData[4 * m_QuadCount + v] = vertexData;
+                bool sideAIsOpaque = !isBlockNeighborTransparent(i, j, k, sideA);
+                bool sideBIsOpaque = !isBlockNeighborTransparent(i, j, k, sideB);
+                bool cornerIsOpaque = !isBlockNeighborTransparent(i, j, k, sideA, sideB);
+                int AO = sideAIsOpaque && sideBIsOpaque ? 0 : 3 - (sideAIsOpaque + sideBIsOpaque + cornerIsOpaque);
+
+                uint32_t vertexData = vertexIndex.i + (vertexIndex.j << 6) + (vertexIndex.k << 12);   // Local vertex coordinates
+                vertexData |= faceID << 18;                                                           // Face index
+                vertexData |= vert << 21;                                                             // Quad vertex index
+                vertexData |= AO << 23;                                                               // Ambient occlusion value
+                vertexData |= textureID << 25;                                                        // TextureID
+
+                meshData[4 * m_QuadCount + vert] = vertexData;
               }
               m_QuadCount++;
             }
+          }
+
+  // Since empty chunks do not have meshes, we need to handle the case of blockfaces adjacent to empty chunks
+  for (Block::Face face : Block::FaceIterator())
+    if (getNeighbor(face))
+      if (getNeighbor(face)->isEmpty())
+      {
+        const int faceID = static_cast<int>(face);
+        const int u = faceID / 2;
+        const int v = (u + 1) % 3;
+        const int w = (u + 2) % 3;
+        const int uIndex = faceID % 2 ? s_ChunkSize - 1 : 0;
+
+        for (blockIndex_t i = 0; i < s_ChunkSize; ++i)
+          for (blockIndex_t j = 0; j < s_ChunkSize; ++j)
+          {
+            BlockIndex index{};
+            index[u] = uIndex;
+            index[v] = i;
+            index[w] = j;
+
+            Block::Type blockType = getBlockType(index);
+            if (blockType != Block::Type::Air)
+            {
+              const int textureID = static_cast<blockIndex_t>(Block::GetTexture(blockType, face));
+
+              for (int vert = 0; vert < 4; ++vert)
+              {
+                BlockIndex vertexIndex = index + offsets[faceID][vert];
+
+                // No ambient occlusion for quad in empty chunk
+                int AO = 3;
+
+                uint32_t vertexData = vertexIndex.i + (vertexIndex.j << 6) + (vertexIndex.k << 12);   // Local vertex coordinates
+                vertexData |= faceID << 18;                                                           // Face index
+                vertexData |= vert << 21;                                                             // Quad vertex index
+                vertexData |= AO << 23;                                                               // Ambient occlusion value
+                vertexData |= textureID << 25;                                                        // TextureID
+
+                meshData[4 * m_QuadCount + vert] = vertexData;
+              }
+              m_QuadCount++;
+            }
+          }
+      }
+
   m_MeshState = MeshState::Simple;
 
   if (m_QuadCount == 0)
@@ -425,27 +526,21 @@ void Chunk::determineOpacity()
 void Chunk::sendAddressUpdate()
 {
   for (Block::Face face : Block::FaceIterator())
-  {
-    int faceID = static_cast<int>(face);
-    if (m_Neighbors[faceID] != nullptr)
+    if (getNeighbor(face))
     {
       int oppFaceID = static_cast<int>(!face);
-      m_Neighbors[faceID]->m_Neighbors[oppFaceID] = this; // Avoid using setNeighbor() to prevent re-meshing
+      getNeighbor(face)->m_Neighbors[oppFaceID] = this; // Avoid using setNeighbor() to prevent re-meshing
     }
-  }
 }
 
 void Chunk::excise()
 {
   for (Block::Face face : Block::FaceIterator())
-  {
-    int faceID = static_cast<int>(face);
-    if (m_Neighbors[faceID] != nullptr)
+    if (getNeighbor(face))
     {
-      EN_ASSERT(m_Neighbors[faceID]->getNeighbor(!face) == this, "Incorrect neighbor!");
-      m_Neighbors[faceID]->setNeighbor(!face, nullptr);
+      EN_ASSERT(getNeighbor(face)->getNeighbor(!face) == this, "Incorrect neighbor!");
+      getNeighbor(face)->setNeighbor(!face, nullptr);
     }
-  }
 }
 
 void Chunk::markAsEmpty()

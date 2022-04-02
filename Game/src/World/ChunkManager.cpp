@@ -24,7 +24,7 @@ void ChunkManager::initialize()
   {
   }
 
-  initializeLODs();
+  // initializeLODs();
 }
 
 void ChunkManager::clean()

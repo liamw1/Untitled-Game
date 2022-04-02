@@ -29,5 +29,7 @@ namespace Block
   bool HasTransparency(Type block);
   bool HasCollision(Type block);
 
+  bool IsTransparent(Texture texture);
+
   constexpr length_t Length() { return 0.5; }
 };

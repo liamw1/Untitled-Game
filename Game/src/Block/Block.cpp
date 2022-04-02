@@ -78,11 +78,31 @@ std::string Block::GetTexturePath(Texture texture)
 bool Block::HasTransparency(Type block)
 {
   EN_ASSERT(s_Initialized, "Block class has not been initialized!");
-  return block == Block::Type::Air || block == Block::Type::OakLeaves;
+  switch (block)
+  {
+    case Block::Type::Air:        return true;
+    case Block::Type::OakLeaves:  return true;
+    default:                      return false;
+  }
 }
 
 bool Block::HasCollision(Type block)
 {
   EN_ASSERT(s_Initialized, "Block class has not been initialized!");
-  return block != Block::Type::Air;
+  switch (block)
+  {
+    case Block::Type::Air:  return false;
+    default:                return true;
+  }
+}
+
+bool Block::IsTransparent(Texture texture)
+{
+  EN_ASSERT(s_Initialized, "Block class has not been initialized!");
+  switch (texture)
+  {
+    case Block::Texture::Invisible: return true;
+    case Block::Texture::OakLeaves: return true;
+    default:                        return false;
+  }
 }
