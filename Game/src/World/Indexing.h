@@ -90,8 +90,8 @@ struct Index3D
 
   static const Index3D<intType>& OutwardNormal(Block::Face face)  // NOTE: Can't declare this as contexpr, not sure why
   {
-    static constexpr Index3D<intType> normals[6] = { { 1, 0, 0}, { -1, 0, 0}, { 0, 1, 0}, { 0, -1, 0}, { 0, 0, 1}, { 0, 0, -1} };
-                                                //      East         West        North       South         Top        Bottom
+    static constexpr Index3D<intType> normals[6] = { { -1, 0, 0}, { 1, 0, 0}, { 0, -1, 0}, { 0, 1, 0}, { 0, 0, -1}, { 0, 0, 1} };
+                                                //       West        East        South        North       Bottom        Top
 
     return normals[static_cast<int>(face)];
   }

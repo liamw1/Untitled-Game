@@ -235,7 +235,7 @@ void Chunk::setNeighbor(Block::Face face, Chunk* chunk)
 
 bool Chunk::isBlockNeighborInAnotherChunk(const BlockIndex& blockIndex, Block::Face face)
 {
-  static constexpr blockIndex_t chunkLimits[2] = { s_ChunkSize - 1, 0 };
+  static constexpr blockIndex_t chunkLimits[2] = { 0, s_ChunkSize - 1 };
   const int faceID = static_cast<int>(face);
   const int coordID = faceID / 2;
 
@@ -328,12 +328,12 @@ void Chunk::generateMesh()
   static uint32_t* const meshData = new uint32_t[maxVertices];
 
   static constexpr int8_t offsets[6][4][3]
-    = { { {1, 0, 0}, {1, 1, 0}, {1, 1, 1}, {1, 0, 1} },    /*  East Face   */
-        { {0, 1, 0}, {0, 0, 0}, {0, 0, 1}, {0, 1, 1} },    /*  West Face   */
-        { {1, 1, 0}, {0, 1, 0}, {0, 1, 1}, {1, 1, 1} },    /*  North Face  */
+    = { { {0, 1, 0}, {0, 0, 0}, {0, 0, 1}, {0, 1, 1} },    /*  West Face   */
+        { {1, 0, 0}, {1, 1, 0}, {1, 1, 1}, {1, 0, 1} },    /*  East Face   */
         { {0, 0, 0}, {1, 0, 0}, {1, 0, 1}, {0, 0, 1} },    /*  South Face  */
-        { {0, 0, 1}, {1, 0, 1}, {1, 1, 1}, {0, 1, 1} },    /*  Top Face    */
-        { {0, 1, 0}, {1, 1, 0}, {1, 0, 0}, {0, 0, 0} } };  /*  Bottom Face */
+        { {1, 1, 0}, {0, 1, 0}, {0, 1, 1}, {1, 1, 1} },    /*  North Face  */
+        { {0, 1, 0}, {1, 1, 0}, {1, 0, 0}, {0, 0, 0} },    /*  Bottom Face */
+        { {0, 0, 1}, {1, 0, 1}, {1, 1, 1}, {0, 1, 1} } };  /*  Top Face    */
 
   // If chunk is empty, no need to generate mesh
   if (isEmpty())
@@ -393,6 +393,8 @@ void Chunk::setBlockType(const BlockIndex& blockIndex, Block::Type blockType)
 
 void Chunk::determineOpacity()
 {
+  static constexpr blockIndex_t chunkLimits[2] = { 0, s_ChunkSize - 1 };
+
   for (Block::Face face : Block::FaceIterator())
   {
     const int faceID = static_cast<int>(face);
@@ -406,7 +408,7 @@ void Chunk::determineOpacity()
       for (blockIndex_t j = 0; j < s_ChunkSize; ++j)
       {
         BlockIndex blockIndex{};
-        blockIndex[u] = faceID % 2 == 0 ? s_ChunkSize - 1 : 0;
+        blockIndex[u] = chunkLimits[faceID % 2];
         blockIndex[v] = i;
         blockIndex[w] = j;
 

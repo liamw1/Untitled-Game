@@ -113,7 +113,7 @@ RayIntersection World::castRaySegment(const Vec3& pointA, const Vec3& pointB) co
         // If block has collision, note the intersection and move to next spatial direction
         if (Block::HasCollision(chunk->getBlockType(blockIndex)))
         {
-          const int faceID = 2 * u + alignedWithPositiveAxis;
+          const int faceID = 2 * u + !alignedWithPositiveAxis;
           tmin = t;
 
           firstIntersection.face = static_cast<Block::Face>(faceID);
@@ -144,17 +144,17 @@ void World::playerCollisionHandling(Timestep timestep) const
 {
   EN_PROFILE_FUNCTION();
 
-  static constexpr Vec3 normals[6] = { { 1, 0, 0}, { -1, 0, 0}, { 0, 1, 0}, { 0, -1, 0}, { 0, 0, 1}, { 0, 0, -1} };
-                                  //      East         West        North       South         Top        Bottom
+  static constexpr Vec3 normals[6] = { { -1, 0, 0}, { 1, 0, 0}, { 0, -1, 0}, { 0, 1, 0}, { 0, 0, -1}, { 0, 0, 1} };
+                                  //       West        East        South        North       Bottom        Top
 
   // Player width and height in blocks
   static const int playerWidth = static_cast<int>(ceil(Player::Width() / Block::Length()));
   static const int playerHeight = static_cast<int>(ceil(Player::Height() / Block::Length()));
-  const seconds dt = timestep.sec();  // Time between frames in seconds
+  seconds dt = timestep.sec();  // Time between frames in seconds
 
 beginCollisionDetection:;
-  const length_t distanceMoved = dt * glm::length(Player::Velocity());
-  const Vec3 anchorPoint = Player::Position() - 0.5 * Vec3(Player::Width(), Player::Width(), Player::Height());
+  length_t distanceMoved = dt * glm::length(Player::Velocity());
+  Vec3 anchorPoint = Player::Position() - 0.5 * Vec3(Player::Width(), Player::Width(), Player::Height());
 
   if (distanceMoved == 0.0)
     return;
@@ -165,8 +165,8 @@ beginCollisionDetection:;
     for (int j = 0; j <= playerWidth; ++j)
       for (int k = 0; k <= playerHeight; ++k)
       {
-        const Vec3 cornerPos = anchorPoint + Block::Length() * Vec3(i == playerWidth ? i - 0.2 : i, j == playerWidth ? j - 0.2 : j, k == playerHeight ? k - 0.2 : k);
-        const RayIntersection collision = castRaySegment(cornerPos - dt * Player::Velocity(), cornerPos);
+        Vec3 cornerPos = anchorPoint + Block::Length() * Vec3(i == playerWidth ? i - 0.2 : i, j == playerWidth ? j - 0.2 : j, k == playerHeight ? k - 0.2 : k);
+        RayIntersection collision = castRaySegment(cornerPos - dt * Player::Velocity(), cornerPos);
 
         if (collision.distance < firstCollision.distance)
         {
@@ -177,11 +177,11 @@ beginCollisionDetection:;
 
   if (firstCollision.distance <= distanceMoved)
   {
-    const int faceID = static_cast<int>(firstCollision.face);
-    const length_t t = firstCollision.distance / distanceMoved;
+    int faceID = static_cast<int>(firstCollision.face);
+    length_t t = firstCollision.distance / distanceMoved;
 
     // Calculate distance player should be pushed out from solid block
-    const Vec3 collisionDisplacement = ((1.0 - t) * dt *  glm::dot(normals[faceID], -Player::Velocity()) + s_MinDistanceToWall) * normals[faceID];
+    Vec3 collisionDisplacement = ((1.0 - t) * dt *  glm::dot(normals[faceID], -Player::Velocity()) + s_MinDistanceToWall) * normals[faceID];
 
     Player::SetPosition(Player::Position() + collisionDisplacement);
 
@@ -194,6 +194,7 @@ beginCollisionDetection:;
 
 void World::playerWorldInteraction()
 {
+  static constexpr blockIndex_t chunkLimits[2] = { 0, Chunk::Size() - 1 };
   static constexpr length_t maxInteractionDistance = 1000 * Block::Length();
 
   m_PlayerRayCast = castRay(Player::Position(), Player::ViewDirection(), maxInteractionDistance);
@@ -201,7 +202,7 @@ void World::playerWorldInteraction()
   {
     const BlockIndex& blockIndex = m_PlayerRayCast.blockIndex;
     const LocalIndex& chunkIndex = m_PlayerRayCast.chunkIndex;
-    const Vec3 blockCenter = Chunk::Length() * static_cast<Vec3>(chunkIndex) + Block::Length() * (static_cast<Vec3>(blockIndex) + Vec3(0.5));
+    Vec3 blockCenter = Chunk::Length() * static_cast<Vec3>(chunkIndex) + Block::Length() * (static_cast<Vec3>(blockIndex) + Vec3(0.5));
 
     Engine::Renderer::DrawCubeFrame(blockCenter, 1.01 * Block::Length() * Vec3(1.0), Float4(0.1f, 0.1f, 0.1f, 1.0f));
   }
@@ -213,7 +214,7 @@ void World::playerWorldInteraction()
       const LocalIndex& chunkIndex = m_PlayerRayCast.chunkIndex;
       const BlockIndex& blockIndex = m_PlayerRayCast.blockIndex;
       const Block::Face& rayCastFace = m_PlayerRayCast.face;
-      Chunk* const chunk = m_ChunkManager.findChunk(chunkIndex);
+      Chunk* chunk = m_ChunkManager.findChunk(chunkIndex);
 
       if (chunk != nullptr)
       {
@@ -227,7 +228,7 @@ void World::playerWorldInteraction()
             const int faceID = static_cast<int>(face);
             const int coordID = faceID / 2;
 
-            if (blockIndex[coordID] == (faceID % 2 == 0 ? Chunk::Size() - 1 : 0))
+            if (blockIndex[coordID] == chunkLimits[faceID % 2])
               m_ChunkManager.sendChunkUpdate(chunk->getNeighbor(face));
           }
         }

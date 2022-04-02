@@ -15,7 +15,6 @@ namespace Noise
     length_t getHeight() const { return m_Height; }
 
     Block::Type getPrimaryBlockType() const { return m_Composition[0].type; }
-    int getPrimaryTextureIndex() const { return static_cast<int>(Block::GetTexture(m_Composition[0].type, Block::Face::Top)); }
 
     std::array<int, 2> getTextureIndices() const;
     Float2 getTextureWeights() const { return { m_Composition[0].weight, m_Composition[1].weight }; }

@@ -6,7 +6,7 @@ const vec2 s_TexCoords[4] = vec2[4]( vec2(0.0f,	0.0f),
 									                   vec2(1.0f, 1.0f),
 									                   vec2(0.0f, 1.0f) );
 
-const float s_LightValues[6] = float[6]( 0.9f, 0.6f, 0.7f, 0.8f, 1.0f, 0.5f);
+const float s_LightValues[6] = float[6]( 0.6f, 0.9f, 0.8f, 0.7f, 0.5f, 1.0f);
 
 layout(std140, binding = 0) uniform Camera
 {

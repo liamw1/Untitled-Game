@@ -6,8 +6,8 @@ namespace Block
 {
   enum class Face : int
   {
-    East, West, North, South, Top, Bottom,
-    First = East, Last = Bottom
+    West, East, South, North, Bottom, Top,
+    First = West, Last = Top
   };
   using FaceIterator = Iterator<Face, Face::First, Face::Last>;
   
@@ -17,7 +17,7 @@ namespace Block
   inline Face operator!(const Face& face)
   {
     const int faceID = static_cast<int>(face);
-    Face oppFace = static_cast<Face>(faceID % 2 == 0 ? faceID + 1 : faceID - 1);
+    Face oppFace = static_cast<Face>(faceID % 2 ? faceID - 1 : faceID + 1);
     return oppFace;
   }
 

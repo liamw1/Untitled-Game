@@ -476,8 +476,8 @@ static void generateTransitionMeshes(LOD::Octree::Node* node, const HeapArray2D<
     int8_t vertexOrder[10] = { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 };
   };
 
-  static constexpr Vec3 normals[6] = { { 1, 0, 0}, { -1, 0, 0}, { 0, 1, 0}, { 0, -1, 0}, { 0, 0, 1}, { 0, 0, -1} };
-                                  //      East         West        North       South         Top        Bottom
+  static constexpr Vec3 normals[6] = { { -1, 0, 0}, { 1, 0, 0}, { 0, -1, 0}, { 0, 1, 0}, { 0, 0, -1}, { 0, 0, 1} };
+                                  //       West        East        South        North       Bottom        Top
 
   const length_t LODFloor = node->anchor.k * Chunk::Length();
   const length_t cellLength = node->length() / s_NumCells;
@@ -491,7 +491,7 @@ static void generateTransitionMeshes(LOD::Octree::Node* node, const HeapArray2D<
     const int u = faceID / 2;
     const int v = (u + 1) % 3;
     const int w = (u + 2) % 3;
-    const bool facingPositiveDir = faceID % 2 == 0;
+    const bool facingPositiveDir = faceID % 2;
     const int uIndex = facingPositiveDir ? s_NumCells : 0;
 
     // Generate transition mesh using Transvoxel algorithm
@@ -683,7 +683,7 @@ static void adjustVertex(LOD::Vertex& vertex, length_t cellLength, uint8_t trans
   {
     const int faceID = static_cast<int>(face);
     const int coordID = faceID / 2;
-    const bool facingPositiveDir = faceID % 2 == 0;
+    const bool facingPositiveDir = faceID % 2;
 
     if (isVertexNearFace(facingPositiveDir, vertex.position[coordID], cellLength))
     {
@@ -723,7 +723,7 @@ static std::vector<LOD::Vertex> calcAdjustedTransitionMesh(LOD::Octree::Node* no
 {
   const int faceID = static_cast<int>(face);
   const int coordID = faceID / 2;
-  const bool facingPositiveDir = faceID % 2 == 0;
+  const bool facingPositiveDir = faceID % 2;
   const length_t cellLength = node->length() / s_NumCells;
 
   std::vector<LOD::Vertex> LODMesh = node->data->transitionMeshes[faceID].vertices;
@@ -749,8 +749,8 @@ static std::vector<LOD::Vertex> calcAdjustedTransitionMesh(LOD::Octree::Node* no
 */
 static void determineTransitionFaces(LOD::Octree& tree, LOD::Octree::Node* node)
 {
-  const GlobalIndex offsets[6] = { { node->size(), 0, 0 }, { -1, 0, 0 }, { 0, node->size(), 0 }, { 0, -1, 0 }, { 0, 0, node->size() }, { 0, 0, -1 } };
-                              //            East               West              North              South              Top                Bottom
+  const GlobalIndex offsets[6] = { { -1, 0, 0 }, { node->size(), 0, 0 }, { 0, -1, 0 }, { 0, node->size(), 0 }, { 0, 0, -1 }, { 0, 0, node->size() } };
+                              //       East               West              North              South               Top               Bottom
 
   // Determine which faces transition to a lower resolution LOD
   uint8_t transitionFaces = 0;
@@ -795,8 +795,8 @@ void LOD::UpdateMesh(LOD::Octree& tree, LOD::Octree::Node* node)
 
 void LOD::MessageNeighbors(LOD::Octree& tree, LOD::Octree::Node* node)
 {
-  const GlobalIndex offsets[6] = { { node->size(), 0, 0 }, { -1, 0, 0 }, { 0, node->size(), 0 }, { 0, -1, 0 }, { 0, 0, node->size() }, { 0, 0, -1 } };
-                              //            East               West              North              South              Top                Bottom
+  const GlobalIndex offsets[6] = { { -1, 0, 0 }, { node->size(), 0, 0 }, { 0, -1, 0 }, { 0, node->size(), 0 }, { 0, 0, -1 }, { 0, 0, node->size() } };
+                              //       East               West              North              South               Top               Bottom
 
   // Tell LOD neighbors to update
   for (Block::Face face : Block::FaceIterator())
