@@ -6,7 +6,7 @@
 GameSandbox::GameSandbox()
   : Layer("GameSandbox")
 {
-  Player::Initialize(GlobalIndex(0, 0, 2), Block::Length() * Vec3(16.0));
+  Player::Initialize(GlobalIndex(0, 0, 1), Block::Length() * Vec3(16.0));
   Engine::RenderCommand::Initialize();
   Engine::Renderer::Initialize();
 
@@ -16,7 +16,7 @@ GameSandbox::GameSandbox()
   for (Block::Texture texture : Block::TextureIterator())
     textureArray->addTexture(Block::GetTexturePath(texture));
 
-  Chunk::Initialize(textureArray);
+  Temp::Chunk::Initialize(textureArray);
   LOD::Initialize(textureArray);
   m_World.initialize();
 }

@@ -1,5 +1,5 @@
 #pragma once
-#include "ChunkManager.h"
+#include "ChunkSystem.h"
 #include "Player/Player.h"
 
 struct RayIntersection
@@ -24,7 +24,7 @@ private:
 
   bool m_RenderingPaused = false;
 
-  ChunkManager m_ChunkManager{};
+  Temp::ChunkManager m_ChunkManager{};
 
   RayIntersection m_PlayerRayCast{};
 

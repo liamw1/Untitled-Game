@@ -60,14 +60,7 @@ private:
     Near, Far
   };
 
-  struct LODVertex
-  {
-    Vec3 position;
-    int quadIndex;
-    float lightValue;
-  };
-
-  static constexpr int s_RenderDistance = 32;
+  static constexpr int s_RenderDistance = 16;
   static constexpr int s_LoadDistance = s_RenderDistance + 2;
   static constexpr int s_UnloadDistance = s_LoadDistance;
   static constexpr int s_MaxChunks = (2 * s_UnloadDistance + 1) * (2 * s_UnloadDistance + 1) * (2 * s_UnloadDistance + 1);

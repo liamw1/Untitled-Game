@@ -1,5 +1,6 @@
 #include "GMpch.h"
 #include "Block.h"
+#include "Util/MultiDimArrays.h"
 
 static constexpr int s_MaxBlockTypes = std::numeric_limits<blockID>::max() + 1;
 static constexpr int s_MaxBlockTextures = 6 * s_MaxBlockTypes;

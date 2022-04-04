@@ -29,14 +29,14 @@ void World::onUpdate(Timestep timestep)
     // m_ChunkManager.manageLODs();
     // m_ChunkManager.renderLODs();
     // Engine::RenderCommand::ClearDepthBuffer();
-    m_ChunkManager.loadNewChunks(200);
+    m_ChunkManager.loadNewChunks(20);
     m_ChunkManager.render();
     m_ChunkManager.clean();
   }
   else
   {
-    m_ChunkManager.renderLODs();
-    Engine::RenderCommand::ClearDepthBuffer();
+    // m_ChunkManager.renderLODs();
+    // Engine::RenderCommand::ClearDepthBuffer();
     m_ChunkManager.render();
   }
 
@@ -106,7 +106,7 @@ RayIntersection World::castRaySegment(const Vec3& pointA, const Vec3& pointB) co
         blockIndex[w] = modulo(static_cast<int64_t>(floor(intersection[w] / Block::Length())), Chunk::Size());
 
         // Search to see if chunk is loaded
-        const Chunk* chunk = m_ChunkManager.findChunk(chunkIndex);
+        const Temp::Chunk* chunk = m_ChunkManager.find(chunkIndex);
         if (chunk == nullptr)
           continue;
 
@@ -214,32 +214,14 @@ void World::playerWorldInteraction()
       const LocalIndex& chunkIndex = m_PlayerRayCast.chunkIndex;
       const BlockIndex& blockIndex = m_PlayerRayCast.blockIndex;
       const Block::Face& rayCastFace = m_PlayerRayCast.face;
-      Chunk* chunk = m_ChunkManager.findChunk(chunkIndex);
+      Temp::Chunk* chunk = m_ChunkManager.find(chunkIndex);
 
       if (chunk != nullptr)
       {
         if (Engine::Input::IsMouseButtonPressed(Mouse::ButtonLeft))
-        {
-          chunk->removeBlock(blockIndex);
-          m_ChunkManager.sendChunkUpdate(chunk);
-
-          for (Block::Face face : Block::FaceIterator())
-          {
-            const int faceID = static_cast<int>(face);
-            const int coordID = faceID / 2;
-
-            if (blockIndex[coordID] == chunkLimits[faceID % 2])
-              m_ChunkManager.sendChunkUpdate(chunk->getNeighbor(face));
-          }
-        }
+          m_ChunkManager.removeBlock(chunk, blockIndex);
         else if (m_PlayerRayCast.distance > 2.5 * Block::Length())
-        {
-          chunk->placeBlock(blockIndex, rayCastFace, Block::Type::Snow);
-          m_ChunkManager.sendChunkUpdate(chunk);
-
-          if (chunk->isBlockNeighborInAnotherChunk(blockIndex, rayCastFace))
-            m_ChunkManager.sendChunkUpdate(chunk->getNeighbor(rayCastFace));
-        }
+          m_ChunkManager.placeBlock(chunk, blockIndex, rayCastFace, Block::Type::Snow);
       }
     }
   }

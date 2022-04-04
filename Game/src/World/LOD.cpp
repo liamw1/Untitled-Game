@@ -2,7 +2,7 @@
 #include "LOD.h"
 #include "Player/Player.h"
 #include "Util/Noise.h"
-#include "Util/Array2D.h"
+#include "Util/MultiDimArrays.h"
 #include "Util/TransVoxel.h"
 
 static constexpr int s_TextureSlot = 0;

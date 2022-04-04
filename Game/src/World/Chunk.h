@@ -2,6 +2,7 @@
 #include "Block/Block.h"
 #include "Indexing.h"
 #include "Util/Noise.h"
+#include "Util/MultiDimArrays.h"
 
 struct HeightMap
 {
@@ -112,8 +113,10 @@ public:
   bool isBlockNeighborInAnotherChunk(const BlockIndex& blockIndex, Block::Face face);
   bool isBlockNeighborTransparent(blockIndex_t i, blockIndex_t j, blockIndex_t k, Block::Face face);
   bool isBlockNeighborTransparent(blockIndex_t i, blockIndex_t j, blockIndex_t k, Block::Face faceA, Block::Face faceB);
+  bool isBlockNeighborTransparent(blockIndex_t i, blockIndex_t j, blockIndex_t k, Block::Face faceA, Block::Face faceB, Block::Face faceC);
   bool isBlockNeighborTransparent(const BlockIndex& blockIndex, Block::Face face);
   bool isBlockNeighborTransparent(const BlockIndex& blockIndex, Block::Face faceA, Block::Face faceB);
+  bool isBlockNeighborTransparent(const BlockIndex& blockIndex, Block::Face faceA, Block::Face faceB, Block::Face faceC);
   bool isBlockNeighborAir(const BlockIndex& blockIndex, Block::Face face);
 
   Block::Type getBlockNeighbor(const BlockIndex& blockIndex, Block::Face face);
@@ -134,11 +137,6 @@ private:
     NeedsUpdate,
     Simple,
     Optimized
-  };
-
-  struct Vertex
-  {
-    Float3 position;
   };
 
   struct Uniforms

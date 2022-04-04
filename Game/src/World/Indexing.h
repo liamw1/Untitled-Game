@@ -22,26 +22,14 @@ struct Index3D
 
   constexpr intType& operator[](int index)
   {
-    EN_ASSERT(index < 3, "Index is out of bounds!");
-    switch (index)
-    {
-      default:
-      case 0: return i;
-      case 1: return j;
-      case 2: return k;
-    }
+    EN_ASSERT(0 <= index && index < 3, "Index is out of bounds!");
+    return *(&i + index);
   }
 
   constexpr const intType& operator[](int index) const
   {
-    EN_ASSERT(index < 3, "Index is out of bounds!");
-    switch (index)
-    {
-      default:
-      case 0: return i;
-      case 1: return j;
-      case 2: return k;
-    }
+    EN_ASSERT(0 <= index && index < 3, "Index is out of bounds!");
+    return *(&i + index);
   }
 
   // Comparison operators define lexicographical ordering on 3D indices
@@ -52,30 +40,20 @@ struct Index3D
   constexpr bool operator<=(const Index3D<intType>& other) const { return !(*this > other); }
   constexpr bool operator>=(const Index3D<intType>& other) const { return !(*this < other); }
 
-  constexpr Index3D<intType> operator+(const Index3D<intType>& other) const
+  constexpr Index3D<intType> operator-() const { return Index3D<intType>(-i, -j, -k); };
+  constexpr Index3D<intType> operator+=(const Index3D<intType>& other)
   {
-    return { static_cast<intType>(i + other.i),
-             static_cast<intType>(j + other.j),
-             static_cast<intType>(k + other.k) };
+    i += other.i;
+    j += other.j;
+    k += other.k;
+    return *this;
   }
-  constexpr Index3D<intType> operator-(const Index3D<intType>& other) const
+  constexpr Index3D<intType> operator-=(const Index3D<intType>& other)
   {
-    return { static_cast<intType>(i - other.i),
-             static_cast<intType>(j - other.j),
-             static_cast<intType>(k - other.k) };
-  }
-
-  constexpr Index3D<intType> operator+(intType n) const
-  {
-    return { static_cast<intType>(i + n),
-             static_cast<intType>(j + n),
-             static_cast<intType>(k + n) };
-  }
-  constexpr Index3D<intType> operator-(intType n) const
-  {
-    return { static_cast<intType>(i - n),
-             static_cast<intType>(j - n),
-             static_cast<intType>(k - n) };
+    i -= other.i;
+    j -= other.j;
+    k -= other.k;
+    return *this;
   }
 
   constexpr operator Vec2() const { return { i, j }; }
@@ -88,7 +66,7 @@ struct Index3D
              static_cast<intType>(vec.z) };
   }
 
-  static const Index3D<intType>& OutwardNormal(Block::Face face)  // NOTE: Can't declare this as contexpr, not sure why
+  static constexpr Index3D<intType> OutwardNormal(Block::Face face)
   {
     static constexpr Index3D<intType> normals[6] = { { -1, 0, 0}, { 1, 0, 0}, { 0, -1, 0}, { 0, 1, 0}, { 0, 0, -1}, { 0, 0, 1} };
                                                 //       West        East        South        North       Bottom        Top
@@ -96,6 +74,32 @@ struct Index3D
     return normals[static_cast<int>(face)];
   }
 };
+
+template<typename intType>
+constexpr Index3D<intType> operator+(Index3D<intType> left, const Index3D<intType>& right)
+{
+  left += right;
+  return left;
+}
+template<typename intType>
+constexpr Index3D<intType> operator-(Index3D<intType> left, const Index3D<intType>& right)
+{
+  left -= right;
+  return left;
+}
+
+template<typename intType>
+constexpr Index3D<intType> operator+(Index3D<intType> index, intType n)
+{
+  index += n * Index3D<intType>(1, 1, 1);
+  return index;
+}
+template<typename intType>
+constexpr Index3D<intType> operator-(Index3D<intType> index, intType n)
+{
+  index -= n * Index3D<intType>(1, 1, 1);
+  return index;
+}
 
 template<typename intType>
 constexpr Index3D<intType> operator*(intType n, const Index3D<intType>& index)
@@ -110,7 +114,7 @@ namespace std
   template<typename intType>
   inline ostream& operator<<(ostream& os, const Index3D<intType>& index)
   {
-    return os << '(' << index.i << ", " << index.j << ", " << index.k << ')';
+    return os << '(' << static_cast<int>(index.i) << ", " << static_cast<int>(index.j) << ", " << static_cast<int>(index.k) << ')';
   }
 }
 
