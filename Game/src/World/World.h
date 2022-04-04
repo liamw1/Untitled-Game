@@ -24,7 +24,7 @@ private:
 
   bool m_RenderingPaused = false;
 
-  Temp::ChunkManager m_ChunkManager{};
+  ChunkManager m_ChunkManager{};
 
   RayIntersection m_PlayerRayCast{};
 

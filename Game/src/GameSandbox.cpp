@@ -16,7 +16,7 @@ GameSandbox::GameSandbox()
   for (Block::Texture texture : Block::TextureIterator())
     textureArray->addTexture(Block::GetTexturePath(texture));
 
-  Temp::Chunk::Initialize(textureArray);
+  Chunk::Initialize(textureArray);
   LOD::Initialize(textureArray);
   m_World.initialize();
 }
@@ -33,7 +33,7 @@ void GameSandbox::onUpdate(Timestep timestep)
 {
   EN_PROFILE_FUNCTION();
 
-  // EN_TRACE("fps: {0}", static_cast<int>(1.0f / timestep.sec()));
+  EN_TRACE("fps: {0}", static_cast<int>(1.0f / timestep.sec()));
 
   Engine::RenderCommand::Clear(Float4(0.788f, 0.949f, 0.949f, 1.0f));
 

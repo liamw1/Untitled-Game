@@ -106,8 +106,10 @@ RayIntersection World::castRaySegment(const Vec3& pointA, const Vec3& pointB) co
         blockIndex[w] = modulo(static_cast<int64_t>(floor(intersection[w] / Block::Length())), Chunk::Size());
 
         // Search to see if chunk is loaded
-        const Temp::Chunk* chunk = m_ChunkManager.find(chunkIndex);
+        const Chunk* chunk = m_ChunkManager.find(chunkIndex);
         if (chunk == nullptr)
+          continue;
+        if (chunk->isEmpty())
           continue;
 
         // If block has collision, note the intersection and move to next spatial direction
@@ -214,7 +216,7 @@ void World::playerWorldInteraction()
       const LocalIndex& chunkIndex = m_PlayerRayCast.chunkIndex;
       const BlockIndex& blockIndex = m_PlayerRayCast.blockIndex;
       const Block::Face& rayCastFace = m_PlayerRayCast.face;
-      Temp::Chunk* chunk = m_ChunkManager.find(chunkIndex);
+      Chunk* chunk = m_ChunkManager.find(chunkIndex);
 
       if (chunk != nullptr)
       {
