@@ -7,6 +7,7 @@ namespace Engine
   {
     Entity CreateEntity(const std::string& name = std::string());
     Entity CreateEntity(const Vec3& initialPosition, const std::string& name = std::string());
+    Entity CreateEmptyEntity();
     void DestroyEntity(Entity entity);
     Entity GetEntity(uint32_t entityID);
 

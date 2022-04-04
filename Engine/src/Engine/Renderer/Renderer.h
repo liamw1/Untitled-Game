@@ -2,7 +2,8 @@
 #include "RendererAPI.h"
 #include "Shader.h"
 #include "Texture.h"
-#include "UniformBuffer.h"
+#include "Engine/Scene/Components.h"
+#include "Engine/Renderer/UniformBuffer.h"
 
 /*
   A general-purpose renderer for 3D objects/effects.

@@ -9,7 +9,7 @@ Shared<const Engine::IndexBuffer> Chunk::s_IndexBuffer = nullptr;
 const Engine::BufferLayout Chunk::s_VertexBufferLayout = { { ShaderDataType::Uint32, "a_VertexData" } };
 
 Chunk::Chunk(const GlobalIndex& chunkIndex)
-  : m_GlobalIndex(chunkIndex), m_Composition(nullptr), m_NonOpaqueFaces(0), m_QuadCount(0)
+  : m_Composition(nullptr), m_NonOpaqueFaces(0), m_QuadCount(0), m_GlobalIndex(chunkIndex)
 {
   m_VertexArray = Engine::VertexArray::Create();
   m_VertexArray->setLayout(s_VertexBufferLayout);
@@ -194,8 +194,10 @@ void Chunk::determineOpacity()
 HeightMap::HeightMap(globalIndex_t chunkI, globalIndex_t chunkJ)
   : chunkI(chunkI), chunkJ(chunkJ), maxHeight(-std::numeric_limits<length_t>::infinity())
 {
-  for (int i = 0; i < Chunk::Size(); ++i)
-    for (int j = 0; j < Chunk::Size(); ++j)
+  EN_PROFILE_FUNCTION();
+
+  for (blockIndex_t i = 0; i < Chunk::Size(); ++i)
+    for (blockIndex_t j = 0; j < Chunk::Size(); ++j)
     {
       Vec2 blockXY = Chunk::Length() * Vec2(chunkI, chunkJ) + Block::Length() * (Vec2(i, j) + Vec2(0.5));
       surfaceData[i][j] = Noise::FastTerrainNoise2D(blockXY);

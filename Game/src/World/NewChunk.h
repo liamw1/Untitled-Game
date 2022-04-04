@@ -91,9 +91,9 @@ private:
 
   Unique<Engine::VertexArray> m_VertexArray;
   Block::Type* m_Composition;
+  GlobalIndex m_GlobalIndex;
   uint16_t m_NonOpaqueFaces;
   uint16_t m_QuadCount;
-  GlobalIndex m_GlobalIndex;
 
   void setBlockType(blockIndex_t i, blockIndex_t j, blockIndex_t k, Block::Type blockType);
   void setBlockType(const BlockIndex& blockIndex, Block::Type blockType);

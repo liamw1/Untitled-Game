@@ -13,56 +13,61 @@ namespace Engine
   {
   public:
     Entity() = default;
-
-    Entity(entt::registry& registry, entt::entity entityID)
-      : m_Handle(registry, entityID) {}
+    Entity(entt::entity entityID)
+      : m_EntityID(entityID) {}
 
     template<typename T>
     bool has() const
     {
       EN_CORE_ASSERT(isValid(), "Entity handle is invalid!");
-      return m_Handle.any_of<T>();
+      return s_Registry.any_of<T>(m_EntityID);
     }
     
     template<typename T, typename... Args>
     T& add(Args&&... args)
     {
       EN_CORE_ASSERT(!has<T>(), "Entity already has component!");
-      return m_Handle.emplace<T>(std::forward<Args>(args)...);
+      return s_Registry.emplace<T>(m_EntityID, std::forward<Args>(args)...);
     }
     
     template<typename T>
     T& get()
     {
       EN_CORE_ASSERT(has<T>(), "Entity does not have component!");
-      return m_Handle.get<T>();
+      return s_Registry.get<T>(m_EntityID);
     }
 
     template<typename T>
     const T& get() const
     {
       EN_CORE_ASSERT(has<T>(), "Entity does not have component!");
-      return m_Handle.get<T>();
+      return s_Registry.get<T>(m_EntityID);
     }
     
     template<typename T>
     void remove()
     {
       EN_CORE_ASSERT(has<T>(), "Entity does not have component!");
-      m_Handle.remove<T>();
+      s_Registry.remove<T>(m_EntityID);
     }
 
-    uint32_t id() const { return static_cast<uint32_t>(m_Handle.entity()); }
+    uint32_t id() const { return static_cast<uint32_t>(m_EntityID); }
 
-    bool isValid() const { return static_cast<bool>(m_Handle); }
+    bool isValid() const { return m_EntityID != entt::null; }
 
-    operator entt::entity() const { return m_Handle.entity(); }
+    operator entt::entity() const { return m_EntityID; }
 
-    bool operator==(const Entity& other) const { return m_Handle == other.m_Handle; }
-    bool operator!=(const Entity& other) const { return m_Handle != other.m_Handle; }
+    bool operator==(const Entity& other) const { return m_EntityID == other.m_EntityID; }
+    bool operator!=(const Entity& other) const { return m_EntityID != other.m_EntityID; }
 
   private:
-    entt::handle m_Handle;
+    entt::entity m_EntityID = entt::null;
+
+    static entt::registry s_Registry;
+
+    static entt::registry& Registry() { return s_Registry; }
+
+    friend struct ECS;
   };
 
 

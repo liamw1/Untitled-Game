@@ -7,8 +7,12 @@
 
 namespace Engine
 {
+  struct ECS
+  {
+    static entt::registry& Registry() { return Entity::Registry(); }
+  };
+
   static constexpr Vec3 s_UpDirection(0, 0, 1);
-  static entt::registry s_Registry;
   
   Entity Scene::CreateEntity(const std::string& name)
   {
@@ -17,21 +21,26 @@ namespace Engine
 
   Entity Scene::CreateEntity(const Vec3& initialPosition, const std::string& name)
   {
-    Entity entity(s_Registry, s_Registry.create());
+    Entity entity(ECS::Registry().create());
     entity.add<Component::Tag>().name = name.empty() ? "Unnamed Entity" : name;
     entity.add<Component::Transform>().position = initialPosition;
     return entity;
   }
 
+  Entity Scene::CreateEmptyEntity()
+  {
+    return ECS::Registry().create();
+  }
+
   void Scene::DestroyEntity(Entity entity)
   {
-    s_Registry.destroy(entity);
+    ECS::Registry().destroy(entity);
   }
 
   Entity Scene::GetEntity(uint32_t entityID)
   {
-    if (s_Registry.valid(static_cast<entt::entity>(entityID)))
-      return Entity(s_Registry, static_cast<entt::entity>(entityID));
+    if (ECS::Registry().valid(static_cast<entt::entity>(entityID)))
+      return Entity(static_cast<entt::entity>(entityID));
     else
     {
       EN_ERROR("Entity ID does not refer to a valid entity!");
@@ -42,13 +51,13 @@ namespace Engine
   void Scene::OnUpdate(Timestep timestep)
   {
     // Update scripts
-    s_Registry.view<Component::NativeScript>().each([=](entt::entity entityID, Component::NativeScript& nsc)
+    ECS::Registry().view<Component::NativeScript>().each([=](entt::entity entityID, Component::NativeScript& nsc)
       {
         // TODO: Move to Scene::OnScenePlay
         if (!nsc.instance)
         {
           nsc.instance = nsc.instantiateScript();
-          nsc.instance->entity = Entity(s_Registry, entityID);
+          nsc.instance->entity = Entity(entityID);
           nsc.instance->onCreate();
         }
 
@@ -56,7 +65,7 @@ namespace Engine
       });
 
     // Render 2D
-    auto view = s_Registry.view<Component::SpriteRenderer>();
+    auto view = ECS::Registry().view<Component::SpriteRenderer>();
     if (view.size() > 0)
     {
       Mat4 viewProj = ActiveCameraViewProjection();
@@ -64,7 +73,7 @@ namespace Engine
       Renderer2D::BeginScene(viewProj);
       for (entt::entity entityID : view)
       {
-        Mat4 transform = s_Registry.get<Component::Transform>(entityID).calculateTransform();
+        Mat4 transform = ECS::Registry().get<Component::Transform>(entityID).calculateTransform();
         const Component::SpriteRenderer& sprite = view.get<Component::SpriteRenderer>(entityID);
 
         Renderer2D::DrawSprite(transform, sprite, static_cast<int>(entityID));
@@ -76,13 +85,13 @@ namespace Engine
   void Scene::OnUpdateDev(Timestep timestep)
   {
     // Render 2D
-    auto view = s_Registry.view<Component::SpriteRenderer>();
+    auto view = ECS::Registry().view<Component::SpriteRenderer>();
     if (view.size() > 0)
     {
       Renderer2D::BeginScene(DevCamera::ViewProjection());
       for (entt::entity entityID : view)
       {
-        Mat4 transform = s_Registry.get<Component::Transform>(entityID).calculateTransform();
+        Mat4 transform = ECS::Registry().get<Component::Transform>(entityID).calculateTransform();
         const Component::SpriteRenderer& sprite = view.get<Component::SpriteRenderer>(entityID);
 
         Renderer2D::DrawSprite(transform, sprite, static_cast<int>(entityID));
@@ -93,13 +102,13 @@ namespace Engine
 
   void Scene::OnEvent(Event& event)
   {
-    s_Registry.view<Component::NativeScript>().each([&](entt::entity entityID, Component::NativeScript& nsc)
+    ECS::Registry().view<Component::NativeScript>().each([&](entt::entity entityID, Component::NativeScript& nsc)
       {
         // TODO: Move to Scene::OnScenePlay
         if (!nsc.instance)
         {
           nsc.instance = nsc.instantiateScript();
-          nsc.instance->entity = Entity(s_Registry, entityID);
+          nsc.instance->entity = Entity(entityID);
           nsc.instance->onCreate();
         }
 
@@ -109,7 +118,7 @@ namespace Engine
 
   Mat4 Scene::ActiveCameraViewProjection()
   {
-    auto view = s_Registry.view<Component::Camera>();
+    auto view = ECS::Registry().view<Component::Camera>();
     for (entt::entity entityID : view)
     {
       const Component::Camera& cameraComponent = view.get<Component::Camera>(entityID);
@@ -119,7 +128,7 @@ namespace Engine
         const Mat4& projection = view.get<Component::Camera>(entityID).camera.getProjection();
         
         Mat4 viewMatrix{};
-        Entity entity(s_Registry, entityID);
+        Entity entity(entityID);
         if (cameraComponent.camera.getProjectionType() == Camera::ProjectionType::Perspective)
         {
           Vec3 viewDirection = entity.get<Component::Transform>().orientationDirection();
@@ -142,7 +151,7 @@ namespace Engine
   void Scene::OnViewportResize(uint32_t width, uint32_t height)
   {
     // Resize our non-fixed aspect ratio cameras
-    auto view = s_Registry.view<Component::Camera>();
+    auto view = ECS::Registry().view<Component::Camera>();
     for (entt::entity entityID : view)
     {
       Component::Camera& cameraComponent = view.get<Component::Camera>(entityID);
@@ -153,10 +162,10 @@ namespace Engine
 
   void Scene::ForEachEntity(void (*func)(const Entity))
   {
-    const size_t numEntities = s_Registry.size();
-    const entt::entity* entityIDs = s_Registry.data();
+    const size_t numEntities = ECS::Registry().size();
+    const entt::entity* entityIDs = ECS::Registry().data();
 
     for (int i = 0; i < numEntities; ++i)
-      func(Entity(s_Registry, entityIDs[i]));
+      func(Entity(entityIDs[i]));
   }
 }

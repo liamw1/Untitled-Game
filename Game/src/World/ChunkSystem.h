@@ -24,8 +24,8 @@ public:
   void clean();
 
   /*
-    \returns The Chunk at the specified chunk index.  If no such chunk can be found,
-             returns nullptr.
+    \returns The Chunk at the specified chunk index.
+             If no such chunk can be found, returns nullptr.
   */
   Chunk* find(const LocalIndex& chunkIndex);
   const Chunk* find(const LocalIndex& chunkIndex) const;
@@ -51,6 +51,7 @@ private:
     Near, Far
   };
 
+private:
   static constexpr int s_RenderDistance = 16;
   static constexpr int s_LoadDistance = s_RenderDistance + 2;
   static constexpr int s_UnloadDistance = s_LoadDistance;
@@ -96,9 +97,9 @@ private:
 
     The neighbors of the removed chunk are re-categorized as boundary chunks.
 
-    \returns A valid iterator at the location of the chunk in m_BoundaryChunks.
+    \returns A valid iterator at the location of the next chunk in m_BoundaryChunks.
   */
-  std::vector<Chunk>::iterator unloadChunk(Chunk& chunk);
+  std::vector<Chunk>::iterator unloadChunk(std::vector<Chunk>::iterator chunk);
 
   void fillChunk(Chunk* chunk, const HeightMap* heightMap);
   void fillChunk(std::vector<Chunk>::iterator chunk, const HeightMap* heightMap);
@@ -119,12 +120,10 @@ private:
   void meshChunk(Chunk* chunk);
   void meshChunk(std::vector<Chunk>::iterator chunk);
 
-  Chunk* getNeighbor(Chunk& chunk, Block::Face face);
   Chunk* getNeighbor(Chunk* chunk, Block::Face face);
-  const Chunk* getNeighbor(const Chunk& chunk, Block::Face face) const;
+  Chunk* getNeighbor(std::vector<Chunk>::iterator chunk, Block::Face face);
   const Chunk* getNeighbor(const Chunk* chunk, Block::Face face) const;
 
-  bool isOnBoundary(const Chunk& chunk) const;
   bool isOnBoundary(std::vector<Chunk>::iterator chunk) const;
 
   bool isLoaded(const GlobalIndex& chunkIndex) const;
@@ -132,7 +131,7 @@ private:
   Chunk* find(const GlobalIndex& chunkIndex);
   const Chunk* find(const GlobalIndex& chunkIndex) const;
 
-  void addToGroup(Chunk& chunk, ChunkType destination);
+  void addToGroup(std::vector<Chunk>::iterator chunk, ChunkType destination);
 
   /*
     Moves chunk from one grouping to another.
@@ -142,8 +141,7 @@ private:
 
     \returns A valid iterator in source grouping.
   */
-  std::vector<Chunk>::iterator moveToGroup(std::vector<Chunk>::iterator iteratorPosition, ChunkType source, ChunkType destination);
+  std::vector<Chunk>::iterator moveToGroup(std::vector<Chunk>::iterator chunk, ChunkType source, ChunkType destination);
 
   std::vector<Chunk>::iterator getIterator(const Chunk* chunk, ChunkType source);
-  std::vector<HeightMap>::iterator getIterator(const HeightMap& heightMap);
 };

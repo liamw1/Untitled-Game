@@ -22,12 +22,6 @@ static bool isIn(const std::vector<T>& arr, const T* element)
 }
 
 template<typename T>
-static bool isIn(const std::vector<T>& arr, const T& element)
-{
-  return isIn(arr, &element);
-}
-
-template<typename T>
 static bool isIn(const std::vector<T>& arr, const GlobalIndex& chunkIndex)
 {
   return std::binary_search(arr.begin(), arr.end(), chunkIndex);
@@ -74,7 +68,7 @@ void ChunkManager::render() const
   static constexpr length_t chunkSphereRadius = sqrt3 * Chunk::Length() / 2;
   for (int planeID = 0; planeID < 6; ++planeID)
   {
-    const length_t planeNormalMag = glm::length(Vec3(frustumPlanes[planeID]));
+    length_t planeNormalMag = glm::length(Vec3(frustumPlanes[planeID]));
     frustumPlanes[planeID].w += chunkSphereRadius * planeNormalMag;
   }
 
@@ -99,7 +93,7 @@ bool ChunkManager::loadNewChunks(int maxNewChunks)
   for (auto chunk = m_BoundaryChunks.begin(); chunk != m_BoundaryChunks.end(); ++chunk)
     for (Block::Face face : Block::FaceIterator())
     {
-      const GlobalIndex neighborIndex = chunk->getGlobalIndex() + GlobalIndex::OutwardNormal(face);
+      GlobalIndex neighborIndex = chunk->getGlobalIndex() + GlobalIndex::OutwardNormal(face);
       if (isInRange(neighborIndex, s_LoadDistance))
         if (!isLoaded(neighborIndex) && !chunk->isFaceOpaque(face))
         {
@@ -135,10 +129,9 @@ void ChunkManager::clean()
   EN_ASSERT(m_BoundaryChunks.size() > 0, "No boundary chunks exist!");
 
   // Destroy boundary chunks outside of unload range
-  std::vector<Chunk*> chunksToRemove{};
   for (auto chunk = m_BoundaryChunks.begin(); chunk != m_BoundaryChunks.end();)
     if (!isInRange(chunk->getGlobalIndex(), s_UnloadDistance))
-      chunk = unloadChunk(*chunk);
+      chunk = unloadChunk(chunk);
     else
       ++chunk;
 
@@ -152,21 +145,21 @@ void ChunkManager::clean()
 
 Chunk* ChunkManager::find(const LocalIndex& chunkIndex)
 {
-  GlobalIndex originChunk = Player::OriginIndex();
+  const GlobalIndex& originChunk = Player::OriginIndex();
   return find(GlobalIndex(originChunk.i + chunkIndex.i, originChunk.j + chunkIndex.j, originChunk.k + chunkIndex.k));
 }
 
 const Chunk* ChunkManager::find(const LocalIndex& chunkIndex) const
 {
-  GlobalIndex originChunk = Player::OriginIndex();
+  const GlobalIndex& originChunk = Player::OriginIndex();
   return find(GlobalIndex(originChunk.i + chunkIndex.i, originChunk.j + chunkIndex.j, originChunk.k + chunkIndex.k));
 }
 
 static bool isBlockNeighborInAnotherChunk(const BlockIndex& blockIndex, Block::Face face)
 {
   static constexpr blockIndex_t chunkLimits[2] = { 0, Chunk::Size() - 1 };
-  const int faceID = static_cast<int>(face);
-  const int coordID = faceID / 2;
+  int faceID = static_cast<int>(face);
+  int coordID = faceID / 2;
 
   return blockIndex[coordID] == chunkLimits[faceID % 2];
 }
@@ -177,7 +170,7 @@ bool ChunkManager::isBlockNeighborAir(const Chunk* chunk, const BlockIndex& bloc
   {
     const Chunk* chunkNeighbor = getNeighbor(chunk, face);
 
-    if (chunkNeighbor == nullptr)
+    if (!chunkNeighbor)
       return false;
     else if (chunkNeighbor->isEmpty())
       return true;
@@ -201,7 +194,7 @@ void ChunkManager::placeBlock(Chunk* chunk, const BlockIndex& blockIndex, Block:
   {
     Chunk* chunkNeighbor = getNeighbor(chunk, face);
 
-    if (chunkNeighbor == nullptr)
+    if (!chunkNeighbor)
       return;
 
     chunkNeighbor->setBlockType(blockIndex - static_cast<blockIndex_t>(Chunk::Size() - 1) * BlockIndex::OutwardNormal(face), blockType);
@@ -261,11 +254,13 @@ bool ChunkManager::isInFrustum(const Vec3& point, const std::array<Vec4, 6>& fru
 
 std::vector<Chunk>::iterator ChunkManager::loadChunk(const GlobalIndex& chunkIndex)
 {
+  EN_PROFILE_FUNCTION();
+
   EN_ASSERT(!isLoaded(chunkIndex), "Chunk is already loaded!");
 
   // Generate heightmap is none exists
   HeightMap* heightMap = findIn(m_HeightMaps, chunkIndex);
-  if (heightMap == nullptr)
+  if (!heightMap)
   {
     auto insertionPosition = std::lower_bound(m_HeightMaps.begin(), m_HeightMaps.end(), chunkIndex);
     heightMap = &(*m_HeightMaps.emplace(insertionPosition, chunkIndex.i, chunkIndex.j));
@@ -298,9 +293,11 @@ std::vector<Chunk>::iterator ChunkManager::loadChunk(const GlobalIndex& chunkInd
   */
 }
 
-std::vector<Chunk>::iterator ChunkManager::unloadChunk(Chunk& chunk)
+std::vector<Chunk>::iterator ChunkManager::unloadChunk(std::vector<Chunk>::iterator chunk)
 {
-  EN_ASSERT(isIn(m_BoundaryChunks, chunk), "Chunk is not a boundary chunk!");
+  EN_PROFILE_FUNCTION();
+
+  EN_ASSERT(isIn(m_BoundaryChunks, &(*chunk)), "Chunk is not a boundary chunk!");
 
   // Move neighbors to m_BoundaryChunks
   for (Block::Face face : Block::FaceIterator())
@@ -322,13 +319,13 @@ std::vector<Chunk>::iterator ChunkManager::unloadChunk(Chunk& chunk)
 
   // Remove chunk from m_BoundaryChunks
   m_ChunksLoaded--;
-  return m_BoundaryChunks.erase(getIterator(&chunk, ChunkType::Boundary));
+  return m_BoundaryChunks.erase(chunk);
 }
 
 void ChunkManager::fillChunk(Chunk* chunk, const HeightMap* heightMap)
 {
-  const length_t chunkFloor = Chunk::Length() * chunk->getGlobalIndex().k;
-  const length_t chunkCeiling = chunkFloor + Chunk::Length();
+  length_t chunkFloor = Chunk::Length() * chunk->getGlobalIndex().k;
+  length_t chunkCeiling = chunkFloor + Chunk::Length();
 
   if (chunkFloor > heightMap->maxHeight)
     return;
@@ -360,7 +357,7 @@ void ChunkManager::fillChunk(Chunk* chunk, const HeightMap* heightMap)
       }
       else
       {
-        const int terrainHeightIndex = static_cast<int>((terrainHeight - chunkFloor) / Block::Length());
+        int terrainHeightIndex = static_cast<int>((terrainHeight - chunkFloor) / Block::Length());
         for (blockIndex_t k = 0; k < Chunk::Size(); ++k)
         {
           if (k == terrainHeightIndex)
@@ -415,13 +412,13 @@ static bool blockNeedsChunkNeighbors(const BlockIndex& blockIndex)
 
 static bool quadNeedsNeighboringChunks(BlockIndex blockIndex, Block::Face face)
 {
-  const int faceID = static_cast<int>(face);
-  const int u = faceID / 2;
-  const int v = (u + 1) % 3;
-  const int w = (u + 2) % 3;
+  int faceID = static_cast<int>(face);
+  int u = faceID / 2;
+  int v = (u + 1) % 3;
+  int w = (u + 2) % 3;
 
   blockIndex += BlockIndex::OutwardNormal(face);
-  return blockIndex[u] < 0     || blockIndex[u] >= Chunk::Size()     ||
+  return blockIndex[u]     < 0 || blockIndex[u]     >= Chunk::Size() ||
          blockIndex[v] - 1 < 0 || blockIndex[v] + 1 >= Chunk::Size() ||
          blockIndex[w] - 1 < 0 || blockIndex[w] + 1 >= Chunk::Size();
 }
@@ -449,7 +446,7 @@ static bool blockHasTransparency(BlockIndex blockIndex, const StackArray3D<const
             0 <= blockIndex.k && blockIndex.k < Chunk::Size(), "Block index is out of bounds!");
 
   const Chunk* chunk = grid[++chunkOffset.i][++chunkOffset.j][++chunkOffset.k];
-  if (chunk == nullptr)
+  if (!chunk)
     return false;
   if (chunk->isEmpty())
     return true;
@@ -495,26 +492,26 @@ void ChunkManager::meshChunk(Chunk* chunk)
           for (Block::Face face : Block::FaceIterator())
           {
             bool blockNeighborHasTransparency = needsNeighbors ? blockHasTransparency(BlockIndex(i, j, k) + BlockIndex::OutwardNormal(face), neighbors)
-                                                               : Block::HasTransparency(chunk->getBlockType(BlockIndex(i, j, k) + BlockIndex::OutwardNormal(face)));
+              : Block::HasTransparency(chunk->getBlockType(BlockIndex(i, j, k) + BlockIndex::OutwardNormal(face)));
             if (blockNeighborHasTransparency)
             {
-              const blockTexID textureID = static_cast<blockTexID>(Block::GetTexture(chunk->getBlockType(i, j, k), face));
-              const int faceID = static_cast<int>(face);
-              const int u = faceID / 2;
-              const int v = (u + 1) % 3;
-              const int w = (u + 2) % 3;
+              blockTexID textureID = static_cast<blockTexID>(Block::GetTexture(chunk->getBlockType(i, j, k), face));
+              int faceID = static_cast<int>(face);
+              int u = faceID / 2;
+              int v = (u + 1) % 3;
+              int w = (u + 2) % 3;
 
               for (int vert = 0; vert < 4; ++vert)
               {
                 Block::Face sideADir = static_cast<Block::Face>(2 * v + offsets[faceID][vert][v]);
                 Block::Face sideBDir = static_cast<Block::Face>(2 * w + offsets[faceID][vert][w]);
 
-                BlockIndex sideA =  BlockIndex(i, j, k) + BlockIndex::OutwardNormal(face) + BlockIndex::OutwardNormal(sideADir);
-                BlockIndex sideB =  BlockIndex(i, j, k) + BlockIndex::OutwardNormal(face) + BlockIndex::OutwardNormal(sideBDir);
+                BlockIndex sideA = BlockIndex(i, j, k) + BlockIndex::OutwardNormal(face) + BlockIndex::OutwardNormal(sideADir);
+                BlockIndex sideB = BlockIndex(i, j, k) + BlockIndex::OutwardNormal(face) + BlockIndex::OutwardNormal(sideBDir);
                 BlockIndex corner = BlockIndex(i, j, k) + BlockIndex::OutwardNormal(face) + BlockIndex::OutwardNormal(sideADir) + BlockIndex::OutwardNormal(sideBDir);
 
-                bool sideAIsOpaque =  !(needsNeighbors ? blockHasTransparency(sideA, neighbors)  : Block::HasTransparency(chunk->getBlockType(sideA)));
-                bool sideBIsOpaque =  !(needsNeighbors ? blockHasTransparency(sideB, neighbors)  : Block::HasTransparency(chunk->getBlockType(sideB)));
+                bool sideAIsOpaque = !(needsNeighbors ? blockHasTransparency(sideA, neighbors) : Block::HasTransparency(chunk->getBlockType(sideA)));
+                bool sideBIsOpaque = !(needsNeighbors ? blockHasTransparency(sideB, neighbors) : Block::HasTransparency(chunk->getBlockType(sideB)));
                 bool cornerIsOpaque = !(needsNeighbors ? blockHasTransparency(corner, neighbors) : Block::HasTransparency(chunk->getBlockType(corner)));
                 int AO = sideAIsOpaque && sideBIsOpaque ? 0 : 3 - (sideAIsOpaque + sideBIsOpaque + cornerIsOpaque);
 
@@ -533,9 +530,6 @@ void ChunkManager::meshChunk(Chunk* chunk)
           }
         }
 
-  if (quadCount == 0)
-    return;
-
   chunk->setMesh(meshData, quadCount);
 }
 
@@ -544,43 +538,33 @@ void ChunkManager::meshChunk(std::vector<Chunk>::iterator chunk)
   meshChunk(&(*chunk));
 }
 
-Chunk* ChunkManager::getNeighbor(Chunk& chunk, Block::Face face)
-{
-  GlobalIndex neighborIndex = chunk.getGlobalIndex() + GlobalIndex::OutwardNormal(face);
-  return find(neighborIndex);
-}
-
 Chunk* ChunkManager::getNeighbor(Chunk* chunk, Block::Face face)
 {
   EN_ASSERT(chunk, "Chunk does not exist!");
-  return getNeighbor(*chunk, face);
-}
-
-const Chunk* ChunkManager::getNeighbor(const Chunk& chunk, Block::Face face) const
-{
-  GlobalIndex neighborIndex = chunk.getGlobalIndex() + GlobalIndex::OutwardNormal(face);
+  GlobalIndex neighborIndex = chunk->getGlobalIndex() + GlobalIndex::OutwardNormal(face);
   return find(neighborIndex);
 }
 
 const Chunk* ChunkManager::getNeighbor(const Chunk* chunk, Block::Face face) const
 {
   EN_ASSERT(chunk, "Chunk does not exist!");
-  return getNeighbor(*chunk, face);
+  GlobalIndex neighborIndex = chunk->getGlobalIndex() + GlobalIndex::OutwardNormal(face);
+  return find(neighborIndex);
 }
 
-bool ChunkManager::isOnBoundary(const Chunk& chunk) const
+Chunk* ChunkManager::getNeighbor(std::vector<Chunk>::iterator chunk, Block::Face face)
 {
-  // Cardinal neighbors
-  for (Block::Face face : Block::FaceIterator())
-    if (!isLoaded(chunk.getGlobalIndex() + GlobalIndex::OutwardNormal(face)) && !chunk.isFaceOpaque(face))
-      return true;
-
-  return false;
+  return getNeighbor(&(*chunk), face);
 }
 
 bool ChunkManager::isOnBoundary(std::vector<Chunk>::iterator chunk) const
 {
-  return isOnBoundary(*chunk);
+  // Cardinal neighbors
+  for (Block::Face face : Block::FaceIterator())
+    if (!isLoaded(chunk->getGlobalIndex() + GlobalIndex::OutwardNormal(face)) && !chunk->isFaceOpaque(face))
+      return true;
+
+  return false;
 }
 
 bool ChunkManager::isLoaded(const GlobalIndex& chunkIndex) const
@@ -613,30 +597,30 @@ const Chunk* ChunkManager::find(const GlobalIndex& chunkIndex) const
   return nullptr;
 }
 
-void ChunkManager::addToGroup(Chunk& chunk, ChunkType destination)
+void ChunkManager::addToGroup(std::vector<Chunk>::iterator chunk, ChunkType destination)
 {
-  const int destinationTypeID = static_cast<int>(destination);
+  int destinationTypeID = static_cast<int>(destination);
 
-  EN_ASSERT(!isIn(m_Chunks[destinationTypeID], chunk), "Chunks of the destination type!");
+  EN_ASSERT(!isIn(m_Chunks[destinationTypeID], &(*chunk)), "Chunks of the destination type!");
 
-  m_Chunks[destinationTypeID].insert(std::lower_bound(m_Chunks[destinationTypeID].begin(), m_Chunks[destinationTypeID].end(), chunk.getGlobalIndex()), std::move(chunk));
+  m_Chunks[destinationTypeID].insert(std::lower_bound(m_Chunks[destinationTypeID].begin(), m_Chunks[destinationTypeID].end(), chunk->getGlobalIndex()), std::move(*chunk));
 }
 
-std::vector<Chunk>::iterator ChunkManager::moveToGroup(std::vector<Chunk>::iterator iteratorPosition, ChunkType source, ChunkType destination)
+std::vector<Chunk>::iterator ChunkManager::moveToGroup(std::vector<Chunk>::iterator chunk, ChunkType source, ChunkType destination)
 {
-  const int sourceTypeID = static_cast<int>(source);
-  const int destinationTypeID = static_cast<int>(destination);
+  int sourceTypeID = static_cast<int>(source);
+  int destinationTypeID = static_cast<int>(destination);
 
   EN_ASSERT(sourceTypeID != destinationTypeID, "Source and destination are the same!");
-  EN_ASSERT(iteratorPosition != m_Chunks[sourceTypeID].end(), "End of iterator!");
+  EN_ASSERT(chunk != m_Chunks[sourceTypeID].end(), "End of iterator!");
 
-  addToGroup(*iteratorPosition, destination);
-  return m_Chunks[sourceTypeID].erase(iteratorPosition);
+  addToGroup(chunk, destination);
+  return m_Chunks[sourceTypeID].erase(chunk);
 }
 
 std::vector<Chunk>::iterator ChunkManager::getIterator(const Chunk* chunk, ChunkType source)
 {
-  const int sourceTypeID = static_cast<int>(source);
+  int sourceTypeID = static_cast<int>(source);
 
   EN_ASSERT(chunk, "No chunk exists!");
   EN_ASSERT(isIn(m_Chunks[sourceTypeID], chunk), "Chunk is not of source type!");
@@ -646,15 +630,5 @@ std::vector<Chunk>::iterator ChunkManager::getIterator(const Chunk* chunk, Chunk
   return m_Chunks[sourceTypeID].begin() + arrayIndex;
 #else
   return std::lower_bound(m_Chunks[sourceTypeID].begin(), m_Chunks[sourceTypeID].end(), chunk->getGlobalIndex());
-#endif
-}
-
-std::vector<HeightMap>::iterator ChunkManager::getIterator(const HeightMap& heightMap)
-{
-#if GM_EXPERIMENTAL
-    intptr_t arrayIndex = (&heightMap - &(*m_HeightMaps.begin()));
-  return m_HeightMaps.begin() + arrayIndex;
-#else
-  return std::lower_bound(m_HeightMaps.begin(), m_HeightMaps.end(), heightMap);
 #endif
 }

@@ -109,7 +109,7 @@ RayIntersection World::castRaySegment(const Vec3& pointA, const Vec3& pointB) co
         const Chunk* chunk = m_ChunkManager.find(chunkIndex);
         if (chunk == nullptr)
           continue;
-        if (chunk->isEmpty())
+        else if (chunk->isEmpty())
           continue;
 
         // If block has collision, note the intersection and move to next spatial direction
@@ -144,8 +144,6 @@ RayIntersection World::castRay(const Vec3& rayOrigin, const Vec3& rayDirection, 
 
 void World::playerCollisionHandling(Timestep timestep) const
 {
-  EN_PROFILE_FUNCTION();
-
   static constexpr Vec3 normals[6] = { { -1, 0, 0}, { 1, 0, 0}, { 0, -1, 0}, { 0, 1, 0}, { 0, 0, -1}, { 0, 0, 1} };
                                   //       West        East        South        North       Bottom        Top
 
