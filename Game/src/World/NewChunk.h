@@ -47,8 +47,6 @@ public:
   Block::Type getBlockType(blockIndex_t i, blockIndex_t j, blockIndex_t k) const;
   Block::Type getBlockType(const BlockIndex& blockIndex) const;
 
-  void draw() const;
-
   static constexpr blockIndex_t Size() { return s_ChunkSize; }
   static constexpr length_t Length() { return Block::Length() * s_ChunkSize; }
   static constexpr int TotalBlocks() { return s_ChunkSize * s_ChunkSize * s_ChunkSize; }
@@ -103,6 +101,12 @@ private:
   void setMesh(const uint32_t* meshData, uint16_t quadCount);
 
   void determineOpacity();
+
+  void update();
+
+  void draw() const;
+
+  void clear();
 
   friend class ChunkManager;
 };

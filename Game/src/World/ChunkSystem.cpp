@@ -78,6 +78,10 @@ void ChunkManager::render() const
     if (isInRange(chunk.getGlobalIndex(), s_RenderDistance))
       if (isInFrustum(chunk.center(), frustumPlanes))
         chunk.draw();
+  for (const Chunk& chunk : m_UpdateList)
+    if (!chunk.isEmpty() && isInRange(chunk.getGlobalIndex(), s_RenderDistance))
+      if (isInFrustum(chunk.center(), frustumPlanes))
+        chunk.draw();
 }
 
 bool ChunkManager::loadNewChunks(int maxNewChunks)
@@ -109,12 +113,7 @@ bool ChunkManager::loadNewChunks(int maxNewChunks)
   for (auto chunk = m_BoundaryChunks.begin(); chunk != m_BoundaryChunks.end();)
   {
     if (!isOnBoundary(chunk))
-    {
-      meshChunk(chunk);
-
-      ChunkType destination = chunk->isEmpty() ? ChunkType::Empty : ChunkType::Renderable;
-      chunk = moveToGroup(chunk, ChunkType::Boundary, destination);
-    }
+      chunk = moveToGroup(chunk, ChunkType::Boundary, ChunkType::NeedsUpdate);
     else
       ++chunk;
   }
@@ -122,11 +121,26 @@ bool ChunkManager::loadNewChunks(int maxNewChunks)
   return newChunks;
 }
 
-void ChunkManager::clean()
+bool ChunkManager::updateChunks(int maxUpdates)
 {
   EN_PROFILE_FUNCTION();
 
-  EN_ASSERT(m_BoundaryChunks.size() > 0, "No boundary chunks exist!");
+  int updatedChunks = 0;
+  auto chunk = m_UpdateList.begin();
+  while (chunk != m_UpdateList.end())
+  {
+    chunk = updateChunk(chunk);
+    updatedChunks++;
+    if (updatedChunks >= maxUpdates)
+      break;
+  }
+
+  return updatedChunks > 0;
+}
+
+void ChunkManager::clean()
+{
+  EN_PROFILE_FUNCTION();
 
   // Destroy boundary chunks outside of unload range
   for (auto chunk = m_BoundaryChunks.begin(); chunk != m_BoundaryChunks.end();)
@@ -177,11 +191,13 @@ bool ChunkManager::isBlockNeighborAir(const Chunk* chunk, const BlockIndex& bloc
     else
       return chunkNeighbor->getBlockType(blockIndex - static_cast<blockIndex_t>(Chunk::Size() - 1) * BlockIndex::OutwardNormal(face)) == Block::Type::Air;
   }
+  else if (chunk->isEmpty())
+    return true;
   else
     return chunk->getBlockType(blockIndex + BlockIndex::OutwardNormal(face)) == Block::Type::Air;
 }
 
-void ChunkManager::placeBlock(Chunk* chunk, const BlockIndex& blockIndex, Block::Face face, Block::Type blockType)
+void ChunkManager::placeBlock(Chunk* chunk, BlockIndex blockIndex, Block::Face face, Block::Type blockType)
 {
   EN_ASSERT(chunk, "Chunk does not exist!");
   EN_ASSERT(!chunk->isEmpty(), "Place block cannot be called on an empty chunk!");
@@ -192,29 +208,26 @@ void ChunkManager::placeBlock(Chunk* chunk, const BlockIndex& blockIndex, Block:
 
   if (isBlockNeighborInAnotherChunk(blockIndex, face))
   {
-    Chunk* chunkNeighbor = getNeighbor(chunk, face);
+    chunk = getNeighbor(chunk, face);
 
-    if (!chunkNeighbor)
+    if (!chunk)
       return;
 
-    chunkNeighbor->setBlockType(blockIndex - static_cast<blockIndex_t>(Chunk::Size() - 1) * BlockIndex::OutwardNormal(face), blockType);
-    meshChunk(chunkNeighbor);
+    blockIndex -= static_cast<blockIndex_t>(Chunk::Size() - 1) * BlockIndex::OutwardNormal(face);
   }
   else
-    chunk->setBlockType(blockIndex + BlockIndex::OutwardNormal(face), blockType);
+    blockIndex += BlockIndex::OutwardNormal(face);
 
-  // NOTE: Fix this, should update more neighbors potentially.  Also, send chunk updates
-  meshChunk(chunk);
+  chunk->setBlockType(blockIndex, blockType);
+  sendBlockUpdate(chunk, blockIndex);
 }
 
 void ChunkManager::removeBlock(Chunk* chunk, const BlockIndex& blockIndex)
 {
-  chunk->setBlockType(blockIndex, Block::Type::Air);
+  EN_ASSERT(chunk->getBlockType(blockIndex) != Block::Type::Air, "Cannot remove air block!");
 
-  meshChunk(chunk);
-  for (Block::Face face : Block::FaceIterator())
-    if (isBlockNeighborInAnotherChunk(blockIndex, face) && getNeighbor(chunk, face) != nullptr)
-      meshChunk(getNeighbor(chunk, face));
+  chunk->setBlockType(blockIndex, Block::Type::Air);
+  sendBlockUpdate(chunk, blockIndex);
 }
 
 bool ChunkManager::isInRange(const GlobalIndex& chunkIndex, globalIndex_t range) const
@@ -275,22 +288,17 @@ std::vector<Chunk>::iterator ChunkManager::loadChunk(const GlobalIndex& chunkInd
 
   EN_ASSERT(std::is_sorted(m_BoundaryChunks.begin(), m_BoundaryChunks.end()), "Chunk was not correctly inserted!");
 
-  m_ChunksLoaded++;
-  return chunk;
-
-  // Flag neighbors for updating (TODO)
-  /*
+  // NOTE: Fix this, should update more neighbors potentially.
   for (Block::Face face : Block::FaceIterator())
   {
-    GlobalIndex neighborIndex = chunkIndex + GlobalIndex::OutwardNormal(face);
+    Chunk* neighbor = getNeighbor(chunk, face);
 
-    auto& [found, chunkNeighbor] = find(m_Chunks, neighborIndex);
-    if (found)
-    {
-
-    }
+    if (neighbor)
+      queueForUpdating(neighbor);
   }
-  */
+
+  m_ChunksLoaded++;
+  return chunk;
 }
 
 std::vector<Chunk>::iterator ChunkManager::unloadChunk(std::vector<Chunk>::iterator chunk)
@@ -309,17 +317,35 @@ std::vector<Chunk>::iterator ChunkManager::unloadChunk(std::vector<Chunk>::itera
       if (isIn(m_BoundaryChunks, chunkNeighbor))
         continue;
 
-      // Move chunk to m_BoundaryChunks
-      ChunkType source = chunkNeighbor->isEmpty() ? ChunkType::Empty : ChunkType::Renderable;
-      EN_ASSERT(isIn(m_Chunks[static_cast<int>(source)], chunkNeighbor), "Chunk is not of the correct type!");
-
-      moveToGroup(getIterator(chunkNeighbor, source), source, ChunkType::Boundary);
+      // NOTE: Fix this, should update more neighbors potentially.
+      queueForUpdating(chunkNeighbor);
     }
   }
 
   // Remove chunk from m_BoundaryChunks
   m_ChunksLoaded--;
   return m_BoundaryChunks.erase(chunk);
+}
+
+std::vector<Chunk>::iterator ChunkManager::updateChunk(std::vector<Chunk>::iterator chunk)
+{
+  EN_ASSERT(chunk != m_UpdateList.end(), "End of iterator!");
+
+  chunk->update();
+
+  if (isOnBoundary(chunk))
+    return moveToGroup(chunk, ChunkType::NeedsUpdate, ChunkType::Boundary);
+  else if (chunk->isEmpty())
+    return moveToGroup(chunk, ChunkType::NeedsUpdate, ChunkType::Empty);
+
+  meshChunk(chunk);
+  if (chunk->m_QuadCount == 0 && chunk->getBlockType(0, 0, 0) == Block::Type::Air)
+  {
+    chunk->clear();
+    return moveToGroup(chunk, ChunkType::NeedsUpdate, ChunkType::Empty);
+  }
+  else
+    return moveToGroup(chunk, ChunkType::NeedsUpdate, ChunkType::Renderable);
 }
 
 void ChunkManager::fillChunk(Chunk* chunk, const HeightMap* heightMap)
@@ -545,16 +571,30 @@ Chunk* ChunkManager::getNeighbor(Chunk* chunk, Block::Face face)
   return find(neighborIndex);
 }
 
-const Chunk* ChunkManager::getNeighbor(const Chunk* chunk, Block::Face face) const
+Chunk* ChunkManager::getNeighbor(Chunk* chunk, Block::Face faceA, Block::Face faceB)
 {
   EN_ASSERT(chunk, "Chunk does not exist!");
-  GlobalIndex neighborIndex = chunk->getGlobalIndex() + GlobalIndex::OutwardNormal(face);
+  GlobalIndex neighborIndex = chunk->getGlobalIndex() + GlobalIndex::OutwardNormal(faceA) + GlobalIndex::OutwardNormal(faceB);
+  return find(neighborIndex);
+}
+
+Chunk* ChunkManager::getNeighbor(Chunk* chunk, Block::Face faceA, Block::Face faceB, Block::Face faceC)
+{
+  EN_ASSERT(chunk, "Chunk does not exist!");
+  GlobalIndex neighborIndex = chunk->getGlobalIndex() + GlobalIndex::OutwardNormal(faceA) + GlobalIndex::OutwardNormal(faceB) + GlobalIndex::OutwardNormal(faceC);
   return find(neighborIndex);
 }
 
 Chunk* ChunkManager::getNeighbor(std::vector<Chunk>::iterator chunk, Block::Face face)
 {
   return getNeighbor(&(*chunk), face);
+}
+
+const Chunk* ChunkManager::getNeighbor(const Chunk* chunk, Block::Face face) const
+{
+  EN_ASSERT(chunk, "Chunk does not exist!");
+  GlobalIndex neighborIndex = chunk->getGlobalIndex() + GlobalIndex::OutwardNormal(face);
+  return find(neighborIndex);
 }
 
 bool ChunkManager::isOnBoundary(std::vector<Chunk>::iterator chunk) const
@@ -606,6 +646,16 @@ void ChunkManager::addToGroup(std::vector<Chunk>::iterator chunk, ChunkType dest
   m_Chunks[destinationTypeID].insert(std::lower_bound(m_Chunks[destinationTypeID].begin(), m_Chunks[destinationTypeID].end(), chunk->getGlobalIndex()), std::move(*chunk));
 }
 
+void ChunkManager::addToGroup(Chunk* chunk, ChunkType destination)
+{
+  int destinationTypeID = static_cast<int>(destination);
+
+  EN_ASSERT(chunk, "Chunk does not exist!");
+  EN_ASSERT(!isIn(m_Chunks[destinationTypeID], chunk), "Chunks of the destination type!");
+
+  m_Chunks[destinationTypeID].insert(std::lower_bound(m_Chunks[destinationTypeID].begin(), m_Chunks[destinationTypeID].end(), chunk->getGlobalIndex()), std::move(*chunk));
+}
+
 std::vector<Chunk>::iterator ChunkManager::moveToGroup(std::vector<Chunk>::iterator chunk, ChunkType source, ChunkType destination)
 {
   int sourceTypeID = static_cast<int>(source);
@@ -616,6 +666,18 @@ std::vector<Chunk>::iterator ChunkManager::moveToGroup(std::vector<Chunk>::itera
 
   addToGroup(chunk, destination);
   return m_Chunks[sourceTypeID].erase(chunk);
+}
+
+void ChunkManager::moveToGroup(Chunk* chunk, ChunkType source, ChunkType destination)
+{
+  int sourceTypeID = static_cast<int>(source);
+  int destinationTypeID = static_cast<int>(destination);
+
+  EN_ASSERT(chunk, "Chunk does not exist!");
+  EN_ASSERT(sourceTypeID != destinationTypeID, "Source and destination are the same!");
+
+  addToGroup(chunk, destination);
+  m_Chunks[sourceTypeID].erase(getIterator(chunk, source));
 }
 
 std::vector<Chunk>::iterator ChunkManager::getIterator(const Chunk* chunk, ChunkType source)
@@ -631,4 +693,91 @@ std::vector<Chunk>::iterator ChunkManager::getIterator(const Chunk* chunk, Chunk
 #else
   return std::lower_bound(m_Chunks[sourceTypeID].begin(), m_Chunks[sourceTypeID].end(), chunk->getGlobalIndex());
 #endif
+}
+
+ChunkManager::ChunkType ChunkManager::getChunkType(const Chunk* chunk)
+{
+  EN_ASSERT(chunk, "Chunk does not exist");
+
+  for (auto chunkGroup = m_Chunks.begin(); chunkGroup != m_Chunks.end(); ++chunkGroup)
+    if (isIn(*chunkGroup, chunk))
+    {
+      ptrdiff_t chunkGroupIndex = chunkGroup - m_Chunks.begin();
+      return static_cast<ChunkType>(chunkGroupIndex);
+    }
+
+  EN_ERROR("Could not find chunk!");
+  return ChunkType::Error;
+}
+
+void ChunkManager::queueForUpdating(Chunk* chunk)
+{
+  EN_ASSERT(chunk, "Chunk does not exist!");
+
+  ChunkType type = getChunkType(chunk);
+  if (type != ChunkType::NeedsUpdate && type != ChunkType::Boundary)
+    moveToGroup(chunk, type, ChunkType::NeedsUpdate);
+}
+
+void ChunkManager::updateImmediately(Chunk* chunk)
+{
+  EN_ASSERT(chunk, "Chunk does not exist!");
+
+  GlobalIndex chunkIndex = chunk->getGlobalIndex();
+
+  ChunkType type = getChunkType(chunk);
+  if (type == ChunkType::NeedsUpdate)
+    updateChunk(getIterator(chunk, type));
+  else if (type == ChunkType::Boundary)
+    return;
+  else
+  {
+    queueForUpdating(chunk);
+    auto it = std::lower_bound(m_UpdateList.begin(), m_UpdateList.end(), chunkIndex);
+    EN_ASSERT(it != m_UpdateList.end() && it->getGlobalIndex() == chunkIndex, "Chunk is not in update list!");
+    updateChunk(it);
+  }
+}
+
+void ChunkManager::sendBlockUpdate(Chunk* chunk, const BlockIndex& blockIndex)
+{
+  updateImmediately(chunk);
+
+  std::vector<Block::Face> updateDirections{};
+  for (Block::Face face : Block::FaceIterator())
+    if (isBlockNeighborInAnotherChunk(blockIndex, face))
+      updateDirections.push_back(face);
+
+  EN_ASSERT(updateDirections.size() <= 3, "Too many update directions!");
+
+  // Update neighbors in cardinal directions
+  for (Block::Face face : updateDirections)
+  {
+    Chunk* neighbor = getNeighbor(chunk, face);
+    if (neighbor)
+      updateImmediately(neighbor);
+  }
+
+  // Queue edge neighbor for updating
+  if (updateDirections.size() == 2)
+  {
+    Chunk* edgeNeighbor = getNeighbor(chunk, updateDirections[0], updateDirections[1]);
+    if (edgeNeighbor)
+      queueForUpdating(edgeNeighbor);
+  }
+
+  // Queue edge/corner neighbors for updating
+  if (updateDirections.size() == 3)
+  {
+    for (int i = 0; i < 3; ++i)
+    {
+      Chunk* edgeNeighbor = getNeighbor(chunk, updateDirections[i], updateDirections[(i + 1) % 3]);
+      if (edgeNeighbor)
+        queueForUpdating(edgeNeighbor);
+    }
+
+    Chunk* cornerNeighbor = getNeighbor(chunk, updateDirections[0], updateDirections[1], updateDirections[2]);
+    if (cornerNeighbor)
+      queueForUpdating(cornerNeighbor);
+  }
 }

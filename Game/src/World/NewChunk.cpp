@@ -18,11 +18,7 @@ Chunk::Chunk(const GlobalIndex& chunkIndex)
 
 Chunk::~Chunk()
 {
-  if (m_Composition)
-  {
-    delete[] m_Composition;
-    m_Composition = nullptr;
-  }
+  clear();
 }
 
 Chunk::Chunk(Chunk&& other) noexcept
@@ -74,19 +70,6 @@ Block::Type Chunk::getBlockType(const BlockIndex& blockIndex) const
   return getBlockType(blockIndex.i, blockIndex.j, blockIndex.k);
 }
 
-void Chunk::draw() const
-{
-  uint32_t meshIndexCount = 6 * static_cast<uint32_t>(m_QuadCount);
-
-  if (meshIndexCount == 0)
-    return; // Nothing to draw
-
-  Uniforms uniforms{};
-  uniforms.anchorPosition = anchorPosition();
-
-  Engine::Renderer::DrawMesh(m_VertexArray.get(), meshIndexCount, s_UniformBuffer.get(), uniforms);
-}
-
 void Chunk::Initialize(const Shared<Engine::TextureArray>& textureArray)
 {
   constexpr uint32_t maxIndices = 6 * 6 * TotalBlocks();
@@ -124,13 +107,12 @@ void Chunk::BindBuffers()
 
 void Chunk::setBlockType(blockIndex_t i, blockIndex_t j, blockIndex_t k, Block::Type blockType)
 {
-  EN_ASSERT(m_Composition, "Chunk data has not yet been allocated!");
   EN_ASSERT(0 <= i && i < Chunk::Size() && 0 <= j && j < Chunk::Size() && 0 <= k && k < Chunk::Size(), "Index is out of bounds!");
 
   if (isEmpty())
   {
     m_Composition = new Block::Type[Chunk::TotalBlocks()];
-    for (blockIndex_t i = 0; i < Chunk::TotalBlocks(); ++i)
+    for (int i = 0; i < Chunk::TotalBlocks(); ++i)
       m_Composition[i] = Block::Type::Air;
   }
 
@@ -190,6 +172,38 @@ void Chunk::determineOpacity()
   nextFace:;
   }
 }
+
+void Chunk::update()
+{
+  if (!isEmpty())
+    determineOpacity();
+  else
+    m_NonOpaqueFaces = 0x3F;
+}
+
+void Chunk::draw() const
+{
+  uint32_t meshIndexCount = 6 * static_cast<uint32_t>(m_QuadCount);
+
+  if (meshIndexCount == 0)
+    return; // Nothing to draw
+
+  Uniforms uniforms{};
+  uniforms.anchorPosition = anchorPosition();
+
+  Engine::Renderer::DrawMesh(m_VertexArray.get(), meshIndexCount, s_UniformBuffer.get(), uniforms);
+}
+
+void Chunk::clear()
+{
+  if (m_Composition)
+  {
+    delete[] m_Composition;
+    m_Composition = nullptr;
+  }
+}
+
+
 
 HeightMap::HeightMap(globalIndex_t chunkI, globalIndex_t chunkJ)
   : chunkI(chunkI), chunkJ(chunkJ), maxHeight(-std::numeric_limits<length_t>::infinity())

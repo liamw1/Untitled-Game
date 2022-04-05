@@ -18,6 +18,8 @@ public:
   */
   bool loadNewChunks(int maxNewChunks);
 
+  bool updateChunks(int maxUpdates);
+
   /*
     Unloads chunks on boundary as they go out of unload range.
   */
@@ -31,7 +33,7 @@ public:
   const Chunk* find(const LocalIndex& chunkIndex) const;
 
   bool isBlockNeighborAir(const Chunk* chunk, const BlockIndex& blockIndex, Block::Face face) const;
-  void placeBlock(Chunk* chunk, const BlockIndex& blockIndex, Block::Face face, Block::Type blockType);
+  void placeBlock(Chunk* chunk, BlockIndex blockIndex, Block::Face face, Block::Type blockType);
   void removeBlock(Chunk* chunk, const BlockIndex& blockIndex);
 
 private:
@@ -40,8 +42,9 @@ private:
     Boundary = 0,
     Empty,
     Renderable,
+    NeedsUpdate,
 
-    First = Boundary, Last = Renderable
+    Error
   };
 
   enum class FrustumPlane : int
@@ -57,10 +60,11 @@ private:
   static constexpr int s_UnloadDistance = s_LoadDistance;
 
   std::vector<HeightMap> m_HeightMaps;
-  std::array<std::vector<Chunk>, 3> m_Chunks;
+  std::array<std::vector<Chunk>, 4> m_Chunks;
   std::vector<Chunk>& m_EmptyChunks = m_Chunks[static_cast<int>(ChunkType::Empty)];
   std::vector<Chunk>& m_BoundaryChunks = m_Chunks[static_cast<int>(ChunkType::Boundary)];
   std::vector<Chunk>& m_RenderableChunks = m_Chunks[static_cast<int>(ChunkType::Renderable)];
+  std::vector<Chunk>& m_UpdateList = m_Chunks[static_cast<int>(ChunkType::NeedsUpdate)];
 
   int m_ChunksLoaded = 0;
 
@@ -101,6 +105,8 @@ private:
   */
   std::vector<Chunk>::iterator unloadChunk(std::vector<Chunk>::iterator chunk);
 
+  std::vector<Chunk>::iterator updateChunk(std::vector<Chunk>::iterator chunk);
+
   void fillChunk(Chunk* chunk, const HeightMap* heightMap);
   void fillChunk(std::vector<Chunk>::iterator chunk, const HeightMap* heightMap);
 
@@ -121,6 +127,8 @@ private:
   void meshChunk(std::vector<Chunk>::iterator chunk);
 
   Chunk* getNeighbor(Chunk* chunk, Block::Face face);
+  Chunk* getNeighbor(Chunk* chunk, Block::Face faceA, Block::Face faceB);
+  Chunk* getNeighbor(Chunk* chunk, Block::Face faceA, Block::Face faceB, Block::Face faceC);
   Chunk* getNeighbor(std::vector<Chunk>::iterator chunk, Block::Face face);
   const Chunk* getNeighbor(const Chunk* chunk, Block::Face face) const;
 
@@ -132,6 +140,7 @@ private:
   const Chunk* find(const GlobalIndex& chunkIndex) const;
 
   void addToGroup(std::vector<Chunk>::iterator chunk, ChunkType destination);
+  void addToGroup(Chunk* chunk, ChunkType destination);
 
   /*
     Moves chunk from one grouping to another.
@@ -142,6 +151,15 @@ private:
     \returns A valid iterator in source grouping.
   */
   std::vector<Chunk>::iterator moveToGroup(std::vector<Chunk>::iterator chunk, ChunkType source, ChunkType destination);
+  void moveToGroup(Chunk* chunk, ChunkType source, ChunkType destination);
 
   std::vector<Chunk>::iterator getIterator(const Chunk* chunk, ChunkType source);
+
+  ChunkType getChunkType(const Chunk* chunk);
+
+  void queueForUpdating(Chunk* chunk);
+
+  void updateImmediately(Chunk* chunk);
+
+  void sendBlockUpdate(Chunk* chunk, const BlockIndex& blockIndex);
 };

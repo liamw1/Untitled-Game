@@ -42,6 +42,8 @@ void World::onUpdate(Timestep timestep)
 
   playerWorldInteraction();
   Engine::Renderer::EndScene();
+
+  m_ChunkManager.updateChunks(200);
 }
 
 RayIntersection World::castRaySegment(const Vec3& pointA, const Vec3& pointB) const

@@ -2,7 +2,6 @@
 #include "RendererAPI.h"
 #include "Shader.h"
 #include "Texture.h"
-#include "Engine/Scene/Components.h"
 #include "Engine/Renderer/UniformBuffer.h"
 
 /*
