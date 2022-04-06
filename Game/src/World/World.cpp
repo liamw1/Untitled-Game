@@ -29,7 +29,7 @@ void World::onUpdate(Timestep timestep)
     // m_ChunkManager.manageLODs();
     // m_ChunkManager.renderLODs();
     // Engine::RenderCommand::ClearDepthBuffer();
-    m_ChunkManager.loadNewChunks(20);
+    m_ChunkManager.loadNewChunks(100);
     m_ChunkManager.render();
     m_ChunkManager.clean();
   }
@@ -43,7 +43,7 @@ void World::onUpdate(Timestep timestep)
   playerWorldInteraction();
   Engine::Renderer::EndScene();
 
-  m_ChunkManager.updateChunks(200);
+  m_ChunkManager.updateChunks(100);
 }
 
 RayIntersection World::castRaySegment(const Vec3& pointA, const Vec3& pointB) const

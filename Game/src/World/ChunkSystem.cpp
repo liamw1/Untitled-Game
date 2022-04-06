@@ -3,45 +3,20 @@
 #include "Player/Player.h"
 #include <iostream>
 
-static constexpr int s = sizeof(Chunk);
-
-template<typename T>
-static bool isIn(const std::vector<T>& arr, const T* element)
+ChunkManager::ChunkManager()
 {
-#if GM_EXPERIMENTAL
-  if (arr.begin() == arr.end())
-    return false;
+  m_ChunkArray = new Chunk[s_MaxChunks];
 
-  const T* arrBegin = &(*arr.begin());
-  const T* arrEnd = &*(arr.end() - 1);
-
-  return element >= arrBegin && element <= arrEnd;
-#else
-  return std::binary_search(arr.begin(), arr.end(), *element);
-#endif
+  m_OpenChunkSlots.reserve(s_MaxChunks);
+  for (int i = 0; i < s_MaxChunks; ++i)
+    m_OpenChunkSlots.push_back(i);
 }
 
-template<typename T>
-static bool isIn(const std::vector<T>& arr, const GlobalIndex& chunkIndex)
+ChunkManager::~ChunkManager()
 {
-  return std::binary_search(arr.begin(), arr.end(), chunkIndex);
+  delete[] m_ChunkArray;
+  m_ChunkArray = nullptr;
 }
-
-template<typename T>
-static T* findIn(std::vector<T>& arr, const GlobalIndex& chunkIndex)
-{
-  auto it = std::lower_bound(arr.begin(), arr.end(), chunkIndex);
-  return it == arr.end() || (*it != chunkIndex) ? nullptr : &(*it);
-}
-
-template<typename T>
-static const T* findIn(const std::vector<T>& arr, const GlobalIndex& chunkIndex)
-{
-  auto it = std::lower_bound(arr.begin(), arr.end(), chunkIndex);
-  return it == arr.end() || (*it != chunkIndex) ? nullptr : &(*it);
-}
-
-
 
 void ChunkManager::initialize()
 {
@@ -74,51 +49,80 @@ void ChunkManager::render() const
 
   // Render chunks in view frustum
   Chunk::BindBuffers();
-  for (const Chunk& chunk : m_RenderableChunks)
-    if (isInRange(chunk.getGlobalIndex(), s_RenderDistance))
-      if (isInFrustum(chunk.center(), frustumPlanes))
-        chunk.draw();
-  for (const Chunk& chunk : m_UpdateList)
-    if (!chunk.isEmpty() && isInRange(chunk.getGlobalIndex(), s_RenderDistance))
-      if (isInFrustum(chunk.center(), frustumPlanes))
-        chunk.draw();
+  for (const auto& [key, chunk] : m_RenderableChunks)
+    if (isInRange(chunk->getGlobalIndex(), s_RenderDistance))
+      if (isInFrustum(chunk->center(), frustumPlanes))
+        chunk->draw();
+  for (const auto& [key, chunk] : m_UpdateList)
+    if (!chunk->isEmpty() && isInRange(chunk->getGlobalIndex(), s_RenderDistance))
+      if (isInFrustum(chunk->center(), frustumPlanes))
+        chunk->draw();
 }
 
 bool ChunkManager::loadNewChunks(int maxNewChunks)
 {
   EN_PROFILE_FUNCTION();
 
+  // If there are no open chunk slots, don't load any more
+  if (m_OpenChunkSlots.size() == 0)
+    return false;
+
   // Load First chunk if none exist
   if (m_ChunksLoaded == 0)
     loadChunk(Player::OriginIndex());
 
   // Find new chunks to generate
-  int newChunks = 0;
-  for (auto chunk = m_BoundaryChunks.begin(); chunk != m_BoundaryChunks.end(); ++chunk)
+  std::vector<GlobalIndex> newChunks{};
+  for (auto it = m_BoundaryChunks.begin(); it != m_BoundaryChunks.end(); ++it)
+  {
+    const Chunk* chunk = it->second;
+
     for (Block::Face face : Block::FaceIterator())
     {
       GlobalIndex neighborIndex = chunk->getGlobalIndex() + GlobalIndex::OutwardNormal(face);
       if (isInRange(neighborIndex, s_LoadDistance))
         if (!isLoaded(neighborIndex) && !chunk->isFaceOpaque(face))
-        {
-          chunk = loadChunk(neighborIndex);
-          newChunks++;
-        }
+          newChunks.push_back(neighborIndex);
 
-      if (newChunks >= maxNewChunks)
+      if (newChunks.size() >= maxNewChunks)
         break;
     }
-
-  // Move chunks out of m_BoundaryChunks when all their neighbors are accounted for
-  for (auto chunk = m_BoundaryChunks.begin(); chunk != m_BoundaryChunks.end();)
-  {
-    if (!isOnBoundary(chunk))
-      chunk = moveToGroup(chunk, ChunkType::Boundary, ChunkType::NeedsUpdate);
-    else
-      ++chunk;
   }
 
-  return newChunks;
+  // Load newly found chunks
+  for (const GlobalIndex& newChunkIndex : newChunks)
+  {
+    if (!isLoaded(newChunkIndex))
+      loadChunk(newChunkIndex);
+
+    // If there are no open chunk slots, don't load any more
+    if (m_OpenChunkSlots.size() == 0)
+      break;
+  }
+
+  // Move chunks out of m_BoundaryChunks when all their neighbors are accounted for
+  for (auto it = m_BoundaryChunks.begin(); it != m_BoundaryChunks.end();)
+  {
+    const Chunk* chunk = it->second;
+
+    if (!isOnBoundary(chunk))
+    {
+      for (int i = -1; i <= 1; ++i)
+        for (int j = -1; j <= 1; ++j)
+          for (int k = -1; k <= 1; ++k)
+          {
+            Chunk* neighbor = find(chunk->getGlobalIndex() + GlobalIndex(i, j, k));
+            if (neighbor && neighbor != chunk)
+              queueForUpdating(neighbor);
+          }
+
+      it = moveToGroup(it, ChunkType::Boundary, ChunkType::NeedsUpdate);
+    }
+    else
+      ++it;
+  }
+
+  return newChunks.size();
 }
 
 bool ChunkManager::updateChunks(int maxUpdates)
@@ -126,13 +130,10 @@ bool ChunkManager::updateChunks(int maxUpdates)
   EN_PROFILE_FUNCTION();
 
   int updatedChunks = 0;
-  auto chunk = m_UpdateList.begin();
-  while (chunk != m_UpdateList.end())
+  while (m_UpdateList.begin() != m_UpdateList.end() && updatedChunks <= maxUpdates)
   {
-    chunk = updateChunk(chunk);
+    updateChunk(m_UpdateList.begin());
     updatedChunks++;
-    if (updatedChunks >= maxUpdates)
-      break;
   }
 
   return updatedChunks > 0;
@@ -143,18 +144,31 @@ void ChunkManager::clean()
   EN_PROFILE_FUNCTION();
 
   // Destroy boundary chunks outside of unload range
-  for (auto chunk = m_BoundaryChunks.begin(); chunk != m_BoundaryChunks.end();)
+  std::vector<GlobalIndex> unloadedChunks{};
+  for (auto it = m_BoundaryChunks.begin(); it != m_BoundaryChunks.end();)
+  {
+    const Chunk* chunk = it->second;
     if (!isInRange(chunk->getGlobalIndex(), s_UnloadDistance))
-      chunk = unloadChunk(chunk);
+    {
+      unloadedChunks.push_back(chunk->getGlobalIndex());
+      it = unloadChunk(it);
+    }
     else
-      ++chunk;
+      ++it;
+  }
+
+  for (const GlobalIndex& index : unloadedChunks)
+    unloadUpdate(index);
 
   // Destroy heightmaps outside of unload range
-  for (auto heightMap = m_HeightMaps.begin(); heightMap != m_HeightMaps.end();)
-    if (!isInRange(GlobalIndex(heightMap->chunkI, heightMap->chunkJ, Player::OriginIndex().k), s_UnloadDistance))
-      heightMap = m_HeightMaps.erase(heightMap);
+  for (auto it = m_HeightMaps.begin(); it != m_HeightMaps.end();)
+  {
+    const HeightMap& heightMap = it->second;
+    if (!isInRange(GlobalIndex(heightMap.chunkI, heightMap.chunkJ, Player::OriginIndex().k), s_UnloadDistance))
+      it = m_HeightMaps.erase(it);
     else
-      ++heightMap;
+      ++it;
+  }
 }
 
 Chunk* ChunkManager::find(const LocalIndex& chunkIndex)
@@ -230,6 +244,16 @@ void ChunkManager::removeBlock(Chunk* chunk, const BlockIndex& blockIndex)
   sendBlockUpdate(chunk, blockIndex);
 }
 
+int ChunkManager::createKey(const GlobalIndex& chunkIndex) const
+{
+  return chunkIndex.i % bitUi32(10) + bitUi32(10) * (chunkIndex.j % bitUi32(10)) + bitUi32(20) * (chunkIndex.k % bitUi32(10));
+}
+
+int ChunkManager::createHeightMapKey(globalIndex_t chunkI, globalIndex_t chunkJ) const
+{
+  return createKey(GlobalIndex(chunkI, chunkJ, 0));
+}
+
 bool ChunkManager::isInRange(const GlobalIndex& chunkIndex, globalIndex_t range) const
 {
   for (int i = 0; i < 3; ++i)
@@ -265,95 +289,102 @@ bool ChunkManager::isInFrustum(const Vec3& point, const std::array<Vec4, 6>& fru
   return true;
 }
 
-std::vector<Chunk>::iterator ChunkManager::loadChunk(const GlobalIndex& chunkIndex)
+ChunkManager::ChunkMapIterator ChunkManager::loadChunk(const GlobalIndex& chunkIndex)
 {
-  EN_PROFILE_FUNCTION();
-
+  EN_ASSERT(m_OpenChunkSlots.size() > 0, "All chunks slots are full!");
   EN_ASSERT(!isLoaded(chunkIndex), "Chunk is already loaded!");
 
   // Generate heightmap is none exists
-  HeightMap* heightMap = findIn(m_HeightMaps, chunkIndex);
-  if (!heightMap)
+  int heightMapKey = createHeightMapKey(chunkIndex.i, chunkIndex.j);
+  auto it = m_HeightMaps.find(heightMapKey);
+  if (it == m_HeightMaps.end())
   {
-    auto insertionPosition = std::lower_bound(m_HeightMaps.begin(), m_HeightMaps.end(), chunkIndex);
-    heightMap = &(*m_HeightMaps.emplace(insertionPosition, chunkIndex.i, chunkIndex.j));
-    EN_ASSERT(std::is_sorted(m_HeightMaps.begin(), m_HeightMaps.end()), "Height map was not correctly inserted");
+    auto [insertionPosition, insertionSuccess] = m_HeightMaps.emplace(heightMapKey, chunkIndex);
+    it = insertionPosition;
+    EN_ASSERT(insertionSuccess, "HeightMap insertion failed!");
   }
-  EN_ASSERT(heightMap, "Heightmap was not found!");
+  const HeightMap& heightMap = it->second;
+
+  // Grab first open chunk slot
+  int chunkSlot = m_OpenChunkSlots.back();
+  m_OpenChunkSlots.pop_back();
 
   // Insert chunk into array and load it
-  auto insertionPosition = std::lower_bound(m_BoundaryChunks.begin(), m_BoundaryChunks.end(), chunkIndex);
-  auto chunk = m_BoundaryChunks.emplace(insertionPosition, chunkIndex);
-  fillChunk(chunk, heightMap);
-
-  EN_ASSERT(std::is_sorted(m_BoundaryChunks.begin(), m_BoundaryChunks.end()), "Chunk was not correctly inserted!");
-
-  // NOTE: Fix this, should update more neighbors potentially.
-  for (Block::Face face : Block::FaceIterator())
-  {
-    Chunk* neighbor = getNeighbor(chunk, face);
-
-    if (neighbor)
-      queueForUpdating(neighbor);
-  }
-
+  m_ChunkArray[chunkSlot] = std::move(Chunk(chunkIndex));
+  Chunk* newChunk = &m_ChunkArray[chunkSlot];
+  auto [insertionPosition, insertionSuccess] = m_BoundaryChunks.insert({ createKey(chunkIndex), newChunk });
+  EN_ASSERT(insertionSuccess, "Chunk insertion failed!");
+  fillChunk(newChunk, heightMap);
   m_ChunksLoaded++;
-  return chunk;
+
+  return insertionPosition;
 }
 
-std::vector<Chunk>::iterator ChunkManager::unloadChunk(std::vector<Chunk>::iterator chunk)
+ChunkManager::ChunkMapIterator ChunkManager::unloadChunk(ChunkMapIterator erasePosition)
 {
-  EN_PROFILE_FUNCTION();
+  EN_ASSERT(erasePosition != m_BoundaryChunks.end(), "End of iterator!");
 
-  EN_ASSERT(isIn(m_BoundaryChunks, &(*chunk)), "Chunk is not a boundary chunk!");
+  const Chunk* chunk = erasePosition->second;
 
+  // Open up chunk slot
+  const int index = static_cast<int>(chunk - &m_ChunkArray[0]);
+  EN_ASSERT(&m_ChunkArray[index] == chunk, "Calculated index does not correspond to given pointer!");
+  m_OpenChunkSlots.push_back(index);
+
+  // Delete chunk data
+  m_ChunkArray[index].reset();
+
+  m_ChunksLoaded--;
+  return m_BoundaryChunks.erase(erasePosition);
+}
+
+void ChunkManager::unloadUpdate(const GlobalIndex& chunkIndex)
+{
   // Move neighbors to m_BoundaryChunks
   for (Block::Face face : Block::FaceIterator())
   {
-    Chunk* chunkNeighbor = getNeighbor(chunk, face);
-    if (chunkNeighbor)
-    {
-      // Check if chunk is already in m_BoundaryChunk.  If so, skip it
-      if (isIn(m_BoundaryChunks, chunkNeighbor))
-        continue;
+    Chunk* neighbor = find(chunkIndex + GlobalIndex::OutwardNormal(face));
 
-      // NOTE: Fix this, should update more neighbors potentially.
-      queueForUpdating(chunkNeighbor);
+    if (neighbor)
+    {
+      ChunkType type = getChunkType(neighbor);
+
+      if (type != ChunkType::Boundary)
+        moveToGroup(neighbor, type, ChunkType::Boundary);
     }
   }
-
-  // Remove chunk from m_BoundaryChunks
-  m_ChunksLoaded--;
-  return m_BoundaryChunks.erase(chunk);
 }
 
-std::vector<Chunk>::iterator ChunkManager::updateChunk(std::vector<Chunk>::iterator chunk)
+ChunkManager::ChunkMapIterator ChunkManager::updateChunk(ChunkMapIterator iteratorPosition)
 {
-  EN_ASSERT(chunk != m_UpdateList.end(), "End of iterator!");
+  EN_ASSERT(iteratorPosition != m_UpdateList.end(), "End of iterator!");
 
+  Chunk* chunk = iteratorPosition->second;
   chunk->update();
 
-  if (isOnBoundary(chunk))
-    return moveToGroup(chunk, ChunkType::NeedsUpdate, ChunkType::Boundary);
-  else if (chunk->isEmpty())
-    return moveToGroup(chunk, ChunkType::NeedsUpdate, ChunkType::Empty);
+  if (chunk->isEmpty())
+    return moveToGroup(iteratorPosition, ChunkType::NeedsUpdate, ChunkType::Empty);
 
   meshChunk(chunk);
   if (chunk->m_QuadCount == 0 && chunk->getBlockType(0, 0, 0) == Block::Type::Air)
   {
     chunk->clear();
-    return moveToGroup(chunk, ChunkType::NeedsUpdate, ChunkType::Empty);
+    return moveToGroup(iteratorPosition, ChunkType::NeedsUpdate, ChunkType::Empty);
   }
   else
-    return moveToGroup(chunk, ChunkType::NeedsUpdate, ChunkType::Renderable);
+    return moveToGroup(iteratorPosition, ChunkType::NeedsUpdate, ChunkType::Renderable);
 }
 
-void ChunkManager::fillChunk(Chunk* chunk, const HeightMap* heightMap)
+void ChunkManager::fillChunk(Chunk* chunk, const HeightMap& heightMap)
 {
+  EN_ASSERT(chunk, "Chunk does not exist!");
+
   length_t chunkFloor = Chunk::Length() * chunk->getGlobalIndex().k;
   length_t chunkCeiling = chunkFloor + Chunk::Length();
 
-  if (chunkFloor > heightMap->maxHeight)
+  chunk->m_NonOpaqueFaces = 0x3F;
+
+  if (chunkFloor > heightMap.maxHeight)
     return;
 
   Block::Type* chunkComposition = new Block::Type[Chunk::TotalBlocks()];
@@ -367,8 +398,8 @@ void ChunkManager::fillChunk(Chunk* chunk, const HeightMap* heightMap)
   for (blockIndex_t i = 0; i < Chunk::Size(); ++i)
     for (blockIndex_t j = 0; j < Chunk::Size(); ++j)
     {
-      const length_t& terrainHeight = heightMap->surfaceData[i][j].getHeight();
-      const Block::Type& surfaceBlockType = heightMap->surfaceData[i][j].getPrimaryBlockType();
+      const length_t& terrainHeight = heightMap.surfaceData[i][j].getHeight();
+      const Block::Type& surfaceBlockType = heightMap.surfaceData[i][j].getPrimaryBlockType();
 
       if (terrainHeight < chunkFloor)
       {
@@ -409,11 +440,6 @@ void ChunkManager::fillChunk(Chunk* chunk, const HeightMap* heightMap)
   }
   else
     chunk->setData(chunkComposition);
-}
-
-void ChunkManager::fillChunk(std::vector<Chunk>::iterator chunk, const HeightMap* heightMap)
-{
-  fillChunk(&(*chunk), heightMap);
 }
 
 static bool blockIsOnChunkBorder(const BlockIndex& blockIndex)
@@ -559,11 +585,6 @@ void ChunkManager::meshChunk(Chunk* chunk)
   chunk->setMesh(meshData, quadCount);
 }
 
-void ChunkManager::meshChunk(std::vector<Chunk>::iterator chunk)
-{
-  meshChunk(&(*chunk));
-}
-
 Chunk* ChunkManager::getNeighbor(Chunk* chunk, Block::Face face)
 {
   EN_ASSERT(chunk, "Chunk does not exist!");
@@ -585,11 +606,6 @@ Chunk* ChunkManager::getNeighbor(Chunk* chunk, Block::Face faceA, Block::Face fa
   return find(neighborIndex);
 }
 
-Chunk* ChunkManager::getNeighbor(std::vector<Chunk>::iterator chunk, Block::Face face)
-{
-  return getNeighbor(&(*chunk), face);
-}
-
 const Chunk* ChunkManager::getNeighbor(const Chunk* chunk, Block::Face face) const
 {
   EN_ASSERT(chunk, "Chunk does not exist!");
@@ -597,7 +613,7 @@ const Chunk* ChunkManager::getNeighbor(const Chunk* chunk, Block::Face face) con
   return find(neighborIndex);
 }
 
-bool ChunkManager::isOnBoundary(std::vector<Chunk>::iterator chunk) const
+bool ChunkManager::isOnBoundary(const Chunk* chunk) const
 {
   // Cardinal neighbors
   for (Block::Face face : Block::FaceIterator())
@@ -609,63 +625,55 @@ bool ChunkManager::isOnBoundary(std::vector<Chunk>::iterator chunk) const
 
 bool ChunkManager::isLoaded(const GlobalIndex& chunkIndex) const
 {
-  for (const std::vector<Chunk>& chunkGroup : m_Chunks)
-    if (isIn(chunkGroup, chunkIndex))
+  for (const ChunkMap& chunkGroup : m_Chunks)
+    if (chunkGroup.find(createKey(chunkIndex)) != chunkGroup.end())
       return true;
   return false;
 }
 
 Chunk* ChunkManager::find(const GlobalIndex& chunkIndex)
 {
-  for (std::vector<Chunk>& chunkGroup : m_Chunks)
+  for (ChunkMap& chunkGroup : m_Chunks)
   {
-    Chunk* chunk = findIn(chunkGroup, chunkIndex);
-    if (chunk)
-      return chunk;
+    auto it = chunkGroup.find(createKey(chunkIndex));
+
+    if (it != chunkGroup.end())
+      return it->second;
   }
   return nullptr;
 }
 
 const Chunk* ChunkManager::find(const GlobalIndex& chunkIndex) const
 {
-  for (const std::vector<Chunk>& chunkGroup : m_Chunks)
+  for (const ChunkMap& chunkGroup : m_Chunks)
   {
-    const Chunk* chunk = findIn(chunkGroup, chunkIndex);
-    if (chunk)
-      return chunk;
+    auto it = chunkGroup.find(createKey(chunkIndex));
+
+    if (it != chunkGroup.end())
+      return it->second;
   }
   return nullptr;
-}
-
-void ChunkManager::addToGroup(std::vector<Chunk>::iterator chunk, ChunkType destination)
-{
-  int destinationTypeID = static_cast<int>(destination);
-
-  EN_ASSERT(!isIn(m_Chunks[destinationTypeID], &(*chunk)), "Chunks of the destination type!");
-
-  m_Chunks[destinationTypeID].insert(std::lower_bound(m_Chunks[destinationTypeID].begin(), m_Chunks[destinationTypeID].end(), chunk->getGlobalIndex()), std::move(*chunk));
 }
 
 void ChunkManager::addToGroup(Chunk* chunk, ChunkType destination)
 {
   int destinationTypeID = static_cast<int>(destination);
+  EN_ASSERT(m_Chunks[destinationTypeID].find(createKey(chunk->getGlobalIndex())) == m_Chunks[destinationTypeID].end(), "Chunk is of the destination type!");
 
-  EN_ASSERT(chunk, "Chunk does not exist!");
-  EN_ASSERT(!isIn(m_Chunks[destinationTypeID], chunk), "Chunks of the destination type!");
-
-  m_Chunks[destinationTypeID].insert(std::lower_bound(m_Chunks[destinationTypeID].begin(), m_Chunks[destinationTypeID].end(), chunk->getGlobalIndex()), std::move(*chunk));
+  m_Chunks[destinationTypeID].insert({ createKey(chunk->getGlobalIndex()), chunk });
 }
 
-std::vector<Chunk>::iterator ChunkManager::moveToGroup(std::vector<Chunk>::iterator chunk, ChunkType source, ChunkType destination)
+ChunkManager::ChunkMapIterator ChunkManager::moveToGroup(ChunkMapIterator iteratorPosition, ChunkType source, ChunkType destination)
 {
   int sourceTypeID = static_cast<int>(source);
   int destinationTypeID = static_cast<int>(destination);
 
   EN_ASSERT(sourceTypeID != destinationTypeID, "Source and destination are the same!");
-  EN_ASSERT(chunk != m_Chunks[sourceTypeID].end(), "End of iterator!");
+  EN_ASSERT(iteratorPosition != m_Chunks[sourceTypeID].end(), "End of iterator!");
+  EN_ASSERT(!(source == ChunkType::Boundary && destination != ChunkType::NeedsUpdate), "Boundary chunks can only be moved to update list!");
 
-  addToGroup(chunk, destination);
-  return m_Chunks[sourceTypeID].erase(chunk);
+  addToGroup(iteratorPosition->second, destination);
+  return m_Chunks[sourceTypeID].erase(iteratorPosition);
 }
 
 void ChunkManager::moveToGroup(Chunk* chunk, ChunkType source, ChunkType destination)
@@ -675,24 +683,10 @@ void ChunkManager::moveToGroup(Chunk* chunk, ChunkType source, ChunkType destina
 
   EN_ASSERT(chunk, "Chunk does not exist!");
   EN_ASSERT(sourceTypeID != destinationTypeID, "Source and destination are the same!");
+  EN_ASSERT(!(source == ChunkType::Boundary && destination != ChunkType::NeedsUpdate), "Boundary chunks can only be moved to update list!");
 
   addToGroup(chunk, destination);
-  m_Chunks[sourceTypeID].erase(getIterator(chunk, source));
-}
-
-std::vector<Chunk>::iterator ChunkManager::getIterator(const Chunk* chunk, ChunkType source)
-{
-  int sourceTypeID = static_cast<int>(source);
-
-  EN_ASSERT(chunk, "No chunk exists!");
-  EN_ASSERT(isIn(m_Chunks[sourceTypeID], chunk), "Chunk is not of source type!");
-
-#if GM_EXPERIMENTAL
-  intptr_t arrayIndex = (chunk - &(*m_Chunks[static_cast<int>(source)].begin()));
-  return m_Chunks[sourceTypeID].begin() + arrayIndex;
-#else
-  return std::lower_bound(m_Chunks[sourceTypeID].begin(), m_Chunks[sourceTypeID].end(), chunk->getGlobalIndex());
-#endif
+  m_Chunks[sourceTypeID].erase(createKey(chunk->getGlobalIndex()));
 }
 
 ChunkManager::ChunkType ChunkManager::getChunkType(const Chunk* chunk)
@@ -700,7 +694,7 @@ ChunkManager::ChunkType ChunkManager::getChunkType(const Chunk* chunk)
   EN_ASSERT(chunk, "Chunk does not exist");
 
   for (auto chunkGroup = m_Chunks.begin(); chunkGroup != m_Chunks.end(); ++chunkGroup)
-    if (isIn(*chunkGroup, chunk))
+    if (chunkGroup->find(createKey(chunk->getGlobalIndex())) != chunkGroup->end())
     {
       ptrdiff_t chunkGroupIndex = chunkGroup - m_Chunks.begin();
       return static_cast<ChunkType>(chunkGroupIndex);
@@ -723,20 +717,15 @@ void ChunkManager::updateImmediately(Chunk* chunk)
 {
   EN_ASSERT(chunk, "Chunk does not exist!");
 
-  GlobalIndex chunkIndex = chunk->getGlobalIndex();
+  ChunkType source = getChunkType(chunk);
 
-  ChunkType type = getChunkType(chunk);
-  if (type == ChunkType::NeedsUpdate)
-    updateChunk(getIterator(chunk, type));
-  else if (type == ChunkType::Boundary)
+  if (source == ChunkType::Boundary && isOnBoundary(chunk))
     return;
-  else
-  {
-    queueForUpdating(chunk);
-    auto it = std::lower_bound(m_UpdateList.begin(), m_UpdateList.end(), chunkIndex);
-    EN_ASSERT(it != m_UpdateList.end() && it->getGlobalIndex() == chunkIndex, "Chunk is not in update list!");
-    updateChunk(it);
-  }
+
+  if (source != ChunkType::NeedsUpdate)
+    moveToGroup(chunk, source, ChunkType::NeedsUpdate);
+
+  updateChunk(m_UpdateList.find(createKey(chunk->getGlobalIndex())));
 }
 
 void ChunkManager::sendBlockUpdate(Chunk* chunk, const BlockIndex& blockIndex)
@@ -756,6 +745,11 @@ void ChunkManager::sendBlockUpdate(Chunk* chunk, const BlockIndex& blockIndex)
     Chunk* neighbor = getNeighbor(chunk, face);
     if (neighbor)
       updateImmediately(neighbor);
+    else if (!chunk->isFaceOpaque(face))
+    {
+      auto it = loadChunk(chunk->getGlobalIndex() + GlobalIndex::OutwardNormal(face));
+      updateImmediately(it->second);
+    }
   }
 
   // Queue edge neighbor for updating

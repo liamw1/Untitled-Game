@@ -6,13 +6,13 @@
 class Chunk
 {
 public:
+  Chunk();
   Chunk(const GlobalIndex& chunkIndex);
   ~Chunk();
 
   Chunk(Chunk&& other) noexcept;
   Chunk& operator=(Chunk&& other) noexcept;
 
-  Chunk() = delete;
   Chunk(const Chunk& other) = delete;
   Chunk& operator=(const Chunk& other) = delete;
 
@@ -108,12 +108,14 @@ private:
 
   void clear();
 
+  void reset();
+
   friend class ChunkManager;
 };
 
 struct HeightMap
 {
-  HeightMap(globalIndex_t chunkI, globalIndex_t chunkJ);
+  HeightMap(const GlobalIndex& index);
 
   globalIndex_t chunkI;
   globalIndex_t chunkJ;

@@ -8,6 +8,9 @@ Unique<Engine::UniformBuffer> Chunk::s_UniformBuffer = nullptr;
 Shared<const Engine::IndexBuffer> Chunk::s_IndexBuffer = nullptr;
 const Engine::BufferLayout Chunk::s_VertexBufferLayout = { { ShaderDataType::Uint32, "a_VertexData" } };
 
+Chunk::Chunk()
+  : m_Composition(nullptr), m_NonOpaqueFaces(0), m_QuadCount(0), m_GlobalIndex({}) {}
+
 Chunk::Chunk(const GlobalIndex& chunkIndex)
   : m_Composition(nullptr), m_NonOpaqueFaces(0), m_QuadCount(0), m_GlobalIndex(chunkIndex)
 {
@@ -203,10 +206,21 @@ void Chunk::clear()
   }
 }
 
+void Chunk::reset()
+{
+  clear();
+
+  // Reset data to default values
+  m_VertexArray.reset();
+  m_GlobalIndex = {};
+  m_NonOpaqueFaces = 0;
+  m_QuadCount = 0;
+}
 
 
-HeightMap::HeightMap(globalIndex_t chunkI, globalIndex_t chunkJ)
-  : chunkI(chunkI), chunkJ(chunkJ), maxHeight(-std::numeric_limits<length_t>::infinity())
+
+HeightMap::HeightMap(const GlobalIndex& index)
+  : chunkI(index.i), chunkJ(index.j), maxHeight(-std::numeric_limits<length_t>::infinity())
 {
   EN_PROFILE_FUNCTION();
 

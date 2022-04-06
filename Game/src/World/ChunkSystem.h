@@ -4,6 +4,9 @@
 class ChunkManager
 {
 public:
+  ChunkManager();
+  ~ChunkManager();
+
   void initialize();
 
   /*
@@ -55,18 +58,33 @@ private:
   };
 
 private:
+  using ChunkMap = std::unordered_map<int, Chunk*>;
+  using ChunkMapIterator = ChunkMap::iterator;
+
   static constexpr int s_RenderDistance = 16;
   static constexpr int s_LoadDistance = s_RenderDistance + 2;
   static constexpr int s_UnloadDistance = s_LoadDistance;
+  static constexpr int s_MaxChunks = (2 * s_UnloadDistance + 1) * (2 * s_UnloadDistance + 1) * (2 * s_UnloadDistance + 1);
 
-  std::vector<HeightMap> m_HeightMaps;
-  std::array<std::vector<Chunk>, 4> m_Chunks;
-  std::vector<Chunk>& m_EmptyChunks = m_Chunks[static_cast<int>(ChunkType::Empty)];
-  std::vector<Chunk>& m_BoundaryChunks = m_Chunks[static_cast<int>(ChunkType::Boundary)];
-  std::vector<Chunk>& m_RenderableChunks = m_Chunks[static_cast<int>(ChunkType::Renderable)];
-  std::vector<Chunk>& m_UpdateList = m_Chunks[static_cast<int>(ChunkType::NeedsUpdate)];
+  // Chunk data
+  Chunk* m_ChunkArray;
+  std::vector<int> m_OpenChunkSlots;
+
+  // Chunk pointers
+  std::array<ChunkMap, 4> m_Chunks;
+  ChunkMap& m_EmptyChunks = m_Chunks[static_cast<int>(ChunkType::Empty)];
+  ChunkMap& m_BoundaryChunks = m_Chunks[static_cast<int>(ChunkType::Boundary)];
+  ChunkMap& m_RenderableChunks = m_Chunks[static_cast<int>(ChunkType::Renderable)];
+  ChunkMap& m_UpdateList = m_Chunks[static_cast<int>(ChunkType::NeedsUpdate)];
+  std::unordered_map<int, HeightMap> m_HeightMaps;
 
   int m_ChunksLoaded = 0;
+
+  /*
+    Generates a (nearly) unique key for hash maps.
+  */
+  int createKey(const GlobalIndex& chunkIndex) const;
+  int createHeightMapKey(globalIndex_t chunkI, globalIndex_t chunkJ) const;
 
   bool isInRange(const GlobalIndex& chunkIndex, globalIndex_t range) const;
 
@@ -92,7 +110,7 @@ private:
 
     \returns A valid iterator at the location of the chunk in m_BoundaryChunks.
   */
-  std::vector<Chunk>::iterator loadChunk(const GlobalIndex& chunkIndex);
+  ChunkMapIterator loadChunk(const GlobalIndex& chunkIndex);
 
   /*
     Searches for chunk, removes it from whatever map it is currently in,
@@ -103,12 +121,13 @@ private:
 
     \returns A valid iterator at the location of the next chunk in m_BoundaryChunks.
   */
-  std::vector<Chunk>::iterator unloadChunk(std::vector<Chunk>::iterator chunk);
+  ChunkMapIterator unloadChunk(ChunkMapIterator erasePosition);
 
-  std::vector<Chunk>::iterator updateChunk(std::vector<Chunk>::iterator chunk);
+  void unloadUpdate(const GlobalIndex& chunkIndex);
 
-  void fillChunk(Chunk* chunk, const HeightMap* heightMap);
-  void fillChunk(std::vector<Chunk>::iterator chunk, const HeightMap* heightMap);
+  ChunkMapIterator updateChunk(ChunkMapIterator iteratorPosition);
+
+  void fillChunk(Chunk* chunk, const HeightMap& heightMap);
 
   /*
     Generates simplistic mesh in a compressed format based on chunk compostion.
@@ -124,22 +143,19 @@ private:
      Uses AO algorithm outlined in https ://0fps.net/2013/07/03/ambient-occlusion-for-minecraft-like-worlds/
   */
   void meshChunk(Chunk* chunk);
-  void meshChunk(std::vector<Chunk>::iterator chunk);
 
   Chunk* getNeighbor(Chunk* chunk, Block::Face face);
   Chunk* getNeighbor(Chunk* chunk, Block::Face faceA, Block::Face faceB);
   Chunk* getNeighbor(Chunk* chunk, Block::Face faceA, Block::Face faceB, Block::Face faceC);
-  Chunk* getNeighbor(std::vector<Chunk>::iterator chunk, Block::Face face);
   const Chunk* getNeighbor(const Chunk* chunk, Block::Face face) const;
 
-  bool isOnBoundary(std::vector<Chunk>::iterator chunk) const;
+  bool isOnBoundary(const Chunk* chunk) const;
 
   bool isLoaded(const GlobalIndex& chunkIndex) const;
 
   Chunk* find(const GlobalIndex& chunkIndex);
   const Chunk* find(const GlobalIndex& chunkIndex) const;
 
-  void addToGroup(std::vector<Chunk>::iterator chunk, ChunkType destination);
   void addToGroup(Chunk* chunk, ChunkType destination);
 
   /*
@@ -150,10 +166,8 @@ private:
 
     \returns A valid iterator in source grouping.
   */
-  std::vector<Chunk>::iterator moveToGroup(std::vector<Chunk>::iterator chunk, ChunkType source, ChunkType destination);
+  ChunkMapIterator moveToGroup(ChunkMapIterator iteratorPosition, ChunkType source, ChunkType destination);
   void moveToGroup(Chunk* chunk, ChunkType source, ChunkType destination);
-
-  std::vector<Chunk>::iterator getIterator(const Chunk* chunk, ChunkType source);
 
   ChunkType getChunkType(const Chunk* chunk);
 
