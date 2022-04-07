@@ -21,6 +21,11 @@ public:
   */
   bool loadNewChunks(int maxNewChunks);
 
+  /*
+    Updates chunks in the update list.
+
+    \returns True if at least one chunk has been updated.
+  */
   bool updateChunks(int maxUpdates);
 
   /*
@@ -35,7 +40,6 @@ public:
   Chunk* find(const LocalIndex& chunkIndex);
   const Chunk* find(const LocalIndex& chunkIndex) const;
 
-  bool isBlockNeighborAir(const Chunk* chunk, const BlockIndex& blockIndex, Block::Face face) const;
   void placeBlock(Chunk* chunk, BlockIndex blockIndex, Block::Face face, Block::Type blockType);
   void removeBlock(Chunk* chunk, const BlockIndex& blockIndex);
 
@@ -59,7 +63,6 @@ private:
 
 private:
   using ChunkMap = std::unordered_map<int, Chunk*>;
-  using ChunkMapIterator = ChunkMap::iterator;
 
   static constexpr int s_RenderDistance = 16;
   static constexpr int s_LoadDistance = s_RenderDistance + 2;
@@ -81,52 +84,44 @@ private:
   int m_ChunksLoaded = 0;
 
   /*
-    Generates a (nearly) unique key for hash maps.
-  */
-  int createKey(const GlobalIndex& chunkIndex) const;
-  int createHeightMapKey(globalIndex_t chunkI, globalIndex_t chunkJ) const;
-
-  bool isInRange(const GlobalIndex& chunkIndex, globalIndex_t range) const;
-
-  /*
-  Uses algorithm described in
-  https://www.gamedevs.org/uploads/fast-extraction-viewing-frustum-planes-from-world-view-projection-matrix.pdf
-
-  \returns An array of vectors representing the view frustum planes.
-           For a plane of the form Ax + By + Cz + D = 0,
-           its corresponding vector is {A, B, C, D}.
-*/
-  std::array<Vec4, 6> calculateViewFrustumPlanes(const Mat4& viewProjection) const;
-
-  /*
-    \returns True if the given point is inside the given set of frustum planes.
-             Could be any frustum, not necessarily the view frustum.
-  */
-  bool isInFrustum(const Vec3& point, const std::array<Vec4, 6>& frustumPlanes) const;
-
-  /*
-    Searches for open chunk slot and loads chunk at the given index.
-    New chunk is always categorized as a boundary chunk.
+    Grabs first open chunk slot and loads chunk at the given index.
+    New chunk is always categorized as a boundary chunk to start with.
 
     \returns A valid iterator at the location of the chunk in m_BoundaryChunks.
   */
-  ChunkMapIterator loadChunk(const GlobalIndex& chunkIndex);
+  ChunkMap::iterator loadChunk(const GlobalIndex& chunkIndex);
 
   /*
-    Searches for chunk, removes it from whatever map it is currently in,
-    unloads it, and frees the slot it was occupying.  Only bondary chunks
-    can be unloaded.
+    Gives chunk necessary updates and removes it from the update list.
+    Given chunk must be in the update list.
 
-    The neighbors of the removed chunk are re-categorized as boundary chunks.
-
-    \returns A valid iterator at the location of the next chunk in m_BoundaryChunks.
+    \returns A valid iterator pointing to the next chunk in m_UpdateList.
   */
-  ChunkMapIterator unloadChunk(ChunkMapIterator erasePosition);
+  ChunkMap::iterator updateChunk(ChunkMap::iterator iteratorPosition);
 
-  void unloadUpdate(const GlobalIndex& chunkIndex);
+  /*
+    Removes chunk from map, unloads it, and frees the slot it was occupying.
+    Given chunk must be a boundary chunk.
 
-  ChunkMapIterator updateChunk(ChunkMapIterator iteratorPosition);
+    The cardinal neighbors of the removed chunk are re-categorized as boundary chunks.
 
+    \returns A valid iterator pointing to the next chunk in m_BoundaryChunks.
+  */
+  ChunkMap::iterator unloadChunk(ChunkMap::iterator erasePosition);
+
+  /*
+    Re-categorizes the cardinal neighbors of a removed chunk as boundary chunks.
+    Should be called for each chunk removed by unloadChunk function.
+  */
+  void sendChunkRemovalUpdate(const GlobalIndex& chunkIndex);
+
+  void queueForUpdating(Chunk* chunk);
+  void updateImmediately(Chunk* chunk);
+  void sendBlockUpdate(Chunk* chunk, const BlockIndex& blockIndex);
+
+  /*
+    Uses heightmap to fill a chunk with block data.
+  */
   void fillChunk(Chunk* chunk, const HeightMap& heightMap);
 
   /*
@@ -135,26 +130,25 @@ private:
 
     Compresed format is follows,
      bits 0-17:  Relative position of vertex within chunk (3-comps, 6 bits each)
-     bits 18-20: Normal direction of quad (follows BlockFace convention)
-     bits 21-22: Texture coordinate index (see BlockFace.glsl for details)
-     bits 23-24: Ambient Occlusion level
-     bits 25-31: Texure ID
+     bits 18-19: Texture coordinate index (see Chunk.glsl for details)
+     bits 20-21: Ambient Occlusion level (see link below)
+     bits 22-31: Texure ID
 
      Uses AO algorithm outlined in https ://0fps.net/2013/07/03/ambient-occlusion-for-minecraft-like-worlds/
   */
   void meshChunk(Chunk* chunk);
 
-  Chunk* getNeighbor(Chunk* chunk, Block::Face face);
-  Chunk* getNeighbor(Chunk* chunk, Block::Face faceA, Block::Face faceB);
-  Chunk* getNeighbor(Chunk* chunk, Block::Face faceA, Block::Face faceB, Block::Face faceC);
-  const Chunk* getNeighbor(const Chunk* chunk, Block::Face face) const;
-
-  bool isOnBoundary(const Chunk* chunk) const;
-
-  bool isLoaded(const GlobalIndex& chunkIndex) const;
-
   Chunk* find(const GlobalIndex& chunkIndex);
   const Chunk* find(const GlobalIndex& chunkIndex) const;
+
+  Chunk* findNeighbor(Chunk* chunk, Block::Face face);
+  Chunk* findNeighbor(Chunk* chunk, Block::Face faceA, Block::Face faceB);
+  Chunk* findNeighbor(Chunk* chunk, Block::Face faceA, Block::Face faceB, Block::Face faceC);
+  const Chunk* findNeighbor(const Chunk* chunk, Block::Face face) const;
+
+  bool isOnBoundary(const Chunk* chunk) const;
+  bool isLoaded(const GlobalIndex& chunkIndex) const;
+  ChunkType getChunkType(const Chunk* chunk);
 
   void addToGroup(Chunk* chunk, ChunkType destination);
 
@@ -166,14 +160,33 @@ private:
 
     \returns A valid iterator in source grouping.
   */
-  ChunkMapIterator moveToGroup(ChunkMapIterator iteratorPosition, ChunkType source, ChunkType destination);
+  ChunkMap::iterator moveToGroup(ChunkMap::iterator iteratorPosition, ChunkType source, ChunkType destination);
   void moveToGroup(Chunk* chunk, ChunkType source, ChunkType destination);
 
-  ChunkType getChunkType(const Chunk* chunk);
+  bool blockNeighborIsAir(const Chunk* chunk, const BlockIndex& blockIndex, Block::Face face) const;
 
-  void queueForUpdating(Chunk* chunk);
+  /*
+    Generates a (nearly) unique key for hash maps.
+  */
+  int createKey(const GlobalIndex& chunkIndex) const;
+  int createHeightMapKey(globalIndex_t chunkI, globalIndex_t chunkJ) const;
 
-  void updateImmediately(Chunk* chunk);
+  bool isInRange(const GlobalIndex& chunkIndex, globalIndex_t range) const;
 
-  void sendBlockUpdate(Chunk* chunk, const BlockIndex& blockIndex);
+  // NOTE: These should probably be moved out into Utils folder
+  /*
+  Uses algorithm described in
+  https://www.gamedevs.org/uploads/fast-extraction-viewing-frustum-planes-from-world-view-projection-matrix.pdf
+
+  \returns An array of vectors representing the view frustum planes.
+           For a plane of the form Ax + By + Cz + D = 0,
+           its corresponding vector is {A, B, C, D}.
+  */
+  std::array<Vec4, 6> calculateViewFrustumPlanes(const Mat4& viewProjection) const;
+
+  /*
+    \returns True if the given point is inside the given set of frustum planes.
+             Could be any frustum, not necessarily the view frustum.
+  */
+  bool isInFrustum(const Vec3& point, const std::array<Vec4, 6>& frustumPlanes) const;
 };

@@ -108,6 +108,15 @@ void Chunk::BindBuffers()
   s_TextureArray->bind(s_TextureSlot);
 }
 
+bool Chunk::BlockNeighborIsInAnotherChunk(const BlockIndex& blockIndex, Block::Face face)
+{
+  static constexpr blockIndex_t chunkLimits[2] = { 0, Chunk::Size() - 1 };
+  int faceID = static_cast<int>(face);
+  int coordID = faceID / 2;
+
+  return blockIndex[coordID] == chunkLimits[faceID % 2];
+}
+
 void Chunk::setBlockType(blockIndex_t i, blockIndex_t j, blockIndex_t k, Block::Type blockType)
 {
   EN_ASSERT(0 <= i && i < Chunk::Size() && 0 <= j && j < Chunk::Size() && 0 <= k && k < Chunk::Size(), "Index is out of bounds!");

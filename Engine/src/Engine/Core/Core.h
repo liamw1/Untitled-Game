@@ -28,10 +28,15 @@
 using length_t = float;
 using rad_t = length_t;
 using seconds = float;
-constexpr length_t PI = static_cast<length_t>(3.1415926535897932384626433832795028841971693993751L);
 
-// ======= Precision selection for floating point tolerance ========= //
-constexpr length_t LNGTH_EPSILON = std::is_same<double, length_t>::value ? DBL_EPSILON : FLT_EPSILON;
+namespace Constants
+{
+  constexpr length_t PI = static_cast<length_t>(3.1415926535897932384626433832795028841971693993751L);
+  constexpr length_t SQRT2 = static_cast<length_t>(1.414213562373095048801688724209698078569671875377L);
+  constexpr length_t SQRT3 = static_cast<length_t>(1.7320508075688772935274463415058723669428052538104L);
+
+  constexpr length_t LENGTH_EPSILON = std::is_same<double, length_t>::value ? DBL_EPSILON : FLT_EPSILON;
+}
 
 
 

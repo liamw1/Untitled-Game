@@ -55,20 +55,7 @@ public:
 
   static void BindBuffers();
 
-  // Comparison operators define lexicographical ordering on indices
-  constexpr bool operator==(const GlobalIndex& index) const { return m_GlobalIndex == index; }
-  constexpr bool operator!=(const GlobalIndex& index) const { return m_GlobalIndex != index; }
-  constexpr bool operator<(const GlobalIndex& index) const { return m_GlobalIndex < index; }
-  constexpr bool operator>(const GlobalIndex& index) const { return m_GlobalIndex > index; }
-  constexpr bool operator<=(const GlobalIndex& index) const { return m_GlobalIndex <= index; }
-  constexpr bool operator>=(const GlobalIndex& index) const { return m_GlobalIndex >= index; }
-
-  constexpr bool operator==(const Chunk& other) const { return m_GlobalIndex == other.m_GlobalIndex; }
-  constexpr bool operator!=(const Chunk& other) const { return m_GlobalIndex != other.m_GlobalIndex; }
-  constexpr bool operator<(const Chunk& other) const { return m_GlobalIndex < other.m_GlobalIndex; }
-  constexpr bool operator>(const Chunk& other) const { return m_GlobalIndex > other.m_GlobalIndex; }
-  constexpr bool operator<=(const Chunk& other) const { return m_GlobalIndex <= other.m_GlobalIndex; }
-  constexpr bool operator>=(const Chunk& other) const { return m_GlobalIndex >= other.m_GlobalIndex; }
+  static bool BlockNeighborIsInAnotherChunk(const BlockIndex& blockIndex, Block::Face face);
 
 private:
   struct Uniforms
@@ -97,17 +84,12 @@ private:
   void setBlockType(const BlockIndex& blockIndex, Block::Type blockType);
 
   void setData(Block::Type* composition);
-
   void setMesh(const uint32_t* meshData, uint16_t quadCount);
-
   void determineOpacity();
 
   void update();
-
   void draw() const;
-
   void clear();
-
   void reset();
 
   friend class ChunkManager;
@@ -122,33 +104,4 @@ struct HeightMap
   HeapArray2D<Noise::SurfaceData, Chunk::Size()> surfaceData;
 
   length_t maxHeight;
-
-  // Comparison operators define lexicographical ordering on indices
-  constexpr bool operator==(const GlobalIndex& index) const { return chunkI == index.i && chunkJ == index.j; }
-  constexpr bool operator!=(const GlobalIndex& index) const { return !(*this == index); }
-  constexpr bool operator<(const GlobalIndex& index) const { return chunkI < index.i || (chunkI == index.i && chunkJ < index.j); }
-  constexpr bool operator>(const GlobalIndex& index) const { return chunkI > index.i || (chunkI == index.i && chunkJ > index.j); }
-  constexpr bool operator<=(const GlobalIndex& index) const { return !(*this > index); }
-  constexpr bool operator>=(const GlobalIndex& index) const { return !(*this < index); }
-
-  constexpr bool operator==(const HeightMap& other) const { return chunkI == other.chunkI && chunkJ == other.chunkJ; }
-  constexpr bool operator!=(const HeightMap& other) const { return !(*this == other); }
-  constexpr bool operator<(const HeightMap& other) const { return chunkI < other.chunkI || (chunkI == other.chunkI && chunkJ < other.chunkJ); }
-  constexpr bool operator>(const HeightMap& other) const { return chunkI > other.chunkI || (chunkI == other.chunkI && chunkJ > other.chunkJ); }
-  constexpr bool operator<=(const HeightMap& other) const { return !(*this > other); }
-  constexpr bool operator>=(const HeightMap& other) const { return !(*this < other); }
 };
-
-constexpr bool operator==(const GlobalIndex& index, const Chunk& chunk) { return index == chunk.getGlobalIndex(); }
-constexpr bool operator!=(const GlobalIndex& index, const Chunk& chunk) { return index != chunk.getGlobalIndex(); }
-constexpr bool operator<(const GlobalIndex& index, const Chunk& chunk) { return index < chunk.getGlobalIndex(); }
-constexpr bool operator>(const GlobalIndex& index, const Chunk& chunk) { return index > chunk.getGlobalIndex(); }
-constexpr bool operator<=(const GlobalIndex& index, const Chunk& chunk) { return index <= chunk.getGlobalIndex(); }
-constexpr bool operator>=(const GlobalIndex& index, const Chunk& chunk) { return index >= chunk.getGlobalIndex(); }
-
-constexpr bool operator==(const GlobalIndex& index, const HeightMap& heightMap) { return heightMap == index; }
-constexpr bool operator!=(const GlobalIndex& index, const HeightMap& heightMap) { return heightMap != index; }
-constexpr bool operator<(const GlobalIndex& index, const HeightMap& heightMap) { return heightMap > index; }
-constexpr bool operator>(const GlobalIndex& index, const HeightMap& heightMap) { return heightMap < index; }
-constexpr bool operator<=(const GlobalIndex& index, const HeightMap& heightMap) { return heightMap >= index; }
-constexpr bool operator>=(const GlobalIndex& index, const HeightMap& heightMap) { return heightMap <= index; }

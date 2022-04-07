@@ -733,7 +733,7 @@ static std::vector<LOD::Vertex> calcAdjustedTransitionMesh(LOD::Octree::Node* no
     for (LOD::Vertex& vertex : LODMesh)
     {
       // If Vertex is on low-resolution side, skip.  If on high-resolution side, move vertex to LOD face
-      if (vertex.position[coordID] < LNGTH_EPSILON * node->length() || vertex.position[coordID] > (1.0 - LNGTH_EPSILON) * node->length())
+      if (vertex.position[coordID] < Constants::LENGTH_EPSILON * node->length() || vertex.position[coordID] > (1.0 - Constants::LENGTH_EPSILON) * node->length())
         continue;
       else
         vertex.position[coordID] = static_cast<float>(facingPositiveDir ? node->length() : 0.0);

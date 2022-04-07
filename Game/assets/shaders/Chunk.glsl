@@ -6,7 +6,6 @@ const vec2 s_TexCoords[4] = vec2[4]( vec2(0.0f,	0.0f),
 									                   vec2(1.0f, 1.0f),
 									                   vec2(0.0f, 1.0f) );
 
-const float s_LightValues[6] = float[6](0.6f, 0.9f, 0.8f, 0.7f, 0.5f, 1.0f);
 const float s_AO[4] = float[4](0.4f, 0.6f, 0.8f, 1.0f);
 
 layout(std140, binding = 0) uniform Camera
@@ -32,13 +31,12 @@ void main()
 						         u_BlockLength * float((a_VertexData & 0x00000FC0u) >> 6u),
 						         u_BlockLength * float((a_VertexData & 0x0003F000u) >> 12u));
 
-  uint face = (a_VertexData & 0x001C0000u) >> 18u;
-  uint quadIndex = (a_VertexData & 0x600000u) >> 21u;
-  uint AOIndex = (a_VertexData & 0x01800000u) >> 23u;
-  v_TextureIndex = (a_VertexData & 0xFE000000u) >> 25u;
-  v_TexCoord = s_TexCoords[quadIndex];
+  uint quadIndex = (a_VertexData & 0x000C0000u) >> 18u;
+  uint AOIndex   = (a_VertexData & 0x00300000u) >> 20u;
+  v_TextureIndex = (a_VertexData & 0xFFC00000u) >> 22u;
 
-  v_BasicLight = vec4(vec3(s_AO[AOIndex] * s_LightValues[5]), 1.0f);
+  v_TexCoord = s_TexCoords[quadIndex];
+  v_BasicLight = vec4(vec3(s_AO[AOIndex]), 1.0f);
 
   gl_Position = u_ViewProjection * vec4(u_AnchorPosition + relPos, 1.0f);
 }
