@@ -491,8 +491,7 @@ static void generateTransitionMeshes(LOD::Octree::Node* node, const HeapArray2D<
     int u = faceID / 2;
     int v = (u + 1) % 3;
     int w = (u + 2) % 3;
-    bool facingPositiveDir = faceID % 2;
-    int uIndex = facingPositiveDir ? s_NumCells : 0;
+    int uIndex = IsPositive(face) ? s_NumCells : 0;
 
     // Generate transition mesh using Transvoxel algorithm
     int vertexCount = 0;
@@ -515,7 +514,7 @@ static void generateTransitionMeshes(LOD::Octree::Node* node, const HeapArray2D<
           sample[w] = j + p / 3;
 
           // If block face normal along negative axis, we must reverse v coordinate-axis to ensure correct orientation
-          if (!facingPositiveDir)
+          if (!IsPositive(face))
             sample[v] = s_NumCells - sample[v];
 
           const int& I = sample.i;
@@ -597,7 +596,7 @@ static void generateTransitionMeshes(LOD::Octree::Node* node, const HeapArray2D<
           sampleB[w] = j + cornerIndexToSampleIndex[cornerIndexB] / 3;
 
           // If block face normal along negative axis, we must reverse v coordinate-axis to ensure correct orientation
-          if (!facingPositiveDir)
+          if (!IsPositive(face))
           {
             sampleA[v] = s_NumCells - sampleA[v];
             sampleB[v] = s_NumCells - sampleB[v];

@@ -1,10 +1,10 @@
 #pragma once
-#include "ChunkSystem.h"
+#include "ChunkManager.h"
 #include "Player/Player.h"
 
 struct RayIntersection
 {
-  length_t distance = std::numeric_limits<length_t>::infinity();
+  length_t distance = std::numeric_limits<length_t>::max();
   Block::Face face;
   BlockIndex blockIndex;
   LocalIndex chunkIndex;

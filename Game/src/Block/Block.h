@@ -13,7 +13,7 @@ namespace Block
   /*
     \returns The face directly opposite the given face.
   */
-  inline Face operator!(const Face& face)
+  constexpr Face operator!(const Face& face)
   {
     const int faceID = static_cast<int>(face);
     Face oppFace = static_cast<Face>(faceID % 2 ? faceID - 1 : faceID + 1);
@@ -32,3 +32,6 @@ namespace Block
 
   constexpr length_t Length() { return 0.5; }
 };
+
+constexpr bool IsPositive(Block::Face face) { return static_cast<int>(face) % 2; }
+constexpr int GetCoordID(Block::Face face) { return static_cast<int>(face) / 2; }

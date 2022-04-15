@@ -2,10 +2,10 @@
 #include "World.h"
 #include "Engine/Renderer/Renderer.h"
 
-static constexpr uint8_t modulo(int64_t a, uint8_t b)
+static constexpr blockIndex_t modulo(globalIndex_t a, blockIndex_t b)
 {
   const int result = a % b;
-  return static_cast<uint8_t>(result >= 0 ? result : result + b);
+  return static_cast<blockIndex_t>(result >= 0 ? result : result + b);
 }
 
 void World::initialize()
@@ -29,7 +29,8 @@ void World::onUpdate(Timestep timestep)
     // m_ChunkManager.manageLODs();
     // m_ChunkManager.renderLODs();
     // Engine::RenderCommand::ClearDepthBuffer();
-    m_ChunkManager.loadNewChunks(100);
+    m_ChunkManager.loadNewChunks(50);
+    m_ChunkManager.updateChunks(50);
     m_ChunkManager.render();
     m_ChunkManager.clean();
   }
@@ -42,8 +43,6 @@ void World::onUpdate(Timestep timestep)
 
   playerWorldInteraction();
   Engine::Renderer::EndScene();
-
-  m_ChunkManager.updateChunks(100);
 }
 
 RayIntersection World::castRaySegment(const Vec3& pointA, const Vec3& pointB) const
@@ -58,20 +57,20 @@ RayIntersection World::castRaySegment(const Vec3& pointA, const Vec3& pointB) co
     const bool alignedWithPositiveAxis = rayDirection[i] > 0.0;
 
     // Global indices of first and last planes that segment will intersect in direction i
-    int64_t n0, nf;
+    globalIndex_t n0, nf;
     if (alignedWithPositiveAxis)
     {
-      n0 = static_cast<int64_t>(ceil(pointA[i] / Block::Length()));
-      nf = static_cast<int64_t>(ceil(pointB[i] / Block::Length()));
+      n0 = static_cast<globalIndex_t>(ceil(pointA[i] / Block::Length()));
+      nf = static_cast<globalIndex_t>(ceil(pointB[i] / Block::Length()));
     }
     else
     {
-      n0 = static_cast<int64_t>(floor(pointA[i] / Block::Length()));
-      nf = static_cast<int64_t>(floor(pointB[i] / Block::Length()));
+      n0 = static_cast<globalIndex_t>(floor(pointA[i] / Block::Length()));
+      nf = static_cast<globalIndex_t>(floor(pointB[i] / Block::Length()));
     }
 
     // n increases to nf if ray is aligned with positive i-axis and decreases to nf otherwise
-    for (int64_t n = n0; alignedWithPositiveAxis ? n <= nf : n >= nf; alignedWithPositiveAxis ? ++n : --n)
+    for (globalIndex_t n = n0; alignedWithPositiveAxis ? n <= nf : n >= nf; alignedWithPositiveAxis ? ++n : --n)
     {
       const length_t t = (n * Block::Length() - pointA[i]) / rayDirection[i];
 
@@ -86,26 +85,24 @@ RayIntersection World::castRaySegment(const Vec3& pointA, const Vec3& pointB) co
         const int w = (i + 2) % 3;
 
         // Intersection point between ray and plane
-        const Vec3 intersection = pointA + t * rayDirection;
+        Vec3 intersection = pointA + t * rayDirection;
 
         // If ray hit West/South/Bottom block face, we can use n for block coordinate, otherwise, we need to step back a block
-        int64_t N = n;
+        globalIndex_t N = n;
         if (!alignedWithPositiveAxis)
           N--;
 
         // Get index of chunk in which intersection took place
-        LocalIndex chunkIndex{};
-        chunkIndex[u] = static_cast<localIndex_t>(N / Chunk::Size());
-        chunkIndex[v] = static_cast<localIndex_t>(floor(intersection[v] / Chunk::Length()));
-        chunkIndex[w] = static_cast<localIndex_t>(floor(intersection[w] / Chunk::Length()));
+        LocalIndex chunkIndex = LocalIndex::CreatePermuted(static_cast<localIndex_t>(N / Chunk::Size()),
+                                                           static_cast<localIndex_t>(floor(intersection[v] / Chunk::Length())),
+                                                           static_cast<localIndex_t>(floor(intersection[w] / Chunk::Length())), i);
         if (N < 0 && N % Chunk::Size() != 0)
           chunkIndex[u]--;
 
         // Get local index of block that was hit by ray
-        BlockIndex blockIndex{};
-        blockIndex[u] = modulo(N, Chunk::Size());
-        blockIndex[v] = modulo(static_cast<int64_t>(floor(intersection[v] / Block::Length())), Chunk::Size());
-        blockIndex[w] = modulo(static_cast<int64_t>(floor(intersection[w] / Block::Length())), Chunk::Size());
+        BlockIndex blockIndex = BlockIndex::CreatePermuted(modulo(N, Chunk::Size()),
+                                                           modulo(static_cast<globalIndex_t>(floor(intersection[v] / Block::Length())), Chunk::Size()),
+                                                           modulo(static_cast<globalIndex_t>(floor(intersection[w] / Block::Length())), Chunk::Size()), i);
 
         // Search to see if chunk is loaded
         const Chunk* chunk = m_ChunkManager.find(chunkIndex);
@@ -117,7 +114,7 @@ RayIntersection World::castRaySegment(const Vec3& pointA, const Vec3& pointB) co
         // If block has collision, note the intersection and move to next spatial direction
         if (Block::HasCollision(chunk->getBlockType(blockIndex)))
         {
-          const int faceID = 2 * u + !alignedWithPositiveAxis;
+          int faceID = 2 * u + !alignedWithPositiveAxis;
           tmin = t;
 
           firstIntersection.face = static_cast<Block::Face>(faceID);

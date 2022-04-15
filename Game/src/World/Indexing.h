@@ -1,6 +1,5 @@
 #pragma once
 #include "Block/Block.h"
-#include <llvm/ADT/DenseMapInfo.h>
 
 /*
   Structs for indexing of blocks and chunks.
@@ -72,6 +71,18 @@ struct Index3D
                                                 //       West        East        South        North       Bottom        Top
 
     return normals[static_cast<int>(face)];
+  }
+
+  static constexpr Index3D<intType> CreatePermuted(intType i, intType j, intType k, int permutation)
+  {
+    EN_ASSERT(0 <= permutation && permutation < 3, "Not a valid permuation!");
+    switch (permutation)
+    {
+      default:
+      case 0: return Index3D<intType>(i, j, k);
+      case 1: return Index3D<intType>(k, i, j);
+      case 2: return Index3D<intType>(j, k, i);
+    }
   }
 };
 

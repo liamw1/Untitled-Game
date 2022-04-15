@@ -49,6 +49,7 @@ void Block::Initialize()
   s_TexturePaths[static_cast<blockTexID>(Block::Texture::OakLogTop)] = "assets/textures/voxel-pack/PNG/Tiles/trunk_top.png";
   s_TexturePaths[static_cast<blockTexID>(Block::Texture::OakLogSide)] = "assets/textures/voxel-pack/PNG/Tiles/trunk_side.png";
   s_TexturePaths[static_cast<blockTexID>(Block::Texture::OakLeaves)] = "assets/textures/voxel-pack/PNG/Tiles/leaves_transparent.png";
+  s_TexturePaths[static_cast<blockTexID>(Block::Texture::Null)] = "assets/textures/Checkerboard.png";
 
   assignTextures(Block::Type::Air, Block::Texture::Invisible);
   assignTextures(Block::Type::Grass, Block::Texture::GrassTop, Block::Texture::GrassSide, Block::Texture::Dirt);
@@ -60,6 +61,7 @@ void Block::Initialize()
   assignTextures(Block::Type::Stone, Block::Texture::Stone);
   assignTextures(Block::Type::OakLog, Block::Texture::OakLogTop, Block::Texture::OakLogSide);
   assignTextures(Block::Type::OakLeaves, Block::Texture::OakLeaves);
+  assignTextures(Block::Type::Null, Block::Texture::Null);
 
   s_Initialized = true;
 }

@@ -1,6 +1,6 @@
 #pragma once
 #include "Indexing.h"
-#include "NewChunk.h"
+#include "Chunk.h"
 
 /*
   Level of Detail (LOD) system.  The game world is partitioned with an octree,

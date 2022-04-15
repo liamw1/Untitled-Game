@@ -17,7 +17,9 @@ namespace Block
     Snow,
     Stone,
     OakLog,
-    OakLeaves
+    OakLeaves,
+
+    Null
   };
 
   enum class Texture : blockTexID
@@ -34,6 +36,7 @@ namespace Block
     OakLogSide,
     OakLeaves,
 
+    Null,
     Invisible,
 
     First = GrassTop, Last = OakLeaves

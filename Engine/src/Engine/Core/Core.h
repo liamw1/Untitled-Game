@@ -186,6 +186,11 @@ public:
     static const Iterator endIter = ++Iterator(endEnum);
     return endIter;
   }
+  Iterator next() const
+  {
+    Iterator copy = *this;
+    return ++copy;
+  }
 
 private:
   val_t value;
