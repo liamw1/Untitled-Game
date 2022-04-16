@@ -1,5 +1,6 @@
 #include "ENpch.h"
 #include "OpenGL_LegacyShader.h"
+#include "Engine/Threading/Threads.h"
 #include <glad/glad.h>
 #include <glm/gtc/type_ptr.hpp>
 
@@ -45,17 +46,20 @@ namespace Engine
   OpenGL_LegacyShader::~OpenGL_LegacyShader()
   {
     EN_PROFILE_FUNCTION();
+    EN_CORE_ASSERT(std::this_thread::get_id() == Threads::GetMainThreadID(), "OpenGL calls must be made in main thread!");
 
     glDeleteProgram(m_RendererID);
   }
 
   void OpenGL_LegacyShader::bind() const
   {
+    EN_CORE_ASSERT(std::this_thread::get_id() == Threads::GetMainThreadID(), "OpenGL calls must be made in main thread!");
     glUseProgram(m_RendererID);
   }
 
   void OpenGL_LegacyShader::unBind() const
   {
+    EN_CORE_ASSERT(std::this_thread::get_id() == Threads::GetMainThreadID(), "OpenGL calls must be made in main thread!");
     glUseProgram(0);
   }
 
@@ -112,6 +116,7 @@ namespace Engine
   void OpenGL_LegacyShader::compile(const std::unordered_map<GLenum, std::string>& shaderSources)
   {
     EN_PROFILE_FUNCTION();
+    EN_CORE_ASSERT(std::this_thread::get_id() == Threads::GetMainThreadID(), "OpenGL calls must be made in main thread!");
 
     EN_CORE_ASSERT(shaderSources.size() <= s_MaxShaders, "A maximum of {0} shaders is supported", s_MaxShaders);
 
@@ -184,6 +189,8 @@ namespace Engine
 
   GLint OpenGL_LegacyShader::getUniformLocation(const std::string& name) const
   {
+    EN_CORE_ASSERT(std::this_thread::get_id() == Threads::GetMainThreadID(), "OpenGL calls must be made in main thread!");
+
     if (m_UniformLocationCache.find(name) != m_UniformLocationCache.end())
       return m_UniformLocationCache[name];
 

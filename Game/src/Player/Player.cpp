@@ -23,7 +23,7 @@ static constexpr length_t s_FarClip = static_cast<length_t>(10000 * Block::Lengt
 
 static Float2 s_LastMousePosition{};
 
-static length_t s_TranslationSpeed = 32 * Block::Length();
+static length_t s_TranslationSpeed = 320 * Block::Length();
 
 class CameraController : public Engine::ScriptableEntity
 {

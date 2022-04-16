@@ -1,5 +1,6 @@
 #include "ENpch.h"
 #include "OpenGLVertexArray.h"
+#include "Engine/Threading/Threads.h"
 #include <glad/glad.h>
 
 namespace Engine
@@ -7,6 +8,8 @@ namespace Engine
   OpenGLIndexBuffer::OpenGLIndexBuffer(const uint32_t* indices, uint32_t count)
     : m_Count(count)
   {
+    EN_CORE_ASSERT(std::this_thread::get_id() == Threads::GetMainThreadID(), "OpenGL calls must be made in main thread!");
+
     glCreateBuffers(1, &m_RendererID);
 
     /*
@@ -23,16 +26,19 @@ namespace Engine
 
   OpenGLIndexBuffer::~OpenGLIndexBuffer()
   {
+    EN_CORE_ASSERT(std::this_thread::get_id() == Threads::GetMainThreadID(), "OpenGL calls must be made in main thread!");
     glDeleteBuffers(1, &m_RendererID);
   }
 
   void OpenGLIndexBuffer::bind() const
   {
+    EN_CORE_ASSERT(std::this_thread::get_id() == Threads::GetMainThreadID(), "OpenGL calls must be made in main thread!");
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_RendererID);
   }
 
   void OpenGLIndexBuffer::unBind() const
   {
+    EN_CORE_ASSERT(std::this_thread::get_id() == Threads::GetMainThreadID(), "OpenGL calls must be made in main thread!");
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
   }
 
@@ -60,18 +66,24 @@ namespace Engine
 
   OpenGLVertexArray::OpenGLVertexArray()
   {
+    EN_CORE_ASSERT(std::this_thread::get_id() == Threads::GetMainThreadID(), "OpenGL calls must be made in main thread!");
+
     glCreateVertexArrays(1, &m_RendererID);
     glCreateBuffers(1, &m_VertexBufferID);
   }
 
   OpenGLVertexArray::~OpenGLVertexArray()
   {
+    EN_CORE_ASSERT(std::this_thread::get_id() == Threads::GetMainThreadID(), "OpenGL calls must be made in main thread!");
+
     glDeleteVertexArrays(1, &m_RendererID);
     glDeleteBuffers(1, &m_VertexBufferID);
   }
 
   void OpenGLVertexArray::bind() const
   {
+    EN_CORE_ASSERT(std::this_thread::get_id() == Threads::GetMainThreadID(), "OpenGL calls must be made in main thread!");
+
     glBindVertexArray(m_RendererID);
 
     if (m_IndexBuffer != nullptr)
@@ -80,11 +92,14 @@ namespace Engine
 
   void OpenGLVertexArray::unBind() const
   {
+    EN_CORE_ASSERT(std::this_thread::get_id() == Threads::GetMainThreadID(), "OpenGL calls must be made in main thread!");
     glBindVertexArray(0);
   }
 
   void OpenGLVertexArray::setLayout(const BufferLayout& layout)
   {
+    EN_CORE_ASSERT(std::this_thread::get_id() == Threads::GetMainThreadID(), "OpenGL calls must be made in main thread!");
+
     glBindVertexArray(m_RendererID);
     glBindBuffer(GL_ARRAY_BUFFER, m_VertexBufferID);
 
@@ -142,6 +157,8 @@ namespace Engine
 
   void OpenGLVertexArray::setVertexBuffer(const void* data, uintptr_t size)
   {
+    EN_CORE_ASSERT(std::this_thread::get_id() == Threads::GetMainThreadID(), "OpenGL calls must be made in main thread!");
+
     glBindVertexArray(m_RendererID);
     glBindBuffer(GL_ARRAY_BUFFER, m_VertexBufferID);
     glBufferData(GL_ARRAY_BUFFER, size, data, GL_DYNAMIC_DRAW);
@@ -154,6 +171,8 @@ namespace Engine
 
   void OpenGLVertexArray::setIndexBuffer(const Shared<const IndexBuffer>& indexBuffer)
   {
+    EN_CORE_ASSERT(std::this_thread::get_id() == Threads::GetMainThreadID(), "OpenGL calls must be made in main thread!");
+
     glBindVertexArray(m_RendererID);
     indexBuffer->bind();
     m_IndexBuffer = indexBuffer;

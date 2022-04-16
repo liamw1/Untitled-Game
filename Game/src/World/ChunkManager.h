@@ -63,6 +63,7 @@ private:
 
 private:
   using ChunkMap = std::unordered_map<int, Chunk*>;
+  using IndexMap = std::unordered_map<int, GlobalIndex>;
 
   static constexpr int s_RenderDistance = 16;
   static constexpr int s_LoadDistance = s_RenderDistance + 2;
@@ -74,14 +75,21 @@ private:
   std::vector<int> m_OpenChunkSlots;
 
   // Chunk pointers
-  std::array<ChunkMap, 4> m_Chunks;
+  std::array<ChunkMap, 3> m_Chunks;
   ChunkMap& m_EmptyChunks = m_Chunks[static_cast<int>(ChunkType::Empty)];
   ChunkMap& m_BoundaryChunks = m_Chunks[static_cast<int>(ChunkType::Boundary)];
   ChunkMap& m_RenderableChunks = m_Chunks[static_cast<int>(ChunkType::Renderable)];
-  ChunkMap& m_UpdateList = m_Chunks[static_cast<int>(ChunkType::NeedsUpdate)];
   std::unordered_map<int, HeightMap> m_HeightMaps;
 
+  IndexMap m_NewChunkList;
+  IndexMap m_UpdateList;
+
   int m_ChunksLoaded = 0;
+
+  int m_ChunksDelta = 0;
+  GlobalIndex m_LastPlayerChunkIndex{};
+
+  void searchForNewChunks();
 
   /*
     Grabs first open chunk slot and loads chunk at the given index.
@@ -89,15 +97,13 @@ private:
 
     \returns A valid iterator at the location of the chunk in m_BoundaryChunks.
   */
-  ChunkMap::iterator loadChunk(const GlobalIndex& chunkIndex);
+  Chunk* loadChunk(const GlobalIndex& chunkIndex);
 
   /*
     Gives chunk necessary updates and removes it from the update list.
     Given chunk must be in the update list.
-
-    \returns A valid iterator pointing to the next chunk in m_UpdateList.
   */
-  ChunkMap::iterator updateChunk(ChunkMap::iterator iteratorPosition);
+  void updateChunk(Chunk* chunk);
 
   /*
     Removes chunk from map, unloads it, and frees the slot it was occupying.
@@ -109,13 +115,15 @@ private:
   */
   ChunkMap::iterator unloadChunk(ChunkMap::iterator erasePosition);
 
+  void sendChunkLoadUpdate(Chunk* chunk);
+
   /*
     Re-categorizes the cardinal neighbors of a removed chunk as boundary chunks.
     Should be called for each chunk removed by unloadChunk function.
   */
   void sendChunkRemovalUpdate(const GlobalIndex& chunkIndex);
 
-  void queueForUpdating(Chunk* chunk);
+  void queueForUpdating(const Chunk* chunk);
   void updateImmediately(Chunk* chunk);
   void sendBlockUpdate(Chunk* chunk, const BlockIndex& blockIndex);
 
@@ -152,10 +160,7 @@ private:
 
     \param source      The type the chunk is currently classified as.
     \param destination The type the chunk will be classified as.
-
-    \returns A valid iterator in source grouping.
   */
-  ChunkMap::iterator moveToGroup(ChunkMap::iterator iteratorPosition, ChunkType source, ChunkType destination);
   void moveToGroup(Chunk* chunk, ChunkType source, ChunkType destination);
 
   bool blockNeighborIsAir(const Chunk* chunk, const BlockIndex& blockIndex, Block::Face face) const;

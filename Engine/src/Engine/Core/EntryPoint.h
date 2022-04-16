@@ -1,5 +1,6 @@
 #pragma once
 #include "Application.h"
+#include "Engine/Threading/Threads.h"
 #include "Engine/Debug/Instrumentor.h"
 
 #ifdef EN_PLATFORM_WINDOWS
@@ -8,6 +9,8 @@ extern Engine::Application* Engine::CreateApplication(ApplicationCommandLineArgs
 
 int main(int argc, char** argv)
 {
+  Threads::SetMainThreadID(std::this_thread::get_id());
+
   Engine::Log::Initialize();
 
   EN_PROFILE_BEGIN_SESSION("Startup", "EngineProfile-Startup.json");

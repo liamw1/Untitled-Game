@@ -29,8 +29,8 @@ void World::onUpdate(Timestep timestep)
     // m_ChunkManager.manageLODs();
     // m_ChunkManager.renderLODs();
     // Engine::RenderCommand::ClearDepthBuffer();
-    m_ChunkManager.loadNewChunks(50);
-    m_ChunkManager.updateChunks(50);
+    m_ChunkManager.loadNewChunks(100);
+    m_ChunkManager.updateChunks(100);
     m_ChunkManager.render();
     m_ChunkManager.clean();
   }

@@ -1,6 +1,7 @@
 #include "ENpch.h"
 #include "OpenGLContext.h"
 #include "Engine/Renderer/GraphicsContext.h"
+#include "Engine/Threading/Threads.h"
 
 #include <GLFW/glfw3.h>
 #include <glad/glad.h>
@@ -30,6 +31,7 @@ namespace Engine
   void OpenGLContext::initialize()
   {
     EN_PROFILE_FUNCTION();
+    EN_CORE_ASSERT(std::this_thread::get_id() == Threads::GetMainThreadID(), "OpenGL calls must be made in main thread!");
 
     glfwMakeContextCurrent(m_WindowHandle);
     int status = gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
@@ -53,6 +55,7 @@ namespace Engine
   void OpenGLContext::swapBuffers()
   {
     EN_PROFILE_FUNCTION();
+    EN_CORE_ASSERT(std::this_thread::get_id() == Threads::GetMainThreadID(), "OpenGL calls must be made in main thread!");
 
     glfwSwapBuffers(m_WindowHandle);
   }
