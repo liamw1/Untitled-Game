@@ -1,6 +1,6 @@
 #include "GMpch.h"
-#include <Engine/Core/EntryPoint.h>
 #include "GameSandbox.h"
+#include <Engine/Core/EntryPoint.h>
 
 class GameApp : public Engine::Application
 {

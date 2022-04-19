@@ -2,6 +2,7 @@
 #include "OpenGLShader.h"
 #include "Engine/Debug/Timer.h"
 #include "Engine/Threading/Threads.h"
+#include "Engine/Debug/Instrumentor.h"
 
 #include <codeanalysis\warnings.h> // Disable intellisense warnings
 #pragma warning(push)

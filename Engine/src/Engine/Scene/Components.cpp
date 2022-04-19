@@ -8,9 +8,9 @@ Vec3 Component::Transform::orientationDirection() const
   const length_t& pitch = rotation.y;
   const length_t& yaw = rotation.z;
 
-  return { cos(yaw) * cos(pitch),
-          -sin(yaw) * cos(pitch),
-          -sin(pitch) };
+  return { std::cos(yaw) * std::cos(pitch),
+          -std::sin(yaw) * std::cos(pitch),
+          -std::sin(pitch) };
 }
 
 Mat4 Component::Transform::calculateTransform() const

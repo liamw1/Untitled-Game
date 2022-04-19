@@ -23,12 +23,13 @@ static Float2 s_LastMousePosition{};
 
 static length_t s_TranslationSpeed = 8;
 
-class CameraController : public Engine::ScriptableEntity
+class CameraController : public Engine::EntityScript
 {
 public:
-  void onCreate() override
+  CameraController(Engine::Entity entity)
+    : m_Entity(entity)
   {
-    Component::Camera& cameraComponent = get<Component::Camera>();
+    Component::Camera& cameraComponent = m_Entity.get<Component::Camera>();
     cameraComponent.isActive = true;
     cameraComponent.camera.setPerspective(s_AspectRatio, s_FOV, s_NearClip, s_FarClip);
   }
@@ -36,7 +37,7 @@ public:
   void onUpdate(Timestep timestep) override
   {
     const seconds dt = timestep.sec();  // Time between frames in seconds
-    Vec3 viewDirection = get<Component::Transform>().orientationDirection();
+    Vec3 viewDirection = m_Entity.get<Component::Transform>().orientationDirection();
     Vec2 planarViewDirection = glm::normalize(Vec2(viewDirection));
 
     // Update player velocity
@@ -55,7 +56,7 @@ public:
       velocity.z -= s_TranslationSpeed;
 
     // Update player position
-    get<Component::Transform>().position += velocity * dt;
+    m_Entity.get<Component::Transform>().position += velocity * dt;
   }
 
   void onEvent(Engine::Event& event) override
@@ -66,9 +67,11 @@ public:
   }
 
 private:
+  Engine::Entity m_Entity;
+
   bool onMouseMove(Engine::MouseMoveEvent& event)
   {
-    Component::Transform& transformComponent = get<Component::Transform>();
+    Component::Transform& transformComponent = m_Entity.get<Component::Transform>();
 
     const Vec3& rotation = transformComponent.rotation;
     Angle roll = Angle::FromRad(rotation.x);
@@ -92,7 +95,7 @@ private:
 
   bool onMouseScroll(Engine::MouseScrollEvent& event)
   {
-    Engine::Camera& camera = get<Component::Camera>().camera;
+    Engine::Camera& camera = m_Entity.get<Component::Camera>().camera;
 
     Angle cameraFOV = camera.getFOV();
     cameraFOV -= s_CameraZoomSensitivity * event.getYOffset() * cameraFOV;

@@ -22,6 +22,7 @@ namespace Engine
   Entity Scene::CreateEntity(const Vec3& initialPosition, const std::string& name)
   {
     Entity entity(ECS::Registry().create());
+    entity.add<Component::ID>();
     entity.add<Component::Tag>().name = name.empty() ? "Unnamed Entity" : name;
     entity.add<Component::Transform>().position = initialPosition;
     return entity;
@@ -55,11 +56,7 @@ namespace Engine
       {
         // TODO: Move to Scene::OnScenePlay
         if (!nsc.instance)
-        {
-          nsc.instance = nsc.instantiateScript();
-          nsc.instance->entity = Entity(entityID);
-          nsc.instance->onCreate();
-        }
+          nsc.instance = nsc.instantiateScript(Entity(entityID));
 
         nsc.instance->onUpdate(timestep);
       });
@@ -106,11 +103,7 @@ namespace Engine
       {
         // TODO: Move to Scene::OnScenePlay
         if (!nsc.instance)
-        {
-          nsc.instance = nsc.instantiateScript();
-          nsc.instance->entity = Entity(entityID);
-          nsc.instance->onCreate();
-        }
+          nsc.instance = nsc.instantiateScript(Entity(entityID));
 
         nsc.instance->onEvent(event);
       });

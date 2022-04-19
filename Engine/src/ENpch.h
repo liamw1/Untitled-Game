@@ -1,5 +1,18 @@
 #pragma once
 
+// ==================== Common Utilities ==================== //
+#include "Engine/Core/Core.h"
+#include "Engine/Core/Log.h"
+
+// =========================== Math ========================= //
+#include <glm/glm.hpp>
+#include "Engine/Core/VecTypes.h"
+
+// ======================== Platform ======================== //
+#ifdef EN_PLATFORM_WINDOWS
+  #include <Windows.h>
+#endif
+
 // ==================== Standard Libraries ==================== //
 #include <cmath>
 #include <chrono>
@@ -19,16 +32,3 @@
 #include <iostream>
 #include <fstream>
 #include <filesystem>
-
-// ==================== Common Utilities ==================== //
-#include "Engine/Core/Core.h"
-#include "Engine/Core/Log.h"
-#include "Engine/Debug/Instrumentor.h"
-
-#ifdef EN_PLATFORM_WINDOWS
-  #include <Windows.h>
-#endif
-
-// =========================== Math ========================= //
-#include <glm/glm.hpp>
-#include "VecTypes.h"

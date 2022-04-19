@@ -59,7 +59,8 @@ namespace Engine
     {
       if (m_Event.getEventType() == T::GetStaticType())
       {
-        m_Event.handled |= func(static_cast<T&>(m_Event));
+        if (!m_Event.handled)
+          m_Event.handled = func(static_cast<T&>(m_Event));
         return true;
       }
       return false;

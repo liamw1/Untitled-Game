@@ -1,6 +1,7 @@
 #include "ENpch.h"
 #include "Application.h"
 #include "Engine/Renderer/Renderer.h"
+#include "Engine/Debug/Instrumentor.h"
 
 namespace Engine
 {

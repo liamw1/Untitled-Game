@@ -69,35 +69,4 @@ namespace Engine
 
     friend struct ECS;
   };
-
-
-
-  class ScriptableEntity
-  {
-  public:
-    Entity entity;
-
-    virtual ~ScriptableEntity() {}
-
-    template<typename T>
-    bool has() const { return entity.has<T>(); }
-
-    template<typename T>
-    T& get() { return entity.get<T>(); }
-
-    template<typename T>
-    const T& get() const { return entity.get<T>(); }
-
-    template<typename T, typename... Args>
-    T& add(Args&&... args) { return entity.add<T>(std::forward<Args>(args)...); }
-
-    template<typename T>
-    void remove() { entity.remove<T>(); }
-
-    virtual void onCreate() {};
-    virtual void onDestroy() {};
-
-    virtual void onUpdate(Timestep timestep) {};
-    virtual void onEvent(Event& event) {};
-  };
 }

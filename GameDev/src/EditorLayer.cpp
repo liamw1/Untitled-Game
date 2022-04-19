@@ -43,15 +43,18 @@ namespace Engine
     m_SecondCamera.get<Component::Transform>().rotation = Vec3(0, Angle(90.0f).rad(), Angle(90.0f).rad());
     m_SecondCamera.add<Component::Camera>().camera.setPerspective(1.0f, Angle(80.0f), 0.01f, 1000.0f);
 
-    class CameraController : public ScriptableEntity
+    class CameraController : public EntityScript
     {
     public:
+      CameraController(Entity entity)
+        : m_Entity(entity) {}
+
       void onUpdate(Timestep timestep) override
       {
         seconds dt = timestep.sec();
         length_t speed = 5.0;
 
-        Vec3& position = get<Component::Transform>().position;
+        Vec3& position = m_Entity.get<Component::Transform>().position;
         if (Input::IsKeyPressed(Key::A))
           position.x -= speed * dt;
         if (Input::IsKeyPressed(Key::D))
@@ -61,6 +64,9 @@ namespace Engine
         if (Input::IsKeyPressed(Key::S))
           position.y -= speed * dt;
       }
+
+    private:
+      Entity m_Entity;
     };
 
     m_CameraEntity.add<Component::NativeScript>().bind<CameraController>();

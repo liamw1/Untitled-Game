@@ -4,6 +4,7 @@
 #include "Shader.h"
 #include "UniformBuffer.h"
 #include "Engine/Scene/Scene.h"
+#include "Engine/Debug/Instrumentor.h"
 
 #include <glm/gtc/matrix_transform.hpp>
 

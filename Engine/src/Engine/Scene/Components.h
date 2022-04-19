@@ -1,12 +1,24 @@
 #pragma once
-#include "Entity.h"
+#include "Scripting.h"
+#include "Engine/Core/UID.h"
 #include "Engine/Renderer/Camera.h"
+
+// Forward declare entity
+namespace Engine
+{
+  class Entity;
+}
 
 /*
   Generic entity components
 */
 namespace Component
 {
+  struct ID
+  {
+    Engine::UID ID;
+  };
+
   struct Tag
   {
     std::string name{};
@@ -37,16 +49,13 @@ namespace Component
 
   struct NativeScript
   {
-    Engine::ScriptableEntity* instance = nullptr;
-      
-    Engine::ScriptableEntity* (*instantiateScript)();
-    void (*destroyScript)(NativeScript*);
+    Unique<Engine::EntityScript> instance;
+    Unique<Engine::EntityScript> (*instantiateScript)(Engine::Entity entity);
 
-    template<typename T>
-    void bind()
+    template<typename T, typename... Args>
+    void bind(Args... args)
     {
-      instantiateScript = []() { return static_cast<Engine::ScriptableEntity*>(new T()); };
-      destroyScript = [](NativeScript* nsc) { delete nsc->instance; nsc->instance = nullptr; };
+      instantiateScript = [args...](Engine::Entity entity)->Unique<Engine::EntityScript> { return CreateUnique<T>(entity, args...); };
     }
   };
 }

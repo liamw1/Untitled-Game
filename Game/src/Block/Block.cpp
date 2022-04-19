@@ -1,6 +1,7 @@
 #include "GMpch.h"
 #include "Block.h"
 #include "Util/MultiDimArrays.h"
+#include <Engine.h>
 
 struct BlockUniforms
 {

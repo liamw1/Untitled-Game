@@ -31,7 +31,7 @@ namespace Engine
 
       uintptr_t dataSize = vertices.size() * sizeof(Vertex);
       target->setVertexBuffer(vertices.data(), dataSize);
-      target->setIndexBuffer(IndexBuffer::Create(indices.data(), static_cast<uint32_t>(indices.size())));
+      target->setIndexBuffer(IndexBuffer::Create(indices));
     }
 
     // Important: Shader must be bound before mesh can be drawn!

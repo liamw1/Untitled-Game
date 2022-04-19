@@ -1,6 +1,7 @@
 #include "ENpch.h"
 #include "OpenGLTexture.h"
 #include "Engine/Threading/Threads.h"
+#include "Engine/Debug/Instrumentor.h"
 
 #include <codeanalysis\warnings.h> // Disable intellisense warnings
 #pragma warning(push)

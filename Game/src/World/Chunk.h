@@ -2,6 +2,7 @@
 #include "Indexing.h"
 #include "Util/Noise.h"
 #include "Util/MultiDimArrays.h"
+#include <Engine.h>
 
 struct HeightMap;
 
@@ -62,7 +63,7 @@ public:
   static bool BlockNeighborIsInAnotherChunk(const BlockIndex& blockIndex, Block::Face face);
 
 private:
-  struct ChunkUniforms
+  struct Uniforms
   {
     Float3 anchorPosition;
   };
@@ -75,7 +76,7 @@ private:
   static Unique<Engine::UniformBuffer> s_ChunkUniformBuffer;
   static Shared<const Engine::IndexBuffer> s_IndexBuffer;
   static const Engine::BufferLayout s_VertexBufferLayout;
-  static ChunkUniforms s_ChunkUniforms;
+  static Uniforms s_Uniforms;
   static constexpr int s_TextureSlot = 0;
 
   Unique<Engine::VertexArray> m_VertexArray;

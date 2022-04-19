@@ -1,6 +1,7 @@
 #include "ENpch.h"
 #include "ImGuiLayer.h"
 #include "Engine/Core/Application.h"
+#include "Engine/Debug/Instrumentor.h"
 
 #include <codeanalysis\warnings.h> // Disable intellisense warnings
 #pragma warning(push)

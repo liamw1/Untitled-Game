@@ -19,8 +19,7 @@
 //
 //================================================================================
 #pragma once
-#include <cstdint>
-#include <VecTypes.h>
+#include <Engine/Core/VecTypes.h>
 
 /*
   The RegularCellData structure holds information about the triangulation

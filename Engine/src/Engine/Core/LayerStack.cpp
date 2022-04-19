@@ -1,5 +1,6 @@
 #include "ENpch.h"
 #include "LayerStack.h"
+#include "Engine/Debug/Instrumentor.h"
 
 namespace Engine
 {

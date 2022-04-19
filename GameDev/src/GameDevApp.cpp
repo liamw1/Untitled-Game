@@ -1,6 +1,6 @@
 #include "GDpch.h"
-#include <Engine/Core/EntryPoint.h>
 #include "EditorLayer.h"
+#include <Engine/Core/EntryPoint.h>
 
 namespace Engine
 {

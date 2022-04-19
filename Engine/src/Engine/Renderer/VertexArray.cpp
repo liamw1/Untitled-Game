@@ -16,6 +16,13 @@ namespace Engine
     }
   }
 
+  Unique<IndexBuffer> IndexBuffer::Create(const std::vector<uint32_t>& indices)
+  {
+    return IndexBuffer::Create(indices.data(), static_cast<uint32_t>(indices.size()));
+  }
+
+
+
   Unique<VertexArray> VertexArray::Create()
   {
     switch (Renderer::GetAPI())

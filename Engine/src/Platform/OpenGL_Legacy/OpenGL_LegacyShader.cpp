@@ -1,6 +1,7 @@
 #include "ENpch.h"
 #include "OpenGL_LegacyShader.h"
 #include "Engine/Threading/Threads.h"
+#include "Engine/Debug/Instrumentor.h"
 #include <glad/glad.h>
 #include <glm/gtc/type_ptr.hpp>
 
