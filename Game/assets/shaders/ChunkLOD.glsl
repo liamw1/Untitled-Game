@@ -2,9 +2,9 @@
 #version 450 core
 
 const vec2 s_TexCoords[4] = vec2[4]( vec2(0.0f,	0.0f),
-									                   vec2(1.0f, 0.0f),
-									                   vec2(1.0f, 1.0f),
-									                   vec2(0.0f, 1.0f) );
+                                     vec2(1.0f, 0.0f),
+                                     vec2(1.0f, 1.0f),
+                                     vec2(0.0f, 1.0f) );
 
 layout(std140, binding = 0) uniform Camera
 {
@@ -12,7 +12,7 @@ layout(std140, binding = 0) uniform Camera
 };
 layout(std140, binding = 2) uniform LOD
 {
-	vec3 u_Anchor;
+  vec3 u_Anchor;
   float u_TextureScaling;
   float u_NearPlaneDistance;
   float u_FarPlaneDistance;
@@ -36,7 +36,7 @@ void main()
 
   // Applying logarithmic depth buffer
   // NOTE: This might be disorting normals far from the camera,
-  //	     it may be better to give shader a modified camera instead
+  //	   it may be better to give shader a modified camera instead
   gl_Position.z = C * log(gl_Position.w / u_NearPlaneDistance) - 1; 
   gl_Position.z *= gl_Position.w;
 

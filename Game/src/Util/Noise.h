@@ -46,4 +46,4 @@ namespace Noise
   length_t FastTerrainNoise3D(const Vec3& position);
 }
 
-inline Noise::SurfaceData operator*(length_t x, const Noise::SurfaceData& other) { return other * x; }
+inline Noise::SurfaceData operator*(length_t x, const Noise::SurfaceData& other) { return other * static_cast<float>(x); }

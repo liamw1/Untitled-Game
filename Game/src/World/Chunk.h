@@ -62,10 +62,9 @@ public:
   static bool BlockNeighborIsInAnotherChunk(const BlockIndex& blockIndex, Block::Face face);
 
 private:
-  struct Uniforms
+  struct ChunkUniforms
   {
     Float3 anchorPosition;
-    const float blockLength = static_cast<float>(Block::Length());
   };
 
   static constexpr int s_ChunkSize = 32;
@@ -73,9 +72,10 @@ private:
   // Mesh Data
   static Unique<Engine::Shader> s_Shader;
   static Shared<Engine::TextureArray> s_TextureArray;
-  static Unique<Engine::UniformBuffer> s_UniformBuffer;
+  static Unique<Engine::UniformBuffer> s_ChunkUniformBuffer;
   static Shared<const Engine::IndexBuffer> s_IndexBuffer;
   static const Engine::BufferLayout s_VertexBufferLayout;
+  static ChunkUniforms s_ChunkUniforms;
   static constexpr int s_TextureSlot = 0;
 
   Unique<Engine::VertexArray> m_VertexArray;

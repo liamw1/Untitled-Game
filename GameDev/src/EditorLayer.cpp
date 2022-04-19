@@ -17,6 +17,10 @@ namespace Engine
   {
     EN_PROFILE_FUNCTION();
 
+    m_CheckerboardTexture = Texture2D::Create("assets/textures/Checkerboard.png");
+    m_PlayButtonIcon = Texture2D::Create("assets/textures/PlayButton.png");
+    m_StopButtonIcon = Texture2D::Create("assets/textures/StopButton.png");
+
     FramebufferSpecification framebufferSpecification;
     framebufferSpecification.attachments = { FramebufferTextureFormat::RGBA8, 
                                              FramebufferTextureFormat::RED_INTEGER,
@@ -91,9 +95,20 @@ namespace Engine
     // Clear entityID attachment to -1
     m_Framebuffer->clearAttachment(1, -1);
 
-    // Update scene
-    Scene::OnUpdateDev(timestep);
-    DevCamera::OnUpdate(timestep);
+    switch (m_SceneState)
+    {
+      case SceneState::Edit:
+      {
+        DevCamera::OnUpdate(timestep);
+        Scene::OnUpdateDev(timestep);
+        break;
+      }
+      case SceneState::Play:
+      {
+        Scene::OnUpdate(timestep);
+        break;
+      }
+    }
 
     ImVec2 mousePos = ImGui::GetMousePos();
     mousePos.x -= m_ViewportBounds[0].x;
@@ -236,6 +251,8 @@ namespace Engine
     ImGui::End();
     ImGui::PopStyleVar();
 
+    UI_Toolbar();
+
     ImGui::End();
   }
 
@@ -246,6 +263,50 @@ namespace Engine
 
     EventDispatcher dispatcher(event);
     dispatcher.dispatch<MouseButtonPressEvent>(EN_BIND_EVENT_FN(onMouseButtonPress));
+  }
+
+  void EditorLayer::onScenePlay()
+  {
+    m_SceneState = SceneState::Play;
+  }
+
+  void EditorLayer::onSceneStop()
+  {
+    m_SceneState = SceneState::Edit;
+  }
+
+  void EditorLayer::UI_Toolbar()
+  {
+    ImVec4* colors = ImGui::GetStyle().Colors;
+    ImVec4 buttonHoveredBackground = colors[ImGuiCol_ButtonHovered];
+    ImVec4 buttonActiveBackground = colors[ImGuiCol_ButtonActive];
+    buttonHoveredBackground.w = 0.5f;
+    buttonActiveBackground.w = 0.5f;
+
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 2));
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(0, 0));
+    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, buttonHoveredBackground);
+    ImGui::PushStyleColor(ImGuiCol_ButtonActive, buttonActiveBackground);
+
+    ImGui::Begin("##toolbar", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+
+    float size = ImGui::GetWindowHeight() - 4.0f;
+    Texture2D* icon = m_SceneState == SceneState::Edit ? m_PlayButtonIcon.get() : m_StopButtonIcon.get();
+
+    ImTextureID texID = reinterpret_cast<ImTextureID>(static_cast<intptr_t>(icon->getRendererID()));
+    ImGui::SetCursorPosX((ImGui::GetWindowContentRegionMax().x - size) / 2);
+    if (ImGui::ImageButton(texID, ImVec2(size, size), ImVec2(0, 0), ImVec2(1, 1), 0))
+    {
+      if (m_SceneState == SceneState::Edit)
+        onScenePlay();
+      else if (m_SceneState == SceneState::Play)
+        onSceneStop();
+    }
+
+    ImGui::PopStyleVar(2);
+    ImGui::PopStyleColor(3);
+    ImGui::End();
   }
 
   bool EditorLayer::onMouseButtonPress(MouseButtonPressEvent& event)

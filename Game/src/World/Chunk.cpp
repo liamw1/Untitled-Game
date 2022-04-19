@@ -1,12 +1,14 @@
 #include "GMpch.h"
 #include "Chunk.h"
 #include "Player/Player.h"
+#include <iostream>
 
 Unique<Engine::Shader> Chunk::s_Shader = nullptr;
 Shared<Engine::TextureArray> Chunk::s_TextureArray = nullptr;
-Unique<Engine::UniformBuffer> Chunk::s_UniformBuffer = nullptr;
+Unique<Engine::UniformBuffer> Chunk::s_ChunkUniformBuffer = nullptr;
 Shared<const Engine::IndexBuffer> Chunk::s_IndexBuffer = nullptr;
 const Engine::BufferLayout Chunk::s_VertexBufferLayout = { { ShaderDataType::Uint32, "a_VertexData" } };
+Chunk::ChunkUniforms Chunk::s_ChunkUniforms{};
 
 Chunk::Chunk()
   : m_Composition(nullptr), m_NonOpaqueFaces(0), m_QuadCount(0), m_GlobalIndex({}) {}
@@ -97,7 +99,7 @@ void Chunk::Initialize(const Shared<Engine::TextureArray>& textureArray)
 
   s_Shader = Engine::Shader::Create("assets/shaders/Chunk.glsl");
   s_TextureArray = textureArray;
-  s_UniformBuffer = Engine::UniformBuffer::Create(sizeof(Uniforms), 1);
+  s_ChunkUniformBuffer = Engine::UniformBuffer::Create(sizeof(ChunkUniforms), 2);
 
   delete[] indices;
 }
@@ -123,6 +125,9 @@ void Chunk::setBlockType(blockIndex_t i, blockIndex_t j, blockIndex_t k, Block::
 
   if (isEmpty())
   {
+    if (blockType == Block::Type::Air)
+      return;
+
     m_Composition = new Block::Type[Chunk::TotalBlocks()];
     for (int i = 0; i < Chunk::TotalBlocks(); ++i)
       m_Composition[i] = Block::Type::Air;
@@ -307,10 +312,8 @@ void Chunk::draw() const
   if (meshIndexCount == 0)
     return; // Nothing to draw
 
-  Uniforms uniforms{};
-  uniforms.anchorPosition = anchorPosition();
-
-  Engine::Renderer::DrawMesh(m_VertexArray.get(), meshIndexCount, s_UniformBuffer.get(), uniforms);
+  s_ChunkUniforms.anchorPosition = anchorPosition();
+  Engine::Renderer::DrawMesh(m_VertexArray.get(), meshIndexCount, s_ChunkUniformBuffer.get(), s_ChunkUniforms);
 }
 
 void Chunk::clear()

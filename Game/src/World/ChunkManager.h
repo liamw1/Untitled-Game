@@ -49,7 +49,6 @@ private:
     Boundary = 0,
     Empty,
     Renderable,
-    NeedsUpdate,
 
     Error
   };
@@ -86,24 +85,31 @@ private:
 
   int m_ChunksLoaded = 0;
 
-  int m_ChunksDelta = 0;
-  GlobalIndex m_LastPlayerChunkIndex{};
-
+  /*
+    Scans boundary for places where new chunks can be loaded
+    and appends them to m_NewChunkList.
+  */
   void searchForNewChunks();
 
   /*
     Grabs first open chunk slot and loads chunk at the given index.
-    New chunk is always categorized as a boundary chunk to start with.
+    Loaded chunks are first classified as boundary chunks.
 
-    \returns A valid iterator at the location of the chunk in m_BoundaryChunks.
+    If chunk or its cardinal neighbors are no longer on the boundary
+    after load, they are moved from m_BoundaryChunks.
+
+    \returns A pointer to the loaded chunk.
   */
   Chunk* loadChunk(const GlobalIndex& chunkIndex);
 
   /*
     Gives chunk necessary updates and removes it from the update list.
     Given chunk must be in the update list.
+    Boundary chunks will not receive updates until they are moved from boundary.
+
+    \returns A valid iterator pointing to the next index in update list.
   */
-  void updateChunk(Chunk* chunk);
+  IndexMap::iterator updateChunk(Chunk* chunk);
 
   /*
     Removes chunk from map, unloads it, and frees the slot it was occupying.
@@ -115,6 +121,16 @@ private:
   */
   ChunkMap::iterator unloadChunk(ChunkMap::iterator erasePosition);
 
+  /*
+    Moves chunk from m_BoundaryChunks if no longer on boundary.
+    Given chunk must be a boundary chunk.
+  */
+  void boundaryChunkUpdate(Chunk* chunk);
+
+  /*
+    Re-categorizes loaded chunk and its cardinal neighbors if they are
+    no longer on boundary.  Should be called for each newly-loaded chunk.
+  */
   void sendChunkLoadUpdate(Chunk* chunk);
 
   /*
@@ -123,9 +139,25 @@ private:
   */
   void sendChunkRemovalUpdate(const GlobalIndex& chunkIndex);
 
-  void queueForUpdating(const Chunk* chunk);
-  void updateImmediately(Chunk* chunk);
+  /*
+    Updates chunk immediately.  If specified block is on chunk border,
+    will also update neighboring chunks.
+
+    Cardinal neighbors will be updated immediately, while
+    edge and corner neighbors will be queued for updating later.
+  */
   void sendBlockUpdate(Chunk* chunk, const BlockIndex& blockIndex);
+
+  /*
+    Adds chunk's index to update list.
+  */
+  void queueForUpdating(const Chunk* chunk);
+
+  /*
+    Adds chunk's index to update list and updates it immediately.
+    May trigger a re-meshing, so use sparingly.
+  */
+  void updateImmediately(Chunk* chunk);
 
   /*
     Generates simplistic mesh in a compressed format based on chunk compostion.
@@ -153,8 +185,6 @@ private:
   bool isLoaded(const GlobalIndex& chunkIndex) const;
   ChunkType getChunkType(const Chunk* chunk);
 
-  void addToGroup(Chunk* chunk, ChunkType destination);
-
   /*
     Moves chunk from one grouping to another.
 
@@ -169,9 +199,11 @@ private:
     Generates a (nearly) unique key for hash maps.
   */
   int createKey(const GlobalIndex& chunkIndex) const;
+  int createKey(const Chunk* chunk) const;
   int createHeightMapKey(globalIndex_t chunkI, globalIndex_t chunkJ) const;
 
   bool isInRange(const GlobalIndex& chunkIndex, globalIndex_t range) const;
+  bool isInRange(const Chunk* chunk, globalIndex_t range) const;
 
   // NOTE: These should probably be moved out into Utils folder
   /*

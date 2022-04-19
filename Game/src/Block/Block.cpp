@@ -2,12 +2,19 @@
 #include "Block.h"
 #include "Util/MultiDimArrays.h"
 
+struct BlockUniforms
+{
+  const float blockLength = static_cast<float>(Block::Length());
+};
+
 static constexpr int s_MaxBlockTypes = std::numeric_limits<blockID>::max() + 1;
 static constexpr int s_MaxBlockTextures = 6 * s_MaxBlockTypes;
 static bool s_Initialized = false;
 
 static StackArray2D<Block::Texture, s_MaxBlockTypes, 6> s_TexIDs{};
 static std::array<std::string, s_MaxBlockTextures> s_TexturePaths{};
+static Unique<Engine::UniformBuffer> s_BlockUniformBuffer = nullptr;
+static const BlockUniforms s_BlockUniforms{};
 
 static void assignTextures(Block::Type block, Block::Texture topTexture, Block::Texture sideTextures, Block::Texture bottomTexture)
 {
@@ -38,6 +45,9 @@ static void assignTextures(Block::Type block, Block::Texture topBotTextures, Blo
 
 void Block::Initialize()
 {
+  s_BlockUniformBuffer = Engine::UniformBuffer::Create(sizeof(BlockUniforms), 1);
+  s_BlockUniformBuffer->setData(&s_BlockUniforms, sizeof(BlockUniforms));
+
   s_TexturePaths[static_cast<blockTexID>(Block::Texture::GrassTop)] = "assets/textures/voxel-pack/PNG/Tiles/grass_top.png";
   s_TexturePaths[static_cast<blockTexID>(Block::Texture::GrassSide)] = "assets/textures/voxel-pack/PNG/Tiles/grass_top.png";
   s_TexturePaths[static_cast<blockTexID>(Block::Texture::Dirt)] = "assets/textures/voxel-pack/PNG/Tiles/dirt.png";

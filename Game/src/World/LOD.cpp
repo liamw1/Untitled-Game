@@ -152,7 +152,7 @@ void LOD::Initialize(const Shared<Engine::TextureArray>& textureArray)
 {
   s_LODShader = Engine::Shader::Create("assets/shaders/ChunkLOD.glsl");
   s_LODTextureArray = textureArray;
-  s_LODUniformBuffer = Engine::UniformBuffer::Create(sizeof(LODUniforms), 2);
+  s_LODUniformBuffer = Engine::UniformBuffer::Create(sizeof(LODUniforms), 3);
 }
 
 void LOD::BindBuffers()
@@ -328,7 +328,7 @@ static NoiseData interpolateNoiseData(LOD::Octree::Node* node, const HeapArray2D
   length_t tB = surfaceDataB.getHeight() - zB;
 
   // Fraction of distance along edge vertex should be placed
-  length_t t = tA / (tA - tB);
+  float t = static_cast<float>(tA / (tA - tB));
 
   Vec3 vertexPosition = LODInterpolation(t, s, posA, posB);
   Noise::SurfaceData surfaceData = LODInterpolation(t, s, surfaceDataA, surfaceDataB);

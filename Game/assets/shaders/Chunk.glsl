@@ -2,20 +2,23 @@
 #version 450 core
 
 const vec2 s_TexCoords[4] = vec2[4]( vec2(0.0f,	0.0f),
-									                   vec2(1.0f, 0.0f),
-									                   vec2(1.0f, 1.0f),
-									                   vec2(0.0f, 1.0f) );
+                                     vec2(1.0f, 0.0f),
+                                     vec2(1.0f, 1.0f),
+                                     vec2(0.0f, 1.0f) );
 
 const float s_AO[4] = float[4](0.4f, 0.6f, 0.8f, 1.0f);
 
 layout(std140, binding = 0) uniform Camera
 {
-	mat4 u_ViewProjection;
+  mat4 u_ViewProjection;
 };
-layout(std140, binding = 1) uniform Chunk
+layout(std140, binding = 1) uniform Block
 {
-	vec3 u_AnchorPosition;
   float u_BlockLength;
+};
+layout(std140, binding = 2) uniform Chunk
+{
+  vec3 u_AnchorPosition;
 };
 
 layout(location = 0) in uint a_VertexData;
@@ -27,9 +30,9 @@ layout(location = 2) out vec4 v_BasicLight;
 void main()
 {
   // Relative position of block center
-  vec3 relPos = vec3(u_BlockLength * float((a_VertexData & 0x0000003Fu) >> 0u),
-						         u_BlockLength * float((a_VertexData & 0x00000FC0u) >> 6u),
-						         u_BlockLength * float((a_VertexData & 0x0003F000u) >> 12u));
+  vec3 relPos = u_BlockLength * vec3((a_VertexData & 0x0000003Fu) >> 0u,
+                                     (a_VertexData & 0x00000FC0u) >> 6u,
+                                     (a_VertexData & 0x0003F000u) >> 12u);
 
   uint quadIndex = (a_VertexData & 0x000C0000u) >> 18u;
   uint AOIndex   = (a_VertexData & 0x00300000u) >> 20u;
@@ -38,7 +41,7 @@ void main()
   v_TexCoord = s_TexCoords[quadIndex];
   v_BasicLight = vec4(vec3(s_AO[AOIndex]), 1.0f);
 
-  gl_Position = u_ViewProjection * vec4(u_AnchorPosition + relPos, 1.0f);
+  gl_Position = u_ViewProjection * vec4(u_AnchorPosition.xyz + relPos, 1.0f);
 }
 
 
