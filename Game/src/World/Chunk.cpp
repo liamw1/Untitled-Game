@@ -5,7 +5,7 @@
 
 Unique<Engine::Shader> Chunk::s_Shader = nullptr;
 Shared<Engine::TextureArray> Chunk::s_TextureArray = nullptr;
-Unique<Engine::UniformBuffer> Chunk::s_ChunkUniformBuffer = nullptr;
+Unique<Engine::UniformBuffer> Chunk::s_UniformBuffer = nullptr;
 Shared<const Engine::IndexBuffer> Chunk::s_IndexBuffer = nullptr;
 const Engine::BufferLayout Chunk::s_VertexBufferLayout = { { ShaderDataType::Uint32, "a_VertexData" } };
 Chunk::Uniforms Chunk::s_Uniforms{};
@@ -99,7 +99,7 @@ void Chunk::Initialize(const Shared<Engine::TextureArray>& textureArray)
 
   s_Shader = Engine::Shader::Create("assets/shaders/Chunk.glsl");
   s_TextureArray = textureArray;
-  s_ChunkUniformBuffer = Engine::UniformBuffer::Create(sizeof(Uniforms), 2);
+  s_UniformBuffer = Engine::UniformBuffer::Create(sizeof(Uniforms), 2);
 
   delete[] indices;
 }
@@ -313,7 +313,7 @@ void Chunk::draw() const
     return; // Nothing to draw
 
   s_Uniforms.anchorPosition = anchorPosition();
-  Engine::Renderer::DrawMesh(m_VertexArray.get(), meshIndexCount, s_ChunkUniformBuffer.get(), s_Uniforms);
+  Engine::Renderer::DrawMesh(m_VertexArray.get(), meshIndexCount, s_UniformBuffer.get(), s_Uniforms);
 }
 
 void Chunk::clear()

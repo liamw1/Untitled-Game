@@ -73,7 +73,7 @@ private:
   // Mesh Data
   static Unique<Engine::Shader> s_Shader;
   static Shared<Engine::TextureArray> s_TextureArray;
-  static Unique<Engine::UniformBuffer> s_ChunkUniformBuffer;
+  static Unique<Engine::UniformBuffer> s_UniformBuffer;
   static Shared<const Engine::IndexBuffer> s_IndexBuffer;
   static const Engine::BufferLayout s_VertexBufferLayout;
   static Uniforms s_Uniforms;

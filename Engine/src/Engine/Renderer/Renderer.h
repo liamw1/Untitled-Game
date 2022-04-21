@@ -42,7 +42,6 @@ namespace Engine
       EN_ASSERT(uniformBuffer != nullptr, "Uniform buffer has not been initialized!");
 
       uniformBuffer->setData(&uniforms, sizeof(Uniforms));
-      vertexArray->bind();
       RenderCommand::DrawIndexed(vertexArray, indexCount);
     }
   };

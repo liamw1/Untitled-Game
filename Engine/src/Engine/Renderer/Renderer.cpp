@@ -153,7 +153,7 @@ namespace Engine
     uint32_t whiteTextureData = 0xffffffff;
     s_WhiteTexture->setData(&whiteTextureData, sizeof(uint32_t));
 
-    s_TextureShader = Shader::Create("../Engine/assets/shaders/Texture.glsl");
+    s_TextureShader = Shader::Create("../Engine/assets/shaders/Quad.glsl");
     s_WireFrameShader = Shader::Create("../Engine/assets/shaders/WireFrame.glsl");
 
     s_CameraUniformBuffer = UniformBuffer::Create(sizeof(CameraUniforms), 0);
@@ -193,7 +193,6 @@ namespace Engine
     s_CubeVertexArray->setVertexBuffer(vertices.data(), vertices.size() * sizeof(QuadVertex));
 
     s_TextureShader->bind();
-    s_CubeVertexArray->bind();
     RenderCommand::DrawIndexed(s_CubeVertexArray.get());
   }
 
@@ -209,7 +208,6 @@ namespace Engine
     s_WireFrameVertexArray->setVertexBuffer(vertices.data(), vertices.size() * sizeof(WireVertex));
 
     s_WireFrameShader->bind();
-    s_WireFrameVertexArray->bind();
     RenderCommand::DrawIndexedLines(s_WireFrameVertexArray.get());
   }
 

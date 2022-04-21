@@ -49,6 +49,35 @@ namespace Engine
     }
   }
 
+  static void render2D(const Mat4& viewProjection)
+  {
+    auto spriteView = ECS::Registry().view<Component::SpriteRenderer>();
+    auto circleView = ECS::Registry().view<Component::CircleRenderer>();
+
+    if (spriteView.size() == 0 && circleView.size() == 0)
+      return;
+
+    Renderer2D::BeginScene(viewProjection);
+
+    for (entt::entity entityID : spriteView)
+    {
+      Mat4 transform = ECS::Registry().get<Component::Transform>(entityID).calculateTransform();
+      const Component::SpriteRenderer& sprite = spriteView.get<Component::SpriteRenderer>(entityID);
+
+      Renderer2D::DrawSprite(transform, sprite, static_cast<int>(entityID));
+    }
+
+    for (entt::entity entityID : circleView)
+    {
+      Mat4 transform = ECS::Registry().get<Component::Transform>(entityID).calculateTransform();
+      const Component::CircleRenderer& circle = circleView.get<Component::CircleRenderer>(entityID);
+
+      Renderer2D::DrawCircle(transform, circle.color, circle.thickness, circle.fade, static_cast<int>(entityID));
+    }
+
+    Renderer2D::EndScene();
+  }
+
   void Scene::OnUpdate(Timestep timestep)
   {
     // Update scripts
@@ -61,40 +90,12 @@ namespace Engine
         nsc.instance->onUpdate(timestep);
       });
 
-    // Render 2D
-    auto view = ECS::Registry().view<Component::SpriteRenderer>();
-    if (view.size() > 0)
-    {
-      Mat4 viewProj = ActiveCameraViewProjection();
-
-      Renderer2D::BeginScene(viewProj);
-      for (entt::entity entityID : view)
-      {
-        Mat4 transform = ECS::Registry().get<Component::Transform>(entityID).calculateTransform();
-        const Component::SpriteRenderer& sprite = view.get<Component::SpriteRenderer>(entityID);
-
-        Renderer2D::DrawSprite(transform, sprite, static_cast<int>(entityID));
-      }
-      Renderer2D::EndScene();
-    }
+    render2D(ActiveCameraViewProjection());
   }
 
   void Scene::OnUpdateDev(Timestep timestep)
   {
-    // Render 2D
-    auto view = ECS::Registry().view<Component::SpriteRenderer>();
-    if (view.size() > 0)
-    {
-      Renderer2D::BeginScene(DevCamera::ViewProjection());
-      for (entt::entity entityID : view)
-      {
-        Mat4 transform = ECS::Registry().get<Component::Transform>(entityID).calculateTransform();
-        const Component::SpriteRenderer& sprite = view.get<Component::SpriteRenderer>(entityID);
-
-        Renderer2D::DrawSprite(transform, sprite, static_cast<int>(entityID));
-      }
-      Renderer2D::EndScene();
-    }
+    render2D(DevCamera::ViewProjection());
   }
 
   void Scene::OnEvent(Event& event)

@@ -20,7 +20,8 @@ namespace Engine
     void DrawQuad(const Mat4& transform, const Float4& tintColor = Float4(1.0), float textureScalingFactor = 1.0f, const Shared<Texture2D>& texture = nullptr, int entityID = -1);
     void DrawQuad(const Vec3& position, const Vec2& size, Angle rotation = Angle(0.0f), const Float4& tintColor = Float4(1.0), float textureScalingFactor = 1.0f, const Shared<Texture2D>& texture = nullptr, int entityID = -1);
 
-    void DrawSprite(const Mat4& transform, const Component::SpriteRenderer& sprite, int entityID);
+    void DrawSprite(const Mat4& transform, const Component::SpriteRenderer& sprite, int entityID = -1);
+    void DrawCircle(const Mat4& transform, const Float4& color, float thickness, float fade, int entityID = -1);
 
     // Stats
     struct Statistics

@@ -49,8 +49,8 @@ namespace Engine
     EN_CORE_ASSERT(std::this_thread::get_id() == Threads::GetMainThreadID(), "OpenGL calls must be made in main thread!");
     EN_ASSERT(vertexArray != nullptr, "Vertex array has not been initialized!");
 
+    vertexArray->bind();
     glDrawArrays(GL_TRIANGLES, 0, vertexCount);
-    glBindTexture(GL_TEXTURE_2D, 0);
   }
 
   void OpenGLRendererAPI::drawIndexed(const VertexArray* vertexArray, uint32_t indexCount)
@@ -58,9 +58,9 @@ namespace Engine
     EN_CORE_ASSERT(std::this_thread::get_id() == Threads::GetMainThreadID(), "OpenGL calls must be made in main thread!");
     EN_ASSERT(vertexArray != nullptr, "Vertex array has not been initialized!");
 
+    vertexArray->bind();
     uint32_t count = indexCount == 0 ? vertexArray->getIndexBuffer()->getCount() : indexCount;
     glDrawElements(GL_TRIANGLES, count, GL_UNSIGNED_INT, nullptr);
-    glBindTexture(GL_TEXTURE_2D, 0);
   }
 
   void OpenGLRendererAPI::drawIndexedLines(const VertexArray* vertexArray, uint32_t indexCount)
@@ -68,6 +68,7 @@ namespace Engine
     EN_CORE_ASSERT(std::this_thread::get_id() == Threads::GetMainThreadID(), "OpenGL calls must be made in main thread!");
     EN_ASSERT(vertexArray != nullptr, "Vertex array has not been initialized!");
 
+    vertexArray->bind();
     uint32_t count = indexCount == 0 ? vertexArray->getIndexBuffer()->getCount() : indexCount;
     glDrawElements(GL_LINES, count, GL_UNSIGNED_INT, nullptr);
   }

@@ -13,4 +13,15 @@ namespace Engine
       m_UpperUID(s_UniformDistribution(s_RandomEngine))
   {
   }
+
+  std::string UID::toString()
+  {
+    static constexpr int numHexCharacters = 2 * sizeof(uint64_t);
+
+    std::stringstream ss;
+    ss << std::hex << std::setfill('0');
+    ss << std::setw(numHexCharacters) << m_UpperUID;
+    ss << std::setw(numHexCharacters) << m_LowerUID;
+    return ss.str();
+  }
 }

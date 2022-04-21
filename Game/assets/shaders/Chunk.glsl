@@ -1,7 +1,7 @@
 #type vertex
 #version 450 core
 
-const vec2 s_TexCoords[4] = vec2[4]( vec2(0.0f,	0.0f),
+const vec2 s_TexCoords[4] = vec2[4]( vec2(0.0f, 0.0f),
                                      vec2(1.0f, 0.0f),
                                      vec2(1.0f, 1.0f),
                                      vec2(0.0f, 1.0f) );

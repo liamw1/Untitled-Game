@@ -10,6 +10,8 @@ namespace Engine
   public:
     UID();
 
+    std::string toString();
+
   private:
     uint64_t m_LowerUID;
     uint64_t m_UpperUID;

@@ -168,9 +168,25 @@ namespace Engine
           EN_CORE_WARN("Entity already has sprite renderer component");
       }
 
+      if (ImGui::MenuItem("Circle Renderer"))
+      {
+        if (!s_SelectionContext.has<Component::CircleRenderer>())
+        {
+          s_SelectionContext.add<Component::CircleRenderer>();
+          ImGui::CloseCurrentPopup();
+        }
+        else
+          EN_CORE_WARN("Entity already has circle renderer component");
+      }
+
       ImGui::EndPopup();
     }
     ImGui::PopItemWidth();
+
+    drawComponent<Component::ID>("ID", entity, [](auto& component)
+      {
+        ImGui::Text("ID: %s", component.ID.toString().c_str());
+      });
 
     if (entity.has<Component::Transform>())
       if (ImGui::TreeNodeEx(reinterpret_cast<void*>(typeid(Component::Transform).hash_code()), s_TreeNodeFlags, "Transform"))
@@ -230,6 +246,13 @@ namespace Engine
     drawComponent<Component::SpriteRenderer>("Sprite renderer", entity, [](auto& component)
       {
         ImGui::ColorEdit4("Color", glm::value_ptr(component.color));
+      });
+
+    drawComponent<Component::CircleRenderer>("Circle renderer", entity, [](auto& component)
+      {
+        ImGui::ColorEdit4("Color", glm::value_ptr(component.color));
+        ImGui::DragFloat("Thickness", &component.thickness, 0.005f, 0.0f, 1.0f);
+        ImGui::DragFloat("Fade", &component.fade, 0.001f, 0.0f, 1.0f);
       });
   }
 

@@ -36,7 +36,14 @@ namespace Component
 
   struct SpriteRenderer
   {
-    Vec4 color = Vec4(1.0);
+    Float4 color = Float4(1.0);
+  };
+
+  struct CircleRenderer
+  {
+    Float4 color = Float4(1.0);
+    float thickness = 1.0f;
+    float fade = 0.005f;
   };
 
   struct Camera
