@@ -18,7 +18,7 @@ GameSandbox::GameSandbox()
     textureArray->addTexture(Block::GetTexturePath(texture));
 
   Chunk::Initialize(textureArray);
-  LOD::Initialize(textureArray);
+  LOD::MeshData::Initialize(textureArray);
   m_World.initialize();
 }
 

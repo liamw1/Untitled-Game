@@ -3,15 +3,10 @@
 #include "Player/Player.h"
 #include <iostream>
 
-Unique<Engine::Shader> Chunk::s_Shader = nullptr;
-Shared<Engine::TextureArray> Chunk::s_TextureArray = nullptr;
-Unique<Engine::UniformBuffer> Chunk::s_UniformBuffer = nullptr;
-Shared<const Engine::IndexBuffer> Chunk::s_IndexBuffer = nullptr;
-const Engine::BufferLayout Chunk::s_VertexBufferLayout = { { ShaderDataType::Uint32, "a_VertexData" } };
-Chunk::Uniforms Chunk::s_Uniforms{};
-
 Chunk::Chunk()
-  : m_Composition(nullptr), m_NonOpaqueFaces(0), m_QuadCount(0), m_GlobalIndex({}) {}
+  : m_Composition(nullptr), m_NonOpaqueFaces(0), m_QuadCount(0), m_GlobalIndex({})
+{
+}
 
 Chunk::Chunk(const GlobalIndex& chunkIndex)
   : m_Composition(nullptr), m_NonOpaqueFaces(0), m_QuadCount(0), m_GlobalIndex(chunkIndex)
@@ -28,9 +23,9 @@ Chunk::~Chunk()
 
 Chunk::Chunk(Chunk&& other) noexcept
   : m_GlobalIndex(other.m_GlobalIndex),
-    m_NonOpaqueFaces(other.m_NonOpaqueFaces),
-    m_QuadCount(other.m_QuadCount),
-    m_VertexArray(std::move(other.m_VertexArray))
+  m_NonOpaqueFaces(other.m_NonOpaqueFaces),
+  m_QuadCount(other.m_QuadCount),
+  m_VertexArray(std::move(other.m_VertexArray))
 {
   m_Composition = other.m_Composition;
   other.m_Composition = nullptr;
@@ -99,7 +94,7 @@ void Chunk::Initialize(const Shared<Engine::TextureArray>& textureArray)
 
   s_Shader = Engine::Shader::Create("assets/shaders/Chunk.glsl");
   s_TextureArray = textureArray;
-  s_UniformBuffer = Engine::UniformBuffer::Create(sizeof(Uniforms), 2);
+  s_UniformBuffer = Engine::UniformBuffer::Create(sizeof(Uniforms), s_UniformBinding);
 
   delete[] indices;
 }
@@ -107,6 +102,7 @@ void Chunk::Initialize(const Shared<Engine::TextureArray>& textureArray)
 void Chunk::BindBuffers()
 {
   s_Shader->bind();
+  s_UniformBuffer->bind();
   s_TextureArray->bind(s_TextureSlot);
 }
 
@@ -209,53 +205,6 @@ void Chunk::fill(const HeightMap& heightMap)
   determineOpacity();
 }
 
-void Chunk::fill3D()
-{
-  static constexpr length_t surfaceHeight = 20 * Block::Length();
-
-  if (m_Composition)
-  {
-    EN_WARN("Calling fill on a non-empty chunk!  Deleting previous allocation...");
-    delete[] m_Composition;
-  }
-
-  length_t chunkFloor = Chunk::Length() * m_GlobalIndex.k;
-
-  if (chunkFloor > surfaceHeight)
-  {
-    m_Composition = nullptr;
-    m_NonOpaqueFaces = 0x3F;
-    return;
-  }
-  else
-    m_Composition = new Block::Type[Chunk::TotalBlocks()];
-
-  EN_PROFILE_FUNCTION();
-
-  bool isEmpty = true;
-  for (blockIndex_t i = 0; i < Chunk::Size(); ++i)
-    for (blockIndex_t j = 0; j < Chunk::Size(); ++j)
-      for (blockIndex_t k = 0; k < Chunk::Size(); ++k)
-      {
-        length_t noiseVal = Noise::FastTerrainNoise3D(Chunk::Length() * static_cast<Vec3>(m_GlobalIndex) + Block::Length() * (Vec3(i, j, k) + Vec3(0.5)));
-        if (noiseVal < 0.0)
-        {
-          setBlockType(i, j, k, Block::Type::Stone);
-          isEmpty = false;
-        }
-        else
-          setBlockType(i, j, k, Block::Type::Air);
-      }
-
-  if (isEmpty)
-  {
-    delete[] m_Composition;
-    m_Composition = nullptr;
-  }
-
-  determineOpacity();
-}
-
 void Chunk::setData(Block::Type* composition)
 {
   if (m_Composition)
@@ -312,8 +261,9 @@ void Chunk::draw() const
   if (meshIndexCount == 0)
     return; // Nothing to draw
 
-  s_Uniforms.anchorPosition = anchorPosition();
-  Engine::Renderer::DrawMesh(m_VertexArray.get(), meshIndexCount, s_UniformBuffer.get(), s_Uniforms);
+  Uniforms uniforms = { anchorPosition() };
+  s_UniformBuffer->setData(&uniforms, sizeof(Uniforms));
+  Engine::RenderCommand::DrawIndexed(m_VertexArray.get(), meshIndexCount);
 }
 
 void Chunk::clear()

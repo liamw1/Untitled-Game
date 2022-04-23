@@ -9,7 +9,20 @@ namespace Engine
 {
   struct ECS
   {
+    static Entity GetEntity(uint32_t entityID)
+    {
+      entt::entity id = static_cast<entt::entity>(entityID);
+      EN_CORE_ASSERT(Entity::Registry().valid(id), "Entity ID does not refer to a valid entity!");
+      return Entity(id);
+    }
+    static Entity GetEntity(entt::entity entityID)
+    {
+      EN_CORE_ASSERT(Entity::Registry().valid(entityID), "Entity ID does not refer to a valid entity!");
+      return Entity(entityID);
+    }
+
     static entt::registry& Registry() { return Entity::Registry(); }
+    static Entity Create() { return Entity::Registry().create(); }
   };
 
   static constexpr Vec3 s_UpDirection(0, 0, 1);
@@ -21,7 +34,7 @@ namespace Engine
 
   Entity Scene::CreateEntity(const Vec3& initialPosition, const std::string& name)
   {
-    Entity entity(ECS::Registry().create());
+    Entity entity = ECS::Create();
     entity.add<Component::ID>();
     entity.add<Component::Tag>().name = name.empty() ? "Unnamed Entity" : name;
     entity.add<Component::Transform>().position = initialPosition;
@@ -30,7 +43,7 @@ namespace Engine
 
   Entity Scene::CreateEmptyEntity()
   {
-    return ECS::Registry().create();
+    return ECS::Create();
   }
 
   void Scene::DestroyEntity(Entity entity)
@@ -40,13 +53,7 @@ namespace Engine
 
   Entity Scene::GetEntity(uint32_t entityID)
   {
-    if (ECS::Registry().valid(static_cast<entt::entity>(entityID)))
-      return Entity(static_cast<entt::entity>(entityID));
-    else
-    {
-      EN_ERROR("Entity ID does not refer to a valid entity!");
-      return {};
-    }
+    return ECS::GetEntity(entityID);
   }
 
   static void render2D(const Mat4& viewProjection)
@@ -85,7 +92,7 @@ namespace Engine
       {
         // TODO: Move to Scene::OnScenePlay
         if (!nsc.instance)
-          nsc.instance = nsc.instantiateScript(Entity(entityID));
+          nsc.instance = nsc.instantiateScript(ECS::GetEntity(entityID));
 
         nsc.instance->onUpdate(timestep);
       });
@@ -104,7 +111,7 @@ namespace Engine
       {
         // TODO: Move to Scene::OnScenePlay
         if (!nsc.instance)
-          nsc.instance = nsc.instantiateScript(Entity(entityID));
+          nsc.instance = nsc.instantiateScript(ECS::GetEntity(entityID));
 
         nsc.instance->onEvent(event);
       });
@@ -122,7 +129,7 @@ namespace Engine
         const Mat4& projection = view.get<Component::Camera>(entityID).camera.getProjection();
         
         Mat4 viewMatrix{};
-        Entity entity(entityID);
+        Entity entity = ECS::GetEntity(entityID);
         if (cameraComponent.camera.getProjectionType() == Camera::ProjectionType::Perspective)
         {
           Vec3 viewDirection = entity.get<Component::Transform>().orientationDirection();
@@ -160,6 +167,6 @@ namespace Engine
     const entt::entity* entityIDs = ECS::Registry().data();
 
     for (int i = 0; i < numEntities; ++i)
-      func(Entity(entityIDs[i]));
+      func(ECS::GetEntity(entityIDs[i]));
   }
 }

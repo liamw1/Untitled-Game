@@ -6,8 +6,9 @@ namespace Engine
   class Layer
   {
   public:
-    Layer(const std::string& debugName = "Layer");
-    virtual ~Layer();
+    Layer(const std::string& debugName = "Layer")
+    : m_DebugName(debugName) {}
+    virtual ~Layer() = default;
 
     virtual void onAttach() {}
     virtual void onDetach() {}

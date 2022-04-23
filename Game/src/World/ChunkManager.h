@@ -1,5 +1,6 @@
 #pragma once
 #include "Chunk.h"
+#include "LOD.h"
 
 class ChunkManager
 {
@@ -7,7 +8,8 @@ public:
   ChunkManager();
   ~ChunkManager();
 
-  void initialize();
+  void initializeChunks();
+  void initializeLODs();
 
   /*
     Decides which chunks to submit for rendering.
@@ -32,6 +34,9 @@ public:
     Unloads chunks on boundary as they go out of unload range.
   */
   void clean();
+
+  void renderLODs();
+  void manageLODs();
 
   /*
     \returns The Chunk at the specified chunk index.
@@ -64,7 +69,7 @@ private:
   using ChunkMap = std::unordered_map<int, Chunk*>;
   using IndexMap = std::unordered_map<int, GlobalIndex>;
 
-  static constexpr int s_RenderDistance = 16;
+  static constexpr int s_RenderDistance = 4;
   static constexpr int s_LoadDistance = s_RenderDistance + 2;
   static constexpr int s_UnloadDistance = s_LoadDistance;
   static constexpr int s_MaxChunks = (2 * s_UnloadDistance + 1) * (2 * s_UnloadDistance + 1) * (2 * s_UnloadDistance + 1);
@@ -84,6 +89,9 @@ private:
   IndexMap m_UpdateList;
 
   int m_ChunksLoaded = 0;
+
+  // LOD data
+  LOD::Octree m_LODTree{};
 
   /*
     Scans boundary for places where new chunks can be loaded
@@ -172,6 +180,10 @@ private:
      Uses AO algorithm outlined in https ://0fps.net/2013/07/03/ambient-occlusion-for-minecraft-like-worlds/
   */
   void meshChunk(Chunk* chunk);
+
+  bool splitLODs(std::vector<LOD::Octree::Node*>& leaves);
+  bool combineLODs(std::vector<LOD::Octree::Node*>& leaves);
+  bool splitAndCombineLODs(std::vector<LOD::Octree::Node*>& leaves);
 
   Chunk* find(const GlobalIndex& chunkIndex);
   const Chunk* find(const GlobalIndex& chunkIndex) const;

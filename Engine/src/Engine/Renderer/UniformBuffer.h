@@ -7,6 +7,9 @@ namespace Engine
 	public:
 		virtual ~UniformBuffer() = default;
 
+    virtual void bind() const = 0;
+    virtual void unBind() const = 0;
+
 		virtual void setData(const void* data, uint32_t size, uint32_t offset = 0) = 0;
 
 		static Unique<UniformBuffer> Create(uint32_t size, uint32_t binding);

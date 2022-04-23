@@ -31,21 +31,42 @@ namespace LOD
     int quadIndex;
   };
 
+  struct Uniforms
+  {
+    Float3 anchor;
+    float textureScaling;
+    const float nearPlaneDistance = static_cast<float>(10 * Block::Length());
+    const float farPlaneDistance = static_cast<float>(1e10 * Block::Length());
+  };
+
   struct MeshData
   {
     MeshData()
       : vertices(), indices()
     {
       vertexArray = Engine::VertexArray::Create();
-      vertexArray->setLayout(s_LODBufferLayout);
+      vertexArray->setLayout(s_VertexBufferLayout);
     }
 
     std::vector<Vertex> vertices;
     std::vector<uint32_t> indices;
     Unique<Engine::VertexArray> vertexArray;
 
+    static void Initialize(const Shared<Engine::TextureArray>& textureArray);
+    static void BindBuffers();
+    static void SetUniforms(const Uniforms& uniforms);
+
   private:
-    static const Engine::BufferLayout s_LODBufferLayout;
+    static constexpr int s_TextureSlot = 0;
+    static constexpr int s_UniformBinding = 3;
+    static inline Unique<Engine::Shader> s_Shader = nullptr;
+    static inline Shared<Engine::TextureArray> s_TextureArray = nullptr;
+    static inline Unique<Engine::UniformBuffer> s_UniformBuffer = nullptr;
+    static inline const Engine::BufferLayout s_VertexBufferLayout = { { ShaderDataType::Float3, "a_Position"        },
+                                                                      { ShaderDataType::Float3, "a_IsoNormal"       },
+                                                                      { ShaderDataType::Int2,   "a_TextureIndices"  },
+                                                                      { ShaderDataType::Float2, "a_TextureWeighs"   },
+                                                                      { ShaderDataType::Int,    "a_QuadIndex"       } };
   };
 
   struct Data 
@@ -169,10 +190,6 @@ namespace LOD
     void getLeavesPriv(Node* branch, std::vector<Node*>& leaves);
     Node* findLeafPriv(Node* branch, const GlobalIndex& index);
   };
-
-  void Initialize(const Shared<Engine::TextureArray>& textureArray);
-
-  void BindBuffers();
 
   void Draw(const Octree::Node* leaf);
 

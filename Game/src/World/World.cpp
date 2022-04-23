@@ -2,6 +2,8 @@
 #include "World.h"
 #include "Engine/Renderer/Renderer.h"
 
+static constexpr bool createLODs = true;
+
 static constexpr blockIndex_t modulo(globalIndex_t a, blockIndex_t b)
 {
   const int result = a % b;
@@ -10,7 +12,9 @@ static constexpr blockIndex_t modulo(globalIndex_t a, blockIndex_t b)
 
 void World::initialize()
 {
-  m_ChunkManager.initialize();
+  m_ChunkManager.initializeChunks();
+  if (createLODs)
+    m_ChunkManager.initializeLODs();
 }
 
 void World::onUpdate(Timestep timestep)
@@ -26,9 +30,13 @@ void World::onUpdate(Timestep timestep)
   Engine::Renderer::BeginScene(Engine::Scene::ActiveCameraViewProjection());
   if (!m_RenderingPaused)
   {
-    // m_ChunkManager.manageLODs();
-    // m_ChunkManager.renderLODs();
-    // Engine::RenderCommand::ClearDepthBuffer();
+    if (createLODs)
+    {
+      m_ChunkManager.manageLODs();
+      m_ChunkManager.renderLODs();
+      Engine::RenderCommand::ClearDepthBuffer();
+    }
+
     m_ChunkManager.loadNewChunks(100);
     m_ChunkManager.updateChunks(100);
     m_ChunkManager.render();
@@ -36,8 +44,13 @@ void World::onUpdate(Timestep timestep)
   }
   else
   {
-    // m_ChunkManager.renderLODs();
-    // Engine::RenderCommand::ClearDepthBuffer();
+    if (createLODs)
+    {
+      m_ChunkManager.renderLODs();
+      Engine::RenderCommand::ClearDepthBuffer();
+
+    }
+
     m_ChunkManager.render();
   }
 

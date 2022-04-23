@@ -29,7 +29,7 @@ layout(location = 2) out vec4 v_BasicLight;
 
 void main()
 {
-  // Relative position of block center
+  // Relative position of block anchor
   vec3 relPos = u_BlockLength * vec3((a_VertexData & 0x0000003Fu) >> 0u,
                                      (a_VertexData & 0x00000FC0u) >> 6u,
                                      (a_VertexData & 0x0003F000u) >> 12u);
@@ -41,7 +41,7 @@ void main()
   v_TexCoord = s_TexCoords[quadIndex];
   v_BasicLight = vec4(vec3(s_AO[AOIndex]), 1.0f);
 
-  gl_Position = u_ViewProjection * vec4(u_AnchorPosition.xyz + relPos, 1.0f);
+  gl_Position = u_ViewProjection * vec4(u_AnchorPosition + relPos, 1.0f);
 }
 
 

@@ -5,25 +5,11 @@
 #include "Util/MultiDimArrays.h"
 #include "Util/TransVoxel.h"
 
-static constexpr int s_TextureSlot = 0;
-static constexpr float s_LODNearPlaneDistance = static_cast<float>(10 * Block::Length());
-static constexpr float s_LODFarPlaneDistance = static_cast<float>(1e10 * Block::Length());
-
 // Number of cells in each direction
 static constexpr int s_NumCells = Chunk::Size();
 
 // Width of a transition cell as a fraction of regular cell width
 static constexpr length_t s_TCFractionalWidth = 0.5f;
-
-static Unique<Engine::Shader> s_LODShader = nullptr;
-static Shared<Engine::TextureArray> s_LODTextureArray = nullptr;
-static Unique<Engine::UniformBuffer> s_LODUniformBuffer = nullptr;
-
-const Engine::BufferLayout LOD::MeshData::s_LODBufferLayout({ { ShaderDataType::Float3, "a_Position"        },
-                                                              { ShaderDataType::Float3, "a_IsoNormal"       },
-                                                              { ShaderDataType::Int2,   "a_TextureIndices"  },
-                                                              { ShaderDataType::Float2, "a_TextureWeighs"   },
-                                                              { ShaderDataType::Int,    "a_QuadIndex"       } });
 
 struct NoiseData
 {
@@ -31,14 +17,6 @@ struct NoiseData
   Vec3 normal;
 
   Noise::SurfaceData surfaceData;
-};
-
-struct LODUniforms
-{
-  Float3 anchor;
-  float textureScaling;
-  float nearPlaneDistance = s_LODNearPlaneDistance;
-  float farPlaneDistance = s_LODFarPlaneDistance;
 };
 
 Vec3 LOD::Octree::Node::anchorPosition() const
@@ -148,17 +126,23 @@ LOD::Octree::Node* LOD::Octree::findLeafPriv(Node* branch, const GlobalIndex& in
 
 
 
-void LOD::Initialize(const Shared<Engine::TextureArray>& textureArray)
+void LOD::MeshData::Initialize(const Shared<Engine::TextureArray>& textureArray)
 {
-  s_LODShader = Engine::Shader::Create("assets/shaders/ChunkLOD.glsl");
-  s_LODTextureArray = textureArray;
-  s_LODUniformBuffer = Engine::UniformBuffer::Create(sizeof(LODUniforms), 3);
+  s_Shader = Engine::Shader::Create("assets/shaders/ChunkLOD.glsl");
+  s_TextureArray = textureArray;
+  s_UniformBuffer = Engine::UniformBuffer::Create(sizeof(LOD::Uniforms), s_UniformBinding);
 }
 
-void LOD::BindBuffers()
+void LOD::MeshData::BindBuffers()
 {
-  s_LODShader->bind();
-  s_LODTextureArray->bind(s_TextureSlot);
+  s_Shader->bind();
+  s_UniformBuffer->bind();
+  s_TextureArray->bind(s_TextureSlot);
+}
+
+void LOD::MeshData::SetUniforms(const Uniforms& uniforms)
+{
+  s_UniformBuffer->setData(&uniforms, sizeof(Uniforms));
 }
 
 void LOD::Draw(const Octree::Node* leaf)
@@ -169,11 +153,12 @@ void LOD::Draw(const Octree::Node* leaf)
     return; // Nothing to draw
 
   // Set local anchor position and texture scaling
-  LODUniforms uniforms{};
+  LOD::Uniforms uniforms{};
   uniforms.anchor = Chunk::Length() * static_cast<Vec3>(leaf->anchor - Player::OriginIndex());
   uniforms.textureScaling = static_cast<float>(bit(leaf->LODLevel()));
+  MeshData::SetUniforms(uniforms);
 
-  Engine::Renderer::DrawMesh(leaf->data->primaryMesh.vertexArray.get(), primaryMeshIndexCount, s_LODUniformBuffer.get(), uniforms);
+  Engine::RenderCommand::DrawIndexed(leaf->data->primaryMesh.vertexArray.get(), primaryMeshIndexCount);
   for (Block::Face face : Block::FaceIterator())
   {
     int faceID = static_cast<int>(face);
@@ -183,7 +168,7 @@ void LOD::Draw(const Octree::Node* leaf)
     if (transitionMeshIndexCount == 0 || !(leaf->data->transitionFaces & bit(faceID)))
       continue;
 
-    Engine::Renderer::DrawMesh(leaf->data->transitionMeshes[faceID].vertexArray.get(), transitionMeshIndexCount, s_LODUniformBuffer.get(), uniforms);
+    Engine::RenderCommand::DrawIndexed(leaf->data->transitionMeshes[faceID].vertexArray.get(), transitionMeshIndexCount);
   }
 }
 

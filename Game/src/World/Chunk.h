@@ -32,7 +32,6 @@ public:
   /*
     A chunk's anchor point is its bottom southeast vertex.
     Position given relative to the anchor of the origin chunk.
-
     Useful property:
     If the anchor point is denoted by A, then for any point
     X within the chunk, X_i >= A_i.
@@ -57,7 +56,6 @@ public:
   static constexpr int TotalBlocks() { return s_ChunkSize * s_ChunkSize * s_ChunkSize; }
 
   static void Initialize(const Shared<Engine::TextureArray>& textureArray);
-
   static void BindBuffers();
 
   static bool BlockNeighborIsInAnotherChunk(const BlockIndex& blockIndex, Block::Face face);
@@ -71,13 +69,13 @@ private:
   static constexpr int s_ChunkSize = 32;
 
   // Mesh Data
-  static Unique<Engine::Shader> s_Shader;
-  static Shared<Engine::TextureArray> s_TextureArray;
-  static Unique<Engine::UniformBuffer> s_UniformBuffer;
-  static Shared<const Engine::IndexBuffer> s_IndexBuffer;
-  static const Engine::BufferLayout s_VertexBufferLayout;
-  static Uniforms s_Uniforms;
+  static inline Unique<Engine::Shader> s_Shader;
+  static inline Shared<Engine::TextureArray> s_TextureArray;
+  static inline Unique<Engine::UniformBuffer> s_UniformBuffer;
+  static inline Shared<const Engine::IndexBuffer> s_IndexBuffer;
+  static inline const Engine::BufferLayout s_VertexBufferLayout = { { ShaderDataType::Uint32, "a_VertexData" } };
   static constexpr int s_TextureSlot = 0;
+  static constexpr int s_UniformBinding = 2;
 
   Unique<Engine::VertexArray> m_VertexArray;
   Block::Type* m_Composition;
@@ -89,7 +87,6 @@ private:
   void setBlockType(const BlockIndex& blockIndex, Block::Type blockType);
 
   void fill(const HeightMap& heightMap);
-  void fill3D();
   void setData(Block::Type* composition);
   void setMesh(const uint32_t* meshData, uint16_t quadCount);
   void determineOpacity();

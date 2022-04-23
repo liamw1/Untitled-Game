@@ -10,7 +10,7 @@ layout(std140, binding = 0) uniform Camera
 {
 	mat4 u_ViewProjection;
 };
-layout(std140, binding = 2) uniform LOD
+layout(std140, binding = 3) uniform LOD
 {
   vec3 u_Anchor;
   float u_TextureScaling;

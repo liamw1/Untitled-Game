@@ -13,8 +13,6 @@ namespace Engine
   {
   public:
     Entity() = default;
-    Entity(entt::entity entityID)
-      : m_EntityID(entityID) {}
 
     template<typename T>
     bool has() const
@@ -61,11 +59,15 @@ namespace Engine
     bool operator!=(const Entity& other) const { return m_EntityID != other.m_EntityID; }
 
   private:
+    static inline entt::registry s_Registry{};
+    static entt::registry& Registry() { return s_Registry; }
+
     entt::entity m_EntityID = entt::null;
 
-    static entt::registry s_Registry;
-
-    static entt::registry& Registry() { return s_Registry; }
+    Entity(entt::entity entityID)
+      : m_EntityID(entityID)
+    {
+    }
 
     friend struct ECS;
   };

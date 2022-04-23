@@ -20,6 +20,16 @@ namespace Engine
 		glDeleteBuffers(1, &m_RendererID);
 	}
 
+  void OpenGLUniformBuffer::bind() const
+  {
+    glBindBuffer(GL_UNIFORM_BUFFER, m_RendererID);
+  }
+
+  void OpenGLUniformBuffer::unBind() const
+  {
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+  }
+
 
 	void OpenGLUniformBuffer::setData(const void* data, uint32_t size, uint32_t offset)
 	{
