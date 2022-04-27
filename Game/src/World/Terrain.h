@@ -35,6 +35,8 @@ namespace Terrain
     Block::CompoundType m_Components;
   };
 
+  inline CompoundSurfaceData operator*(length_t x, const CompoundSurfaceData& other) { return other * static_cast<float>(x); }
+
   struct SurfaceData
   {
     length_t elevation;
@@ -51,5 +53,3 @@ namespace Terrain
 
   SurfaceData CreateSurfaceData(const Vec2& pointXY, const Biome& biome);
 }
-
-inline Terrain::CompoundSurfaceData operator*(length_t x, const Terrain::CompoundSurfaceData& other) { return other * static_cast<float>(x); }

@@ -3,19 +3,17 @@
 
 struct Biome
 {
-  length_t averageElevation = 0.0;
+  length_t averageElevation = 0 * Block::Length();
   length_t elevationAmplitude = 150 * Block::Length();
   length_t elevationScale = 1280 * Block::Length();
   float elevationPersistence = 1.0f / 6;
   float elevationLacunarity = 4.0f;
 
+  length_t averageSurfaceDepth = 1.0;
   length_t averageSoilDepth = 5.0;
 
   Block::CompoundType primarySurfaceType = { Block::Type::Grass };
   Block::CompoundType soilType = { Block::Type::Dirt };
-
-  float lowSurfaceThreshold = 0.2f;
-  float highSurfaceThreshold = 0.8f;
 
   constexpr length_t minElevation() const
   {
@@ -35,6 +33,8 @@ struct Biome
 
     return averageElevation + totalAmplitude;
   }
+
+  static constexpr int NumOctaves() { return s_Octaves; }
 
 private:
   static constexpr int s_Octaves = 4;

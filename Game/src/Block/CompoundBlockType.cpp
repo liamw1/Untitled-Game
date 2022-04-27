@@ -27,34 +27,24 @@ Block::CompoundType Block::CompoundType::operator*(float x) const
 
 Block::CompoundType& Block::CompoundType::operator+=(const CompoundType& other)
 {
-  // NOTE: This function can probably be made more efficient
+  std::array<Component, s_NumTypes> mergedComposition{};
 
-  std::array<Component, 2 * s_NumTypes> combinedComposition{};
-  for (int i = 0; i < s_NumTypes; ++i)
-    combinedComposition[i] = m_Components[i];
-
-  // Add like componets together and insert new components
-  for (int i = 0; i < s_NumTypes; ++i)
+  int i = 0, j = 0;
+  for (int k = 0; k < s_NumTypes; ++k)
   {
-    bool otherComponentPresent = false;
-    const Component& otherComponent = other.m_Components[i];
-    for (int j = 0; j < s_NumTypes; ++j)
-      if (combinedComposition[j].type == otherComponent.type)
-      {
-        combinedComposition[j].weight += otherComponent.weight;
-        otherComponentPresent = true;
-        break;
-      }
-
-    if (!otherComponentPresent)
-      combinedComposition[s_NumTypes + i] = otherComponent;
+    if (m_Components[i].weight > other.m_Components[j].weight)
+    {
+      mergedComposition[k] = m_Components[i];
+      i++;
+    }
+    else
+    {
+      mergedComposition[k] = other.m_Components[j];
+      j++;
+    }
   }
 
-  std::sort(combinedComposition.begin(), combinedComposition.end(), [](Component a, Component b) { return a.weight > b.weight; });
-
-  for (int i = 0; i < s_NumTypes; ++i)
-    m_Components[i] = combinedComposition[i];
-
+  m_Components = mergedComposition;
   return *this;
 }
 

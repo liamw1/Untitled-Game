@@ -616,8 +616,8 @@ static void generateTransitionMeshes(LOD::Octree::Node* node, const HeapArray2D<
 void LOD::GenerateMesh(LOD::Octree::Node* node)
 {
   // NOTE: These values should come from biome system when implemented
-  static constexpr length_t globalMinTerrainHeight = -180 * Block::Length();
-  static constexpr length_t globalMaxTerrainHeight =  180 * Block::Length();
+  static constexpr length_t globalMinTerrainHeight = s_DefaultBiome.minElevation();
+  static constexpr length_t globalMaxTerrainHeight = s_DefaultBiome.maxElevation();
 
   length_t LODFloor = node->anchor.k * Chunk::Length();
   length_t LODCeiling = LODFloor + node->length();

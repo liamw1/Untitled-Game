@@ -121,8 +121,9 @@ static void heightMapStage(Block::Type* composition, const GlobalIndex& chunkInd
     for (blockIndex_t j = 0; j < Chunk::Size(); ++j)
     {
       const Terrain::SurfaceData& surfaceData = heightMap.surfaceData[i][j];
-      int terrainElevationIndex = static_cast<int>(std::floor((surfaceData.elevation - chunkFloor) / Block::Length()));
-      int soilDepth = static_cast<int>(std::ceil(s_DefaultBiome.averageSoilDepth));
+      int terrainElevationIndex = static_cast<int>(std::ceil((surfaceData.elevation - chunkFloor) / Block::Length()));
+      int surfaceDepth = static_cast<int>(std::ceil(s_DefaultBiome.averageSurfaceDepth));
+      int soilDepth = surfaceDepth + static_cast<int>(std::ceil(s_DefaultBiome.averageSoilDepth));
 
       blockIndex_t k = 0;
       while (k < terrainElevationIndex - soilDepth && k < Chunk::Size())
@@ -130,12 +131,12 @@ static void heightMapStage(Block::Type* composition, const GlobalIndex& chunkInd
         setBlockType(composition, i, j, k, Block::Type::Stone);
         k++;
       }
-      while (k < terrainElevationIndex && k < Chunk::Size())
+      while (k < terrainElevationIndex - surfaceDepth && k < Chunk::Size())
       {
         setBlockType(composition, i, j, k, s_DefaultBiome.soilType.getPrimary());
         k++;
       }
-      if (k == terrainElevationIndex && k < Chunk::Size())
+      while (k < terrainElevationIndex && k < Chunk::Size())
       {
         setBlockType(composition, i, j, k, surfaceData.blockType);
         k++;
@@ -245,6 +246,7 @@ Terrain::SurfaceData Terrain::CreateSurfaceData(const Vec2& pointXY, const Biome
   length_t elevation = s_DefaultBiome.averageElevation + noiseOctaves[0] + noiseOctaves[1] + noiseOctaves[2] + noiseOctaves[3];
   Block::Type blockType = biome.primarySurfaceType.getPrimary();
 
+  // NOTE: Should be using some sort of temperature system here
   if (elevation > 50 * Block::Length() + noiseOctaves[1])
     blockType = Block::Type::Snow;
   else if (elevation > 30 * Block::Length() + noiseOctaves[2])
