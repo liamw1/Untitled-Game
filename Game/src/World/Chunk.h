@@ -58,8 +58,6 @@ public:
   static void Initialize(const Shared<Engine::TextureArray>& textureArray);
   static void BindBuffers();
 
-  static bool BlockNeighborIsInAnotherChunk(const BlockIndex& blockIndex, Block::Face face);
-
 private:
   struct Uniforms
   {
@@ -86,7 +84,6 @@ private:
   void setBlockType(blockIndex_t i, blockIndex_t j, blockIndex_t k, Block::Type blockType);
   void setBlockType(const BlockIndex& blockIndex, Block::Type blockType);
 
-  void fill(const HeightMap& heightMap);
   void setData(Block::Type* composition);
   void setMesh(const uint32_t* meshData, uint16_t quadCount);
   void determineOpacity();
@@ -97,15 +94,5 @@ private:
   void reset();
 
   friend class ChunkManager;
-};
-
-struct HeightMap
-{
-  HeightMap(const GlobalIndex& index);
-
-  globalIndex_t chunkI;
-  globalIndex_t chunkJ;
-  HeapArray2D<Noise::SurfaceData, Chunk::Size()> surfaceData;
-
-  length_t maxHeight;
+  friend class ChunkFiller;
 };

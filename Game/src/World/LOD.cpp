@@ -1,7 +1,7 @@
 #include "GMpch.h"
 #include "LOD.h"
+#include "Terrain.h"
 #include "Player/Player.h"
-#include "Util/Noise.h"
 #include "Util/MultiDimArrays.h"
 #include "Util/TransVoxel.h"
 
@@ -11,12 +11,14 @@ static constexpr int s_NumCells = Chunk::Size();
 // Width of a transition cell as a fraction of regular cell width
 static constexpr length_t s_TCFractionalWidth = 0.5f;
 
+static constexpr Biome s_DefaultBiome{};
+
 struct NoiseData
 {
   Vec3 position;
   Vec3 normal;
 
-  Noise::SurfaceData surfaceData;
+  Terrain::CompoundSurfaceData surfaceData;
 };
 
 Vec3 LOD::Octree::Node::anchorPosition() const
@@ -199,23 +201,23 @@ static T LODInterpolation(float t, float s, const T& q0, const T& q1)
   return ((1 - s) / 2 + s * (1 - t)) * q0 + ((1 - s) / 2 + s * t) * q1;
 }
 
-static HeapArray2D<Noise::SurfaceData, s_NumCells + 1> generateNoise(LOD::Octree::Node* node)
+static HeapArray2D<Terrain::CompoundSurfaceData, s_NumCells + 1> generateNoise(LOD::Octree::Node* node)
 {
   length_t cellLength = node->length() / s_NumCells;
   Vec2 LODAnchorXY = Chunk::Length() * static_cast<Vec2>(node->anchor);
 
-  HeapArray2D<Noise::SurfaceData, s_NumCells + 1> noiseValues{};
+  HeapArray2D<Terrain::CompoundSurfaceData, s_NumCells + 1> noiseValues{};
   for (int i = 0; i < s_NumCells + 1; ++i)
     for (int j = 0; j < s_NumCells + 1; ++j)
     {
       // Sample noise at cell corners
       Vec2 pointXY = LODAnchorXY + cellLength * Vec2(i, j);
-      noiseValues[i][j] = Noise::FastTerrainNoise2D(pointXY);
+      noiseValues[i][j] = Terrain::CreateSurfaceData(pointXY, s_DefaultBiome);
     }
   return noiseValues;
 }
 
-static bool needsMesh(LOD::Octree::Node* node, const HeapArray2D<Noise::SurfaceData, s_NumCells + 1>& noiseValues)
+static bool needsMesh(LOD::Octree::Node* node, const HeapArray2D<Terrain::CompoundSurfaceData, s_NumCells + 1>& noiseValues)
 {
   length_t LODFloor = node->anchor.k * Chunk::Length();
   length_t LODCeiling = LODFloor + node->length();
@@ -225,7 +227,7 @@ static bool needsMesh(LOD::Octree::Node* node, const HeapArray2D<Noise::SurfaceD
   for (int i = 0; i < s_NumCells + 1; ++i)
     for (int j = 0; j < s_NumCells + 1; ++j)
     {
-      length_t terrainHeight = noiseValues[i][j].getHeight();
+      length_t terrainHeight = noiseValues[i][j].getElevation();
 
       if (LODFloor <= terrainHeight && terrainHeight <= LODCeiling)
       {
@@ -238,7 +240,7 @@ endCheck:;
   return needsMesh;
 }
 
-static HeapArray2D<Vec3, s_NumCells + 1> calcNoiseNormals(LOD::Octree::Node* node, const HeapArray2D<Noise::SurfaceData, s_NumCells + 1>& noiseValues)
+static HeapArray2D<Vec3, s_NumCells + 1> calcNoiseNormals(LOD::Octree::Node* node, const HeapArray2D<Terrain::CompoundSurfaceData, s_NumCells + 1>& noiseValues)
 {
   length_t cellLength = node->length() / s_NumCells;
   Vec2 LODAnchorXY = Chunk::Length() * static_cast<Vec2>(node->anchor);
@@ -254,34 +256,34 @@ static HeapArray2D<Vec3, s_NumCells + 1> calcNoiseNormals(LOD::Octree::Node* nod
       if (i == 0)
       {
         Vec2 pointXY = LODAnchorXY + cellLength * Vec2(i - 1, j);
-        fLC = Noise::FastTerrainNoise2D(pointXY).getHeight();
+        fLC = Terrain::CreateSurfaceData(pointXY, s_DefaultBiome).elevation;
       }
       else
-        fLC = noiseValues[i - 1][j].getHeight();
+        fLC = noiseValues[i - 1][j].getElevation();
 
       if (i == s_NumCells)
       {
         Vec2 pointXY = LODAnchorXY + cellLength * Vec2(i + 1, j);
-        fUC = Noise::FastTerrainNoise2D(pointXY).getHeight();
+        fUC = Terrain::CreateSurfaceData(pointXY, s_DefaultBiome).elevation;
       }
       else
-        fUC = noiseValues[i + 1][j].getHeight();
+        fUC = noiseValues[i + 1][j].getElevation();
 
       if (j == 0)
       {
         Vec2 pointXY = LODAnchorXY + cellLength * Vec2(i, j - 1);
-        fCL = Noise::FastTerrainNoise2D(pointXY).getHeight();
+        fCL = Terrain::CreateSurfaceData(pointXY, s_DefaultBiome).elevation;
       }
       else
-        fCL = noiseValues[i][j - 1].getHeight();
+        fCL = noiseValues[i][j - 1].getElevation();
 
       if (j == s_NumCells)
       {
         Vec2 pointXY = LODAnchorXY + cellLength * Vec2(i, j + 1);
-        fCU = Noise::FastTerrainNoise2D(pointXY).getHeight();
+        fCU = Terrain::CreateSurfaceData(pointXY, s_DefaultBiome).elevation;
       }
       else
-        fCU = noiseValues[i][j + 1].getHeight();
+        fCU = noiseValues[i][j + 1].getElevation();
 
       Vec2 gradient{};
       gradient.x = (fUC - fLC) / (2 * cellLength);
@@ -293,7 +295,7 @@ static HeapArray2D<Vec3, s_NumCells + 1> calcNoiseNormals(LOD::Octree::Node* nod
   return noiseNormals;
 }
 
-static NoiseData interpolateNoiseData(LOD::Octree::Node* node, const HeapArray2D<Noise::SurfaceData, s_NumCells + 1>& noiseValues, const HeapArray2D<Vec3, s_NumCells + 1>& noiseNormals, const BlockIndex& cornerA, const BlockIndex& cornerB, float s)
+static NoiseData interpolateNoiseData(LOD::Octree::Node* node, const HeapArray2D<Terrain::CompoundSurfaceData, s_NumCells + 1>& noiseValues, const HeapArray2D<Vec3, s_NumCells + 1>& noiseNormals, const BlockIndex& cornerA, const BlockIndex& cornerB, float s)
 {
   length_t LODFloor = node->anchor.k * Chunk::Length();
   length_t cellLength = node->length() / s_NumCells;
@@ -305,18 +307,18 @@ static NoiseData interpolateNoiseData(LOD::Octree::Node* node, const HeapArray2D
   length_t zA = LODFloor + cornerA.k * cellLength;
   length_t zB = LODFloor + cornerB.k * cellLength;
 
-  const Noise::SurfaceData& surfaceDataA = noiseValues[cornerA.i][cornerA.j];
-  const Noise::SurfaceData& surfaceDataB = noiseValues[cornerB.i][cornerB.j];
+  const Terrain::CompoundSurfaceData& surfaceDataA = noiseValues[cornerA.i][cornerA.j];
+  const Terrain::CompoundSurfaceData& surfaceDataB = noiseValues[cornerB.i][cornerB.j];
 
   // Isovalues of corners A and B
-  length_t tA = surfaceDataA.getHeight() - zA;
-  length_t tB = surfaceDataB.getHeight() - zB;
+  length_t tA = surfaceDataA.getElevation() - zA;
+  length_t tB = surfaceDataB.getElevation() - zB;
 
   // Fraction of distance along edge vertex should be placed
   float t = static_cast<float>(tA / (tA - tB));
 
   Vec3 vertexPosition = LODInterpolation(t, s, posA, posB);
-  Noise::SurfaceData surfaceData = LODInterpolation(t, s, surfaceDataA, surfaceDataB);
+  Terrain::CompoundSurfaceData surfaceData = LODInterpolation(t, s, surfaceDataA, surfaceDataB);
 
   // Estimate isosurface normal using linear interpolation between corners
   const Vec3& n0 = noiseNormals[cornerA.i][cornerA.j];
@@ -327,7 +329,7 @@ static NoiseData interpolateNoiseData(LOD::Octree::Node* node, const HeapArray2D
 }
 
 // Generate primary LOD mesh using Marching Cubes algorithm
-static void generatePrimaryMesh(LOD::Octree::Node* node, const HeapArray2D<Noise::SurfaceData, s_NumCells + 1>& noiseValues, const HeapArray2D<Vec3, s_NumCells + 1>& noiseNormals)
+static void generatePrimaryMesh(LOD::Octree::Node* node, const HeapArray2D<Terrain::CompoundSurfaceData, s_NumCells + 1>& noiseValues, const HeapArray2D<Vec3, s_NumCells + 1>& noiseNormals)
 {
   EN_PROFILE_FUNCTION();
 
@@ -362,7 +364,7 @@ static void generatePrimaryMesh(LOD::Octree::Node* node, const HeapArray2D<Noise
           int K = v & bit(2) ? k + 1 : k;
           length_t Z = LODFloor + K * cellLength;
 
-          if (noiseValues[I][J].getHeight() > Z)
+          if (noiseValues[I][J].getElevation() > Z)
             cellCase |= bit(v);
         }
         if (cellCase == 0 || cellCase == 255)
@@ -451,7 +453,7 @@ static void generatePrimaryMesh(LOD::Octree::Node* node, const HeapArray2D<Noise
 }
 
 // Generate transition meshes using Transvoxel algorithm
-static void generateTransitionMeshes(LOD::Octree::Node* node, const HeapArray2D<Noise::SurfaceData, s_NumCells + 1>& noiseValues, const HeapArray2D<Vec3, s_NumCells + 1>& noiseNormals)
+static void generateTransitionMeshes(LOD::Octree::Node* node, const HeapArray2D<Terrain::CompoundSurfaceData, s_NumCells + 1>& noiseValues, const HeapArray2D<Vec3, s_NumCells + 1>& noiseNormals)
 {
   EN_PROFILE_FUNCTION();
 
@@ -507,7 +509,7 @@ static void generateTransitionMeshes(LOD::Octree::Node* node, const HeapArray2D<
           const int& K = sample.k;
           length_t Z = LODFloor + K * cellLength;
 
-          if (noiseValues[I][J].getHeight() > Z)
+          if (noiseValues[I][J].getElevation() > Z)
             cellCase |= bit(sampleIndexToBitFlip[p]);
         }
         if (cellCase == 0 || cellCase == 511)
@@ -614,8 +616,8 @@ static void generateTransitionMeshes(LOD::Octree::Node* node, const HeapArray2D<
 void LOD::GenerateMesh(LOD::Octree::Node* node)
 {
   // NOTE: These values should come from biome system when implemented
-  static constexpr length_t globalMinTerrainHeight = -205 * Block::Length();
-  static constexpr length_t globalMaxTerrainHeight =  205 * Block::Length();
+  static constexpr length_t globalMinTerrainHeight = -180 * Block::Length();
+  static constexpr length_t globalMaxTerrainHeight =  180 * Block::Length();
 
   length_t LODFloor = node->anchor.k * Chunk::Length();
   length_t LODCeiling = LODFloor + node->length();
@@ -629,7 +631,7 @@ void LOD::GenerateMesh(LOD::Octree::Node* node)
   EN_PROFILE_FUNCTION();
 
   // Generate voxel data using heightmap
-  HeapArray2D<Noise::SurfaceData, s_NumCells + 1> noiseValues = generateNoise(node);
+  HeapArray2D<Terrain::CompoundSurfaceData, s_NumCells + 1> noiseValues = generateNoise(node);
 
   if (!needsMesh(node, noiseValues))
     return;

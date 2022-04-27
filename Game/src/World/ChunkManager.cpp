@@ -1,6 +1,8 @@
 #include "GMpch.h"
 #include "ChunkManager.h"
 #include "Player/Player.h"
+#include "Terrain.h"
+#include "Util/Util.h"
 #include <iostream>
 
 ChunkManager::ChunkManager()
@@ -57,7 +59,7 @@ void ChunkManager::render() const
     return;
 
   const Mat4& viewProjection = Engine::Scene::ActiveCameraViewProjection();
-  std::array<Vec4, 6> frustumPlanes = calculateViewFrustumPlanes(viewProjection);
+  std::array<Vec4, 6> frustumPlanes = Util::CalculateViewFrustumPlanes(viewProjection);
 
   // Shift each plane by distance equal to radius of sphere that circumscribes chunk
   static constexpr length_t chunkSphereRadius = Constants::SQRT3 * Chunk::Length() / 2;
@@ -70,8 +72,8 @@ void ChunkManager::render() const
   // Render chunks in view frustum
   Chunk::BindBuffers();
   for (const auto& [key, chunk] : m_RenderableChunks)
-    if (isInRange(chunk, s_RenderDistance))
-      if (isInFrustum(chunk->center(), frustumPlanes))
+    if (Util::IsInRangeOfPlayer(chunk, s_RenderDistance))
+      if (Util::IsInFrustum(chunk->center(), frustumPlanes))
         chunk->draw();
 }
 
@@ -136,7 +138,7 @@ void ChunkManager::clean()
   {
     const Chunk* chunk = it->second;
 
-    if (!isInRange(chunk, s_UnloadDistance))
+    if (!Util::IsInRangeOfPlayer(chunk, s_UnloadDistance))
     {
       unloadedChunks.push_back(chunk->getGlobalIndex());
       it = unloadChunk(it);
@@ -148,16 +150,7 @@ void ChunkManager::clean()
   for (const GlobalIndex& index : unloadedChunks)
     sendChunkRemovalUpdate(index);
 
-  // Destroy heightmaps outside of unload range
-  for (auto it = m_HeightMaps.begin(); it != m_HeightMaps.end();)
-  {
-    const HeightMap& heightMap = it->second;
-
-    if (!isInRange(GlobalIndex(heightMap.chunkI, heightMap.chunkJ, Player::OriginIndex().k), s_UnloadDistance))
-      it = m_HeightMaps.erase(it);
-    else
-      ++it;
-  }
+  Terrain::Clean(s_UnloadDistance);
 }
 
 void ChunkManager::renderLODs()
@@ -167,14 +160,11 @@ void ChunkManager::renderLODs()
   std::vector<LOD::Octree::Node*> leaves = m_LODTree.getLeaves();
   const Mat4& viewProjection = Engine::Scene::ActiveCameraViewProjection();
 
-  const std::array<Vec4, 6> frustumPlanes = calculateViewFrustumPlanes(viewProjection);
+  std::array<Vec4, 6> frustumPlanes = Util::CalculateViewFrustumPlanes(viewProjection);
   std::array<Vec4, 6> shiftedFrustumPlanes = frustumPlanes;
-  std::array<length_t, 6> planeNormalMags = { glm::length(Vec3(frustumPlanes[static_cast<int>(FrustumPlane::Left)])),
-                                              glm::length(Vec3(frustumPlanes[static_cast<int>(FrustumPlane::Right)])),
-                                              glm::length(Vec3(frustumPlanes[static_cast<int>(FrustumPlane::Bottom)])),
-                                              glm::length(Vec3(frustumPlanes[static_cast<int>(FrustumPlane::Top)])),
-                                              glm::length(Vec3(frustumPlanes[static_cast<int>(FrustumPlane::Near)])),
-                                              glm::length(Vec3(frustumPlanes[static_cast<int>(FrustumPlane::Far)])), };
+  std::array<length_t, 6> planeNormalMags{};
+  for (int i = 0; i < planeNormalMags.size(); ++i)
+    planeNormalMags[i] = glm::length(Vec3(frustumPlanes[i]));
 
   LOD::MeshData::BindBuffers();
   for (LOD::Octree::Node* leaf : leaves)
@@ -186,7 +176,7 @@ void ChunkManager::renderLODs()
       for (int planeID = 0; planeID < 6; ++planeID)
         shiftedFrustumPlanes[planeID].w = frustumPlanes[planeID].w + LODSphereRadius * planeNormalMags[planeID];
 
-      if (isInFrustum(leaf->center(), shiftedFrustumPlanes) && !isInRange(leaf->anchor, s_RenderDistance - 1))
+      if (Util::IsInFrustum(leaf->center(), shiftedFrustumPlanes) && !Util::IsInRangeOfPlayer(leaf->anchor, s_RenderDistance - 1))
         LOD::Draw(leaf);
     }
 }
@@ -236,7 +226,7 @@ void ChunkManager::placeBlock(Chunk* chunk, BlockIndex blockIndex, Block::Face f
     return;
   }
 
-  if (Chunk::BlockNeighborIsInAnotherChunk(blockIndex, face))
+  if (Util::BlockNeighborIsInAnotherChunk(blockIndex, face))
   {
     chunk = findNeighbor(chunk, face);
 
@@ -269,9 +259,9 @@ void ChunkManager::searchForNewChunks()
     for (Block::Face face : Block::FaceIterator())
     {
       GlobalIndex neighborIndex = chunk->getGlobalIndex() + GlobalIndex::OutwardNormal(face);
-      if (isInRange(neighborIndex, s_LoadDistance) && m_NewChunkList.find(createKey(neighborIndex)) == m_NewChunkList.end())
+      if (Util::IsInRangeOfPlayer(neighborIndex, s_LoadDistance) && m_NewChunkList.find(Util::CreateKey(neighborIndex)) == m_NewChunkList.end())
         if (!chunk->isFaceOpaque(face) && !isLoaded(neighborIndex))
-          m_NewChunkList.insert({ createKey(neighborIndex), neighborIndex });
+          m_NewChunkList.insert({ Util::CreateKey(neighborIndex), neighborIndex });
     }
 }
 
@@ -280,17 +270,6 @@ Chunk* ChunkManager::loadChunk(const GlobalIndex& chunkIndex)
   EN_ASSERT(m_OpenChunkSlots.size() > 0, "All chunks slots are full!");
   EN_ASSERT(!isLoaded(chunkIndex), "Chunk is already loaded!");
 
-  // Generate heightmap is none exists
-  int heightMapKey = createHeightMapKey(chunkIndex.i, chunkIndex.j);
-  auto it = m_HeightMaps.find(heightMapKey);
-  if (it == m_HeightMaps.end())
-  {
-    const auto& [insertionPosition, insertionSuccess] = m_HeightMaps.emplace(heightMapKey, chunkIndex);
-    it = insertionPosition;
-    EN_ASSERT(insertionSuccess, "HeightMap insertion failed!");
-  }
-  const HeightMap& heightMap = it->second;
-
   // Grab first open chunk slot
   int chunkSlot = m_OpenChunkSlots.back();
   m_OpenChunkSlots.pop_back();
@@ -298,10 +277,10 @@ Chunk* ChunkManager::loadChunk(const GlobalIndex& chunkIndex)
   // Insert chunk into array and load it
   m_ChunkArray[chunkSlot] = std::move(Chunk(chunkIndex));
   Chunk* newChunk = &m_ChunkArray[chunkSlot];
-  const auto& [insertionPosition, insertionSuccess] = m_BoundaryChunks.insert({ createKey(chunkIndex), newChunk });
+  const auto& [insertionPosition, insertionSuccess] = m_BoundaryChunks.insert({ Util::CreateKey(chunkIndex), newChunk });
   EN_ASSERT(insertionSuccess, "Chunk insertion failed!");
 
-  newChunk->fill(heightMap);
+  Terrain::GenerateNew(newChunk);
   m_ChunksLoaded++;
 
   sendChunkLoadUpdate(newChunk);
@@ -312,7 +291,7 @@ Chunk* ChunkManager::loadChunk(const GlobalIndex& chunkIndex)
 ChunkManager::IndexMap::iterator ChunkManager::updateChunk(Chunk* chunk)
 {
   EN_ASSERT(chunk, "Chunk does not exist!");
-  EN_ASSERT(m_UpdateList.find(createKey(chunk)) != m_UpdateList.end(), "Chunks is not in update list!");
+  EN_ASSERT(m_UpdateList.find(Util::CreateKey(chunk)) != m_UpdateList.end(), "Chunks is not in update list!");
 
   ChunkType source = getChunkType(chunk);
   if (source != ChunkType::Boundary)
@@ -339,7 +318,7 @@ ChunkManager::IndexMap::iterator ChunkManager::updateChunk(Chunk* chunk)
       moveToGroup(chunk, source, destination);
   }
 
-  return m_UpdateList.erase(m_UpdateList.find(createKey(chunk)));
+  return m_UpdateList.erase(m_UpdateList.find(Util::CreateKey(chunk)));
 }
 
 ChunkManager::ChunkMap::iterator ChunkManager::unloadChunk(ChunkMap::iterator erasePosition)
@@ -411,7 +390,7 @@ void ChunkManager::sendBlockUpdate(Chunk* chunk, const BlockIndex& blockIndex)
 
   std::vector<Block::Face> updateDirections{};
   for (Block::Face face : Block::FaceIterator())
-    if (Chunk::BlockNeighborIsInAnotherChunk(blockIndex, face))
+    if (Util::BlockNeighborIsInAnotherChunk(blockIndex, face))
       updateDirections.push_back(face);
 
   EN_ASSERT(updateDirections.size() <= 3, "Too many update directions for a single block update!");
@@ -457,7 +436,7 @@ void ChunkManager::sendBlockUpdate(Chunk* chunk, const BlockIndex& blockIndex)
 void ChunkManager::queueForUpdating(const Chunk* chunk)
 {
   EN_ASSERT(chunk, "Chunk does not exist!");
-  m_UpdateList.insert({ createKey(chunk), chunk->getGlobalIndex() });
+  m_UpdateList.insert({ Util::CreateKey(chunk), chunk->getGlobalIndex() });
 }
 
 void ChunkManager::updateImmediately(Chunk* chunk)
@@ -470,6 +449,8 @@ void ChunkManager::updateImmediately(Chunk* chunk)
 
 static Block::Type getBlockType(Block::Type* blockData, blockIndex_t i, blockIndex_t j, blockIndex_t k)
 {
+  EN_ASSERT(blockData, "Block data does not exist!");
+  EN_ASSERT(-1 <= i && i <= Chunk::Size() && -1 <= j && j <= Chunk::Size() && -1 <= k && k <= Chunk::Size(), "Index is out of bounds!");
   return blockData[(Chunk::Size() + 2) * (Chunk::Size() + 2) * (i + 1) + (Chunk::Size() + 2) * (j + 1) + (k + 1)];
 }
 
@@ -480,6 +461,8 @@ static Block::Type getBlockType(Block::Type* blockData, const BlockIndex& blockI
 
 static void setBlockType(Block::Type* blockData, blockIndex_t i, blockIndex_t j, blockIndex_t k, Block::Type blockType)
 {
+  EN_ASSERT(blockData, "Block data does not exist!");
+  EN_ASSERT(-1 <= i && i <= Chunk::Size() && -1 <= j && j <= Chunk::Size() && -1 <= k && k <= Chunk::Size(), "Index is out of bounds!");
   blockData[(Chunk::Size() + 2) * (Chunk::Size() + 2) * (i + 1) + (Chunk::Size() + 2) * (j + 1) + (k + 1)] = blockType;
 }
 
@@ -504,8 +487,8 @@ void ChunkManager::meshChunk(Chunk* chunk)
   static constexpr int maxVertices = 4 * 6 * Chunk::TotalBlocks();
   static uint32_t* const meshData = new uint32_t[maxVertices];
 
-  static constexpr int totalBlocksNeeded = (Chunk::Size() + 2) * (Chunk::Size() + 2) * (Chunk::Size() + 2);
-  static Block::Type* const blockData = new Block::Type[totalBlocksNeeded];
+  static constexpr int totalVolumeNeeded = (Chunk::Size() + 2) * (Chunk::Size() + 2) * (Chunk::Size() + 2);
+  static Block::Type* const blockData = new Block::Type[totalVolumeNeeded];
 
   if (chunk->isEmpty())
     return;
@@ -713,7 +696,7 @@ Chunk* ChunkManager::find(const GlobalIndex& chunkIndex)
 {
   for (ChunkMap& chunkGroup : m_Chunks)
   {
-    ChunkMap::iterator  it = chunkGroup.find(createKey(chunkIndex));
+    ChunkMap::iterator  it = chunkGroup.find(Util::CreateKey(chunkIndex));
 
     if (it != chunkGroup.end())
       return it->second;
@@ -725,7 +708,7 @@ const Chunk* ChunkManager::find(const GlobalIndex& chunkIndex) const
 {
   for (const ChunkMap& chunkGroup : m_Chunks)
   {
-    ChunkMap::const_iterator  it = chunkGroup.find(createKey(chunkIndex));
+    ChunkMap::const_iterator  it = chunkGroup.find(Util::CreateKey(chunkIndex));
 
     if (it != chunkGroup.end())
       return it->second;
@@ -770,7 +753,7 @@ bool ChunkManager::isOnBoundary(const Chunk* chunk) const
 bool ChunkManager::isLoaded(const GlobalIndex& chunkIndex) const
 {
   for (const ChunkMap& chunkGroup : m_Chunks)
-    if (chunkGroup.find(createKey(chunkIndex)) != chunkGroup.end())
+    if (chunkGroup.find(Util::CreateKey(chunkIndex)) != chunkGroup.end())
       return true;
   return false;
 }
@@ -780,7 +763,7 @@ ChunkManager::ChunkType ChunkManager::getChunkType(const Chunk* chunk)
   EN_ASSERT(chunk, "Chunk does not exist");
 
   for (auto chunkGroup = m_Chunks.begin(); chunkGroup != m_Chunks.end(); ++chunkGroup)
-    if (chunkGroup->find(createKey(chunk)) != chunkGroup->end())
+    if (chunkGroup->find(Util::CreateKey(chunk)) != chunkGroup->end())
     {
       ptrdiff_t chunkGroupIndex = chunkGroup - m_Chunks.begin();
       return static_cast<ChunkType>(chunkGroupIndex);
@@ -807,7 +790,7 @@ void ChunkManager::moveToGroup(Chunk* chunk, ChunkType source, ChunkType destina
             queueForUpdating(neighbor);
         }
 
-  int key = createKey(chunk);
+  int key = Util::CreateKey(chunk);
   int sourceTypeID = static_cast<int>(source);
   int destinationTypeID = static_cast<int>(destination);
 
@@ -819,7 +802,7 @@ bool ChunkManager::blockNeighborIsAir(const Chunk* chunk, const BlockIndex& bloc
 {
   EN_ASSERT(chunk, "Chunk does not exist!");
 
-  if (Chunk::BlockNeighborIsInAnotherChunk(blockIndex, face))
+  if (Util::BlockNeighborIsInAnotherChunk(blockIndex, face))
   {
     const Chunk* chunkNeighbor = findNeighbor(chunk, face);
 
@@ -834,59 +817,4 @@ bool ChunkManager::blockNeighborIsAir(const Chunk* chunk, const BlockIndex& bloc
     return true;
   else
     return chunk->getBlockType(blockIndex + BlockIndex::OutwardNormal(face)) == Block::Type::Air;
-}
-
-int ChunkManager::createKey(const GlobalIndex& chunkIndex) const
-{
-  return chunkIndex.i % bitUi32(10) + bitUi32(10) * (chunkIndex.j % bitUi32(10)) + bitUi32(20) * (chunkIndex.k % bitUi32(10));
-}
-
-int ChunkManager::createKey(const Chunk* chunk) const
-{
-  return createKey(chunk->getGlobalIndex());
-}
-
-int ChunkManager::createHeightMapKey(globalIndex_t chunkI, globalIndex_t chunkJ) const
-{
-  return createKey(GlobalIndex(chunkI, chunkJ, 0));
-}
-
-bool ChunkManager::isInRange(const GlobalIndex& chunkIndex, globalIndex_t range) const
-{
-  for (int i = 0; i < 3; ++i)
-    if (abs(chunkIndex[i] - Player::OriginIndex()[i]) > range)
-      return false;
-  return true;
-}
-
-bool ChunkManager::isInRange(const Chunk* chunk, globalIndex_t range) const
-{
-  return isInRange(chunk->getGlobalIndex(), range);
-}
-
-std::array<Vec4, 6> ChunkManager::calculateViewFrustumPlanes(const Mat4& viewProjection) const
-{
-  Vec4 row1 = glm::row(viewProjection, 0);
-  Vec4 row2 = glm::row(viewProjection, 1);
-  Vec4 row3 = glm::row(viewProjection, 2);
-  Vec4 row4 = glm::row(viewProjection, 3);
-
-  std::array<Vec4, 6> frustumPlanes{};
-  frustumPlanes[static_cast<int>(FrustumPlane::Left)] = row4 + row1;
-  frustumPlanes[static_cast<int>(FrustumPlane::Right)] = row4 - row1;
-  frustumPlanes[static_cast<int>(FrustumPlane::Bottom)] = row4 + row2;
-  frustumPlanes[static_cast<int>(FrustumPlane::Top)] = row4 - row2;
-  frustumPlanes[static_cast<int>(FrustumPlane::Near)] = row4 + row3;
-  frustumPlanes[static_cast<int>(FrustumPlane::Far)] = row4 - row3;
-
-  return frustumPlanes;
-}
-
-bool ChunkManager::isInFrustum(const Vec3& point, const std::array<Vec4, 6>& frustumPlanes) const
-{
-  for (int planeID = 0; planeID < 5; ++planeID) // Skip far plane
-    if (glm::dot(Vec4(point, 1.0), frustumPlanes[planeID]) < 0)
-      return false;
-
-  return true;
 }

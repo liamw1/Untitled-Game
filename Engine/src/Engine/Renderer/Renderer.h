@@ -27,22 +27,11 @@ namespace Engine
     template<typename Vertex>
     void UploadMesh(VertexArray* target, const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices)
     {
-      EN_ASSERT(target != nullptr, "Vertex array has not been initialized!");
+      EN_ASSERT(target, "Vertex array has not been initialized!");
 
       uintptr_t dataSize = vertices.size() * sizeof(Vertex);
       target->setVertexBuffer(vertices.data(), dataSize);
       target->setIndexBuffer(IndexBuffer::Create(indices));
-    }
-
-    // Important: Shader must be bound before mesh can be drawn!
-    template<typename Uniforms>
-    void DrawMesh(const VertexArray* vertexArray, uint32_t indexCount, UniformBuffer* uniformBuffer, const Uniforms& uniforms)
-    {
-      EN_ASSERT(vertexArray != nullptr, "Vertex array has not been initialized!");
-      EN_ASSERT(uniformBuffer != nullptr, "Uniform buffer has not been initialized!");
-
-      uniformBuffer->setData(&uniforms, sizeof(Uniforms));
-      RenderCommand::DrawIndexed(vertexArray, indexCount);
     }
   };
 }

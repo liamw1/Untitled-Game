@@ -7,19 +7,15 @@
 
 namespace Engine
 {
-  struct ECS
+  class ECS
   {
-    static Entity GetEntity(uint32_t entityID)
-    {
-      entt::entity id = static_cast<entt::entity>(entityID);
-      EN_CORE_ASSERT(Entity::Registry().valid(id), "Entity ID does not refer to a valid entity!");
-      return Entity(id);
-    }
+  public:
     static Entity GetEntity(entt::entity entityID)
     {
       EN_CORE_ASSERT(Entity::Registry().valid(entityID), "Entity ID does not refer to a valid entity!");
       return Entity(entityID);
     }
+    static Entity GetEntity(uint32_t entityID) { return (static_cast<entt::entity>(entityID)); }
 
     static entt::registry& Registry() { return Entity::Registry(); }
     static Entity Create() { return Entity::Registry().create(); }

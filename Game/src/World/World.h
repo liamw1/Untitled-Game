@@ -1,6 +1,5 @@
 #pragma once
 #include "ChunkManager.h"
-#include "Player/Player.h"
 
 struct RayIntersection
 {

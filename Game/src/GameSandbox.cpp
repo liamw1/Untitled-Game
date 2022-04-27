@@ -1,12 +1,13 @@
 #include "GMpch.h"
 #include "GameSandbox.h"
+#include "Player/Player.h"
 #include "World/World.h"
 #include "World/LOD.h"
 
 GameSandbox::GameSandbox()
   : Layer("GameSandbox")
 {
-  Player::Initialize(GlobalIndex(0, 0, 1), Block::Length() * Vec3(16.0));
+  Player::Initialize(GlobalIndex(0, 0, 2), Block::Length() * Vec3(16.0));
   Engine::RenderCommand::Initialize();
   Engine::Renderer2D::Initialize();
   Engine::Renderer::Initialize();
@@ -34,7 +35,7 @@ void GameSandbox::onUpdate(Timestep timestep)
 {
   EN_PROFILE_FUNCTION();
 
-  EN_TRACE("fps: {0}", static_cast<int>(1.0f / timestep.sec()));
+  // EN_TRACE("fps: {0}", static_cast<int>(1.0f / timestep.sec()));
 
   Engine::RenderCommand::Clear(Float4(0.788f, 0.949f, 0.949f, 1.0f));
 

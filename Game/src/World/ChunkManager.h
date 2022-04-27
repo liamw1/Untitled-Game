@@ -58,18 +58,11 @@ private:
     Error
   };
 
-  enum class FrustumPlane : int
-  {
-    Left, Right,
-    Bottom, Top,
-    Near, Far
-  };
-
 private:
   using ChunkMap = std::unordered_map<int, Chunk*>;
   using IndexMap = std::unordered_map<int, GlobalIndex>;
 
-  static constexpr int s_RenderDistance = 4;
+  static constexpr int s_RenderDistance = 12;
   static constexpr int s_LoadDistance = s_RenderDistance + 2;
   static constexpr int s_UnloadDistance = s_LoadDistance;
   static constexpr int s_MaxChunks = (2 * s_UnloadDistance + 1) * (2 * s_UnloadDistance + 1) * (2 * s_UnloadDistance + 1);
@@ -83,7 +76,6 @@ private:
   ChunkMap& m_EmptyChunks = m_Chunks[static_cast<int>(ChunkType::Empty)];
   ChunkMap& m_BoundaryChunks = m_Chunks[static_cast<int>(ChunkType::Boundary)];
   ChunkMap& m_RenderableChunks = m_Chunks[static_cast<int>(ChunkType::Renderable)];
-  std::unordered_map<int, HeightMap> m_HeightMaps;
 
   IndexMap m_NewChunkList;
   IndexMap m_UpdateList;
@@ -206,31 +198,4 @@ private:
   void moveToGroup(Chunk* chunk, ChunkType source, ChunkType destination);
 
   bool blockNeighborIsAir(const Chunk* chunk, const BlockIndex& blockIndex, Block::Face face) const;
-
-  /*
-    Generates a (nearly) unique key for hash maps.
-  */
-  int createKey(const GlobalIndex& chunkIndex) const;
-  int createKey(const Chunk* chunk) const;
-  int createHeightMapKey(globalIndex_t chunkI, globalIndex_t chunkJ) const;
-
-  bool isInRange(const GlobalIndex& chunkIndex, globalIndex_t range) const;
-  bool isInRange(const Chunk* chunk, globalIndex_t range) const;
-
-  // NOTE: These should probably be moved out into Utils folder
-  /*
-  Uses algorithm described in
-  https://www.gamedevs.org/uploads/fast-extraction-viewing-frustum-planes-from-world-view-projection-matrix.pdf
-
-  \returns An array of vectors representing the view frustum planes.
-           For a plane of the form Ax + By + Cz + D = 0,
-           its corresponding vector is {A, B, C, D}.
-  */
-  std::array<Vec4, 6> calculateViewFrustumPlanes(const Mat4& viewProjection) const;
-
-  /*
-    \returns True if the given point is inside the given set of frustum planes.
-             Could be any frustum, not necessarily the view frustum.
-  */
-  bool isInFrustum(const Vec3& point, const std::array<Vec4, 6>& frustumPlanes) const;
 };

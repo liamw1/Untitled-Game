@@ -69,6 +69,6 @@ namespace Engine
     {
     }
 
-    friend struct ECS;
+    friend class ECS;
   };
 }

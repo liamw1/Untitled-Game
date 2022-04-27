@@ -106,15 +106,6 @@ void Chunk::BindBuffers()
   s_TextureArray->bind(s_TextureSlot);
 }
 
-bool Chunk::BlockNeighborIsInAnotherChunk(const BlockIndex& blockIndex, Block::Face face)
-{
-  static constexpr blockIndex_t chunkLimits[2] = { 0, Chunk::Size() - 1 };
-  int faceID = static_cast<int>(face);
-  int coordID = faceID / 2;
-
-  return blockIndex[coordID] == chunkLimits[faceID % 2];
-}
-
 void Chunk::setBlockType(blockIndex_t i, blockIndex_t j, blockIndex_t k, Block::Type blockType)
 {
   EN_ASSERT(0 <= i && i < Chunk::Size() && 0 <= j && j < Chunk::Size() && 0 <= k && k < Chunk::Size(), "Index is out of bounds!");
@@ -135,74 +126,6 @@ void Chunk::setBlockType(blockIndex_t i, blockIndex_t j, blockIndex_t k, Block::
 void Chunk::setBlockType(const BlockIndex& blockIndex, Block::Type blockType)
 {
   setBlockType(blockIndex.i, blockIndex.j, blockIndex.k, blockType);
-}
-
-void Chunk::fill(const HeightMap& heightMap)
-{
-  if (m_Composition)
-  {
-    EN_WARN("Calling fill on a non-empty chunk!  Deleting previous allocation...");
-    delete[] m_Composition;
-  }
-
-  length_t chunkFloor = Chunk::Length() * m_GlobalIndex.k;
-  length_t chunkCeiling = chunkFloor + Chunk::Length();
-
-  if (chunkFloor > heightMap.maxHeight)
-  {
-    m_Composition = nullptr;
-    m_NonOpaqueFaces = 0x3F;
-    return;
-  }
-  else
-    m_Composition = new Block::Type[Chunk::TotalBlocks()];
-
-  bool isEmpty = true;
-  for (blockIndex_t i = 0; i < Chunk::Size(); ++i)
-    for (blockIndex_t j = 0; j < Chunk::Size(); ++j)
-    {
-      const length_t& terrainHeight = heightMap.surfaceData[i][j].getHeight();
-      const Block::Type& surfaceBlockType = heightMap.surfaceData[i][j].getPrimaryBlockType();
-
-      if (terrainHeight < chunkFloor)
-      {
-        for (blockIndex_t k = 0; k < Chunk::Size(); ++k)
-          setBlockType(i, j, k, Block::Type::Air);
-      }
-      else if (terrainHeight > chunkCeiling + Block::Length())
-      {
-        for (blockIndex_t k = 0; k < Chunk::Size(); ++k)
-          setBlockType(i, j, k, Block::Type::Dirt);
-        isEmpty = false;
-      }
-      else
-      {
-        int terrainHeightIndex = static_cast<int>((terrainHeight - chunkFloor) / Block::Length());
-        for (blockIndex_t k = 0; k < Chunk::Size(); ++k)
-        {
-          if (k == terrainHeightIndex)
-          {
-            setBlockType(i, j, k, surfaceBlockType);
-            isEmpty = false;
-          }
-          else if (k < terrainHeightIndex)
-          {
-            setBlockType(i, j, k, Block::Type::Dirt);
-            isEmpty = false;
-          }
-          else
-            setBlockType(i, j, k, Block::Type::Air);
-        }
-      }
-    }
-
-  if (isEmpty)
-  {
-    delete[] m_Composition;
-    m_Composition = nullptr;
-  }
-
-  determineOpacity();
 }
 
 void Chunk::setData(Block::Type* composition)
@@ -284,22 +207,4 @@ void Chunk::reset()
   m_GlobalIndex = {};
   m_NonOpaqueFaces = 0;
   m_QuadCount = 0;
-}
-
-
-
-HeightMap::HeightMap(const GlobalIndex& index)
-  : chunkI(index.i), chunkJ(index.j), maxHeight(-std::numeric_limits<length_t>::infinity())
-{
-  EN_PROFILE_FUNCTION();
-
-  for (blockIndex_t i = 0; i < Chunk::Size(); ++i)
-    for (blockIndex_t j = 0; j < Chunk::Size(); ++j)
-    {
-      Vec2 blockXY = Chunk::Length() * Vec2(chunkI, chunkJ) + Block::Length() * (Vec2(i, j) + Vec2(0.5));
-      surfaceData[i][j] = Noise::FastTerrainNoise2D(blockXY);
-
-      if (surfaceData[i][j].getHeight() > maxHeight)
-        maxHeight = surfaceData[i][j].getHeight();
-    }
 }
