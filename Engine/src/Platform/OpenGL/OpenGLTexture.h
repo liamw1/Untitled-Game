@@ -4,23 +4,6 @@
 
 namespace Engine
 {
-  class OpenGLTextureArray : public TextureArray
-  {
-  public:
-    OpenGLTextureArray(uint32_t textureCount, uint32_t textureSize);
-    ~OpenGLTextureArray();
-
-    void bind(uint32_t slot = 0) const override;
-
-    void addTexture(const std::string& path) override;
-
-  private:
-    uint32_t m_MaxTextures, m_TextureSize;
-    uint32_t m_TextureCount = 0;
-    uint32_t m_RendererID = 0;
-    GLenum m_InternalFormat = GL_RGBA8, m_DataFormat = GL_RGBA;
-  };
-
   class OpenGLTexture2D : public Texture2D
   {
   public:
@@ -42,5 +25,24 @@ namespace Engine
     uint32_t m_Width, m_Height;
     uint32_t m_RendererID = 0;
     GLenum m_InternalFormat, m_DataFormat;
+  };
+
+
+
+  class OpenGLTextureArray : public TextureArray
+  {
+  public:
+    OpenGLTextureArray(uint32_t textureCount, uint32_t textureSize);
+    ~OpenGLTextureArray();
+
+    void bind(uint32_t slot = 0) const override;
+
+    void addTexture(const std::string& path) override;
+
+  private:
+    uint32_t m_MaxTextures, m_TextureSize;
+    uint32_t m_TextureCount = 0;
+    uint32_t m_RendererID = 0;
+    GLenum m_InternalFormat = GL_RGBA8, m_DataFormat = GL_RGBA;
   };
 }

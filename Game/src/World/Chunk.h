@@ -69,7 +69,6 @@ private:
   // Mesh Data
   static inline Unique<Engine::Shader> s_Shader;
   static inline Shared<Engine::TextureArray> s_TextureArray;
-  static inline Unique<Engine::UniformBuffer> s_UniformBuffer;
   static inline Shared<const Engine::IndexBuffer> s_IndexBuffer;
   static inline const Engine::BufferLayout s_VertexBufferLayout = { { ShaderDataType::Uint32, "a_VertexData" } };
   static constexpr int s_TextureSlot = 0;

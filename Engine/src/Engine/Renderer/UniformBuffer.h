@@ -2,16 +2,17 @@
 
 namespace Engine
 {
-	class UniformBuffer
-	{
-	public:
-		virtual ~UniformBuffer() = default;
+  namespace UniformBuffer
+  {
+    void Initialize();
 
-    virtual void bind() const = 0;
-    virtual void unBind() const = 0;
+    void Allocate(uint32_t binding, uint32_t size);
+    void Deallocate(uint32_t binding);
 
-		virtual void setData(const void* data, uint32_t size, uint32_t offset = 0) = 0;
+    void Bind(uint32_t binding);
+    void Unbind();
 
-		static Unique<UniformBuffer> Create(uint32_t size, uint32_t binding);
-	};
+    void SetData(uint32_t binding, const void* data);
+    void SetData(uint32_t binding, const void* data, uint32_t size, uint32_t offset = 0);
+  }
 }

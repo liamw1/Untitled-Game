@@ -94,7 +94,7 @@ void Chunk::Initialize(const Shared<Engine::TextureArray>& textureArray)
 
   s_Shader = Engine::Shader::Create("assets/shaders/Chunk.glsl");
   s_TextureArray = textureArray;
-  s_UniformBuffer = Engine::UniformBuffer::Create(sizeof(Uniforms), s_UniformBinding);
+  Engine::UniformBuffer::Allocate(s_UniformBinding, sizeof(Uniforms));
 
   delete[] indices;
 }
@@ -102,7 +102,7 @@ void Chunk::Initialize(const Shared<Engine::TextureArray>& textureArray)
 void Chunk::BindBuffers()
 {
   s_Shader->bind();
-  s_UniformBuffer->bind();
+  Engine::UniformBuffer::Bind(s_UniformBinding);
   s_TextureArray->bind(s_TextureSlot);
 }
 
@@ -185,7 +185,7 @@ void Chunk::draw() const
     return; // Nothing to draw
 
   Uniforms uniforms = { anchorPosition() };
-  s_UniformBuffer->setData(&uniforms, sizeof(Uniforms));
+  Engine::UniformBuffer::SetData(s_UniformBinding, &uniforms);
   Engine::RenderCommand::DrawIndexed(m_VertexArray.get(), meshIndexCount);
 }
 

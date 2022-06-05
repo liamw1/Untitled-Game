@@ -6,7 +6,7 @@
 
 namespace Engine
 {
-  void OpenGLRendererAPI::initialize()
+  OpenGLRendererAPI::OpenGLRendererAPI()
   {
     EN_PROFILE_FUNCTION();
     EN_CORE_ASSERT(std::this_thread::get_id() == Threads::GetMainThreadID(), "OpenGL calls must be made in main thread!");

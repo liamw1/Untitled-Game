@@ -1,8 +1,8 @@
 #pragma once
-#include "RendererAPI.h"
+#include "VertexArray.h"
 #include "Shader.h"
 #include "Texture.h"
-#include "Engine/Renderer/UniformBuffer.h"
+#include "UniformBuffer.h"
 
 /*
   A general-purpose renderer for 3D objects/effects.
@@ -13,8 +13,6 @@ namespace Engine
   {
     void Initialize();
     void Shutdown();
-
-    inline RendererAPI::API GetAPI() { return RendererAPI::GetAPI(); }
 
     void BeginScene(const Mat4& viewProjection);
     void EndScene();

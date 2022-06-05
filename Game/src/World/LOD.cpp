@@ -132,19 +132,19 @@ void LOD::MeshData::Initialize(const Shared<Engine::TextureArray>& textureArray)
 {
   s_Shader = Engine::Shader::Create("assets/shaders/ChunkLOD.glsl");
   s_TextureArray = textureArray;
-  s_UniformBuffer = Engine::UniformBuffer::Create(sizeof(LOD::Uniforms), s_UniformBinding);
+  Engine::UniformBuffer::Allocate(s_UniformBinding, sizeof(LOD::Uniforms));
 }
 
 void LOD::MeshData::BindBuffers()
 {
   s_Shader->bind();
-  s_UniformBuffer->bind();
+  Engine::UniformBuffer::Bind(s_UniformBinding);
   s_TextureArray->bind(s_TextureSlot);
 }
 
 void LOD::MeshData::SetUniforms(const Uniforms& uniforms)
 {
-  s_UniformBuffer->setData(&uniforms, sizeof(Uniforms));
+  Engine::UniformBuffer::SetData(s_UniformBinding, &uniforms);
 }
 
 void LOD::Draw(const Octree::Node* leaf)

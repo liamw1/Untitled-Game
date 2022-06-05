@@ -41,7 +41,6 @@ namespace Engine
   static Unique<Texture2D> s_WhiteTexture;
 
   static CameraUniforms s_CameraUniforms;
-  static Unique<UniformBuffer> s_CameraUniformBuffer;
   
   static constexpr Float4 s_CubeFrameVertexPositions[8] = { { -0.5f, -0.5f, -0.5f, 1.0f },
                                                             {  0.5f, -0.5f, -0.5f, 1.0f },
@@ -119,6 +118,8 @@ namespace Engine
   void Renderer::Initialize()
   {
     EN_PROFILE_FUNCTION();
+
+    UniformBuffer::Allocate(0, sizeof(CameraUniforms));
     
     /* Wire Frame Initialization */
     s_WireFrameVertexArray = VertexArray::Create();
@@ -155,8 +156,6 @@ namespace Engine
 
     s_TextureShader = Shader::Create("../Engine/assets/shaders/Quad.glsl");
     s_WireFrameShader = Shader::Create("../Engine/assets/shaders/WireFrame.glsl");
-
-    s_CameraUniformBuffer = UniformBuffer::Create(sizeof(CameraUniforms), 0);
   }
 
   void Renderer::Shutdown()
@@ -166,7 +165,7 @@ namespace Engine
   void Renderer::BeginScene(const Mat4& viewProjection)
   {
     s_CameraUniforms.viewProjection = viewProjection;
-    s_CameraUniformBuffer->setData(&s_CameraUniforms, sizeof(CameraUniforms));
+    UniformBuffer::SetData(0, &s_CameraUniforms);
   }
 
   void Renderer::EndScene()

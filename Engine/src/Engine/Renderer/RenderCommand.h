@@ -1,25 +1,21 @@
 #pragma once
-#include "RendererAPI.h"
+#include "VertexArray.h"
 
 namespace Engine
 {
-  class RenderCommand
+  namespace RenderCommand
   {
-  public:
-    static void Initialize() { s_RendererAPI->initialize(); }
-    static void SetViewport(uint32_t x, uint32_t y, uint32_t width, uint32_t height) { s_RendererAPI->setViewport(x, y, width, height); }
+    void Initialize();
+    void SetViewport(uint32_t x, uint32_t y, uint32_t width, uint32_t height);
     
-    static void Clear(const Float4& color = { 0.0f, 0.0f, 0.0f, 1.0f }) { s_RendererAPI->clear(color); }
-    static void WireFrameToggle(bool enableWireFrame) { s_RendererAPI->wireFrameToggle(enableWireFrame); }
-    static void FaceCullToggle(bool enableFaceCulling) { s_RendererAPI->faceCullToggle(enableFaceCulling); }
+    void Clear(const Float4& color = { 0.0f, 0.0f, 0.0f, 1.0f });
+    void WireFrameToggle(bool enableWireFrame);
+    void FaceCullToggle(bool enableFaceCulling);
     
-    static void DrawVertices(const VertexArray* vertexArray, uint32_t vertexCount) { return s_RendererAPI->drawVertices(vertexArray, vertexCount); }
-    static void DrawIndexed(const VertexArray* vertexArray, uint32_t indexCount = 0) { return s_RendererAPI->drawIndexed(vertexArray, indexCount); }
-    static void DrawIndexedLines(const VertexArray* vertexArray, uint32_t indexCount = 0) { return s_RendererAPI->drawIndexedLines(vertexArray, indexCount); }
+    void DrawVertices(const VertexArray* vertexArray, uint32_t vertexCount);
+    void DrawIndexed(const VertexArray* vertexArray, uint32_t indexCount = 0);
+    void DrawIndexedLines(const VertexArray* vertexArray, uint32_t indexCount = 0);
 
-    static void ClearDepthBuffer() { return s_RendererAPI->clearDepthBuffer(); }
-
-  private:
-    static Unique<RendererAPI> s_RendererAPI;
+    void ClearDepthBuffer();
   };
 }

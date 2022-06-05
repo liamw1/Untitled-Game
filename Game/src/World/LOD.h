@@ -61,7 +61,6 @@ namespace LOD
     static constexpr int s_UniformBinding = 3;
     static inline Unique<Engine::Shader> s_Shader = nullptr;
     static inline Shared<Engine::TextureArray> s_TextureArray = nullptr;
-    static inline Unique<Engine::UniformBuffer> s_UniformBuffer = nullptr;
     static inline const Engine::BufferLayout s_VertexBufferLayout = { { ShaderDataType::Float3, "a_Position"        },
                                                                       { ShaderDataType::Float3, "a_IsoNormal"       },
                                                                       { ShaderDataType::Int2,   "a_TextureIndices"  },

@@ -77,7 +77,6 @@ namespace Engine
   static Renderer2D::Statistics s_Stats;
 
   static CameraUniforms s_CameraUniforms;
-  static Unique<UniformBuffer> s_CameraUniformBuffer;
 
 
 
@@ -133,7 +132,7 @@ namespace Engine
   {
     EN_PROFILE_FUNCTION();
 
-    s_CameraUniformBuffer = UniformBuffer::Create(sizeof(CameraUniforms), 0);
+    UniformBuffer::Allocate(0, sizeof(CameraUniforms));
 
     uint32_t* quadIndices = new uint32_t[s_MaxQuadIndices];
 
@@ -195,7 +194,7 @@ namespace Engine
   void Renderer2D::BeginScene(const Mat4& viewProjection)
   {
     s_CameraUniforms.viewProjection = viewProjection;
-    s_CameraUniformBuffer->setData(&s_CameraUniforms, sizeof(CameraUniforms));
+    UniformBuffer::SetData(0, &s_CameraUniforms);
 
     startBatch();
   }
