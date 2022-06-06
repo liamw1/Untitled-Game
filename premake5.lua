@@ -3,7 +3,7 @@ include "dependencies.lua"
 
 workspace "Engine"
 	architecture "x86_64"
-	startproject "GameDev"
+	startproject "Game"
 
 	configurations
 	{
@@ -35,4 +35,3 @@ group ""
 include "Engine"
 include "GameDev"
 include "Game"
-include "Sandbox"
