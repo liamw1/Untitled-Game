@@ -3,7 +3,7 @@
 #include "Player/Player.h"
 #include "Engine/Renderer/Renderer.h"
 
-static constexpr bool createLODs = false;
+static constexpr bool createLODs = true;
 
 static constexpr blockIndex_t modulo(globalIndex_t a, blockIndex_t b)
 {

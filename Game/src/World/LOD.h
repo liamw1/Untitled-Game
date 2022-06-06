@@ -176,7 +176,7 @@ namespace LOD
     static constexpr int MaxNodeDepth() { return s_MaxNodeDepth; }
 
   private:
-    static constexpr int s_MaxNodeDepth = 8;
+    static constexpr int s_MaxNodeDepth = 12;
     static constexpr uint64_t s_RootNodeSize = pow2(s_MaxNodeDepth);
     static constexpr GlobalIndex s_RootNodeAnchor = -static_cast<globalIndex_t>(s_RootNodeSize / 2) * GlobalIndex(1, 1, 1);
 
