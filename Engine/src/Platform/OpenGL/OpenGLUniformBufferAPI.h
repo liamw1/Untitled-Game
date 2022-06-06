@@ -17,7 +17,7 @@ namespace Engine
     void setData(uint32_t binding, const void* data, uint32_t size, uint32_t offset);
 
   private:
-    static constexpr int s_MaxUniformBindings = 32; // NOTE: Should get from OpenGL directly
+    static constexpr int s_MaxUniformBindings = 32; // NOTE: Should query this from OpenGL
     std::array<uint32_t, s_MaxUniformBindings> m_RendererIDs;
     std::array<uint32_t, s_MaxUniformBindings> m_BufferSizes;
   };

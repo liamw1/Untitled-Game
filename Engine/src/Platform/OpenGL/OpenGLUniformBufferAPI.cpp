@@ -21,7 +21,7 @@ namespace Engine
     m_RendererIDs[binding] = rendererID;
     m_BufferSizes[binding] = size;
 
-    // TODO: Check if sum of allocation exceeds uniform size limits
+    // TODO: Check if sum of allocations exceed uniform size limits
   }
 
   void OpenGLUniformBufferAPI::deallocate(uint32_t binding)

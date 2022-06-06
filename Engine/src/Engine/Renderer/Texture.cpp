@@ -1,42 +1,51 @@
 #include "ENpch.h"
 #include "Texture.h"
 #include "RendererAPI.h"
-#include "Platform/OpenGL/OpenGLTexture.h"
+#include "TextureAPI.h"
+#include "Platform/OpenGL/OpenGLTextureAPI.h"
 
 namespace Engine
 {
-  Unique<Texture2D> Texture2D::Create(uint32_t width, uint32_t height)
+  static Unique<TextureAPI> s_TextureAPI = nullptr;
+
+  void Engine::Texture::Initialize()
   {
     switch (RendererAPI::GetAPI())
     {
-      case RendererAPI::API::None:          EN_CORE_ASSERT(false, "RendererAPI::None is currently not supported!"); return nullptr;
-      case RendererAPI::API::OpenGL:        return CreateUnique<OpenGLTexture2D>(width, height);
-      case RendererAPI::API::OpenGL_Legacy: return CreateUnique<OpenGLTexture2D>(width, height);
-      default:                              EN_CORE_ASSERT(false, "Unknown RendererAPI!"); return nullptr;
+      case RendererAPI::API::None:          EN_CORE_ASSERT(false, "RendererAPI::None is currently not supported!"); return;
+      case RendererAPI::API::OpenGL:        s_TextureAPI = CreateUnique<OpenGLTextureAPI>();  break;
+      case RendererAPI::API::OpenGL_Legacy: s_TextureAPI = CreateUnique<OpenGLTextureAPI>();  break;
+      default:                              EN_CORE_ASSERT(false, "Unknown RendererAPI!");                return;
     }
   }
 
-  Unique<Texture2D> Texture2D::Create(const std::string& path)
+  void Texture::Create2D(uint32_t binding, uint32_t width, uint32_t height)
   {
-    switch (RendererAPI::GetAPI())
-    {
-      case RendererAPI::API::None:          EN_CORE_ASSERT(false, "RendererAPI::None is currently not supported!"); return nullptr;
-      case RendererAPI::API::OpenGL:        return CreateUnique<OpenGLTexture2D>(path);
-      case RendererAPI::API::OpenGL_Legacy: return CreateUnique<OpenGLTexture2D>(path);
-      default:                              EN_CORE_ASSERT(false, "Unknown RendererAPI!"); return nullptr;
-    }
+    s_TextureAPI->create2D(binding, width, height);
   }
 
-
-
-  Unique<TextureArray> TextureArray::Create(uint32_t textureCount, uint32_t textureSize)
+  void Texture::Create2D(uint32_t binding, const std::string& path)
   {
-    switch (RendererAPI::GetAPI())
-    {
-      case RendererAPI::API::None:          EN_CORE_ASSERT(false, "RendererAPI::None is currently not supported!"); return nullptr;
-      case RendererAPI::API::OpenGL:        return CreateUnique<OpenGLTextureArray>(textureCount, textureSize);
-      case RendererAPI::API::OpenGL_Legacy: return CreateUnique<OpenGLTextureArray>(textureCount, textureSize);
-      default:                              EN_CORE_ASSERT(false, "Unknown RendererAPI!"); return nullptr;
-    }
+    s_TextureAPI->create2D(binding, path);
+  }
+
+  void Texture::Create2DArray(uint32_t binding, uint32_t textureCount, uint32_t textureSize)
+  {
+    s_TextureAPI->create2DArray(binding, textureCount, textureSize);
+  }
+
+  void Texture::Remove(uint32_t binding)
+  {
+    s_TextureAPI->remove(binding);
+  }
+
+  void Texture::Bind(uint32_t binding)
+  {
+    s_TextureAPI->bind(binding);
+  }
+
+  void Texture::Add(uint32_t binding, const std::string& path)
+  {
+    s_TextureAPI->add(binding, path);
   }
 }

@@ -6,49 +6,17 @@
 */
 namespace Engine
 {
-  class Texture
+  namespace Texture
   {
-  public:
-    virtual ~Texture() = default;
+    void Initialize();
 
-    virtual uint32_t getWidth() const = 0;
-    virtual uint32_t getHeight() const = 0;
-    virtual uint32_t getRendererID() const = 0;
+    void Create2D(uint32_t binding, uint32_t width, uint32_t height);
+    void Create2D(uint32_t binding, const std::string& path);
+    void Create2DArray(uint32_t binding, uint32_t textureCount, uint32_t textureSize);
+    void Remove(uint32_t binding);
 
-    /*
-      Method for setting texture data directly.
-      \param data Buffer of texture data
-      \param size Size of buffer in bytes
-    */
-    virtual void setData(void* data, uint32_t size) = 0;
+    void Bind(uint32_t binding);
 
-    /*
-      Binds texture to texture slot (0 by default).
-      Number of slot varies between GPUs, usually around 16-32 total.
-    */
-    virtual void bind(uint32_t slot = 0) const = 0;
-
-    virtual bool operator==(const Texture& other) const = 0;
-  };
-
-  class Texture2D : public Texture
-  {
-  public:
-    static Unique<Texture2D> Create(uint32_t width, uint32_t height);
-    static Unique<Texture2D> Create(const std::string& path);
-  };
-
-
-
-  class TextureArray
-  {
-  public:
-    virtual ~TextureArray() = default;
-
-    virtual void bind(uint32_t slot = 0) const = 0;
-
-    virtual void addTexture(const std::string& path) = 0;
-
-    static Unique<TextureArray> Create(uint32_t textureCount, uint32_t textureSize);
-  };
+    void Add(uint32_t binding, const std::string& path);
+  }
 }
