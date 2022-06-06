@@ -206,7 +206,7 @@ namespace Engine
       {
         Camera& camera = component.camera;
 
-        static constexpr char* projectionTypeStrings[2] = { "Perspective", "Orthographic" };
+        static constexpr std::array<const char*, 2> projectionTypeStrings = { "Perspective", "Orthographic" };
         const char* currentProjectionTypeString = projectionTypeStrings[static_cast<int>(camera.getProjectionType())];
         if (ImGui::BeginCombo("Projection", currentProjectionTypeString))
         {

@@ -8,7 +8,7 @@ namespace Util
   */
   int CreateKey(const GlobalIndex& chunkIndex);
   int CreateKey(const Chunk* chunk);
-  int CreateHeightMapKey(globalIndex_t chunkI, globalIndex_t chunkJ);
+  int Create2DMapKey(globalIndex_t chunkI, globalIndex_t chunkJ);
 
   bool IsInRangeOfPlayer(const GlobalIndex& chunkIndex, globalIndex_t range);
   bool IsInRangeOfPlayer(const Chunk* chunk, globalIndex_t range);

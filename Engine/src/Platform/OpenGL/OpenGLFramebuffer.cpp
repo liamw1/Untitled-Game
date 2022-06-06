@@ -211,15 +211,6 @@ namespace Engine
     return pixelData;
   }
 
-  template<typename T>
-  static void clear(uint32_t attachment, GLenum textureFormat, GLenum valueType, const std::variant<int, float>& value)
-  {
-    EN_CORE_ASSERT(std::this_thread::get_id() == Threads::GetMainThreadID(), "OpenGL calls must be made in main thread!");
-
-    T typedValue = std::any_cast<T>(value);
-    glClearTexImage(attachment, 0, textureFormat, valueType, &typedValue);
-  }
-
   void OpenGLFramebuffer::clearAttachment(uint32_t attachmentIndex, const std::variant<int, float>& value)
   {
     EN_CORE_ASSERT(std::this_thread::get_id() == Threads::GetMainThreadID(), "OpenGL calls must be made in main thread!");

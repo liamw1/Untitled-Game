@@ -40,17 +40,7 @@ length_t Noise::FastTerrainNoise3D(const Vec3& position)
   return octave1;
 }
 
-std::array<length_t, 4> Noise::OctaveNoise2D(const Vec2& pointXY, length_t amplitude, length_t scale, float persistence, float lacunarity)
+length_t Noise::SimplexNoise2D(const Vec2& v)
 {
-  std::array<length_t, 4> octaves{};
-
-  length_t frequency = static_cast<length_t>(1.0 / scale);
-  for (int i = 0; i < 4; ++i)
-  {
-    octaves[i] = amplitude * glm::simplex(frequency * pointXY);
-    amplitude *= persistence;
-    frequency *= lacunarity;
-  }
-
-  return octaves;
+  return glm::simplex(v);
 }

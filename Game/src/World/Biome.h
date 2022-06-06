@@ -3,17 +3,26 @@
 
 struct Biome
 {
-  length_t averageElevation = 0 * Block::Length();
-  length_t elevationAmplitude = 150 * Block::Length();
-  length_t elevationScale = 1280 * Block::Length();
-  float elevationPersistence = 1.0f / 6;
-  float elevationLacunarity = 4.0f;
+  length_t averageElevation;
+  length_t elevationAmplitude;
+  length_t elevationScale;
+  float elevationPersistence;
+  float elevationLacunarity;
 
-  length_t averageSurfaceDepth = 1.0;
-  length_t averageSoilDepth = 5.0;
+  float averageTemperature;
+  float localTemperatureVariation;
+  length_t localTemperatureVariationScale;
 
-  Block::CompoundType primarySurfaceType = { Block::Type::Grass };
-  Block::CompoundType soilType = { Block::Type::Dirt };
+  length_t averageSurfaceDepth;
+  length_t averageSoilDepth;
+
+  Block::CompoundType surfaceType;
+  Block::CompoundType surfaceType_High;
+  Block::CompoundType surfaceType_Cold;
+  Block::CompoundType soilType;
+
+  length_t highThreshold;
+  float coldThreshold;
 
   constexpr length_t minElevation() const
   {
@@ -33,6 +42,20 @@ struct Biome
 
     return averageElevation + totalAmplitude;
   }
+
+  Biome operator+(const Biome& other) const;
+  Biome operator*(float x) const;
+
+  Biome& operator+=(const Biome& other);
+  Biome& operator*=(float x);
+
+public:
+  enum class Type
+  {
+    Default = 0
+  };
+
+  static const Biome& Get(Type type);
 
   static constexpr int NumOctaves() { return s_Octaves; }
 

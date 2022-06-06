@@ -32,9 +32,7 @@ private:
   T* m_Data = nullptr;
 
   Container()
-    : m_Data(new T[N * M])
-  {
-  }
+    : m_Data(new T[N * M]) {}
   ~Container() { delete[] m_Data; }
 
   Container(Container&& other) noexcept

@@ -51,5 +51,8 @@ namespace Terrain
 
   void Clean(int unloadDistance);
 
-  SurfaceData CreateSurfaceData(const Vec2& pointXY, const Biome& biome);
+  Noise::OctaveNoiseData<Biome::NumOctaves()> GetElevationData(const Vec2& pointXY, const Biome& biome);
+  float GetTemperatureData(const Vec2& pointXY, const Biome& biome);
+
+  SurfaceData GetSurfaceData(const Noise::OctaveNoiseData<Biome::NumOctaves()>& elevationData, float seaLevelTemperature, const Biome& biome);
 }

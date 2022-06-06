@@ -12,7 +12,7 @@ int Util::CreateKey(const Chunk* chunk)
   return CreateKey(chunk->getGlobalIndex());
 }
 
-int Util::CreateHeightMapKey(globalIndex_t chunkI, globalIndex_t chunkJ)
+int Util::Create2DMapKey(globalIndex_t chunkI, globalIndex_t chunkJ)
 {
   return CreateKey(GlobalIndex(chunkI, chunkJ, 0));
 }
