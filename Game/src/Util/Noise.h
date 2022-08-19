@@ -45,7 +45,7 @@ namespace Noise
   {
     std::array<length_t, N> octaves{};
 
-    length_t frequency = static_cast<length_t>(1.0 / scale);
+    length_t frequency = 1_m / scale;
     for (int i = 0; i < N; ++i)
     {
       octaves[i] = amplitude * SimplexNoise2D(frequency * pointXY);

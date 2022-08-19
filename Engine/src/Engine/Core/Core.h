@@ -29,6 +29,9 @@ using length_t = float;
 using rad_t = length_t;
 using seconds = float;
 
+constexpr length_t operator"" _m(long double x) { return static_cast<length_t>(x); }
+constexpr length_t operator"" _m(uint64_t x) { return static_cast<length_t>(x); }
+
 namespace Constants
 {
   constexpr length_t PI = static_cast<length_t>(3.1415926535897932384626433832795028841971693993751L);
@@ -104,6 +107,10 @@ public:
   constexpr Angle operator*(double x) const { return Angle(static_cast<rad_t>(x) * m_Degrees); }
   constexpr Angle operator*(Angle other) const { return Angle(m_Degrees * other.m_Degrees); }
 
+  constexpr Angle operator/(int n) const { return Angle(m_Degrees / n); }
+  constexpr Angle operator/(float x) const { return Angle(m_Degrees / static_cast<rad_t>(x)); }
+  constexpr Angle operator/(double x) const { return Angle(m_Degrees / static_cast<rad_t>(x)); }
+
   constexpr Angle& operator+=(Angle other)
   {
     m_Degrees += other.m_Degrees;
@@ -129,6 +136,12 @@ private:
 constexpr Angle operator*(int n, Angle theta) { return theta * n; }
 constexpr Angle operator*(float x, Angle theta) { return theta * x; }
 constexpr Angle operator*(double x, Angle theta) { return theta * x; }
+
+// Angle literals
+constexpr Angle operator"" _deg(uint64_t degrees) { return Angle(static_cast<rad_t>(degrees)); }
+constexpr Angle operator"" _deg(long double degrees) { return Angle(static_cast<rad_t>(degrees)); }
+constexpr Angle operator"" _rad(uint64_t radians) { return Angle::FromRad(static_cast<rad_t>(radians)); }
+constexpr Angle operator"" _rad(long double radians) { return Angle::FromRad(static_cast<rad_t>(radians)); }
 
 
 

@@ -8,9 +8,9 @@ namespace Engine
 {
 	namespace DevCamera
 	{
-		static constexpr Angle s_RotationSpeed = Angle(45.0f);
+		static constexpr Angle s_RotationSpeed = 45_deg;
 
-		static Angle s_FOV = Angle(45.0f);
+		static Angle s_FOV = 45_deg;
 		static float s_AspectRatio = 1.778f;
 		static float s_NearClip = 0.1f;
 		static float s_FarClip = 1000.0f;

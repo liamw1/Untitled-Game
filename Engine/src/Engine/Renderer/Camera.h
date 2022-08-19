@@ -38,7 +38,7 @@ namespace Engine
     float m_FarClip = 1.0f;
 
     // Projection-specific parameters
-    Angle m_FOV = Angle(80.0f);
+    Angle m_FOV = 80_deg;
     float m_OrthographicSize = 1.0f;
 
     void recalculateProjection();

@@ -40,8 +40,8 @@ namespace Engine
     m_CameraEntity.get<Component::Camera>().camera.setOrthographic(1.0f, 5.0f, -1.0f, 1.0f);
 
     m_SecondCamera = Scene::CreateEntity(Vec3(0.0, 0.0, 5.0), "Secondary Camera");
-    m_SecondCamera.get<Component::Transform>().rotation = Vec3(0, Angle(90.0f).rad(), Angle(90.0f).rad());
-    m_SecondCamera.add<Component::Camera>().camera.setPerspective(1.0f, Angle(80.0f), 0.01f, 1000.0f);
+    m_SecondCamera.get<Component::Transform>().rotation = Vec3(0, Constants::PI / 4, Constants::PI / 4);
+    m_SecondCamera.add<Component::Camera>().camera.setPerspective(1.0f, 80_deg, 0.01f, 1000.0f);
 
     class CameraController : public EntityScript
     {

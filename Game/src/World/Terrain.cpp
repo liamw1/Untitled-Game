@@ -51,6 +51,28 @@ struct TemperatureMap
   StackArray2D<float, Chunk::Size()> temperatureData{};
 };
 
+struct BiomeMap
+{
+  BiomeMap(const GlobalIndex& index)
+    : chunkI(index.i), chunkJ(index.j)
+  {
+    // Generate Voronoi points
+    std::array<Vec2, 9> voronoiPoints{};
+
+    for (blockIndex_t i = 0; i < Chunk::Size(); ++i)
+      for (blockIndex_t j = 0; j < Chunk::Size(); ++j)
+      {
+        Vec2 blockXY = Chunk::Length() * Vec2(chunkI, chunkJ) + Block::Length() * (Vec2(i, j) + Vec2(0.5));
+
+
+      }
+  }
+
+  globalIndex_t chunkI;
+  globalIndex_t chunkJ;
+  StackArray2D<Biome, Chunk::Size()> biomeData{};
+};
+
 static std::unordered_map<int, HeightMap> s_HeightMapCache;
 static std::unordered_map<int, TemperatureMap> s_TemperatureMapCache;
 

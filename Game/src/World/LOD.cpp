@@ -217,7 +217,8 @@ static HeapArray2D<Terrain::CompoundSurfaceData, s_NumCells + 1> generateNoise(L
       Noise::OctaveNoiseData<Biome::NumOctaves()> elevationData = Terrain::GetElevationData(pointXY, s_DefaultBiome);
       float seaLevelTemperature = Terrain::GetTemperatureData(pointXY, s_DefaultBiome);
       noiseValues[i][j] = Terrain::GetSurfaceData(elevationData, seaLevelTemperature, s_DefaultBiome);
-    }  return noiseValues;
+    }
+  return noiseValues;
 }
 
 static bool needsMesh(LOD::Octree::Node* node, const HeapArray2D<Terrain::CompoundSurfaceData, s_NumCells + 1>& noiseValues)

@@ -19,8 +19,8 @@ Vec2 hash(const Vec2& v)
 
 length_t Noise::FastSimplex2D(const Vec2& v)
 {
-  static constexpr length_t K1 = static_cast<length_t>(0.366025404); // (sqrt(3)-1)/2;
-  static constexpr length_t K2 = static_cast<length_t>(0.211324865); // (3-sqrt(3))/6;
+  static constexpr length_t K1 = 0.366025404_m; // (sqrt(3)-1)/2;
+  static constexpr length_t K2 = 0.211324865_m; // (3-sqrt(3))/6;
 
   Vec2 i = glm::floor(v + (v.x + v.y) * K1);
   Vec2 a = v - i + Vec2((i.x + i.y) * K2);

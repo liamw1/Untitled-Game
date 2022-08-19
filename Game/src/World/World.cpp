@@ -49,7 +49,6 @@ void World::onUpdate(Timestep timestep)
     {
       m_ChunkManager.renderLODs();
       Engine::RenderCommand::ClearDepthBuffer();
-
     }
 
     m_ChunkManager.render();
