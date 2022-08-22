@@ -1,6 +1,6 @@
 #include "ENpch.h"
 #include "WindowsWindow.h"
-#include "Engine/Renderer/Renderer.h"
+#include "Engine/Renderer/RendererAPI.h"
 #include "Engine/Events/KeyEvent.h"
 #include "Engine/Events/MouseEvent.h"
 #include "Engine/Events/ApplicationEvent.h"
@@ -85,7 +85,7 @@ namespace Engine
       EN_PROFILE_SCOPE("glfwCreateWindow");
 
       #if defined(EN_DEBUG)
-        if (Renderer::GetAPI() == RendererAPI::API::OpenGL || Renderer::GetAPI() == RendererAPI::API::OpenGL_Legacy)
+        if (RendererAPI::GetAPI() == RendererAPI::API::OpenGL || RendererAPI::GetAPI() == RendererAPI::API::OpenGL_Legacy)
           glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
       #endif
       m_Window = glfwCreateWindow(static_cast<int>(properties.width), static_cast<int>(properties.height), m_Data.title.c_str(), nullptr, nullptr);
