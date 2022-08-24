@@ -86,7 +86,7 @@ bool ChunkManager::loadNewChunks(int maxNewChunks)
     return false;
 
   // Load First chunk if none exist
-  if (m_ChunksLoaded == 0)
+  if (m_OpenChunkSlots.size() == s_MaxChunks)
     loadChunk(Player::OriginIndex());
 
   searchForNewChunks();
@@ -281,8 +281,6 @@ Chunk* ChunkManager::loadChunk(const GlobalIndex& chunkIndex)
   EN_ASSERT(insertionSuccess, "Chunk insertion failed!");
 
   Terrain::GenerateNew(newChunk);
-  m_ChunksLoaded++;
-
   sendChunkLoadUpdate(newChunk);
 
   return newChunk;
@@ -333,8 +331,6 @@ ChunkManager::ChunkMap::iterator ChunkManager::unloadChunk(ChunkMap::iterator er
 
   // Delete chunk data
   m_ChunkArray[chunkSlot].reset();
-  m_ChunksLoaded--;
-
   return m_BoundaryChunks.erase(erasePosition);
 }
 
@@ -447,14 +443,14 @@ void ChunkManager::updateImmediately(Chunk* chunk)
   updateChunk(chunk);
 }
 
-static Block::Type getBlockType(Block::Type* blockData, blockIndex_t i, blockIndex_t j, blockIndex_t k)
+static Block::Type getBlockType(const Block::Type* blockData, blockIndex_t i, blockIndex_t j, blockIndex_t k)
 {
   EN_ASSERT(blockData, "Block data does not exist!");
   EN_ASSERT(-1 <= i && i <= Chunk::Size() && -1 <= j && j <= Chunk::Size() && -1 <= k && k <= Chunk::Size(), "Index is out of bounds!");
   return blockData[(Chunk::Size() + 2) * (Chunk::Size() + 2) * (i + 1) + (Chunk::Size() + 2) * (j + 1) + (k + 1)];
 }
 
-static Block::Type getBlockType(Block::Type* blockData, const BlockIndex& blockIndex)
+static Block::Type getBlockType(const Block::Type* blockData, const BlockIndex& blockIndex)
 {
   return getBlockType(blockData, blockIndex.i, blockIndex.j, blockIndex.k);
 }

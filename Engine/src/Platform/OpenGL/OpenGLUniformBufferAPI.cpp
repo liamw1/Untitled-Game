@@ -58,7 +58,7 @@ namespace Engine
   {
     EN_CORE_ASSERT(std::this_thread::get_id() == Threads::GetMainThreadID(), "OpenGL calls must be made in main thread!");
     EN_CORE_ASSERT(binding < s_MaxUniformBindings, "Binding exceeds maximum allowed uniform bindings!");
-    EN_CORE_ASSERT(size + offset < m_BufferSizes[binding], "Data exceeds uniform buffer size!");
+    EN_CORE_ASSERT(size + offset <= m_BufferSizes[binding], "Data exceeds uniform buffer size!");
 
     glNamedBufferSubData(m_RendererIDs[binding], offset, size, data);
   }

@@ -80,8 +80,6 @@ private:
   IndexMap m_NewChunkList;
   IndexMap m_UpdateList;
 
-  int m_ChunksLoaded = 0;
-
   // LOD data
   LOD::Octree m_LODTree{};
 

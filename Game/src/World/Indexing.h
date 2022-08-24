@@ -15,7 +15,8 @@ struct Index3D
   intType j;
   intType k;
 
-  constexpr Index3D() = default;
+  constexpr Index3D()
+    : Index3D(0, 0, 0) {}
   constexpr Index3D(intType i, intType j, intType k)
     : i(i), j(j), k(k) {}
 
