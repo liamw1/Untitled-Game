@@ -126,7 +126,7 @@ namespace Engine
       {
         case GLFW_PRESS:
         {
-          KeyPressEvent event(static_cast<Key>(keyCode), 0);
+          KeyPressEvent event(static_cast<Key>(keyCode), false);
           data.eventCallback(event);
           break;
         }
@@ -138,7 +138,7 @@ namespace Engine
         }
         case GLFW_REPEAT:
         {
-          KeyPressEvent event(static_cast<Key>(keyCode), 1);
+          KeyPressEvent event(static_cast<Key>(keyCode), true);
           data.eventCallback(event);
           break;
         }

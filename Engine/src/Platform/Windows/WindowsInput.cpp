@@ -9,7 +9,7 @@ namespace Engine
   {
     GLFWwindow* window = static_cast<GLFWwindow*>(Application::Get().getWindow().getNativeWindow());
     int state = glfwGetKey(window, static_cast<int>(key));
-    return state == GLFW_PRESS || state == GLFW_REPEAT;
+    return state == GLFW_PRESS;
   }
 
   bool Input::IsMouseButtonPressed(Mouse button)
