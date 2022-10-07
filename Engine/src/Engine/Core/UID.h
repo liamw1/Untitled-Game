@@ -27,7 +27,7 @@ namespace std
   {
     size_t operator()(const Engine::UID& uuid) const
     {
-      return hash<uint64_t>()(uuid.m_LowerUID + uuid.m_UpperUID);
+      return uuid.m_LowerUID + uuid.m_UpperUID;
     }
   };
 }

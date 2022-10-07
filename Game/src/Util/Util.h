@@ -12,6 +12,7 @@ namespace Util
 
   bool IsInRangeOfPlayer(const GlobalIndex& chunkIndex, globalIndex_t range);
   bool IsInRangeOfPlayer(const Chunk* chunk, globalIndex_t range);
+  bool IsInRangeOfPlayer(const Chunk& chunk, globalIndex_t range);
 
   bool BlockNeighborIsInAnotherChunk(const BlockIndex& blockIndex, Block::Face face);
 

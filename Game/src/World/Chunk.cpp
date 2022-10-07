@@ -11,9 +11,6 @@ Chunk::Chunk()
 Chunk::Chunk(const GlobalIndex& chunkIndex)
   : m_Composition(nullptr), m_NonOpaqueFaces(0), m_QuadCount(0), m_GlobalIndex(chunkIndex)
 {
-  m_VertexArray = Engine::VertexArray::Create();
-  m_VertexArray->setLayout(s_VertexBufferLayout);
-  m_VertexArray->setIndexBuffer(s_IndexBuffer);
 }
 
 Chunk::~Chunk()
@@ -141,6 +138,10 @@ void Chunk::setData(Block::Type* composition)
 
 void Chunk::setMesh(const uint32_t* meshData, uint16_t quadCount)
 {
+  m_VertexArray = Engine::VertexArray::Create();
+  m_VertexArray->setLayout(s_VertexBufferLayout);
+  m_VertexArray->setIndexBuffer(s_IndexBuffer);
+
   m_QuadCount = quadCount;
   m_VertexArray->setVertexBuffer(meshData, 4 * sizeof(uint32_t) * m_QuadCount);
 }
@@ -189,6 +190,17 @@ void Chunk::draw() const
   Engine::RenderCommand::DrawIndexed(m_VertexArray.get(), meshIndexCount);
 }
 
+void Chunk::draw2()
+{
+  if (m_Mesh.size() > 0)
+  {
+    setMesh(m_Mesh.data(), m_Mesh.size() / 4);
+    m_Mesh.clear();
+  }
+
+  draw();
+}
+
 void Chunk::clear()
 {
   if (m_Composition)
@@ -203,6 +215,7 @@ void Chunk::reset()
   clear();
 
   // Reset data to default values
+  m_Mesh.clear();
   m_VertexArray.reset();
   m_GlobalIndex = {};
   m_NonOpaqueFaces = 0;

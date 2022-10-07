@@ -180,10 +180,6 @@ namespace Engine
     uint32_t s_WhiteTextureData = 0xFFFFFFFF;
     s_WhiteTexture->setData(&s_WhiteTextureData, sizeof(uint32_t));
     s_TextureSlots[0] = s_WhiteTexture;
-
-    int samplers[s_MaxTextureSlots]{};
-    for (int i = 0; i < s_MaxTextureSlots; ++i)
-      samplers[i] = i;
   }
 
   void Renderer2D::Shutdown()
@@ -259,7 +255,7 @@ namespace Engine
   void Renderer2D::DrawQuad(const Vec3& position, const Vec2& size, Angle rotation, const Float4& tintColor, float textureScalingFactor, const Shared<Texture2D>& texture, int entityID)
   {
     Mat4 transform = glm::translate(Mat4(1.0), position)
-                   * glm::rotate(Mat4(1.0), rotation.rad(), Vec3(0.0, 0.0, 1.0))
+                   * glm::rotate(Mat4(1.0), rotation.radl(), Vec3(0.0, 0.0, 1.0))
                    * glm::scale(Mat4(1.0), Vec3(size, 1.0));
 
     DrawQuad(transform, tintColor, textureScalingFactor, texture, entityID);

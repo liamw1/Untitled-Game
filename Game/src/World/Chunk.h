@@ -16,6 +16,7 @@ public:
   Chunk(Chunk&& other) noexcept;
   Chunk& operator=(Chunk&& other) noexcept;
 
+  // Chunks are unique and so cannot be copied
   Chunk(const Chunk& other) = delete;
   Chunk& operator=(const Chunk& other) = delete;
 
@@ -74,6 +75,8 @@ private:
   static constexpr int s_TextureSlot = 0;
   static constexpr int s_UniformBinding = 2;
 
+  mutable std::mutex m_Mutex;
+  std::vector<uint32_t> m_Mesh;
   Unique<Engine::VertexArray> m_VertexArray;
   Block::Type* m_Composition;
   GlobalIndex m_GlobalIndex;
@@ -89,9 +92,13 @@ private:
 
   void update();
   void draw() const;
+  void draw2(); // TODO: Remove
   void clear();
   void reset();
 
+  std::lock_guard<std::mutex> acquireLock() const { return std::lock_guard(m_Mutex); };
+
   friend class ChunkManager;
+  friend class MTChunkManager; // Remove
   friend class ChunkFiller;
 };

@@ -30,6 +30,11 @@ bool Util::IsInRangeOfPlayer(const Chunk* chunk, globalIndex_t range)
   return IsInRangeOfPlayer(chunk->getGlobalIndex(), range);
 }
 
+bool Util::IsInRangeOfPlayer(const Chunk& chunk, globalIndex_t range)
+{
+  return IsInRangeOfPlayer(chunk.getGlobalIndex(), range);
+}
+
 bool Util::BlockNeighborIsInAnotherChunk(const BlockIndex& blockIndex, Block::Face face)
 {
   static constexpr blockIndex_t chunkLimits[2] = { 0, Chunk::Size() - 1 };

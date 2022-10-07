@@ -9,6 +9,7 @@ namespace Engine
     : Layer("EditorLayer"),
       m_ViewportSize({0, 0})
   {
+    Engine::UniformBuffer::Initialize();
     RenderCommand::Initialize();
     Renderer2D::Initialize();
   }

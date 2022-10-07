@@ -126,6 +126,21 @@ namespace Engine
     ImGui::PopID();
   }
 
+  template<typename T>
+  static void addComponentEntry(const std::string& entryName)
+  {
+    if (ImGui::MenuItem(entryName.c_str()))
+    {
+      if (!s_SelectionContext.has<T>())
+      {
+        s_SelectionContext.add<T>();
+        ImGui::CloseCurrentPopup();
+      }
+      else
+        EN_CORE_WARN("Entity already has {0} component", entryName);
+    }
+  }
+
   static void drawComponents(Entity& entity)
   {
     if (entity.has<Component::Tag>())
@@ -146,38 +161,9 @@ namespace Engine
 
     if (ImGui::BeginPopup("AddComponent"))
     {
-      if (ImGui::MenuItem("Camera"))
-      {
-        if (!s_SelectionContext.has<Component::Camera>())
-        {
-          s_SelectionContext.add<Component::Camera>();
-          ImGui::CloseCurrentPopup();
-        }
-        else
-          EN_CORE_WARN("Entity already has camera component");
-      }
-
-      if (ImGui::MenuItem("Sprite Renderer"))
-      {
-        if (!s_SelectionContext.has<Component::SpriteRenderer>())
-        {
-          s_SelectionContext.add<Component::SpriteRenderer>();
-          ImGui::CloseCurrentPopup();
-        }
-        else
-          EN_CORE_WARN("Entity already has sprite renderer component");
-      }
-
-      if (ImGui::MenuItem("Circle Renderer"))
-      {
-        if (!s_SelectionContext.has<Component::CircleRenderer>())
-        {
-          s_SelectionContext.add<Component::CircleRenderer>();
-          ImGui::CloseCurrentPopup();
-        }
-        else
-          EN_CORE_WARN("Entity already has circle renderer component");
-      }
+      addComponentEntry<Component::Camera>("Camera");
+      addComponentEntry<Component::SpriteRenderer>("Sprite Renderer");
+      addComponentEntry<Component::CircleRenderer>("Circle Renderer");
 
       ImGui::EndPopup();
     }
@@ -227,7 +213,7 @@ namespace Engine
           ImGui::DragFloat("Near", &nearClip);
           ImGui::DragFloat("Far", &farClip);
 
-          camera.setPerspective(aspectRatio, Angle(fov), nearClip, farClip);
+          camera.setPerspective(aspectRatio, Angle::FromDeg(fov), nearClip, farClip);
         }
         else if (camera.getProjectionType() == Camera::ProjectionType::Orthographic)
         {

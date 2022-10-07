@@ -3,15 +3,16 @@
 #include "Player/Player.h"
 #include "Terrain.h"
 #include "Util/Util.h"
-#include <iostream>
 
 ChunkManager::ChunkManager()
 {
   m_ChunkArray = new Chunk[s_MaxChunks];
 
-  m_OpenChunkSlots.reserve(s_MaxChunks);
+  std::vector<int> stackData;
+  stackData.reserve(s_MaxChunks);
+  m_OpenChunkSlots = std::stack<int, std::vector<int>>(stackData);
   for (int i = s_MaxChunks - 1; i >= 0; --i)
-    m_OpenChunkSlots.push_back(i);
+    m_OpenChunkSlots.push(i);
 }
 
 ChunkManager::~ChunkManager()
@@ -151,6 +152,8 @@ void ChunkManager::clean()
     sendChunkRemovalUpdate(index);
 
   Terrain::Clean(s_UnloadDistance);
+
+  EN_INFO("Boundary Chunks: {0}, Renderable Chunks: {1}, Empty Chunks: {2}", m_BoundaryChunks.size(), m_RenderableChunks.size(), m_EmptyChunks.size());
 }
 
 void ChunkManager::renderLODs()
@@ -271,13 +274,13 @@ Chunk* ChunkManager::loadChunk(const GlobalIndex& chunkIndex)
   EN_ASSERT(!isLoaded(chunkIndex), "Chunk is already loaded!");
 
   // Grab first open chunk slot
-  int chunkSlot = m_OpenChunkSlots.back();
-  m_OpenChunkSlots.pop_back();
+  int chunkSlot = m_OpenChunkSlots.top();
+  m_OpenChunkSlots.pop();
 
   // Insert chunk into array and load it
   m_ChunkArray[chunkSlot] = std::move(Chunk(chunkIndex));
   Chunk* newChunk = &m_ChunkArray[chunkSlot];
-  const auto& [insertionPosition, insertionSuccess] = m_BoundaryChunks.insert({ Util::CreateKey(chunkIndex), newChunk });
+  auto [insertionPosition, insertionSuccess] = m_BoundaryChunks.insert({ Util::CreateKey(chunkIndex), newChunk });
   EN_ASSERT(insertionSuccess, "Chunk insertion failed!");
 
   Terrain::GenerateNew(newChunk);
@@ -295,23 +298,14 @@ ChunkManager::IndexMap::iterator ChunkManager::updateChunk(Chunk* chunk)
   if (source != ChunkType::Boundary)
   {
     chunk->update();
-
-    ChunkType destination;
-    if (chunk->isEmpty())
-      destination = ChunkType::Empty;
-    else
+    if (!chunk->isEmpty())
     {
       meshChunk(chunk);
-
       if (chunk->getQuadCount() == 0 && chunk->getBlockType(0, 0, 0) == Block::Type::Air)
-      {
         chunk->clear();
-        destination = ChunkType::Empty;
-      }
-      else
-        destination = ChunkType::Renderable;
     }
 
+    ChunkType destination = chunk->isEmpty() ? ChunkType::Empty : ChunkType::Renderable;
     if (source != destination)
       moveToGroup(chunk, source, destination);
   }
@@ -327,7 +321,7 @@ ChunkManager::ChunkMap::iterator ChunkManager::unloadChunk(ChunkMap::iterator er
 
   // Open up chunk slot
   int chunkSlot = static_cast<int>(chunk - &m_ChunkArray[0]);
-  m_OpenChunkSlots.push_back(chunkSlot);
+  m_OpenChunkSlots.push(chunkSlot);
 
   // Delete chunk data
   m_ChunkArray[chunkSlot].reset();
@@ -469,6 +463,7 @@ static void setBlockType(Block::Type* blockData, const BlockIndex& blockIndex, B
 
 void ChunkManager::meshChunk(Chunk* chunk)
 {
+  EN_PROFILE_FUNCTION();
   EN_ASSERT(chunk, "Chunk does not exist!");
 
   static constexpr BlockIndex offsets[6][4]
@@ -481,15 +476,10 @@ void ChunkManager::meshChunk(Chunk* chunk)
 
   // NOTE: Should probably replace with custom memory allocation system
   static constexpr int maxVertices = 4 * 6 * Chunk::TotalBlocks();
-  static uint32_t* const meshData = new uint32_t[maxVertices];
+  thread_local uint32_t* const meshData = new uint32_t[maxVertices];
 
   static constexpr int totalVolumeNeeded = (Chunk::Size() + 2) * (Chunk::Size() + 2) * (Chunk::Size() + 2);
-  static Block::Type* const blockData = new Block::Type[totalVolumeNeeded];
-
-  if (chunk->isEmpty())
-    return;
-
-  EN_PROFILE_FUNCTION();
+  thread_local Block::Type* const blockData = new Block::Type[totalVolumeNeeded];
 
   // Load blocks from chunk
   for (blockIndex_t i = 0; i < Chunk::Size(); ++i)
@@ -692,7 +682,7 @@ Chunk* ChunkManager::find(const GlobalIndex& chunkIndex)
 {
   for (ChunkMap& chunkGroup : m_Chunks)
   {
-    ChunkMap::iterator  it = chunkGroup.find(Util::CreateKey(chunkIndex));
+    ChunkMap::iterator it = chunkGroup.find(Util::CreateKey(chunkIndex));
 
     if (it != chunkGroup.end())
       return it->second;

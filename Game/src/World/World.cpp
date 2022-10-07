@@ -3,6 +3,9 @@
 #include "Player/Player.h"
 #include "Engine/Renderer/Renderer.h"
 
+#define USE_LODS false
+#define PLAYER_INTERACTION false
+
 static constexpr bool createLODs = false;
 
 static constexpr blockIndex_t modulo(globalIndex_t a, blockIndex_t b)
@@ -14,8 +17,11 @@ static constexpr blockIndex_t modulo(globalIndex_t a, blockIndex_t b)
 void World::initialize()
 {
   m_ChunkManager.initializeChunks();
+
+#if USE_LODS
   if (createLODs)
     m_ChunkManager.initializeLODs();
+#endif
 }
 
 void World::onUpdate(Timestep timestep)
@@ -24,40 +30,37 @@ void World::onUpdate(Timestep timestep)
 
   /* Player update stage */
   Player::UpdateBegin(timestep);
+#if PLAYER_INTERACTION
   playerCollisionHandling(timestep);
+#endif
   Player::UpdateEnd();
 
   /* Rendering stage */
   Engine::Renderer::BeginScene(Engine::Scene::ActiveCameraViewProjection());
-  if (!m_RenderingPaused)
+
+  m_ChunkManager.render();
+
+#if USE_LODS
+  if (createLODs)
   {
-    if (createLODs)
-    {
-      m_ChunkManager.manageLODs();
-      m_ChunkManager.renderLODs();
-      Engine::RenderCommand::ClearDepthBuffer();
-    }
-
-    m_ChunkManager.loadNewChunks(100);
-    m_ChunkManager.updateChunks(100);
-    m_ChunkManager.render();
-    m_ChunkManager.clean();
+    m_ChunkManager.manageLODs();
+    m_ChunkManager.renderLODs();
+    Engine::RenderCommand::ClearDepthBuffer();
   }
-  else
-  {
-    if (createLODs)
-    {
-      m_ChunkManager.renderLODs();
-      Engine::RenderCommand::ClearDepthBuffer();
-    }
+#endif
 
-    m_ChunkManager.render();
-  }
-
+#if PLAYER_INTERACTION
   playerWorldInteraction();
+#endif
+
   Engine::Renderer::EndScene();
+
+  m_ChunkManager.loadNewChunks(100);
+  m_ChunkManager.updateChunks(100);
+  m_ChunkManager.clean();
 }
 
+#if PLAYER_INTERACTION
 RayIntersection World::castRaySegment(const Vec3& pointA, const Vec3& pointB) const
 {
   const Vec3 rayDirection = pointB - pointA;
@@ -238,6 +241,7 @@ void World::playerWorldInteraction()
     }
   }
 }
+#endif
 
 void World::onEvent(Engine::Event& event)
 {

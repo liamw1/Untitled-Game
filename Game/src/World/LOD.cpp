@@ -711,6 +711,8 @@ static std::vector<LOD::Vertex> calcAdjustedPrimaryMesh(LOD::Octree::Node* node)
 
 static std::vector<LOD::Vertex> calcAdjustedTransitionMesh(LOD::Octree::Node* node, Block::Face face)
 {
+  static constexpr length_t small = 128 * std::numeric_limits<length_t>::epsilon();
+
   int faceID = static_cast<int>(face);
   int coordID = faceID / 2;
   bool facingPositiveDir = faceID % 2;
@@ -723,7 +725,7 @@ static std::vector<LOD::Vertex> calcAdjustedTransitionMesh(LOD::Octree::Node* no
     for (LOD::Vertex& vertex : LODMesh)
     {
       // If Vertex is on low-resolution side, skip.  If on high-resolution side, move vertex to LOD face
-      if (vertex.position[coordID] < Constants::LENGTH_EPSILON * node->length() || vertex.position[coordID] > (1.0 - Constants::LENGTH_EPSILON) * node->length())
+      if (vertex.position[coordID] < small * node->length() || vertex.position[coordID] > (1.0 - small) * node->length())
         continue;
       else
         vertex.position[coordID] = static_cast<float>(facingPositiveDir ? node->length() : 0.0);

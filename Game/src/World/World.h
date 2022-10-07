@@ -1,5 +1,11 @@
 #pragma once
+#define USE_MT true
+
+#if USE_MT
+#include "MTChunkManager.h"
+#else
 #include "ChunkManager.h"
+#endif
 
 struct RayIntersection
 {
@@ -23,7 +29,11 @@ private:
 
   bool m_RenderingPaused = false;
 
+#if USE_MT
+  MTChunkManager m_ChunkManager{};
+#else
   ChunkManager m_ChunkManager{};
+#endif
 
   RayIntersection m_PlayerRayCast{};
 

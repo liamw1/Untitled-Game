@@ -162,7 +162,7 @@ static const TemperatureMap& getTemperatureMap(const GlobalIndex& chunkIndex)
 static float calcSurfaceTemperature(float seaLevelTemperature, length_t surfaceElevation)
 {
   static constexpr float tempDropPerBlock = 0.25f;
-  return seaLevelTemperature - tempDropPerBlock * (surfaceElevation / Block::Length());
+  return seaLevelTemperature - tempDropPerBlock * static_cast<float>(surfaceElevation / Block::Length());
 }
 
 static void heightMapStage(Block::Type* composition, const GlobalIndex& chunkIndex)

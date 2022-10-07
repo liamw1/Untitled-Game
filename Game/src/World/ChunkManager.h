@@ -1,6 +1,7 @@
 #pragma once
 #include "Chunk.h"
 #include "LOD.h"
+#include <stack>
 
 class ChunkManager
 {
@@ -62,14 +63,14 @@ private:
   using ChunkMap = std::unordered_map<int, Chunk*>;
   using IndexMap = std::unordered_map<int, GlobalIndex>;
 
-  static constexpr int s_RenderDistance = 4;
+  static constexpr int s_RenderDistance = 16;
   static constexpr int s_LoadDistance = s_RenderDistance + 2;
   static constexpr int s_UnloadDistance = s_LoadDistance;
   static constexpr int s_MaxChunks = (2 * s_UnloadDistance + 1) * (2 * s_UnloadDistance + 1) * (2 * s_UnloadDistance + 1);
 
   // Chunk data
   Chunk* m_ChunkArray;
-  std::vector<int> m_OpenChunkSlots;
+  std::stack<int, std::vector<int>> m_OpenChunkSlots;
 
   // Chunk pointers
   std::array<ChunkMap, 3> m_Chunks;
