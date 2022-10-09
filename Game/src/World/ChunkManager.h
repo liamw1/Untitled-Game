@@ -45,8 +45,10 @@ public:
   Chunk* find(const LocalIndex& chunkIndex);
   const Chunk* find(const LocalIndex& chunkIndex) const;
 
-  void placeBlock(Chunk* chunk, BlockIndex blockIndex, Block::Face face, Block::Type blockType);
-  void removeBlock(Chunk* chunk, const BlockIndex& blockIndex);
+  [[nodiscard]] std::pair<const Chunk*, std::unique_lock<std::mutex>> acquireChunk(const LocalIndex& chunkIndex) const { return { find(chunkIndex), {} }; }
+
+  void placeBlock(const GlobalIndex& chunkIndex, BlockIndex blockIndex, Block::Face face, Block::Type blockType);
+  void removeBlock(const GlobalIndex& chunkIndex, const BlockIndex& blockIndex);
 
 private:
   enum class ChunkType : int
@@ -62,7 +64,7 @@ private:
   using ChunkMap = std::unordered_map<int, Chunk*>;
   using IndexMap = std::unordered_map<int, GlobalIndex>;
 
-  static constexpr int s_RenderDistance = 8;
+  static constexpr int s_RenderDistance = 32;
   static constexpr int s_LoadDistance = s_RenderDistance + 2;
   static constexpr int s_UnloadDistance = s_LoadDistance;
   static constexpr int s_MaxChunks = (2 * s_UnloadDistance + 1) * (2 * s_UnloadDistance + 1) * (2 * s_UnloadDistance + 1);

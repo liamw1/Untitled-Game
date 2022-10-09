@@ -44,9 +44,7 @@ void World::onUpdate(Timestep timestep)
   }
 #endif
 
-#if PLAYER_INTERACTION
   playerWorldInteraction();
-#endif
 
   Engine::Renderer::EndScene();
 
@@ -199,7 +197,6 @@ beginCollisionDetection:;
   }
 }
 
-#if PLAYER_INTERACTION
 void World::playerWorldInteraction()
 {
   static constexpr blockIndex_t chunkLimits[2] = { 0, Chunk::Size() - 1 };
@@ -215,26 +212,21 @@ void World::playerWorldInteraction()
     Engine::Renderer::DrawCubeFrame(blockCenter, 1.01 * Block::Length() * Vec3(1.0), Float4(0.1f, 0.1f, 0.1f, 1.0f));
   }
 
-  if (Engine::Input::IsMouseButtonPressed(Mouse::ButtonLeft) || Engine::Input::IsMouseButtonPressed(Mouse::ButtonRight))
+  if (m_PlayerRayCast.distance <= maxInteractionDistance)
   {
-    if (m_PlayerRayCast.distance <= maxInteractionDistance)
-    {
-      const LocalIndex& chunkIndex = m_PlayerRayCast.chunkIndex;
-      const BlockIndex& blockIndex = m_PlayerRayCast.blockIndex;
-      const Block::Face& rayCastFace = m_PlayerRayCast.face;
-      Chunk* chunk = m_ChunkManager.find(chunkIndex);
+    const LocalIndex& localIndex = m_PlayerRayCast.chunkIndex;
+    const BlockIndex& blockIndex = m_PlayerRayCast.blockIndex;
+    const Block::Face& rayCastFace = m_PlayerRayCast.face;
 
-      if (chunk != nullptr)
-      {
-        if (Engine::Input::IsMouseButtonPressed(Mouse::ButtonLeft))
-          m_ChunkManager.removeBlock(chunk, blockIndex);
-        else if (m_PlayerRayCast.distance > 2.5 * Block::Length())
-          m_ChunkManager.placeBlock(chunk, blockIndex, rayCastFace, Block::Type::Snow);
-      }
-    }
+    GlobalIndex originChunk = Player::OriginIndex();
+    GlobalIndex chunkIndex(originChunk.i + localIndex.i, originChunk.j + localIndex.j, originChunk.k + localIndex.k);
+
+    if (Engine::Input::IsMouseButtonPressed(Mouse::ButtonLeft))
+      m_ChunkManager.removeBlock(chunkIndex, blockIndex);
+    if (Engine::Input::IsMouseButtonPressed(Mouse::ButtonRight) && m_PlayerRayCast.distance > 2.5 * Block::Length())
+      m_ChunkManager.placeBlock(chunkIndex, blockIndex, rayCastFace, Block::Type::Snow);
   }
 }
-#endif
 
 void World::onEvent(Engine::Event& event)
 {

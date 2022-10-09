@@ -208,8 +208,10 @@ const Chunk* ChunkManager::find(const LocalIndex& chunkIndex) const
   return find(GlobalIndex(originChunk.i + chunkIndex.i, originChunk.j + chunkIndex.j, originChunk.k + chunkIndex.k));
 }
 
-void ChunkManager::placeBlock(Chunk* chunk, BlockIndex blockIndex, Block::Face face, Block::Type blockType)
+void ChunkManager::placeBlock(const GlobalIndex& chunkIndex, BlockIndex blockIndex, Block::Face face, Block::Type blockType)
 {
+  Chunk* chunk = find(chunkIndex);
+
   EN_ASSERT(chunk, "Chunk does not exist!");
   EN_ASSERT(!chunk->isEmpty(), "Place block cannot be called on an empty chunk!");
 
@@ -236,8 +238,10 @@ void ChunkManager::placeBlock(Chunk* chunk, BlockIndex blockIndex, Block::Face f
   sendBlockUpdate(chunk, blockIndex);
 }
 
-void ChunkManager::removeBlock(Chunk* chunk, const BlockIndex& blockIndex)
+void ChunkManager::removeBlock(const GlobalIndex& chunkIndex, const BlockIndex& blockIndex)
 {
+  Chunk* chunk = find(chunkIndex);
+
   EN_ASSERT(chunk, "Chunk does not exist!");
   EN_ASSERT(chunk->getBlockType(blockIndex) != Block::Type::Air, "Cannot remove air block!");
 

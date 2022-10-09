@@ -17,7 +17,6 @@ MTChunkManager::MTChunkManager()
 
   m_LoadThread = std::thread(&MTChunkManager::loadWorker, this);
   m_UpdateThread = std::thread(&MTChunkManager::updateWorker, this);
-  m_CleanThread = std::thread(&MTChunkManager::cleanWorker, this);
 }
 
 MTChunkManager::~MTChunkManager()
@@ -25,7 +24,6 @@ MTChunkManager::~MTChunkManager()
   m_Running.store(false);
   m_LoadThread.join();
   m_UpdateThread.join();
-  m_CleanThread.join();
 
   delete[] m_ChunkArray;
 }
@@ -106,34 +104,58 @@ void MTChunkManager::updateWorker()
   {
     EN_PROFILE_SCOPE("Update worker");
 
-    GlobalIndex updateIndex = m_UpdateQueue.waitAndRemoveOne();
+    GlobalIndex updateIndex = m_LazyUpdateQueue.waitAndRemoveOne();
     std::vector<uint32_t> mesh = createMesh(updateIndex);
     update(updateIndex, mesh);
   }
 }
 
-void MTChunkManager::cleanWorker()
+void MTChunkManager::updateChunks(int maxUpdates)
 {
-  using namespace std::chrono_literals;
+  EN_PROFILE_FUNCTION();
 
-  while (m_Running.load())
+  while (true)
   {
-    EN_PROFILE_SCOPE("Clean worker");
-
-    std::vector<GlobalIndex> chunksMarkedForDeletion = findAll(ChunkType::Boundary, [](const Chunk& chunk)
-      {
-        return !Util::IsInRangeOfPlayer(chunk, s_UnloadDistance);
-      });
-
-    if (!chunksMarkedForDeletion.empty())
+    std::optional<GlobalIndex> updateIndex = m_ForceUpdateQueue.tryRemove();
+    if (updateIndex)
     {
-      for (const GlobalIndex& chunkIndex : chunksMarkedForDeletion)
-        if (!Util::IsInRangeOfPlayer(chunkIndex, s_UnloadDistance))
-          erase(chunkIndex);
-      Terrain::Clean(s_UnloadDistance);
+      bool loaded;
+      {
+        std::shared_lock lock(m_ChunkMapMutex);
+        loaded = isLoaded(*updateIndex);
+      }
+
+      // TODO: Consolidate these into separate functions
+      if (!loaded)
+      {
+        Chunk chunk(*updateIndex);
+        Terrain::GenerateNew(&chunk);
+        insert(std::move(chunk));
+      }
+
+      std::vector<uint32_t> mesh = createMesh(*updateIndex);
+      update(*updateIndex, mesh);
     }
     else
-      std::this_thread::sleep_for(100ms);
+      break;
+  }
+}
+
+void MTChunkManager::clean()
+{
+  EN_PROFILE_FUNCTION();
+
+  std::vector<GlobalIndex> chunksMarkedForDeletion = findAll(ChunkType::Boundary, [](const Chunk& chunk)
+    {
+      return !Util::IsInRangeOfPlayer(chunk, s_UnloadDistance);
+    });
+
+  if (!chunksMarkedForDeletion.empty())
+  {
+    for (const GlobalIndex& chunkIndex : chunksMarkedForDeletion)
+      if (!Util::IsInRangeOfPlayer(chunkIndex, s_UnloadDistance))
+        erase(chunkIndex);
+    Terrain::Clean(s_UnloadDistance);
   }
 }
 
@@ -142,6 +164,57 @@ std::pair<const Chunk*, std::unique_lock<std::mutex>> MTChunkManager::acquireChu
   GlobalIndex originChunk = Player::OriginIndex();
   return acquireChunk(GlobalIndex(originChunk.i + chunkIndex.i, originChunk.j + chunkIndex.j, originChunk.k + chunkIndex.k));
 }
+
+void MTChunkManager::placeBlock(const GlobalIndex& chunkIndex, BlockIndex blockIndex, Block::Face face, Block::Type blockType)
+{
+  {
+    auto [chunk, lock] = acquireChunk(chunkIndex);
+
+    if (!chunk || chunk->getBlockType(blockIndex) == Block::Type::Air)
+    {
+      EN_WARN("Cannot call placeBlock on an air block!");
+      return;
+    }
+
+    if (Util::BlockNeighborIsInAnotherChunk(blockIndex, face))
+    {
+      auto [neighbor, neighborLock] = acquireChunk(chunk->getGlobalIndex() + GlobalIndex::OutwardNormal(face));
+
+      if (!neighbor)
+        return;
+
+      chunk = neighbor;
+      lock = std::move(neighborLock);
+
+      blockIndex -= static_cast<blockIndex_t>(Chunk::Size() - 1) * BlockIndex::OutwardNormal(face);
+    }
+    else
+      blockIndex += BlockIndex::OutwardNormal(face);
+
+    // If trying to place an air block or trying to place a block in a space occupied by another block, do nothing
+    if (blockType == Block::Type::Air || (!chunk->isEmpty() && chunk->getBlockType(blockIndex) != Block::Type::Air))
+    {
+      EN_WARN("Invalid block placement!");
+      return;
+    }
+
+    chunk->setBlockType(blockIndex, blockType);
+  }
+
+  sendBlockUpdate(chunkIndex, blockIndex);
+}
+
+void MTChunkManager::removeBlock(const GlobalIndex& chunkIndex, const BlockIndex& blockIndex)
+{
+  {
+    auto [chunk, lock] = acquireChunk(chunkIndex);
+    chunk->setBlockType(blockIndex, Block::Type::Air);
+  }
+
+  sendBlockUpdate(chunkIndex, blockIndex);
+}
+
+
 
 bool MTChunkManager::insert(Chunk&& chunk)
 {
@@ -424,6 +497,18 @@ std::vector<GlobalIndex> MTChunkManager::findAll(ChunkType chunkType, bool (*con
   return indexList;
 }
 
+std::pair<Chunk*, std::unique_lock<std::mutex>> MTChunkManager::acquireChunk(const GlobalIndex& chunkIndex)
+{
+  std::shared_lock lock(m_ChunkMapMutex);
+  std::unique_lock<std::mutex> chunkLock;
+
+  Chunk* chunk = find(chunkIndex);
+  if (chunk)
+    chunkLock = std::unique_lock(chunk->m_Mutex);
+
+  return { chunk, std::move(chunkLock) };
+}
+
 std::pair<const Chunk*, std::unique_lock<std::mutex>> MTChunkManager::acquireChunk(const GlobalIndex& chunkIndex) const
 {
   std::shared_lock lock(m_ChunkMapMutex);
@@ -453,6 +538,19 @@ GlobalIndex MTChunkManager::IndexSet::waitAndRemoveOne()
   GlobalIndex value = m_Data.begin()->second;
   m_Data.erase(m_Data.begin());
   return value;
+}
+
+std::optional<GlobalIndex> MTChunkManager::IndexSet::tryRemove()
+{
+  std::lock_guard lock(m_Mutex);
+
+  if (!m_Data.empty())
+  {
+    GlobalIndex value = m_Data.begin()->second;
+    m_Data.erase(m_Data.begin());
+    return value;
+  }
+  return std::nullopt;
 }
 
 
@@ -509,6 +607,48 @@ const Chunk* MTChunkManager::find(const GlobalIndex& chunkIndex) const
       return it->second;
   }
   return nullptr;
+}
+
+void MTChunkManager::sendBlockUpdate(const GlobalIndex& chunkIndex, const BlockIndex& blockIndex)
+{
+  m_ForceUpdateQueue.add(chunkIndex);
+
+  std::vector<Block::Face> updateDirections{};
+  for (Block::Face face : Block::FaceIterator())
+    if (Util::BlockNeighborIsInAnotherChunk(blockIndex, face))
+      updateDirections.push_back(face);
+
+  EN_ASSERT(updateDirections.size() <= 3, "Too many update directions for a single block update!");
+
+  // Update neighbors in cardinal directions
+  for (Block::Face face : updateDirections)
+  {
+    GlobalIndex neighborIndex = chunkIndex + GlobalIndex::OutwardNormal(face);
+    m_ForceUpdateQueue.add(neighborIndex);
+  }
+
+  // Queue edge neighbor for updating
+  if (updateDirections.size() == 2)
+  {
+    GlobalIndex edgeNeighborIndex = chunkIndex + GlobalIndex::OutwardNormal(updateDirections[0]) + GlobalIndex::OutwardNormal(updateDirections[1]);
+    m_LazyUpdateQueue.add(edgeNeighborIndex);
+  }
+
+  // Queue edge/corner neighbors for updating
+  if (updateDirections.size() == 3)
+  {
+    GlobalIndex cornerNeighborIndex = chunkIndex;
+    for (int i = 0; i < 3; ++i)
+    {
+      int j = (i + 1) % 3;
+      GlobalIndex edgeNeighborIndex = chunkIndex + GlobalIndex::OutwardNormal(updateDirections[i]) + GlobalIndex::OutwardNormal(updateDirections[j]);
+      m_LazyUpdateQueue.add(edgeNeighborIndex);
+
+      cornerNeighborIndex += GlobalIndex::OutwardNormal(updateDirections[i]);
+    }
+
+    m_LazyUpdateQueue.add(cornerNeighborIndex);
+  }
 }
 
 void MTChunkManager::sendChunkLoadUpdate(Chunk* newChunk)
@@ -569,7 +709,7 @@ void MTChunkManager::recategorizeChunk(Chunk* chunk, ChunkType source, ChunkType
         {
           GlobalIndex neighborIndex = chunk->getGlobalIndex() + GlobalIndex(i, j, k);
           if (isLoaded(neighborIndex))
-            m_UpdateQueue.add(neighborIndex);
+            m_LazyUpdateQueue.add(neighborIndex);
         }
 
   int key = Util::CreateKey(chunk);

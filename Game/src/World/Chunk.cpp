@@ -19,10 +19,11 @@ Chunk::~Chunk()
 }
 
 Chunk::Chunk(Chunk&& other) noexcept
-  : m_GlobalIndex(other.m_GlobalIndex),
-  m_NonOpaqueFaces(other.m_NonOpaqueFaces),
-  m_QuadCount(other.m_QuadCount),
-  m_VertexArray(std::move(other.m_VertexArray))
+  : m_Mesh(std::move(other.m_Mesh)),
+    m_VertexArray(std::move(other.m_VertexArray)),
+    m_GlobalIndex(other.m_GlobalIndex),
+    m_NonOpaqueFaces(other.m_NonOpaqueFaces),
+    m_QuadCount(other.m_QuadCount)
 {
   m_Composition = other.m_Composition;
   other.m_Composition = nullptr;
@@ -32,10 +33,11 @@ Chunk& Chunk::operator=(Chunk&& other) noexcept
 {
   if (this != &other)
   {
+    m_Mesh = std::move(other.m_Mesh);
+    m_VertexArray = std::move(other.m_VertexArray);
     m_GlobalIndex = other.m_GlobalIndex;
     m_NonOpaqueFaces = other.m_NonOpaqueFaces;
     m_QuadCount = other.m_QuadCount;
-    m_VertexArray = std::move(other.m_VertexArray);
 
     delete[] m_Composition;
     m_Composition = other.m_Composition;
