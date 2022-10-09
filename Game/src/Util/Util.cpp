@@ -19,8 +19,10 @@ int Util::Create2DMapKey(globalIndex_t chunkI, globalIndex_t chunkJ)
 
 bool Util::IsInRangeOfPlayer(const GlobalIndex& chunkIndex, globalIndex_t range)
 {
+  GlobalIndex originIndex = Player::OriginIndex();
+
   for (int i = 0; i < 3; ++i)
-    if (abs(chunkIndex[i] - Player::OriginIndex()[i]) > range)
+    if (abs(chunkIndex[i] - originIndex[i]) > range)
       return false;
   return true;
 }

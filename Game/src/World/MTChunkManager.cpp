@@ -5,6 +5,7 @@
 #include "Util/Util.h"
 
 MTChunkManager::MTChunkManager()
+  : m_Running(true)
 {
   m_ChunkArray = new Chunk[s_MaxChunks];
 
@@ -14,11 +15,19 @@ MTChunkManager::MTChunkManager()
   for (int i = s_MaxChunks - 1; i >= 0; --i)
     m_OpenChunkSlots.push(i);
 
-  std::thread loadThread(&MTChunkManager::loadThread, this);
-  std::thread updateThread(&MTChunkManager::updateThread, this);
+  m_LoadThread = std::thread(&MTChunkManager::loadWorker, this);
+  m_UpdateThread = std::thread(&MTChunkManager::updateWorker, this);
+  m_CleanThread = std::thread(&MTChunkManager::cleanWorker, this);
+}
 
-  loadThread.detach();
-  updateThread.detach();
+MTChunkManager::~MTChunkManager()
+{
+  m_Running.store(false);
+  m_LoadThread.join();
+  m_UpdateThread.join();
+  m_CleanThread.join();
+
+  delete[] m_ChunkArray;
 }
 
 void MTChunkManager::render()
@@ -43,57 +52,59 @@ void MTChunkManager::render()
       if (Util::IsInRangeOfPlayer(chunk, s_RenderDistance) && Util::IsInFrustum(chunk.center(), frustumPlanes))
       {
         std::lock_guard lock = chunk.acquireLock();
-        chunk.draw2();
+
+        if (!chunk.m_Mesh.empty())
+        {
+          chunk.setMesh(chunk.m_Mesh.data(), chunk.m_Mesh.size() / 4);
+          chunk.m_Mesh.clear();
+        }
+
+        chunk.draw();
       }
     });
 }
 
-void MTChunkManager::loadThread()
+void MTChunkManager::loadWorker()
 {
   using namespace std::chrono_literals;
 
-  while (true)
+  while (m_Running.load())
   {
+    EN_PROFILE_SCOPE("Load worker");
+
     mapType<int, GlobalIndex> newChunkPositions;
-    {
-      forEach(ChunkType::Boundary, [&](const Chunk& chunk)
+    forEach(ChunkType::Boundary, [&](const Chunk& chunk)
+      {
+        for (Block::Face face : Block::FaceIterator())
         {
-          for (Block::Face face : Block::FaceIterator())
-          {
-            GlobalIndex neighborIndex = chunk.getGlobalIndex() + GlobalIndex::OutwardNormal(face);
-            if (Util::IsInRangeOfPlayer(neighborIndex, s_LoadDistance) && newChunkPositions.find(Util::CreateKey(neighborIndex)) == newChunkPositions.end())
-              if (!chunk.isFaceOpaque(face) && !isLoaded(neighborIndex))
-                newChunkPositions.insert({ Util::CreateKey(neighborIndex), neighborIndex });
-          }
-        });
-    }
+          GlobalIndex neighborIndex = chunk.getGlobalIndex() + GlobalIndex::OutwardNormal(face);
+          if (Util::IsInRangeOfPlayer(neighborIndex, s_LoadDistance) && newChunkPositions.find(Util::CreateKey(neighborIndex)) == newChunkPositions.end())
+            if (!chunk.isFaceOpaque(face) && !isLoaded(neighborIndex))
+              newChunkPositions.insert({ Util::CreateKey(neighborIndex), neighborIndex });
+        }
+      });
 
     // Load First chunk if none exist
     if (m_OpenChunkSlots.size() == s_MaxChunks)
       newChunkPositions.insert({ Util::CreateKey(Player::OriginIndex()), Player::OriginIndex() });
 
-    if (newChunkPositions.size() > 0)
-    {
+    if (!newChunkPositions.empty())
       for (const auto& [key, newChunkIndex] : newChunkPositions)
       {
         Chunk chunk(newChunkIndex);
         Terrain::GenerateNew(&chunk);
         insert(std::move(chunk));
-        // EN_INFO("Boundary Chunks: {0}, Renderable Chunks: {1}, Empty Chunks: {2}", m_BoundaryChunks.size(), m_RenderableChunks.size(), m_EmptyChunks.size());
       }
-    }
     else
-      std::this_thread::sleep_for(1ms);
+      std::this_thread::sleep_for(100ms);
   }
 }
 
-void MTChunkManager::updateThread()
+void MTChunkManager::updateWorker()
 {
-  using namespace std::chrono_literals;
-
-  while (true)
+  while (m_Running.load())
   {
-    EN_PROFILE_SCOPE("Chunk Updating");
+    EN_PROFILE_SCOPE("Update worker");
 
     GlobalIndex updateIndex = m_UpdateQueue.waitAndRemoveOne();
     std::vector<uint32_t> mesh = createMesh(updateIndex);
@@ -101,11 +112,43 @@ void MTChunkManager::updateThread()
   }
 }
 
+void MTChunkManager::cleanWorker()
+{
+  using namespace std::chrono_literals;
+
+  while (m_Running.load())
+  {
+    EN_PROFILE_SCOPE("Clean worker");
+
+    std::vector<GlobalIndex> chunksMarkedForDeletion = findAll(ChunkType::Boundary, [](const Chunk& chunk)
+      {
+        return !Util::IsInRangeOfPlayer(chunk, s_UnloadDistance);
+      });
+
+    if (!chunksMarkedForDeletion.empty())
+    {
+      for (const GlobalIndex& chunkIndex : chunksMarkedForDeletion)
+        if (!Util::IsInRangeOfPlayer(chunkIndex, s_UnloadDistance))
+          erase(chunkIndex);
+      Terrain::Clean(s_UnloadDistance);
+    }
+    else
+      std::this_thread::sleep_for(100ms);
+  }
+}
+
+std::pair<const Chunk*, std::unique_lock<std::mutex>> MTChunkManager::acquireChunk(const LocalIndex& chunkIndex) const
+{
+  GlobalIndex originChunk = Player::OriginIndex();
+  return acquireChunk(GlobalIndex(originChunk.i + chunkIndex.i, originChunk.j + chunkIndex.j, originChunk.k + chunkIndex.k));
+}
+
 bool MTChunkManager::insert(Chunk&& chunk)
 {
   std::lock_guard lock(m_ChunkMapMutex);
 
-  EN_ASSERT(!m_OpenChunkSlots.empty(), "All chunks slots are full!");
+  if (m_OpenChunkSlots.empty())
+    return false;
 
   // Grab first open chunk slot
   int chunkSlot = m_OpenChunkSlots.top();
@@ -140,12 +183,15 @@ bool MTChunkManager::erase(const GlobalIndex& chunkIndex)
   // Delete chunk data
   m_ChunkArray[chunkSlot].reset();
   m_BoundaryChunks.erase(erasePosition);
+
+  sendChunkRemovalUpdate(chunkIndex);
+
   return true;
 }
 
 bool MTChunkManager::update(const GlobalIndex& chunkIndex, const std::vector<uint32_t>& mesh)
 {
-  std::lock_guard lock(m_ChunkMapMutex);
+  std::shared_lock sharedLock(m_ChunkMapMutex);
 
   Chunk* chunk = find(chunkIndex);
   if (!chunk)
@@ -156,14 +202,19 @@ bool MTChunkManager::update(const GlobalIndex& chunkIndex, const std::vector<uin
     return false;
 
   std::lock_guard chunkLock = chunk->acquireLock();
+  sharedLock.unlock();
+
   chunk->determineOpacity();
   chunk->m_Mesh = mesh;
-  if (!chunk->isEmpty() && mesh.empty() && chunk->getBlockType(0, 0, 0) == Block::Type::Air) // Maybe should be part of SetMesh
+  if (!chunk->isEmpty() && chunk->m_Mesh.empty() && chunk->getBlockType(0, 0, 0) == Block::Type::Air) // Maybe should be part of SetMesh
     chunk->clear();
 
   ChunkType destination = chunk->isEmpty() ? ChunkType::Empty : ChunkType::Renderable;
   if (source != destination)
+  {
+    std::lock_guard lock(m_ChunkMapMutex);
     recategorizeChunk(chunk, source, destination);
+  }
 
   return true;
 }
@@ -200,15 +251,11 @@ std::vector<uint32_t> MTChunkManager::createMesh(const GlobalIndex& chunkIndex) 
   for (int i = 0; i < totalVolumeNeeded; ++i)
     blockData[i] = Block::Type::Null;
 
+  // Load blocks from chunk
   {
-    std::shared_lock lock(m_ChunkMapMutex);
-
-    // Load blocks from chunk
-    const Chunk* chunk = find(chunkIndex);
+    auto [chunk, lock] = acquireChunk(chunkIndex);
     if (chunk)
     {
-      std::lock_guard chunkLock = chunk->acquireLock();
-
       if (chunk->isEmpty())
         return {};
 
@@ -219,99 +266,89 @@ std::vector<uint32_t> MTChunkManager::createMesh(const GlobalIndex& chunkIndex) 
     }
     else
       return {};
+  }
 
-    // Load blocks from cardinal neighbors
-    for (Block::Face face : Block::FaceIterator())
-    {
-      int faceIndex = IsPositive(face) ? Chunk::Size() : -1;
-      int neighborFaceIndex = IsPositive(face) ? 0 : Chunk::Size() - 1;
+  // Load blocks from cardinal neighbors
+  for (Block::Face face : Block::FaceIterator())
+  {
+    int faceIndex = IsPositive(face) ? Chunk::Size() : -1;
+    int neighborFaceIndex = IsPositive(face) ? 0 : Chunk::Size() - 1;
 
-      const Chunk* neighbor = findNeighbor(chunkIndex, face);
-      if (neighbor)
-      {
-        std::lock_guard chunkLock = neighbor->acquireLock();
-
-        for (blockIndex_t i = 0; i < Chunk::Size(); ++i)
-          for (blockIndex_t j = 0; j < Chunk::Size(); ++j)
-          {
-            BlockIndex relativeBlockIndex = BlockIndex::CreatePermuted(faceIndex, i, j, GetCoordID(face));
-
-            if (neighbor->isEmpty())
-              setBlockType(blockData, relativeBlockIndex, Block::Type::Air);
-            else
-            {
-              BlockIndex neighborBlockIndex = BlockIndex::CreatePermuted(neighborFaceIndex, i, j, GetCoordID(face));
-              setBlockType(blockData, relativeBlockIndex, neighbor->getBlockType(neighborBlockIndex));
-            }
-          }
-      }
-    }
-
-    // Load blocks from edge neighbors
-    for (auto itA = Block::FaceIterator().begin(); itA != Block::FaceIterator().end(); ++itA)
-      for (auto itB = itA.next(); itB != Block::FaceIterator().end(); ++itB)
-      {
-        Block::Face faceA = *itA;
-        Block::Face faceB = *itB;
-
-        // Opposite faces cannot form edge
-        if (faceB == !faceA)
-          continue;
-
-        int u = GetCoordID(faceA);
-        int v = GetCoordID(faceB);
-        int w = (2 * (u + v)) % 3;  // Extracts coordID that runs along edge
-
-        const Chunk* neighbor = findNeighbor(chunkIndex, faceA, faceB);
-        if (neighbor)
+    auto [neighbor, lock] = acquireChunk(chunkIndex + GlobalIndex::OutwardNormal(face));
+    if (neighbor)
+      for (blockIndex_t i = 0; i < Chunk::Size(); ++i)
+        for (blockIndex_t j = 0; j < Chunk::Size(); ++j)
         {
-          std::lock_guard lock = neighbor->acquireLock();
+          BlockIndex relativeBlockIndex = BlockIndex::CreatePermuted(faceIndex, i, j, GetCoordID(face));
 
-          for (blockIndex_t i = 0; i < Chunk::Size(); ++i)
+          if (neighbor->isEmpty())
+            setBlockType(blockData, relativeBlockIndex, Block::Type::Air);
+          else
           {
-            BlockIndex relativeBlockIndex{};
-            relativeBlockIndex[u] = IsPositive(faceA) ? Chunk::Size() : -1;
-            relativeBlockIndex[v] = IsPositive(faceB) ? Chunk::Size() : -1;
-            relativeBlockIndex[w] = i;
-
-            if (neighbor->isEmpty())
-              setBlockType(blockData, relativeBlockIndex, Block::Type::Air);
-            else
-            {
-              BlockIndex neighborBlockIndex{};
-              neighborBlockIndex[u] = IsPositive(faceA) ? 0 : Chunk::Size() - 1;
-              neighborBlockIndex[v] = IsPositive(faceB) ? 0 : Chunk::Size() - 1;
-              neighborBlockIndex[w] = i;
-
-              setBlockType(blockData, relativeBlockIndex, neighbor->getBlockType(neighborBlockIndex));
-            }
-          }
-        }
-      }
-
-    // Load blocks from corner neighbors
-    for (int i = 0; i < 2; ++i)
-      for (int j = 0; j < 2; ++j)
-        for (int k = 0; k < 2; ++k)
-        {
-          GlobalIndex neighborIndex = chunkIndex + GlobalIndex(i, j, k) - GlobalIndex(1 - i, 1 - j, 1 - k);
-          const Chunk* neighbor = find(neighborIndex);
-          if (neighbor)
-          {
-            std::lock_guard lock = neighbor->acquireLock();
-
-            BlockIndex relativeBlockIndex = Chunk::Size() * BlockIndex(i, j, k) - BlockIndex(1 - i, 1 - j, 1 - k);
-
-            if (neighbor->isEmpty())
-              setBlockType(blockData, relativeBlockIndex, Block::Type::Air);
-            else
-            {
-              BlockIndex neighborBlockIndex = static_cast<blockIndex_t>(Chunk::Size() - 1) * BlockIndex(1 - i, 1 - j, 1 - k);
-              setBlockType(blockData, relativeBlockIndex, neighbor->getBlockType(neighborBlockIndex));
-            }
+            BlockIndex neighborBlockIndex = BlockIndex::CreatePermuted(neighborFaceIndex, i, j, GetCoordID(face));
+            setBlockType(blockData, relativeBlockIndex, neighbor->getBlockType(neighborBlockIndex));
           }
         }
   }
+
+  // Load blocks from edge neighbors
+  for (auto itA = Block::FaceIterator().begin(); itA != Block::FaceIterator().end(); ++itA)
+    for (auto itB = itA.next(); itB != Block::FaceIterator().end(); ++itB)
+    {
+      Block::Face faceA = *itA;
+      Block::Face faceB = *itB;
+
+      // Opposite faces cannot form edge
+      if (faceB == !faceA)
+        continue;
+
+      int u = GetCoordID(faceA);
+      int v = GetCoordID(faceB);
+      int w = (2 * (u + v)) % 3;  // Extracts coordID that runs along edge
+
+      auto [neighbor, lock] = acquireChunk(chunkIndex + GlobalIndex::OutwardNormal(faceA) + GlobalIndex::OutwardNormal(faceB));
+      if (neighbor)
+        for (blockIndex_t i = 0; i < Chunk::Size(); ++i)
+        {
+          BlockIndex relativeBlockIndex{};
+          relativeBlockIndex[u] = IsPositive(faceA) ? Chunk::Size() : -1;
+          relativeBlockIndex[v] = IsPositive(faceB) ? Chunk::Size() : -1;
+          relativeBlockIndex[w] = i;
+
+          if (neighbor->isEmpty())
+            setBlockType(blockData, relativeBlockIndex, Block::Type::Air);
+          else
+          {
+            BlockIndex neighborBlockIndex{};
+            neighborBlockIndex[u] = IsPositive(faceA) ? 0 : Chunk::Size() - 1;
+            neighborBlockIndex[v] = IsPositive(faceB) ? 0 : Chunk::Size() - 1;
+            neighborBlockIndex[w] = i;
+
+            setBlockType(blockData, relativeBlockIndex, neighbor->getBlockType(neighborBlockIndex));
+          }
+        }
+    }
+
+  // Load blocks from corner neighbors
+  for (int i = 0; i < 2; ++i)
+    for (int j = 0; j < 2; ++j)
+      for (int k = 0; k < 2; ++k)
+      {
+        GlobalIndex neighborIndex = chunkIndex + GlobalIndex(i, j, k) - GlobalIndex(1 - i, 1 - j, 1 - k);
+        auto [neighbor, lock] = acquireChunk(neighborIndex);
+        if (neighbor)
+        {
+          BlockIndex relativeBlockIndex = Chunk::Size() * BlockIndex(i, j, k) - BlockIndex(1 - i, 1 - j, 1 - k);
+
+          if (neighbor->isEmpty())
+            setBlockType(blockData, relativeBlockIndex, Block::Type::Air);
+          else
+          {
+            BlockIndex neighborBlockIndex = static_cast<blockIndex_t>(Chunk::Size() - 1) * BlockIndex(1 - i, 1 - j, 1 - k);
+            setBlockType(blockData, relativeBlockIndex, neighbor->getBlockType(neighborBlockIndex));
+          }
+        }
+      }
 
   static constexpr BlockIndex offsets[6][4]
     = { { {0, 1, 0}, {0, 0, 0}, {0, 0, 1}, {0, 1, 1} },    /*  West Face   */
@@ -320,8 +357,6 @@ std::vector<uint32_t> MTChunkManager::createMesh(const GlobalIndex& chunkIndex) 
         { {1, 1, 0}, {0, 1, 0}, {0, 1, 1}, {1, 1, 1} },    /*  North Face  */
         { {0, 1, 0}, {1, 1, 0}, {1, 0, 0}, {0, 0, 0} },    /*  Bottom Face */
         { {0, 0, 1}, {1, 0, 1}, {1, 1, 1}, {0, 1, 1} } };  /*  Top Face    */
-
-  EN_PROFILE_FUNCTION();
 
   // Mesh chunk using block data
   std::vector<uint32_t> mesh;
@@ -387,6 +422,18 @@ std::vector<GlobalIndex> MTChunkManager::findAll(ChunkType chunkType, bool (*con
     if (condition(*chunk))
       indexList.push_back(chunk->getGlobalIndex());
   return indexList;
+}
+
+std::pair<const Chunk*, std::unique_lock<std::mutex>> MTChunkManager::acquireChunk(const GlobalIndex& chunkIndex) const
+{
+  std::shared_lock lock(m_ChunkMapMutex);
+  std::unique_lock<std::mutex> chunkLock;
+
+  const Chunk* chunk = find(chunkIndex);
+  if (chunk)
+    chunkLock = std::unique_lock(chunk->m_Mutex);
+
+  return { chunk, std::move(chunkLock) };
 }
 
 bool MTChunkManager::IndexSet::add(const GlobalIndex& index)
@@ -464,21 +511,6 @@ const Chunk* MTChunkManager::find(const GlobalIndex& chunkIndex) const
   return nullptr;
 }
 
-const Chunk* MTChunkManager::findNeighbor(const GlobalIndex& chunkIndex, Block::Face face) const
-{
-  return find(chunkIndex + GlobalIndex::OutwardNormal(face));
-}
-
-const Chunk* MTChunkManager::findNeighbor(const GlobalIndex& chunkIndex, Block::Face faceA, Block::Face faceB) const
-{
-  return find(chunkIndex + GlobalIndex::OutwardNormal(faceA) + GlobalIndex::OutwardNormal(faceB));
-}
-
-const Chunk* MTChunkManager::findNeighbor(const GlobalIndex& chunkIndex, Block::Face faceA, Block::Face faceB, Block::Face faceC) const
-{
-  return find(chunkIndex + GlobalIndex::OutwardNormal(faceA) + GlobalIndex::OutwardNormal(faceB) + GlobalIndex::OutwardNormal(faceC));
-}
-
 void MTChunkManager::sendChunkLoadUpdate(Chunk* newChunk)
 {
   boundaryChunkUpdate(newChunk);
@@ -493,6 +525,22 @@ void MTChunkManager::sendChunkLoadUpdate(Chunk* newChunk)
 
     if (getChunkType(neighbor) == ChunkType::Boundary)
       boundaryChunkUpdate(neighbor);
+  }
+}
+
+void MTChunkManager::sendChunkRemovalUpdate(const GlobalIndex& removalIndex)
+{
+  for (Block::Face face : Block::FaceIterator())
+  {
+    Chunk* neighbor = find(removalIndex + GlobalIndex::OutwardNormal(face));
+
+    if (neighbor)
+    {
+      ChunkType type = getChunkType(neighbor);
+
+      if (type != ChunkType::Boundary)
+        recategorizeChunk(neighbor, type, ChunkType::Boundary);
+    }
   }
 }
 

@@ -16,8 +16,6 @@ static constexpr blockIndex_t modulo(globalIndex_t a, blockIndex_t b)
 
 void World::initialize()
 {
-  m_ChunkManager.initializeChunks();
-
 #if USE_LODS
   if (createLODs)
     m_ChunkManager.initializeLODs();
@@ -29,11 +27,8 @@ void World::onUpdate(Timestep timestep)
   EN_PROFILE_FUNCTION();
 
   /* Player update stage */
-  Player::UpdateBegin(timestep);
-#if PLAYER_INTERACTION
   playerCollisionHandling(timestep);
-#endif
-  Player::UpdateEnd();
+  Player::Update();
 
   /* Rendering stage */
   Engine::Renderer::BeginScene(Engine::Scene::ActiveCameraViewProjection());
@@ -60,7 +55,6 @@ void World::onUpdate(Timestep timestep)
   m_ChunkManager.clean();
 }
 
-#if PLAYER_INTERACTION
 RayIntersection World::castRaySegment(const Vec3& pointA, const Vec3& pointB) const
 {
   const Vec3 rayDirection = pointB - pointA;
@@ -121,7 +115,7 @@ RayIntersection World::castRaySegment(const Vec3& pointA, const Vec3& pointB) co
                                                            modulo(static_cast<globalIndex_t>(floor(intersection[w] / Block::Length())), Chunk::Size()), i);
 
         // Search to see if chunk is loaded
-        const Chunk* chunk = m_ChunkManager.find(chunkIndex);
+        auto [chunk, lock] = m_ChunkManager.acquireChunk(chunkIndex);
         if (chunk == nullptr)
           continue;
         else if (chunk->isEmpty())
@@ -136,8 +130,6 @@ RayIntersection World::castRaySegment(const Vec3& pointA, const Vec3& pointB) co
           firstIntersection.face = static_cast<Block::Face>(faceID);
           firstIntersection.blockIndex = blockIndex;
           firstIntersection.chunkIndex = chunkIndex;
-
-          continue;
         }
       }
     }
@@ -207,6 +199,7 @@ beginCollisionDetection:;
   }
 }
 
+#if PLAYER_INTERACTION
 void World::playerWorldInteraction()
 {
   static constexpr blockIndex_t chunkLimits[2] = { 0, Chunk::Size() - 1 };

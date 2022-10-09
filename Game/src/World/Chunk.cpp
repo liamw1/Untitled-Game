@@ -190,17 +190,6 @@ void Chunk::draw() const
   Engine::RenderCommand::DrawIndexed(m_VertexArray.get(), meshIndexCount);
 }
 
-void Chunk::draw2()
-{
-  if (m_Mesh.size() > 0)
-  {
-    setMesh(m_Mesh.data(), m_Mesh.size() / 4);
-    m_Mesh.clear();
-  }
-
-  draw();
-}
-
 void Chunk::clear()
 {
   if (m_Composition)

@@ -92,7 +92,6 @@ private:
 
   void update();
   void draw() const;
-  void draw2(); // TODO: Remove
   void clear();
   void reset();
 

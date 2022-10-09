@@ -21,13 +21,6 @@ ChunkManager::~ChunkManager()
   m_ChunkArray = nullptr;
 }
 
-void ChunkManager::initializeChunks()
-{
-  while (loadNewChunks(std::numeric_limits<int>::max()))
-  {
-  }
-}
-
 void ChunkManager::initializeLODs()
 {
   EN_PROFILE_FUNCTION();
@@ -152,8 +145,6 @@ void ChunkManager::clean()
     sendChunkRemovalUpdate(index);
 
   Terrain::Clean(s_UnloadDistance);
-
-  EN_INFO("Boundary Chunks: {0}, Renderable Chunks: {1}, Empty Chunks: {2}", m_BoundaryChunks.size(), m_RenderableChunks.size(), m_EmptyChunks.size());
 }
 
 void ChunkManager::renderLODs()

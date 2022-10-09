@@ -7,19 +7,22 @@ class MTChunkManager
 {
 public:
   MTChunkManager();
+  ~MTChunkManager();
 
   void render();
 
-  void loadThread();
-  void updateThread();
+  void loadWorker();
+  void updateWorker();
+  void cleanWorker();
 
-  void initializeChunks() {};
   bool loadNewChunks(int maxNewChunks) { return false; };
   bool updateChunks(int maxUpdates) { return false; };
   void clean() {};
 
+  [[nodiscard]] std::pair<const Chunk*, std::unique_lock<std::mutex>> acquireChunk(const LocalIndex& chunkIndex) const;
+
 private:
-  static constexpr int s_RenderDistance = 16;
+  static constexpr int s_RenderDistance = 8;
   static constexpr int s_LoadDistance = s_RenderDistance + 2;
   static constexpr int s_UnloadDistance = s_LoadDistance;
   static constexpr int s_MaxChunks = (2 * s_UnloadDistance + 1) * (2 * s_UnloadDistance + 1) * (2 * s_UnloadDistance + 1);
@@ -44,6 +47,8 @@ private:
   void forEach(ChunkType chunkType, const std::function<void(Chunk& chunk)>& func) const;
   std::vector<GlobalIndex> findAll(ChunkType chunkType, bool (*condition)(const Chunk& chunk)) const;
 
+  [[nodiscard]] std::pair<const Chunk*, std::unique_lock<std::mutex>> acquireChunk(const GlobalIndex& chunkIndex) const;
+
 private:
   static constexpr int s_ChunkTypes = 3;
 
@@ -60,7 +65,11 @@ private:
   Chunk* m_ChunkArray;
   std::stack<int, std::vector<int>> m_OpenChunkSlots;
 
-  // Mutexes
+  // Multi-threading
+  std::atomic<bool> m_Running;
+  std::thread m_LoadThread;
+  std::thread m_UpdateThread;
+  std::thread m_CleanThread;
   mutable std::shared_mutex m_ChunkMapMutex;
 
   class IndexSet
@@ -85,11 +94,9 @@ private:
   ChunkType getChunkType(const Chunk* chunk) const;
   Chunk* find(const GlobalIndex& chunkIndex);
   const Chunk* find(const GlobalIndex& chunkIndex) const;
-  const Chunk* findNeighbor(const GlobalIndex& chunkIndex, Block::Face face) const;
-  const Chunk* findNeighbor(const GlobalIndex& chunkIndex, Block::Face faceA, Block::Face faceB) const;
-  const Chunk* findNeighbor(const GlobalIndex& chunkIndex, Block::Face faceA, Block::Face faceB, Block::Face faceC) const;
 
   void sendChunkLoadUpdate(Chunk* newChunk);
+  void sendChunkRemovalUpdate(const GlobalIndex& removalIndex);
   void boundaryChunkUpdate(Chunk* chunk);
   void recategorizeChunk(Chunk* chunk, ChunkType source, ChunkType destination);
 };

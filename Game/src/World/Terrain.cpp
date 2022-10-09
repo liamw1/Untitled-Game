@@ -75,6 +75,7 @@ struct BiomeMap
 
 static std::unordered_map<int, HeightMap> s_HeightMapCache;
 static std::unordered_map<int, TemperatureMap> s_TemperatureMapCache;
+static std::mutex s_Mutex;
 
 Terrain::CompoundSurfaceData Terrain::CompoundSurfaceData::operator+(const CompoundSurfaceData& other) const
 {
@@ -209,6 +210,8 @@ void Terrain::GenerateNew(Chunk* chunk)
 {
   EN_ASSERT(chunk, "Chunk does not exist!");
 
+  std::lock_guard lock(s_Mutex);
+
   static const length_t globalMinTerrainHeight = s_DefaultBiome.minElevation();
   static const length_t globalMaxTerrainHeight = s_DefaultBiome.maxElevation();
 
@@ -240,6 +243,8 @@ void Terrain::GenerateNew(Chunk* chunk)
 
 void Terrain::Clean(int unloadDistance)
 {
+  std::lock_guard lock(s_Mutex);
+
   // Destroy heightmaps outside of unload range
   for (auto it = s_HeightMapCache.begin(); it != s_HeightMapCache.end();)
   {
