@@ -39,9 +39,9 @@ namespace Engine
     EN_CORE_ASSERT(status, "Failed to initialize GLad!");
 
     EN_CORE_INFO("OpenGL Info:");
-    EN_CORE_INFO("  Vendor:    {0}", glGetString(GL_VENDOR));
-    EN_CORE_INFO("  Renderer:  {0}", glGetString(GL_RENDERER));
-    EN_CORE_INFO("  Version:   {0}", glGetString(GL_VERSION));
+    EN_CORE_INFO("  Vendor:    {0}", reinterpret_cast<const char*>(glGetString(GL_VENDOR)));
+    EN_CORE_INFO("  Renderer:  {0}", reinterpret_cast<const char*>(glGetString(GL_RENDERER)));
+    EN_CORE_INFO("  Version:   {0}", reinterpret_cast<const char*>(glGetString(GL_VERSION)));
     
     EN_CORE_ASSERT(GLVersion.major > 4 || (GLVersion.major == 4 && GLVersion.minor >= 5), "Hazel requires at least OpenGL version 4.5!");
 

@@ -213,7 +213,7 @@ namespace Engine
           ImGui::DragFloat("Near", &nearClip);
           ImGui::DragFloat("Far", &farClip);
 
-          camera.setPerspective(aspectRatio, Angle::FromDeg(fov), nearClip, farClip);
+          camera.setPerspective(aspectRatio, Angle(fov), nearClip, farClip);
         }
         else if (camera.getProjectionType() == Camera::ProjectionType::Orthographic)
         {
