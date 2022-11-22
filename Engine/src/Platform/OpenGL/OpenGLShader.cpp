@@ -4,15 +4,11 @@
 #include "Engine/Threading/Threads.h"
 #include "Engine/Debug/Instrumentor.h"
 
-#include <codeanalysis\warnings.h> // Disable intellisense warnings
-#pragma warning(push)
-#pragma warning(disable : ALL_CODE_ANALYSIS_WARNINGS)
 #include <glad/glad.h>
 #include <glm/gtc/type_ptr.hpp>
 #include <shaderc/shaderc.hpp>
 #include <spirv_cross/spirv_cross.hpp>
 #include <spirv_cross/spirv_glsl.hpp>
-#pragma warning(pop)
 
 namespace Engine
 {

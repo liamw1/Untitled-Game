@@ -3,11 +3,7 @@
 #include "Engine/Threading/Threads.h"
 #include "Engine/Debug/Instrumentor.h"
 
-#include <codeanalysis\warnings.h> // Disable intellisense warnings
-#pragma warning(push)
-#pragma warning(disable : ALL_CODE_ANALYSIS_WARNINGS)
 #include <stb_image.h>
-#pragma warning(pop)
 
 static constexpr uint32_t s_MipmapLevels = 8;
 static constexpr float s_AnistropicFilteringAmount = 16.0f;
