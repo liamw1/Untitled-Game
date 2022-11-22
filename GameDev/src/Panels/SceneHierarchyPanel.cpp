@@ -7,10 +7,10 @@ namespace Engine
   static Entity s_SelectionContext;
   static char s_TextBuffer[256];
   static constexpr ImGuiTreeNodeFlags s_TreeNodeFlags = ImGuiTreeNodeFlags_DefaultOpen |
-                                                        ImGuiTreeNodeFlags_Framed |
-                                                        ImGuiTreeNodeFlags_SpanAvailWidth |
-                                                        ImGuiTreeNodeFlags_AllowItemOverlap |
-                                                        ImGuiTreeNodeFlags_FramePadding;
+    ImGuiTreeNodeFlags_Framed |
+    ImGuiTreeNodeFlags_SpanAvailWidth |
+    ImGuiTreeNodeFlags_AllowItemOverlap |
+    ImGuiTreeNodeFlags_FramePadding;
 
   static void drawEntityNode(const Entity& entity)
   {
@@ -43,7 +43,7 @@ namespace Engine
     if (entity.has<T>())
     {
       T& component = entity.get<T>();
-      float contentRegionAvailalbeWidth = ImGui::GetWindowWidth();
+      float contentRegionWidth = ImGui::GetWindowContentRegionWidth();
 
       ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(4, 4));
       float lineHeight = GImGui->Font->FontSize + 2.0f * GImGui->Style.FramePadding.y;
@@ -51,7 +51,7 @@ namespace Engine
       bool open = ImGui::TreeNodeEx(reinterpret_cast<void*>(typeid(T).hash_code()), s_TreeNodeFlags, name.c_str());
       ImGui::PopStyleVar();
 
-      ImGui::SameLine(contentRegionAvailalbeWidth - lineHeight / 2);
+      ImGui::SameLine(contentRegionWidth - lineHeight / 2);
       if (ImGui::Button("...", ImVec2(lineHeight, lineHeight)))
         ImGui::OpenPopup("ComponentSettings");
 
@@ -94,8 +94,8 @@ namespace Engine
     ImVec2 buttonSize(lineHeight + 3.0f, lineHeight);
 
     static const std::string buttonLabels[3] = { "X", "Y", "Z" };
-    static const ImVec4 buttonColors[3] = { ImVec4(0.9f, 0.2f, 0.2f, 1.0f), 
-                                            ImVec4(0.3f, 0.8f, 0.3f, 1.0f), 
+    static const ImVec4 buttonColors[3] = { ImVec4(0.9f, 0.2f, 0.2f, 1.0f),
+                                            ImVec4(0.3f, 0.8f, 0.3f, 1.0f),
                                             ImVec4(0.2f, 0.35f, 0.9f, 1.0f) };
     for (int i = 0; i < 3; ++i)
     {
@@ -192,41 +192,41 @@ namespace Engine
       {
         Camera& camera = component.camera;
 
-        static constexpr std::array<const char*, 2> projectionTypeStrings = { "Perspective", "Orthographic" };
-        const char* currentProjectionTypeString = projectionTypeStrings[static_cast<int>(camera.getProjectionType())];
-        if (ImGui::BeginCombo("Projection", currentProjectionTypeString))
-        {
-          for (int i = 0; i < 2; ++i)
-            if (currentProjectionTypeString == projectionTypeStrings[i])
-              ImGui::SetItemDefaultFocus();
+    static constexpr std::array<const char*, 2> projectionTypeStrings = { "Perspective", "Orthographic" };
+    const char* currentProjectionTypeString = projectionTypeStrings[static_cast<int>(camera.getProjectionType())];
+    if (ImGui::BeginCombo("Projection", currentProjectionTypeString))
+    {
+      for (int i = 0; i < 2; ++i)
+        if (currentProjectionTypeString == projectionTypeStrings[i])
+          ImGui::SetItemDefaultFocus();
 
-          ImGui::EndCombo();
-        }
+      ImGui::EndCombo();
+    }
 
-        float aspectRatio = camera.getAspectRatio();
-        float nearClip = camera.getNearClip();
-        float farClip = camera.getFarClip();
-        if (camera.getProjectionType() == Camera::ProjectionType::Perspective)
-        {
-          float fov = camera.getFOV().deg();
-          ImGui::DragFloat("FOV", &fov);
-          ImGui::DragFloat("Near", &nearClip);
-          ImGui::DragFloat("Far", &farClip);
+    float aspectRatio = camera.getAspectRatio();
+    float nearClip = camera.getNearClip();
+    float farClip = camera.getFarClip();
+    if (camera.getProjectionType() == Camera::ProjectionType::Perspective)
+    {
+      float fov = camera.getFOV().deg();
+      ImGui::DragFloat("FOV", &fov);
+      ImGui::DragFloat("Near", &nearClip);
+      ImGui::DragFloat("Far", &farClip);
 
-          camera.setPerspective(aspectRatio, Angle(fov), nearClip, farClip);
-        }
-        else if (camera.getProjectionType() == Camera::ProjectionType::Orthographic)
-        {
-          float orthoSize = camera.getOrthographicSize();
+      camera.setPerspective(aspectRatio, Angle(fov), nearClip, farClip);
+    }
+    else if (camera.getProjectionType() == Camera::ProjectionType::Orthographic)
+    {
+      float orthoSize = camera.getOrthographicSize();
 
-          ImGui::DragFloat("Size", &orthoSize);
-          ImGui::DragFloat("Near", &nearClip);
-          ImGui::DragFloat("Far", &farClip);
+      ImGui::DragFloat("Size", &orthoSize);
+      ImGui::DragFloat("Near", &nearClip);
+      ImGui::DragFloat("Far", &farClip);
 
-          camera.setOrthographic(aspectRatio, orthoSize, nearClip, farClip);
-        }
-        else
-          EN_CORE_ERROR("Unknown camera projection type!");
+      camera.setOrthographic(aspectRatio, orthoSize, nearClip, farClip);
+    }
+    else
+      EN_CORE_ERROR("Unknown camera projection type!");
       });
 
     drawComponent<Component::SpriteRenderer>("Sprite renderer", entity, [](auto& component)
@@ -237,8 +237,8 @@ namespace Engine
     drawComponent<Component::CircleRenderer>("Circle renderer", entity, [](auto& component)
       {
         ImGui::ColorEdit4("Color", glm::value_ptr(component.color));
-        ImGui::DragFloat("Thickness", &component.thickness, 0.005f, 0.0f, 1.0f);
-        ImGui::DragFloat("Fade", &component.fade, 0.001f, 0.0f, 1.0f);
+    ImGui::DragFloat("Thickness", &component.thickness, 0.005f, 0.0f, 1.0f);
+    ImGui::DragFloat("Fade", &component.fade, 0.001f, 0.0f, 1.0f);
       });
   }
 
@@ -258,7 +258,7 @@ namespace Engine
       s_SelectionContext = {};
 
     // Right-click on blank space
-    if (ImGui::BeginPopupContextWindow(0, false))
+    if (ImGui::BeginPopupContextWindow(0, ImGuiPopupFlags_MouseButtonRight))
     {
       if (ImGui::MenuItem("Create Empty Entity"))
         Scene::CreateEntity("Empty Entity");
