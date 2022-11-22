@@ -45,7 +45,7 @@ project "GameDev"
 
 		postbuildcommands
 		{
-      "{COPY} ../bin/" .. outputdir .. "/Engine/Engine.pdb" .. " ../bin/" .. outputdir .. "/%{prj.name}",
+      			"{COPY} ../bin/" .. outputdir .. "/Engine/Engine.pdb" .. " ../bin/" .. outputdir .. "/%{prj.name}",
 			"{COPYDIR} \"%{LibraryDir.VulkanSDK_DebugDLL}\" \"%{cfg.targetdir}\""
 		}
 

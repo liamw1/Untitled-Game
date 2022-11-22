@@ -4,11 +4,8 @@
 #include "Engine/Debug/Instrumentor.h"
 
 #include <imgui.h>
-#include <examples/imgui_impl_glfw.h>
-#include <examples/imgui_impl_opengl3.h>
-
-// TEMPORARY
-#include <GLFW/glfw3.h>
+#include <backends/imgui_impl_glfw.h>
+#include <backends/imgui_impl_opengl3.h>
 
 
 namespace Engine
@@ -30,12 +27,8 @@ namespace Engine
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO(); (void)io;
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;          // Enable Keyboard Controls
-    // io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;        // Enable Gamepad Controls
-    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;              // Enable Docking
-    io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;            // Enable Multi-Viewport / Platform Windows
-    // io.ConfigFlags |= ImGuiConfigFlags_ViewportsNoTaskBarIcons;
-    // io.ConfigFlags |= ImGuiConfigFlags_ViewportsNoMerge;
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
+    //io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;    // Enable Gamepad Controls
 
     io.Fonts->AddFontFromFileTTF("../Engine/assets/fonts/opensans/static/OpenSans/OpenSans-Bold.ttf", 18.0f);
     io.FontDefault = io.Fonts->AddFontFromFileTTF("../Engine/assets/fonts/opensans/static/OpenSans/OpenSans-Regular.ttf", 18.0f);
@@ -43,13 +36,10 @@ namespace Engine
     // Setup Dear ImGui style
     ImGui::StyleColorsDark();
 
-    // When viewports are enabled we tweak WindowRounding/WindowBg so platform windows can look identical to regular ones.
+    // We tweak WindowRounding/WindowBg so platform windows can look identical to regular ones.
     ImGuiStyle& style = ImGui::GetStyle();
-    if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
-    {
-      style.WindowRounding = 0.0f;
-      style.Colors[ImGuiCol_WindowBg].w = 1.0f;
-    }
+    style.WindowRounding = 0.0f;
+    style.Colors[ImGuiCol_WindowBg].w = 1.0f;
 
     setDarkThemeColors();
 
@@ -100,14 +90,6 @@ namespace Engine
     // Rendering
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-
-    if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
-    {
-      GLFWwindow* backupCurrentContext = glfwGetCurrentContext();
-      ImGui::UpdatePlatformWindows();
-      ImGui::RenderPlatformWindowsDefault();
-      glfwMakeContextCurrent(backupCurrentContext);
-    }
   }
 
   void ImGuiLayer::setDarkThemeColors()

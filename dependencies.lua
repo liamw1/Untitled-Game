@@ -11,7 +11,6 @@ IncludeDir["glm"] = "%{wks.location}/Engine/lib/glm"
 IncludeDir["stb_image"] = "%{wks.location}/Engine/lib/stb_image"
 IncludeDir["spdlog"] = "%{wks.location}/Engine/lib/spdlog/include"
 IncludeDir["EnTT"] = "%{wks.location}/Engine/lib/EnTT/single_include"
-IncludeDir["llvm"] = "%{wks.location}/Game/lib/llvm/include"
 
 LibraryDir = {}
 LibraryDir["VulkanSDK"] = "%{VULKAN_SDK}/Lib"

@@ -43,7 +43,7 @@ namespace Engine
     if (entity.has<T>())
     {
       T& component = entity.get<T>();
-      float contentRegionAvailalbeWidth = ImGui::GetContentRegionAvailWidth();
+      float contentRegionAvailalbeWidth = ImGui::GetWindowWidth();
 
       ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(4, 4));
       float lineHeight = GImGui->Font->FontSize + 2.0f * GImGui->Style.FramePadding.y;
@@ -258,7 +258,7 @@ namespace Engine
       s_SelectionContext = {};
 
     // Right-click on blank space
-    if (ImGui::BeginPopupContextWindow(0, 1, false))
+    if (ImGui::BeginPopupContextWindow(0, false))
     {
       if (ImGui::MenuItem("Create Empty Entity"))
         Scene::CreateEntity("Empty Entity");

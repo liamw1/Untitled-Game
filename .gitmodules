@@ -8,7 +8,7 @@
 	branch = master
 [submodule "Engine/lib/imgui"]
 	path = Engine/lib/imgui
-	url = https://github.com/TheCherno/imgui
+	url = https://github.com/ocornut/imgui
 	branch = docking
 [submodule "Engine/lib/glm"]
 	path = Engine/lib/glm

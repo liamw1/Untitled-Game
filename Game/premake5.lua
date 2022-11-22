@@ -13,9 +13,7 @@ project "Game"
 	files
 	{
 		"src/**.h",
-		"src/**.cpp",
-		"%{IncludeDir.llvm}/**.h",
-		"%{IncludeDir.llvm}/**.cpp"
+		"src/**.cpp"
 	}
 
 	includedirs
@@ -29,8 +27,7 @@ project "Game"
 		"%{IncludeDir.spdlog}",
 		"%{IncludeDir.ImGui}",
 		"%{IncludeDir.glm}",
-		"%{IncludeDir.EnTT}",
-		"%{IncludeDir.llvm}"
+		"%{IncludeDir.EnTT}"
 	}
 
 	links
@@ -48,7 +45,7 @@ project "Game"
 
 		postbuildcommands
 		{
-            "{COPY} ../bin/" .. outputdir .. "/Engine/Engine.pdb" .. " ../bin/" .. outputdir .. "/%{prj.name}"
+            		"{COPY} ../bin/" .. outputdir .. "/Engine/Engine.pdb" .. " ../bin/" .. outputdir .. "/%{prj.name}"
 		}
 
 	filter "configurations:Release"
