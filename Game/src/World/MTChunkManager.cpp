@@ -53,7 +53,7 @@ void MTChunkManager::render()
 
         if (!chunk.m_Mesh.empty())
         {
-          chunk.setMesh(chunk.m_Mesh.data(), chunk.m_Mesh.size() / 4);
+          chunk.setMesh(chunk.m_Mesh.data(), static_cast<uint16_t>(chunk.m_Mesh.size() / 4));
           chunk.m_Mesh.clear();
         }
 
