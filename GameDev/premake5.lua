@@ -19,11 +19,7 @@ project "GameDev"
 	includedirs
 	{
 		"src",
-		"%{wks.location}/Engine/src"
-	}
-
-	sysincludedirs
-	{
+		"%{wks.location}/Engine/src",
 		"%{IncludeDir.spdlog}",
 		"%{IncludeDir.ImGui}",
 		"%{IncludeDir.glm}",

@@ -24,11 +24,7 @@ project "Engine"
 
 	includedirs
 	{
-		"src"
-	}
-
-	sysincludedirs
-	{
+		"src",
 		"%{IncludeDir.spdlog}",
 		"%{IncludeDir.GLFW}",
 		"%{IncludeDir.GLad}",
