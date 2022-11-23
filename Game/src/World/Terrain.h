@@ -45,10 +45,8 @@ namespace Terrain
     operator CompoundSurfaceData () const { return CompoundSurfaceData(elevation, blockType); }
   };
 
-
-
-  void GenerateNew(Chunk* chunk);
-  void GenerateEmpty(Chunk* chunk);
+  Chunk GenerateNew(const GlobalIndex& chunkIndex);
+  Chunk GenerateEmpty(const GlobalIndex& chunkIndex);
 
   void Clean(int unloadDistance);
 

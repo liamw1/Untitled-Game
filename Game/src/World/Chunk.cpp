@@ -4,29 +4,29 @@
 #include <iostream>
 
 Chunk::Chunk()
-  : m_Composition(nullptr), m_NonOpaqueFaces(0), m_QuadCount(0), m_GlobalIndex({})
+  : m_Composition(nullptr),
+    m_NonOpaqueFaces(0),
+    m_QuadCount(0),
+    m_GlobalIndex({})
 {
 }
 
 Chunk::Chunk(const GlobalIndex& chunkIndex)
-  : m_Composition(nullptr), m_NonOpaqueFaces(0), m_QuadCount(0), m_GlobalIndex(chunkIndex)
+  : m_Composition(nullptr),
+    m_NonOpaqueFaces(0),
+    m_QuadCount(0),
+    m_GlobalIndex(chunkIndex)
 {
-}
-
-Chunk::~Chunk()
-{
-  clear();
 }
 
 Chunk::Chunk(Chunk&& other) noexcept
   : m_Mesh(std::move(other.m_Mesh)),
     m_VertexArray(std::move(other.m_VertexArray)),
+    m_Composition(std::move(other.m_Composition)),
     m_GlobalIndex(other.m_GlobalIndex),
     m_NonOpaqueFaces(other.m_NonOpaqueFaces),
     m_QuadCount(other.m_QuadCount)
 {
-  m_Composition = other.m_Composition;
-  other.m_Composition = nullptr;
 }
 
 Chunk& Chunk::operator=(Chunk&& other) noexcept
@@ -35,13 +35,10 @@ Chunk& Chunk::operator=(Chunk&& other) noexcept
   {
     m_Mesh = std::move(other.m_Mesh);
     m_VertexArray = std::move(other.m_VertexArray);
+    m_Composition = std::move(other.m_Composition);
     m_GlobalIndex = other.m_GlobalIndex;
     m_NonOpaqueFaces = other.m_NonOpaqueFaces;
     m_QuadCount = other.m_QuadCount;
-
-    delete[] m_Composition;
-    m_Composition = other.m_Composition;
-    other.m_Composition = nullptr;
   }
   return *this;
 }
@@ -109,14 +106,13 @@ void Chunk::setBlockType(blockIndex_t i, blockIndex_t j, blockIndex_t k, Block::
 {
   EN_ASSERT(0 <= i && i < Chunk::Size() && 0 <= j && j < Chunk::Size() && 0 <= k && k < Chunk::Size(), "Index is out of bounds!");
 
-  if (isEmpty())
+  if (empty())
   {
     if (blockType == Block::Type::Air)
       return;
 
-    m_Composition = new Block::Type[Chunk::TotalBlocks()];
-    for (int i = 0; i < Chunk::TotalBlocks(); ++i)
-      m_Composition[i] = Block::Type::Air;
+    // Elements will be default initialized to 0 (Air)
+    m_Composition = std::make_unique<Block::Type[]>(Chunk::TotalBlocks());
   }
 
   m_Composition[i * Chunk::Size() * Chunk::Size() + j * Chunk::Size() + k] = blockType;
@@ -127,25 +123,29 @@ void Chunk::setBlockType(const BlockIndex& blockIndex, Block::Type blockType)
   setBlockType(blockIndex.i, blockIndex.j, blockIndex.k, blockType);
 }
 
-void Chunk::setData(Block::Type* composition)
+void Chunk::setData(std::unique_ptr<Block::Type[]> composition)
 {
   if (m_Composition)
-  {
     EN_WARN("Calling setData on a non-empty chunk!  Deleting previous allocation...");
-    delete[] m_Composition;
-  }
-  m_Composition = composition;
+  m_Composition = std::move(composition);
   determineOpacity();
 }
 
-void Chunk::setMesh(const uint32_t* meshData, uint16_t quadCount)
+void Chunk::uploadMesh()
 {
-  m_VertexArray = Engine::VertexArray::Create();
-  m_VertexArray->setLayout(s_VertexBufferLayout);
-  m_VertexArray->setIndexBuffer(s_IndexBuffer);
+  if (m_Mesh.empty())
+    return;
 
-  m_QuadCount = quadCount;
-  m_VertexArray->setVertexBuffer(meshData, 4 * sizeof(uint32_t) * m_QuadCount);
+  if (!m_VertexArray)
+  {
+    m_VertexArray = Engine::VertexArray::Create();
+    m_VertexArray->setLayout(s_VertexBufferLayout);
+    m_VertexArray->setIndexBuffer(s_IndexBuffer);
+  }
+
+  m_QuadCount = static_cast<uint16_t>(m_Mesh.size() / 4);
+  m_VertexArray->setVertexBuffer(m_Mesh.data(), 4 * sizeof(uint32_t) * m_QuadCount);
+  m_Mesh.clear();
 }
 
 void Chunk::determineOpacity()
@@ -175,8 +175,14 @@ void Chunk::determineOpacity()
   }
 }
 
-void Chunk::update()
+void Chunk::internalUpdate(const std::vector<uint32_t>& mesh)
 {
+  EN_ASSERT(mesh.size() / 4 < std::numeric_limits<uint16_t>::max(), "Mesh has more than the maximum allowable number of quads!");
+
+  m_Mesh = mesh;
+  if (!empty() && m_Mesh.empty() && getBlockType(0, 0, 0) == Block::Type::Air)
+    m_Composition.reset();
+
   determineOpacity();
 }
 
@@ -192,22 +198,12 @@ void Chunk::draw() const
   Engine::RenderCommand::DrawIndexed(m_VertexArray.get(), meshIndexCount);
 }
 
-void Chunk::clear()
-{
-  if (m_Composition)
-  {
-    delete[] m_Composition;
-    m_Composition = nullptr;
-  }
-}
-
 void Chunk::reset()
 {
-  clear();
-
   // Reset data to default values
   m_Mesh.clear();
   m_VertexArray.reset();
+  m_Composition.reset();
   m_GlobalIndex = {};
   m_NonOpaqueFaces = 0;
   m_QuadCount = 0;

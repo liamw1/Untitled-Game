@@ -9,8 +9,7 @@ static const Biome s_DefaultBiome = Biome::Get(Biome::Type::Default);
 class ChunkFiller
 {
 public:
-  static void Clear(Chunk* chunk) { chunk->clear(); }
-  static void SetData(Chunk* chunk, Block::Type* composition) { chunk->setData(composition); }
+  static void SetData(Chunk& chunk, std::unique_ptr<Block::Type[]> composition) { chunk.setData(std::move(composition)); }
 };
 
 struct HeightMap
@@ -107,21 +106,21 @@ std::array<int, 2> Terrain::CompoundSurfaceData::getTextureIndices() const
 
 
 
-static Block::Type getBlockType(const Block::Type* composition, blockIndex_t i, blockIndex_t j, blockIndex_t k)
+static Block::Type getBlockType(const std::unique_ptr<Block::Type[]>& composition, blockIndex_t i, blockIndex_t j, blockIndex_t k)
 {
   EN_ASSERT(composition, "Composition does not exist!");
   EN_ASSERT(0 <= i && i < Chunk::Size() && 0 <= j && j < Chunk::Size() && 0 <= k && k < Chunk::Size(), "Index is out of bounds!");
   return composition[Chunk::Size() * Chunk::Size() * i + Chunk::Size() * j + k];
 }
 
-static void setBlockType(Block::Type* composition, blockIndex_t i, blockIndex_t j, blockIndex_t k, Block::Type blockType)
+static void setBlockType(std::unique_ptr<Block::Type[]>& composition, blockIndex_t i, blockIndex_t j, blockIndex_t k, Block::Type blockType)
 {
   EN_ASSERT(composition, "Composition does not exist!");
   EN_ASSERT(0 <= i && i < Chunk::Size() && 0 <= j && j < Chunk::Size() && 0 <= k && k < Chunk::Size(), "Index is out of bounds!");
   composition[Chunk::Size() * Chunk::Size() * i + Chunk::Size() * j + k] = blockType;
 }
 
-static bool isEmpty(Block::Type* composition)
+static bool isEmpty(const std::unique_ptr<Block::Type[]>& composition)
 {
   EN_ASSERT(composition, "Composition does not exist!");
   for (int i = 0; i < Chunk::TotalBlocks(); ++i)
@@ -166,7 +165,7 @@ static float calcSurfaceTemperature(float seaLevelTemperature, length_t surfaceE
   return seaLevelTemperature - tempDropPerBlock * static_cast<float>(surfaceElevation / Block::Length());
 }
 
-static void heightMapStage(Block::Type* composition, const GlobalIndex& chunkIndex)
+static void heightMapStage(std::unique_ptr<Block::Type[]>& composition, const GlobalIndex& chunkIndex)
 {
   // Generates heightmap is none exists
   const HeightMap& heightMap = getHeightMap(chunkIndex);
@@ -206,45 +205,38 @@ static void heightMapStage(Block::Type* composition, const GlobalIndex& chunkInd
     }
 }
 
-void Terrain::GenerateNew(Chunk* chunk)
+Chunk Terrain::GenerateNew(const GlobalIndex& chunkIndex)
 {
-  EN_ASSERT(chunk, "Chunk does not exist!");
+  Chunk chunk(chunkIndex);
 
   std::lock_guard lock(s_Mutex);
 
   static const length_t globalMinTerrainHeight = s_DefaultBiome.minElevation();
   static const length_t globalMaxTerrainHeight = s_DefaultBiome.maxElevation();
 
-  if (!chunk->isEmpty())
-  {
-    EN_WARN("Calling generate on a non-empty chunk!  Deleting previous allocation...");
-    ChunkFiller::Clear(chunk);
-  }
-
-  length_t chunkFloor = Chunk::Length() * chunk->getGlobalIndex().k;
+  length_t chunkFloor = Chunk::Length() * chunkIndex.k;
   if (chunkFloor > globalMaxTerrainHeight)
   {
     ChunkFiller::SetData(chunk, nullptr);
-    return;
+    return chunk;
   }
 
-  Block::Type* composition = new Block::Type[Chunk::TotalBlocks()];
-  heightMapStage(composition, chunk->getGlobalIndex());
+  std::unique_ptr<Block::Type[]> composition = std::make_unique_for_overwrite<Block::Type[]>(Chunk::TotalBlocks());
+  heightMapStage(composition, chunkIndex);
 
   if (isEmpty(composition))
-  {
-    delete[] composition;
-    composition = nullptr;
-  }
+    composition.reset();
 
   // Chunk takes ownership of composition
-  ChunkFiller::SetData(chunk, composition);
+  ChunkFiller::SetData(chunk, std::move(composition));
+  return chunk;
 }
 
-void Terrain::GenerateEmpty(Chunk* chunk)
+Chunk Terrain::GenerateEmpty(const GlobalIndex& chunkIndex)
 {
-  EN_ASSERT(chunk, "Chunk does not exist!");
+  Chunk chunk(chunkIndex);
   ChunkFiller::SetData(chunk, nullptr);
+  return chunk;
 }
 
 void Terrain::Clean(int unloadDistance)

@@ -11,7 +11,6 @@ class Chunk
 public:
   Chunk();
   Chunk(const GlobalIndex& chunkIndex);
-  ~Chunk();
 
   Chunk(Chunk&& other) noexcept;
   Chunk& operator=(Chunk&& other) noexcept;
@@ -44,13 +43,10 @@ public:
   */
   Vec3 center() const { return anchorPosition() + Chunk::Length() / 2; }
 
-  bool isEmpty() const { return m_Composition == nullptr; }
-  bool isFaceOpaque(Block::Face face) const { return !(m_NonOpaqueFaces & bit(static_cast<int>(face))); }
+  bool empty() const { return m_Composition == nullptr; }
 
   Block::Type getBlockType(blockIndex_t i, blockIndex_t j, blockIndex_t k) const;
   Block::Type getBlockType(const BlockIndex& blockIndex) const;
-
-  uint32_t getQuadCount() const { return m_QuadCount; }
 
   static constexpr blockIndex_t Size() { return s_ChunkSize; }
   static constexpr length_t Length() { return Block::Length() * s_ChunkSize; }
@@ -78,26 +74,36 @@ private:
   mutable std::mutex m_Mutex;
   std::vector<uint32_t> m_Mesh;
   Unique<Engine::VertexArray> m_VertexArray;
-  Block::Type* m_Composition;
+  std::unique_ptr<Block::Type[]> m_Composition;
   GlobalIndex m_GlobalIndex;
   uint16_t m_NonOpaqueFaces;
   uint16_t m_QuadCount;
 
+  /*
+    \return Whether or not a given chunk face has transparent blocks. Useful for deciding which chunks should be loaded
+    into memory.
+
+    WARNING: This function only reflects the opacity state of the chunk when determineOpacity() was last called. If any
+    changes to chunk composition occured since then, this function may not be accureate. This is because determineOpacity
+    is a costly operation (at least relative to the cost of changing a single block), so we prefer to only compute opacity
+    when the chunk is updated via setData or internalUpdate. Use with caution.
+  */
+  bool isFaceOpaque(Block::Face face) const { return !(m_NonOpaqueFaces & bit(static_cast<int>(face))); }
+
   void setBlockType(blockIndex_t i, blockIndex_t j, blockIndex_t k, Block::Type blockType);
   void setBlockType(const BlockIndex& blockIndex, Block::Type blockType);
 
-  void setData(Block::Type* composition);
-  void setMesh(const uint32_t* meshData, uint16_t quadCount);
+  void setData(std::unique_ptr<Block::Type[]> composition);
+  void uploadMesh();
   void determineOpacity();
 
-  void update();
+  void internalUpdate(const std::vector<uint32_t>& mesh);
   void draw() const;
-  void clear();
   void reset();
 
   std::lock_guard<std::mutex> acquireLock() const { return std::lock_guard(m_Mutex); };
 
-  friend class ChunkManager;
-  friend class MTChunkManager; // Remove
   friend class ChunkFiller;
+  friend class ChunkManager;
+  friend class ChunkContainer;
 };

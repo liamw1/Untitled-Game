@@ -4,7 +4,6 @@
 #include "Engine/Renderer/Renderer.h"
 
 #define USE_LODS false
-#define PLAYER_INTERACTION false
 
 static constexpr bool createLODs = false;
 
@@ -17,8 +16,8 @@ static constexpr blockIndex_t modulo(globalIndex_t a, blockIndex_t b)
 void World::initialize()
 {
   m_ChunkManager.setLoadModeVoid();
-  m_ChunkManager.loadChunk({ 0, 0, 1 }, Block::Type::Air);
-  m_ChunkManager.loadChunk({ 0, 0, 0 }, Block::Type::Sand);
+  m_ChunkManager.loadChunk({ 0, -1, 2 }, Block::Type::Air);
+  m_ChunkManager.loadChunk({ 0, -1, 1 }, Block::Type::Sand);
   m_ChunkManager.launchLoadThread();
   m_ChunkManager.launchUpdateThread();
 
@@ -119,9 +118,7 @@ RayIntersection World::castRaySegment(const Vec3& pointA, const Vec3& pointB) co
 
         // Search to see if chunk is loaded
         auto [chunk, lock] = m_ChunkManager.acquireChunk(chunkIndex);
-        if (chunk == nullptr)
-          continue;
-        else if (chunk->isEmpty())
+        if (!chunk || chunk->empty())
           continue;
 
         // If block has collision, note the intersection and move to next spatial direction
@@ -228,7 +225,7 @@ void World::playerWorldInteraction()
 
     if (Engine::Input::IsMouseButtonPressed(Mouse::ButtonLeft))
       m_ChunkManager.removeBlock(chunkIndex, blockIndex);
-    if (Engine::Input::IsMouseButtonPressed(Mouse::ButtonRight) && m_PlayerRayCast.distance > 2.5 * Block::Length())
+    else if (Engine::Input::IsMouseButtonPressed(Mouse::ButtonRight) && m_PlayerRayCast.distance > 2.5 * Block::Length())
       m_ChunkManager.placeBlock(chunkIndex, blockIndex, rayCastFace, Block::Type::Snow);
   }
 }
