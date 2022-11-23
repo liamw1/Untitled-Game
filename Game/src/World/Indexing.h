@@ -66,12 +66,12 @@ struct Index3D
              static_cast<intType>(vec.z) };
   }
 
-  static constexpr Index3D<intType> OutwardNormal(Block::Face face)
+  static constexpr Index3D<intType> Dir(Block::Face face)
   {
-    static constexpr Index3D<intType> normals[6] = { { -1, 0, 0}, { 1, 0, 0}, { 0, -1, 0}, { 0, 1, 0}, { 0, 0, -1}, { 0, 0, 1} };
-                                                //       West        East        South        North       Bottom        Top
+    static constexpr Index3D<intType> directions[6] = { { -1, 0, 0}, { 1, 0, 0}, { 0, -1, 0}, { 0, 1, 0}, { 0, 0, -1}, { 0, 0, 1} };
+                                                   //       West        East        South        North       Bottom        Top
 
-    return normals[static_cast<int>(face)];
+    return directions[static_cast<int>(face)];
   }
 
   static constexpr Index3D<intType> CreatePermuted(intType i, intType j, intType k, int permutation)

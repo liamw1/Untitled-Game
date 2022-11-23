@@ -56,7 +56,7 @@ LocalIndex Chunk::getLocalIndex() const
 
 Block::Type Chunk::getBlockType(blockIndex_t i, blockIndex_t j, blockIndex_t k) const
 {
-  EN_ASSERT(!isEmpty(), "Chunk is empty!");
+  EN_ASSERT(!empty(), "Chunk is empty!");
   EN_ASSERT(0 <= i && i < Chunk::Size() && 0 <= j && j < Chunk::Size() && 0 <= k && k < Chunk::Size(), "Index is out of bounds!");
   return m_Composition[i * Chunk::Size() * Chunk::Size() + j * Chunk::Size() + k];
 }

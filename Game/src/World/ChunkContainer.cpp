@@ -116,7 +116,7 @@ std::unordered_set<GlobalIndex> ChunkContainer::findAllLoadableIndices() const
   for (const auto& [key, chunk] : m_BoundaryChunks)
     for (Block::Face face : Block::FaceIterator())
     {
-      GlobalIndex neighborIndex = chunk->getGlobalIndex() + GlobalIndex::OutwardNormal(face);
+      GlobalIndex neighborIndex = chunk->getGlobalIndex() + GlobalIndex::Dir(face);
       if (Util::IsInRangeOfPlayer(neighborIndex, c_LoadDistance) && newChunkIndices.find(neighborIndex) == newChunkIndices.end())
         if (!chunk->isFaceOpaque(face) && !isLoaded(neighborIndex))
           newChunkIndices.insert(neighborIndex);
@@ -162,14 +162,14 @@ void ChunkContainer::sendBlockUpdate(const GlobalIndex& chunkIndex, const BlockI
   // Update neighbors in cardinal directions
   for (Block::Face face : updateDirections)
   {
-    GlobalIndex neighborIndex = chunkIndex + GlobalIndex::OutwardNormal(face);
+    GlobalIndex neighborIndex = chunkIndex + GlobalIndex::Dir(face);
     m_ForceUpdateQueue.add(neighborIndex);
   }
 
   // Queue edge neighbor for updating
   if (updateDirections.size() == 2)
   {
-    GlobalIndex edgeNeighborIndex = chunkIndex + GlobalIndex::OutwardNormal(updateDirections[0]) + GlobalIndex::OutwardNormal(updateDirections[1]);
+    GlobalIndex edgeNeighborIndex = chunkIndex + GlobalIndex::Dir(updateDirections[0]) + GlobalIndex::Dir(updateDirections[1]);
     m_LazyUpdateQueue.add(edgeNeighborIndex);
   }
 
@@ -180,10 +180,10 @@ void ChunkContainer::sendBlockUpdate(const GlobalIndex& chunkIndex, const BlockI
     for (int i = 0; i < 3; ++i)
     {
       int j = (i + 1) % 3;
-      GlobalIndex edgeNeighborIndex = chunkIndex + GlobalIndex::OutwardNormal(updateDirections[i]) + GlobalIndex::OutwardNormal(updateDirections[j]);
+      GlobalIndex edgeNeighborIndex = chunkIndex + GlobalIndex::Dir(updateDirections[i]) + GlobalIndex::Dir(updateDirections[j]);
       m_LazyUpdateQueue.add(edgeNeighborIndex);
 
-      cornerNeighborIndex += GlobalIndex::OutwardNormal(updateDirections[i]);
+      cornerNeighborIndex += GlobalIndex::Dir(updateDirections[i]);
     }
 
     m_LazyUpdateQueue.add(cornerNeighborIndex);
@@ -240,7 +240,7 @@ bool ChunkContainer::isOnBoundary(const Chunk* chunk) const
   EN_ASSERT(chunk, "Chunk does not exist!");
 
   for (Block::Face face : Block::FaceIterator())
-    if (!isLoaded(chunk->getGlobalIndex() + GlobalIndex::OutwardNormal(face)) && !chunk->isFaceOpaque(face))
+    if (!isLoaded(chunk->getGlobalIndex() + GlobalIndex::Dir(face)) && !chunk->isFaceOpaque(face))
       return true;
   return false;
 }
@@ -288,7 +288,7 @@ void ChunkContainer::sendChunkLoadUpdate(Chunk* newChunk)
   // Move cardinal neighbors out of m_BoundaryChunks if they are no longer on boundary
   for (Block::Face face : Block::FaceIterator())
   {
-    Chunk* neighbor = find(newChunk->getGlobalIndex() + GlobalIndex::OutwardNormal(face));
+    Chunk* neighbor = find(newChunk->getGlobalIndex() + GlobalIndex::Dir(face));
     if (neighbor && getChunkType(neighbor) == ChunkType::Boundary)
       boundaryChunkUpdate(neighbor);
   }
@@ -298,7 +298,7 @@ void ChunkContainer::sendChunkRemovalUpdate(const GlobalIndex& removalIndex)
 {
   for (Block::Face face : Block::FaceIterator())
   {
-    Chunk* neighbor = find(removalIndex + GlobalIndex::OutwardNormal(face));
+    Chunk* neighbor = find(removalIndex + GlobalIndex::Dir(face));
 
     if (neighbor)
     {

@@ -107,7 +107,7 @@ void ChunkManager::placeBlock(const GlobalIndex& chunkIndex, BlockIndex blockInd
 
     if (Util::BlockNeighborIsInAnotherChunk(blockIndex, face))
     {
-      auto [neighbor, neighborLock] = m_ChunkContainer.acquireChunk(chunk->getGlobalIndex() + GlobalIndex::OutwardNormal(face));
+      auto [neighbor, neighborLock] = m_ChunkContainer.acquireChunk(chunk->getGlobalIndex() + GlobalIndex::Dir(face));
 
       if (!neighbor)
         return;
@@ -115,10 +115,10 @@ void ChunkManager::placeBlock(const GlobalIndex& chunkIndex, BlockIndex blockInd
       chunk = neighbor;
       lock = std::move(neighborLock);
 
-      blockIndex -= static_cast<blockIndex_t>(Chunk::Size() - 1) * BlockIndex::OutwardNormal(face);
+      blockIndex -= static_cast<blockIndex_t>(Chunk::Size() - 1) * BlockIndex::Dir(face);
     }
     else
-      blockIndex += BlockIndex::OutwardNormal(face);
+      blockIndex += BlockIndex::Dir(face);
 
     // If trying to place an air block or trying to place a block in a space occupied by another block, do nothing
     if (blockType == Block::Type::Air || (!chunk->empty() && chunk->getBlockType(blockIndex) != Block::Type::Air))
@@ -261,7 +261,7 @@ std::vector<uint32_t> ChunkManager::createMesh(const GlobalIndex& chunkIndex) co
     int faceIndex = IsPositive(face) ? Chunk::Size() : -1;
     int neighborFaceIndex = IsPositive(face) ? 0 : Chunk::Size() - 1;
 
-    auto [neighbor, lock] = m_ChunkContainer.acquireChunk(chunkIndex + GlobalIndex::OutwardNormal(face));
+    auto [neighbor, lock] = m_ChunkContainer.acquireChunk(chunkIndex + GlobalIndex::Dir(face));
     if (neighbor)
       for (blockIndex_t i = 0; i < Chunk::Size(); ++i)
         for (blockIndex_t j = 0; j < Chunk::Size(); ++j)
@@ -293,7 +293,7 @@ std::vector<uint32_t> ChunkManager::createMesh(const GlobalIndex& chunkIndex) co
       int v = GetCoordID(faceB);
       int w = (2 * (u + v)) % 3;  // Extracts coordID that runs along edge
 
-      auto [neighbor, lock] = m_ChunkContainer.acquireChunk(chunkIndex + GlobalIndex::OutwardNormal(faceA) + GlobalIndex::OutwardNormal(faceB));
+      auto [neighbor, lock] = m_ChunkContainer.acquireChunk(chunkIndex + GlobalIndex::Dir(faceA) + GlobalIndex::Dir(faceB));
       if (neighbor)
         for (blockIndex_t i = 0; i < Chunk::Size(); ++i)
         {
@@ -355,7 +355,7 @@ std::vector<uint32_t> ChunkManager::createMesh(const GlobalIndex& chunkIndex) co
 
         if (blockType != Block::Type::Air)
           for (Block::Face face : Block::FaceIterator())
-            if (Block::HasTransparency(getBlockType(blockData, BlockIndex(i, j, k) + BlockIndex::OutwardNormal(face))))
+            if (Block::HasTransparency(getBlockType(blockData, BlockIndex(i, j, k) + BlockIndex::Dir(face))))
             {
               int textureID = static_cast<int>(Block::GetTexture(blockType, face));
               int faceID = static_cast<int>(face);
@@ -368,9 +368,9 @@ std::vector<uint32_t> ChunkManager::createMesh(const GlobalIndex& chunkIndex) co
                 Block::Face sideADir = static_cast<Block::Face>(2 * v + offsets[faceID][vert][v]);
                 Block::Face sideBDir = static_cast<Block::Face>(2 * w + offsets[faceID][vert][w]);
 
-                BlockIndex sideA = BlockIndex(i, j, k) + BlockIndex::OutwardNormal(face) + BlockIndex::OutwardNormal(sideADir);
-                BlockIndex sideB = BlockIndex(i, j, k) + BlockIndex::OutwardNormal(face) + BlockIndex::OutwardNormal(sideBDir);
-                BlockIndex corner = BlockIndex(i, j, k) + BlockIndex::OutwardNormal(face) + BlockIndex::OutwardNormal(sideADir) + BlockIndex::OutwardNormal(sideBDir);
+                BlockIndex sideA = BlockIndex(i, j, k) + BlockIndex::Dir(face) + BlockIndex::Dir(sideADir);
+                BlockIndex sideB = BlockIndex(i, j, k) + BlockIndex::Dir(face) + BlockIndex::Dir(sideBDir);
+                BlockIndex corner = BlockIndex(i, j, k) + BlockIndex::Dir(face) + BlockIndex::Dir(sideADir) + BlockIndex::Dir(sideBDir);
 
                 bool sideAIsOpaque = !Block::HasTransparency(getBlockType(blockData, sideA));
                 bool sideBIsOpaque = !Block::HasTransparency(getBlockType(blockData, sideB));
