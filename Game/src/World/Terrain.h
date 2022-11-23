@@ -48,6 +48,7 @@ namespace Terrain
 
 
   void GenerateNew(Chunk* chunk);
+  void GenerateEmpty(Chunk* chunk);
 
   void Clean(int unloadDistance);
 

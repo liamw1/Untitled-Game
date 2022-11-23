@@ -241,6 +241,12 @@ void Terrain::GenerateNew(Chunk* chunk)
   ChunkFiller::SetData(chunk, composition);
 }
 
+void Terrain::GenerateEmpty(Chunk* chunk)
+{
+  EN_ASSERT(chunk, "Chunk does not exist!");
+  ChunkFiller::SetData(chunk, nullptr);
+}
+
 void Terrain::Clean(int unloadDistance)
 {
   std::lock_guard lock(s_Mutex);

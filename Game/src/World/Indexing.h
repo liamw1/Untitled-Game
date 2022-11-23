@@ -121,15 +121,6 @@ constexpr Index3D<intType> operator*(intType n, const Index3D<intType>& index)
            static_cast<intType>(n * index.k) };
 }
 
-namespace std
-{
-  template<typename intType>
-  inline ostream& operator<<(ostream& os, const Index3D<intType>& index)
-  {
-    return os << '(' << static_cast<int>(index.i) << ", " << static_cast<int>(index.j) << ", " << static_cast<int>(index.k) << ')';
-  }
-}
-
 
 
 // =========== Precision selection for Indices ============= //
@@ -146,3 +137,23 @@ using globalIndex_t = typename GlobalIndexSelector<std::is_same<double, length_t
 using BlockIndex = Index3D<blockIndex_t>;
 using LocalIndex = Index3D<localIndex_t>;
 using GlobalIndex = Index3D<globalIndex_t>;
+
+
+
+namespace std
+{
+  template<typename intType>
+  inline ostream& operator<<(ostream& os, const Index3D<intType>& index)
+  {
+    return os << '(' << static_cast<int>(index.i) << ", " << static_cast<int>(index.j) << ", " << static_cast<int>(index.k) << ')';
+  }
+
+  template<>
+  struct hash<GlobalIndex>
+  {
+    int operator()(const GlobalIndex& index) const
+    {
+      return index.i % bitUi32(10) + bitUi32(10) * (index.j % bitUi32(10)) + bitUi32(20) * (index.k % bitUi32(10));
+    }
+  };
+}

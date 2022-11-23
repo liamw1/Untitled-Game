@@ -14,16 +14,15 @@ MTChunkManager::MTChunkManager()
   m_OpenChunkSlots = std::stack<int, std::vector<int>>(stackData);
   for (int i = s_MaxChunks - 1; i >= 0; --i)
     m_OpenChunkSlots.push(i);
-
-  m_LoadThread = std::thread(&MTChunkManager::loadWorker, this);
-  m_UpdateThread = std::thread(&MTChunkManager::updateWorker, this);
 }
 
 MTChunkManager::~MTChunkManager()
 {
   m_Running.store(false);
-  m_LoadThread.join();
-  m_UpdateThread.join();
+  if (m_LoadThread.joinable())
+    m_LoadThread.join();
+  if (m_UpdateThread.joinable())
+    m_UpdateThread.join();
 
   delete[] m_ChunkArray;
 }
@@ -62,55 +61,7 @@ void MTChunkManager::render()
     });
 }
 
-void MTChunkManager::loadWorker()
-{
-  using namespace std::chrono_literals;
-
-  while (m_Running.load())
-  {
-    EN_PROFILE_SCOPE("Load worker");
-
-    mapType<int, GlobalIndex> newChunkPositions;
-    forEach(ChunkType::Boundary, [&](const Chunk& chunk)
-      {
-        for (Block::Face face : Block::FaceIterator())
-        {
-          GlobalIndex neighborIndex = chunk.getGlobalIndex() + GlobalIndex::OutwardNormal(face);
-          if (Util::IsInRangeOfPlayer(neighborIndex, s_LoadDistance) && newChunkPositions.find(Util::CreateKey(neighborIndex)) == newChunkPositions.end())
-            if (!chunk.isFaceOpaque(face) && !isLoaded(neighborIndex))
-              newChunkPositions.insert({ Util::CreateKey(neighborIndex), neighborIndex });
-        }
-      });
-
-    // Load First chunk if none exist
-    if (m_OpenChunkSlots.size() == s_MaxChunks)
-      newChunkPositions.insert({ Util::CreateKey(Player::OriginIndex()), Player::OriginIndex() });
-
-    if (!newChunkPositions.empty())
-      for (const auto& [key, newChunkIndex] : newChunkPositions)
-      {
-        Chunk chunk(newChunkIndex);
-        Terrain::GenerateNew(&chunk);
-        insert(std::move(chunk));
-      }
-    else
-      std::this_thread::sleep_for(100ms);
-  }
-}
-
-void MTChunkManager::updateWorker()
-{
-  while (m_Running.load())
-  {
-    EN_PROFILE_SCOPE("Update worker");
-
-    GlobalIndex updateIndex = m_LazyUpdateQueue.waitAndRemoveOne();
-    std::vector<uint32_t> mesh = createMesh(updateIndex);
-    update(updateIndex, mesh);
-  }
-}
-
-void MTChunkManager::updateChunks(int maxUpdates)
+void MTChunkManager::update()
 {
   EN_PROFILE_FUNCTION();
 
@@ -127,11 +78,7 @@ void MTChunkManager::updateChunks(int maxUpdates)
 
       // TODO: Consolidate these into separate functions
       if (!loaded)
-      {
-        Chunk chunk(*updateIndex);
-        Terrain::GenerateNew(&chunk);
-        insert(std::move(chunk));
-      }
+        loadNewChunk(*updateIndex);
 
       std::vector<uint32_t> mesh = createMesh(*updateIndex);
       update(*updateIndex, mesh);
@@ -212,6 +159,77 @@ void MTChunkManager::removeBlock(const GlobalIndex& chunkIndex, const BlockIndex
   }
 
   sendBlockUpdate(chunkIndex, blockIndex);
+}
+
+void MTChunkManager::loadChunk(const GlobalIndex& chunkIndex, Block::Type blockType)
+{
+  Block::Type* composition = new Block::Type[Chunk::TotalBlocks()];
+  for (int i = 0; i < Chunk::TotalBlocks(); ++i)
+    composition[i] = blockType;
+
+  Chunk newChunk(chunkIndex);
+  newChunk.setData(composition);
+  insert(std::move(newChunk));
+}
+
+
+
+void MTChunkManager::loadWorker()
+{
+  using namespace std::chrono_literals;
+
+  while (m_Running.load())
+  {
+    EN_PROFILE_SCOPE("Load worker");
+
+    setType<GlobalIndex> newChunkPositions;
+    forEach(ChunkType::Boundary, [&](const Chunk& chunk)
+      {
+        for (Block::Face face : Block::FaceIterator())
+        {
+          GlobalIndex neighborIndex = chunk.getGlobalIndex() + GlobalIndex::OutwardNormal(face);
+          if (Util::IsInRangeOfPlayer(neighborIndex, s_LoadDistance) && newChunkPositions.find(neighborIndex) == newChunkPositions.end())
+            if (!chunk.isFaceOpaque(face) && !isLoaded(neighborIndex))
+              newChunkPositions.insert(neighborIndex);
+        }
+      });
+
+    // Load First chunk if none exist
+    if (m_OpenChunkSlots.size() == s_MaxChunks)
+      newChunkPositions.insert(Player::OriginIndex());
+
+    if (!newChunkPositions.empty())
+      for (const GlobalIndex& newChunkIndex : newChunkPositions)
+        loadNewChunk(newChunkIndex);
+    else
+      std::this_thread::sleep_for(100ms);
+  }
+}
+
+void MTChunkManager::updateWorker()
+{
+  using namespace std::chrono_literals;
+
+  while (m_Running.load())
+  {
+    EN_PROFILE_SCOPE("Update worker");
+
+    std::optional<GlobalIndex> updateIndex = m_LazyUpdateQueue.tryRemove();
+    if (updateIndex)
+    {
+      std::vector<uint32_t> mesh = createMesh(*updateIndex);
+      update(*updateIndex, mesh);
+    }
+    else
+      std::this_thread::sleep_for(100ms);
+  }
+}
+
+void MTChunkManager::loadNewChunk(const GlobalIndex& chunkIndex)
+{
+  Chunk chunk(chunkIndex);
+  m_LoadTerrain ? Terrain::GenerateNew(&chunk) : Terrain::GenerateEmpty(&chunk);
+  insert(std::move(chunk));
 }
 
 
@@ -659,11 +677,7 @@ void MTChunkManager::sendChunkLoadUpdate(Chunk* newChunk)
   for (Block::Face face : Block::FaceIterator())
   {
     Chunk* neighbor = find(newChunk->getGlobalIndex() + GlobalIndex::OutwardNormal(face));
-
-    if (!neighbor)  // TODO: Change this
-      continue;
-
-    if (getChunkType(neighbor) == ChunkType::Boundary)
+    if (neighbor && getChunkType(neighbor) == ChunkType::Boundary)
       boundaryChunkUpdate(neighbor);
   }
 }

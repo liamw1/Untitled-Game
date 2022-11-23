@@ -4,7 +4,7 @@
 
 int Util::CreateKey(const GlobalIndex& chunkIndex)
 {
-  return chunkIndex.i % bitUi32(10) + bitUi32(10) * (chunkIndex.j % bitUi32(10)) + bitUi32(20) * (chunkIndex.k % bitUi32(10));
+  return std::hash<GlobalIndex>{}(chunkIndex);
 }
 
 int Util::CreateKey(const Chunk* chunk)

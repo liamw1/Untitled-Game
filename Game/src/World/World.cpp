@@ -16,6 +16,12 @@ static constexpr blockIndex_t modulo(globalIndex_t a, blockIndex_t b)
 
 void World::initialize()
 {
+  m_ChunkManager.setLoadModeVoid();
+  m_ChunkManager.loadChunk({ 0, 0, 1 }, Block::Type::Air);
+  m_ChunkManager.loadChunk({ 0, 0, 0 }, Block::Type::Sand);
+  m_ChunkManager.launchLoadThread();
+  m_ChunkManager.launchUpdateThread();
+
 #if USE_LODS
   if (createLODs)
     m_ChunkManager.initializeLODs();
@@ -48,8 +54,7 @@ void World::onUpdate(Timestep timestep)
 
   Engine::Renderer::EndScene();
 
-  m_ChunkManager.loadNewChunks(100);
-  m_ChunkManager.updateChunks(100);
+  m_ChunkManager.update();
   m_ChunkManager.clean();
 }
 

@@ -10,12 +10,7 @@ public:
   ~MTChunkManager();
 
   void render();
-
-  void loadWorker();
-  void updateWorker();
-
-  bool loadNewChunks(int maxNewChunks) { return false; };
-  void updateChunks(int maxUpdates);
+  void update();
   void clean();
 
   [[nodiscard]] std::pair<const Chunk*, std::unique_lock<std::mutex>> acquireChunk(const LocalIndex& chunkIndex) const;
@@ -23,8 +18,15 @@ public:
   void placeBlock(const GlobalIndex& chunkIndex, BlockIndex blockIndex, Block::Face face, Block::Type blockType);
   void removeBlock(const GlobalIndex& chunkIndex, const BlockIndex& blockIndex);
 
+  void loadChunk(const GlobalIndex& chunkIndex, Block::Type blockType);
+
+  void setLoadModeTerrain() { m_LoadTerrain = true; }
+  void setLoadModeVoid() { m_LoadTerrain = false; }
+  void launchLoadThread() { m_LoadThread = std::thread(&MTChunkManager::loadWorker, this); }
+  void launchUpdateThread() { m_UpdateThread = std::thread(&MTChunkManager::updateWorker, this); }
+
 private:
-  static constexpr int s_RenderDistance = 32;
+  static constexpr int s_RenderDistance = 8;
   static constexpr int s_LoadDistance = s_RenderDistance + 2;
   static constexpr int s_UnloadDistance = s_LoadDistance;
   static constexpr int s_MaxChunks = (2 * s_UnloadDistance + 1) * (2 * s_UnloadDistance + 1) * (2 * s_UnloadDistance + 1);
@@ -37,6 +39,11 @@ private:
 
     Error
   };
+
+  void loadWorker();
+  void updateWorker();
+
+  void loadNewChunk(const GlobalIndex& chunkIndex);
 
 // Functions which control access to chunk containers
 private:
@@ -58,6 +65,9 @@ private:
   template<typename Key, typename Val>
   using mapType = std::unordered_map<Key, Val>;
 
+  template<typename Val>
+  using setType = std::unordered_set<Val>;
+
   // Chunk pointers
   std::array<mapType<int, Chunk*>, s_ChunkTypes> m_Chunks;
   mapType<int, Chunk*>& m_EmptyChunks = m_Chunks[static_cast<int>(ChunkType::Empty)];
@@ -73,6 +83,8 @@ private:
   std::thread m_LoadThread;
   std::thread m_UpdateThread;
   mutable std::shared_mutex m_ChunkMapMutex;
+
+  bool m_LoadTerrain = false;
 
   class IndexSet
   {
