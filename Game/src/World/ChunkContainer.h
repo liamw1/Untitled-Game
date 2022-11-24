@@ -63,7 +63,7 @@ public:
   std::unordered_set<GlobalIndex> findAllLoadableIndices() const;
 
   /*
-    \returns The chunk along with a lock on its mutex. Chunk will be nullptr is no chunk is found.
+    \returns The chunk along with a lock on its mutex. Will return nullptr is no chunk is found.
   */
   [[nodiscard]] std::pair<Chunk*, std::unique_lock<std::mutex>> acquireChunk(const GlobalIndex& chunkIndex);
   [[nodiscard]] std::pair<const Chunk*, std::unique_lock<std::mutex>> acquireChunk(const GlobalIndex& chunkIndex) const;
@@ -97,7 +97,7 @@ private:
   std::unique_ptr<Chunk[]> m_ChunkArray;
   std::stack<int, std::vector<int>> m_OpenChunkSlots;
 
-  mutable std::shared_mutex m_ChunkMapMutex;
+  mutable std::shared_mutex m_ContainerMutex;
 
   class IndexSet
   {
@@ -115,32 +115,57 @@ private:
 
 // Helper functions for chunk container access. These assume the map mutex has already been locked by one of the public functions
 private:
+  /*
+    \returns True if there exists a chunk in the container at the specified index.
+
+    Requires at minimum a shared lock to be owned on the container mutex.
+  */
   bool isLoaded(const GlobalIndex& chunkIndex) const;
+
+  /*
+    \returns True if the given chunk meets the requirements to be a boundary chunk.
+             Does not check if the chunk is in the boundary map.
+
+    Requires at minimum a shared lock to be owned on the container mutex.
+  */
   bool isOnBoundary(const Chunk* chunk) const;
+
+  /*
+    \returns What type the chunk is currently classified as.
+
+    Requires at minimum a shared lock to be owned on the container mutex.
+  */
   ChunkType getChunkType(const Chunk* chunk) const;
 
   /*
-    \returns The Chunk at the specified chunk index.
-             If no such chunk can be found, returns nullptr.
+    \returns The Chunk at the specified chunk index. If no such chunk can be found, returns nullptr.
+
+    Requires at minium a shared lock to be owned on the container mutex.
   */
   Chunk* find(const GlobalIndex& chunkIndex);
   const Chunk* find(const GlobalIndex& chunkIndex) const;
 
   /*
-    Re-categorizes loaded chunk and its cardinal neighbors if they are
-    no longer on boundary.  Should be called for each newly-loaded chunk.
+    Re-categorizes loaded chunk and its cardinal neighbors if they are no longer on boundary.
+    Should be called for each newly-loaded chunk.
+
+    Requires an exclusive lock on the container mutex, as it will modify chunk maps.
   */
   void sendChunkLoadUpdate(Chunk* newChunk);
 
   /*
     Re-categorizes the cardinal neighbors of a removed chunk as boundary chunks.
     Should be called for each chunk removed by unloadChunk function.
+
+    Requires an exclusive lock on the container mutex, as it will modify chunk maps.
   */
   void sendChunkRemovalUpdate(const GlobalIndex& removalIndex);
 
   /*
     Moves chunk from m_BoundaryChunks if no longer on boundary.
     Given chunk must be a boundary chunk.
+
+    Requires an exclusive lock on the container mutex, as it will modify chunk maps.
   */
   void boundaryChunkUpdate(Chunk* chunk);
 
@@ -148,6 +173,8 @@ private:
     Moves chunk from one grouping to another.
     \param source      The type the chunk is currently classified as.
     \param destination The type the chunk will be classified as.
+
+    Requires an exclusive lock on the container mutex, as it will modify chunk maps.
   */
   void recategorizeChunk(Chunk* chunk, ChunkType source, ChunkType destination);
 };

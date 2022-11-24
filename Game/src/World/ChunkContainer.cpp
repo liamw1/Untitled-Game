@@ -17,7 +17,7 @@ ChunkContainer::ChunkContainer()
 
 bool ChunkContainer::insert(Chunk chunk)
 {
-  std::lock_guard lock(m_ChunkMapMutex);
+  std::lock_guard lock(m_ContainerMutex);
 
   if (m_OpenChunkSlots.empty())
     return false;
@@ -39,7 +39,7 @@ bool ChunkContainer::insert(Chunk chunk)
 
 bool ChunkContainer::erase(const GlobalIndex& chunkIndex)
 {
-  std::lock_guard lock(m_ChunkMapMutex);
+  std::lock_guard lock(m_ContainerMutex);
 
   mapType<int, Chunk*>::iterator erasePosition = m_BoundaryChunks.find(Util::CreateKey(chunkIndex));
   if (erasePosition == m_BoundaryChunks.end())
@@ -64,7 +64,7 @@ bool ChunkContainer::erase(const GlobalIndex& chunkIndex)
 
 bool ChunkContainer::update(const GlobalIndex& chunkIndex, const std::vector<uint32_t>& mesh)
 {
-  std::shared_lock sharedLock(m_ChunkMapMutex);
+  std::shared_lock sharedLock(m_ContainerMutex);
 
   Chunk* chunk = find(chunkIndex);
   if (!chunk)
@@ -86,7 +86,7 @@ bool ChunkContainer::update(const GlobalIndex& chunkIndex, const std::vector<uin
 
   if (source != destination)
   {
-    std::lock_guard lock(m_ChunkMapMutex);
+    std::lock_guard lock(m_ContainerMutex);
     recategorizeChunk(chunk, source, destination);
   }
 
@@ -95,7 +95,7 @@ bool ChunkContainer::update(const GlobalIndex& chunkIndex, const std::vector<uin
 
 void ChunkContainer::forEach(ChunkType chunkType, const std::function<void(Chunk& chunk)>& func) const
 {
-  std::shared_lock lock(m_ChunkMapMutex);
+  std::shared_lock lock(m_ContainerMutex);
 
   for (const auto& [key, chunk] : m_Chunks[static_cast<int>(chunkType)])
     func(*chunk);
@@ -105,7 +105,7 @@ std::vector<GlobalIndex> ChunkContainer::findAll(ChunkType chunkType, bool(*cond
 {
   std::vector<GlobalIndex> indexList;
 
-  std::shared_lock lock(m_ChunkMapMutex);
+  std::shared_lock lock(m_ContainerMutex);
 
   for (const auto& [key, chunk] : m_Chunks[static_cast<int>(chunkType)])
     if (condition(*chunk))
@@ -115,7 +115,7 @@ std::vector<GlobalIndex> ChunkContainer::findAll(ChunkType chunkType, bool(*cond
 
 std::unordered_set<GlobalIndex> ChunkContainer::findAllLoadableIndices() const
 {
-  std::shared_lock lock(m_ChunkMapMutex);
+  std::shared_lock lock(m_ContainerMutex);
 
   std::unordered_set<GlobalIndex> newChunkIndices;
   for (const auto& [key, chunk] : m_BoundaryChunks)
@@ -131,7 +131,7 @@ std::unordered_set<GlobalIndex> ChunkContainer::findAllLoadableIndices() const
 
 std::pair<Chunk*, std::unique_lock<std::mutex>> ChunkContainer::acquireChunk(const GlobalIndex& chunkIndex)
 {
-  std::shared_lock lock(m_ChunkMapMutex);
+  std::shared_lock lock(m_ContainerMutex);
   std::unique_lock<std::mutex> chunkLock;
 
   Chunk* chunk = find(chunkIndex);
@@ -143,7 +143,7 @@ std::pair<Chunk*, std::unique_lock<std::mutex>> ChunkContainer::acquireChunk(con
 
 std::pair<const Chunk*, std::unique_lock<std::mutex>> ChunkContainer::acquireChunk(const GlobalIndex& chunkIndex) const
 {
-  std::shared_lock lock(m_ChunkMapMutex);
+  std::shared_lock lock(m_ContainerMutex);
   std::unique_lock<std::mutex> chunkLock;
 
   const Chunk* chunk = find(chunkIndex);
@@ -197,13 +197,13 @@ void ChunkContainer::sendBlockUpdate(const GlobalIndex& chunkIndex, const BlockI
 
 bool ChunkContainer::empty() const
 {
-  std::shared_lock lock(m_ChunkMapMutex);
+  std::shared_lock lock(m_ContainerMutex);
   return m_OpenChunkSlots.size() == s_MaxChunks;
 }
 
 bool ChunkContainer::contains(const GlobalIndex& chunkIndex) const
 {
-  std::shared_lock lock(m_ChunkMapMutex);
+  std::shared_lock lock(m_ContainerMutex);
   return isLoaded(chunkIndex);
 }
 

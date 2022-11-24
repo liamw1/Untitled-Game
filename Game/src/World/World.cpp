@@ -15,7 +15,7 @@ static constexpr blockIndex_t modulo(globalIndex_t a, blockIndex_t b)
 
 void World::initialize()
 {
-  m_ChunkManager.setLoadModeVoid();
+  m_ChunkManager.setLoadModeTerrain();
   m_ChunkManager.loadChunk({ 0, -1, 2 }, Block::Type::Air);
   m_ChunkManager.loadChunk({ 0, -1, 1 }, Block::Type::Sand);
   m_ChunkManager.launchLoadThread();

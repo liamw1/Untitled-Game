@@ -24,7 +24,7 @@ Chunk::Chunk(Chunk&& other) noexcept
     m_VertexArray(std::move(other.m_VertexArray)),
     m_Composition(std::move(other.m_Composition)),
     m_GlobalIndex(other.m_GlobalIndex),
-    m_NonOpaqueFaces(other.m_NonOpaqueFaces),
+    m_NonOpaqueFaces(other.m_NonOpaqueFaces.load()),
     m_QuadCount(other.m_QuadCount)
 {
 }
@@ -37,7 +37,7 @@ Chunk& Chunk::operator=(Chunk&& other) noexcept
     m_VertexArray = std::move(other.m_VertexArray);
     m_Composition = std::move(other.m_Composition);
     m_GlobalIndex = other.m_GlobalIndex;
-    m_NonOpaqueFaces = other.m_NonOpaqueFaces;
+    m_NonOpaqueFaces.store(other.m_NonOpaqueFaces.load());
     m_QuadCount = other.m_QuadCount;
   }
   return *this;
@@ -64,6 +64,12 @@ Block::Type Chunk::getBlockType(blockIndex_t i, blockIndex_t j, blockIndex_t k) 
 Block::Type Chunk::getBlockType(const BlockIndex& blockIndex) const
 {
   return getBlockType(blockIndex.i, blockIndex.j, blockIndex.k);
+}
+
+bool Chunk::isFaceOpaque(Block::Face face) const
+{
+  uint16_t nonOpaqueFaces = m_NonOpaqueFaces.load();
+  return !(nonOpaqueFaces & bit(static_cast<int>(face)));
 }
 
 void Chunk::Initialize(const Shared<Engine::TextureArray>& textureArray)
@@ -154,11 +160,11 @@ void Chunk::determineOpacity()
 
   if (m_Composition == nullptr)
   {
-    m_NonOpaqueFaces = 0x3F;
+    m_NonOpaqueFaces.store(0x3F);
     return;
   }
 
-  m_NonOpaqueFaces = 0;
+  uint16_t nonOpaqueFaces = 0;
   for (Block::Face face : Block::FaceIterator())
   {
     for (blockIndex_t i = 0; i < Chunk::Size(); ++i)
@@ -167,12 +173,13 @@ void Chunk::determineOpacity()
         BlockIndex blockIndex = BlockIndex::CreatePermuted(chunkLimits[IsPositive(face)], i, j, GetCoordID(face));
         if (Block::HasTransparency(getBlockType(blockIndex)))
         {
-          m_NonOpaqueFaces |= bit(static_cast<int>(face));
+          nonOpaqueFaces |= bit(static_cast<int>(face));
           goto nextFace;
         }
       }
   nextFace:;
   }
+  m_NonOpaqueFaces.store(nonOpaqueFaces);
 }
 
 void Chunk::internalUpdate(const std::vector<uint32_t>& mesh)
@@ -205,6 +212,6 @@ void Chunk::reset()
   m_VertexArray.reset();
   m_Composition.reset();
   m_GlobalIndex = {};
-  m_NonOpaqueFaces = 0;
+  m_NonOpaqueFaces.store(0);
   m_QuadCount = 0;
 }

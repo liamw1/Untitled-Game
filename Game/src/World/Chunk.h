@@ -8,6 +8,11 @@ struct HeightMap;
 
 class Chunk
 {
+/*
+  Almost all public functions can be safely accessed as long as a lock is held on either
+  the chunk's mutex OR the container mutex. The only exception is empty(), which requires
+  a lock on the chunk mutex specifically.
+*/
 public:
   Chunk();
   Chunk(const GlobalIndex& chunkIndex);
@@ -48,6 +53,17 @@ public:
   Block::Type getBlockType(blockIndex_t i, blockIndex_t j, blockIndex_t k) const;
   Block::Type getBlockType(const BlockIndex& blockIndex) const;
 
+  /*
+    \return Whether or not a given chunk face has transparent blocks. Useful for deciding which chunks should be loaded
+    into memory.
+
+    WARNING: This function only reflects the opacity state of the chunk when determineOpacity() was last called. If any
+    changes to chunk composition occured since then, this function may not be accurate. This is because determineOpacity
+    is a costly operation (at least relative to the cost of changing a single block), so we prefer to only compute opacity
+    when the chunk is updated via setData or internalUpdate. Use with caution.
+  */
+  bool isFaceOpaque(Block::Face face) const;
+
   static constexpr blockIndex_t Size() { return s_ChunkSize; }
   static constexpr length_t Length() { return Block::Length() * s_ChunkSize; }
   static constexpr int TotalBlocks() { return s_ChunkSize * s_ChunkSize * s_ChunkSize; }
@@ -55,6 +71,7 @@ public:
   static void Initialize(const Shared<Engine::TextureArray>& textureArray);
   static void BindBuffers();
 
+// All private functions require a lock on the chunk mutex.
 private:
   struct Uniforms
   {
@@ -76,19 +93,8 @@ private:
   Unique<Engine::VertexArray> m_VertexArray;
   std::unique_ptr<Block::Type[]> m_Composition;
   GlobalIndex m_GlobalIndex;
-  uint16_t m_NonOpaqueFaces;
+  std::atomic<uint16_t> m_NonOpaqueFaces;
   uint16_t m_QuadCount;
-
-  /*
-    \return Whether or not a given chunk face has transparent blocks. Useful for deciding which chunks should be loaded
-    into memory.
-
-    WARNING: This function only reflects the opacity state of the chunk when determineOpacity() was last called. If any
-    changes to chunk composition occured since then, this function may not be accureate. This is because determineOpacity
-    is a costly operation (at least relative to the cost of changing a single block), so we prefer to only compute opacity
-    when the chunk is updated via setData or internalUpdate. Use with caution.
-  */
-  bool isFaceOpaque(Block::Face face) const { return !(m_NonOpaqueFaces & bit(static_cast<int>(face))); }
 
   void setBlockType(blockIndex_t i, blockIndex_t j, blockIndex_t k, Block::Type blockType);
   void setBlockType(const BlockIndex& blockIndex, Block::Type blockType);
