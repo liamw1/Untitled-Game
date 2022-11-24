@@ -44,16 +44,17 @@ bool ChunkContainer::erase(const GlobalIndex& chunkIndex)
   mapType<int, Chunk*>::iterator erasePosition = m_BoundaryChunks.find(Util::CreateKey(chunkIndex));
   if (erasePosition == m_BoundaryChunks.end())
     return false;
-
   const Chunk* chunk = erasePosition->second;
-  std::lock_guard chunkLock = chunk->acquireLock();
 
   // Open up chunk slot
   int chunkSlot = static_cast<int>(chunk - &m_ChunkArray[0]);
   m_OpenChunkSlots.push(chunkSlot);
 
   // Delete chunk data
-  m_ChunkArray[chunkSlot].reset();
+  {
+    std::lock_guard chunkLock = chunk->acquireLock();
+    m_ChunkArray[chunkSlot].reset();
+  }
   m_BoundaryChunks.erase(erasePosition);
 
   sendChunkRemovalUpdate(chunkIndex);
@@ -73,12 +74,16 @@ bool ChunkContainer::update(const GlobalIndex& chunkIndex, const std::vector<uin
   if (source == ChunkType::Boundary)
     return false;
 
-  std::lock_guard chunkLock = chunk->acquireLock();
-  sharedLock.unlock();
+  ChunkType destination;
+  {
+    std::lock_guard chunkLock = chunk->acquireLock();
+    sharedLock.unlock();
 
-  chunk->internalUpdate(mesh);
+    chunk->internalUpdate(mesh);
 
-  ChunkType destination = chunk->empty() ? ChunkType::Empty : ChunkType::Renderable;
+    destination = chunk->empty() ? ChunkType::Empty : ChunkType::Renderable;
+  }
+
   if (source != destination)
   {
     std::lock_guard lock(m_ChunkMapMutex);
@@ -312,11 +317,16 @@ void ChunkContainer::sendChunkRemovalUpdate(const GlobalIndex& removalIndex)
 
 void ChunkContainer::boundaryChunkUpdate(Chunk* chunk)
 {
+  EN_ASSERT(chunk, "Chunk does not exist!");
   EN_ASSERT(getChunkType(chunk) == ChunkType::Boundary, "Chunk is not a boundary chunk!");
 
   if (!isOnBoundary(chunk))
   {
-    ChunkType destination = chunk->empty() ? ChunkType::Empty : ChunkType::Renderable;
+    ChunkType destination;
+    {
+      std::lock_guard lock = chunk->acquireLock();
+      destination = chunk->empty() ? ChunkType::Empty : ChunkType::Renderable;
+    }
     recategorizeChunk(chunk, ChunkType::Boundary, destination);
   }
 }
