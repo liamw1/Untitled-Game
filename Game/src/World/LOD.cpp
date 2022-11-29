@@ -216,7 +216,7 @@ static HeapArray2D<Terrain::CompoundSurfaceData, s_NumCells + 1> generateNoise(L
       Vec2 pointXY = LODAnchorXY + cellLength * Vec2(i, j);
       Noise::OctaveNoiseData<Biome::NumOctaves()> elevationData = Terrain::GetElevationData(pointXY, s_DefaultBiome);
       float seaLevelTemperature = Terrain::GetTemperatureData(pointXY, s_DefaultBiome);
-      noiseValues[i][j] = Terrain::GetSurfaceData(elevationData, seaLevelTemperature, s_DefaultBiome);
+      noiseValues[i][j] = Terrain::GetSurfaceInfo(elevationData, seaLevelTemperature, s_DefaultBiome);
     }
   return noiseValues;
 }

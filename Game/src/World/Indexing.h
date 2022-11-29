@@ -1,6 +1,89 @@
 #pragma once
 #include "Block/Block.h"
 
+template<typename intType>
+struct Index2D
+{
+  intType i;
+  intType j;
+
+  constexpr Index2D()
+    : Index2D(0, 0) {}
+  constexpr Index2D(intType _i, intType _j)
+    : i(_i), j(_j) {}
+
+  constexpr intType& operator[](int index)
+  {
+    EN_ASSERT(0 <= index && index < 2, "Index is out of bounds!");
+    return *(&i + index);
+  }
+
+  constexpr const intType& operator[](int index) const
+  {
+    EN_ASSERT(0 <= index && index < 2, "Index is out of bounds!");
+    return *(&i + index);
+  }
+
+  // Comparison operators define lexicographical ordering on 3D indices
+  constexpr bool operator==(const Index2D<intType>& other) const { return i == other.i && j == other.j; }
+  constexpr bool operator!=(const Index2D<intType>& other) const { return !(*this == other); }
+  constexpr bool operator<(const Index2D<intType>& other) const { return i < other.i || (i == other.i && j < other.j); }
+  constexpr bool operator>(const Index2D<intType>& other) const { return i > other.i || (i == other.i && j > other.j); }
+  constexpr bool operator<=(const Index2D<intType>& other) const { return !(*this > other); }
+  constexpr bool operator>=(const Index2D<intType>& other) const { return !(*this < other); }
+
+  constexpr Index2D<intType> operator-() const { return Index2D<intType>(-i, -j); };
+  constexpr Index2D<intType> operator+=(const Index2D<intType>& other)
+  {
+    i += other.i;
+    j += other.j;
+    return *this;
+  }
+  constexpr Index2D<intType> operator-=(const Index2D<intType>& other)
+  {
+    i -= other.i;
+    j -= other.j;
+    return *this;
+  }
+  constexpr Index2D<intType> operator*=(intType n)
+  {
+    EN_ASSERT(n == 0 || (static_cast<intType>(i * n) / n == i && static_cast<intType>(j * n) / n == j), "Integer overflow!");
+    i *= n;
+    j *= n;
+    return *this;
+  }
+  constexpr Index2D<intType> operator/=(intType n)
+  {
+    i /= n;
+    j /= n;
+    return *this;
+  }
+
+  constexpr Index2D<intType> operator+(Index2D<intType> other) const { return other += *this; }
+  constexpr Index2D<intType> operator-(Index2D<intType> other) const { return -(other -= *this); }
+
+  constexpr Index2D<intType> operator+(intType n) const { return Index2D<intType>(n, n) += *this; }
+  constexpr Index2D<intType> operator-(intType n) const { return -(Index2D<intType>(n, n) -= *this); }
+
+  constexpr Index2D<intType> operator*(intType n) const
+  {
+    Index2D<intType> copy = *this;
+    return copy *= n;
+  }
+  constexpr Index2D<intType> operator/(intType n) const
+  {
+    Index2D<intType> copy = *this;
+    return copy /= n;
+  }
+
+  explicit constexpr operator Vec2() const { return { i, j }; }
+
+  static constexpr Index2D<intType> ToIndex(const Vec2& vec)
+  {
+    return { static_cast<intType>(vec.x), static_cast<intType>(vec.y) };
+  }
+};
+
 /*
   Structs for indexing of blocks and chunks.
 
@@ -17,8 +100,10 @@ struct Index3D
 
   constexpr Index3D()
     : Index3D(0, 0, 0) {}
-  constexpr Index3D(intType i, intType j, intType k)
-    : i(i), j(j), k(k) {}
+  constexpr Index3D(intType _i, intType _j, intType _k)
+    : i(_i), j(_j), k(_k) {}
+  constexpr Index3D(Index2D<intType> index2D, intType _k)
+    : i(index2D.i), j(index2D.j), k(_k) {}
 
   constexpr intType& operator[](int index)
   {
@@ -57,7 +142,7 @@ struct Index3D
   }
   constexpr Index3D<intType> operator*=(intType n)
   {
-    EN_ASSERT(n == 0 || ((i * n) / n == i && (j * n) / n == j && (k * n) / n == k), "Integer overflow!");
+    EN_ASSERT(n == 0 || (static_cast<intType>(i * n) / n == i && static_cast<intType>(j * n) / n == j && static_cast<intType>(k * n) / n == k), "Integer overflow!");
     i *= n;
     j *= n;
     k *= n;
@@ -88,8 +173,9 @@ struct Index3D
     return copy /= n;
   }
 
-  constexpr operator Vec2() const { return { i, j }; }
-  constexpr operator Vec3() const { return { i, j, k }; }
+  explicit constexpr operator Vec2() const { return { i, j }; }
+  explicit constexpr operator Vec3() const { return { i, j, k }; }
+  explicit constexpr operator Index2D<intType>() const { return { i, j }; }
 
   static constexpr Index3D<intType> ToIndex(const Vec3& vec)
   {
@@ -136,6 +222,7 @@ using blockIndex_t = int8_t;
 using localIndex_t = int16_t;
 using globalIndex_t = typename GlobalIndexSelector<std::is_same<double, length_t>::value>::type;
 
+using SurfaceMapIndex = Index2D<globalIndex_t>;
 using BlockIndex = Index3D<blockIndex_t>;
 using LocalIndex = Index3D<localIndex_t>;
 using GlobalIndex = Index3D<globalIndex_t>;
@@ -149,6 +236,15 @@ namespace std
   {
     return os << '[' << static_cast<int>(index.i) << ", " << static_cast<int>(index.j) << ", " << static_cast<int>(index.k) << ']';
   }
+
+  template<>
+  struct hash<SurfaceMapIndex>
+  {
+    int operator()(const SurfaceMapIndex& index) const
+    {
+      return index.i % bitUi32(16) + bitUi32(16) * (index.j % bitUi32(16));
+    }
+  };
 
   template<>
   struct hash<GlobalIndex>

@@ -12,19 +12,16 @@ int Util::CreateKey(const Chunk* chunk)
   return CreateKey(chunk->getGlobalIndex());
 }
 
-int Util::Create2DMapKey(globalIndex_t chunkI, globalIndex_t chunkJ)
+bool Util::IsInRangeOfPlayer(const SurfaceMapIndex& surfaceIndex, globalIndex_t range)
 {
-  return CreateKey(GlobalIndex(chunkI, chunkJ, 0));
+  GlobalIndex originIndex = Player::OriginIndex();
+  return abs(surfaceIndex.i - originIndex.i) <= range && abs(surfaceIndex.j - originIndex.j) <= range;
 }
 
 bool Util::IsInRangeOfPlayer(const GlobalIndex& chunkIndex, globalIndex_t range)
 {
-  GlobalIndex originIndex = Player::OriginIndex();
-
-  for (int i = 0; i < 3; ++i)
-    if (abs(chunkIndex[i] - originIndex[i]) > range)
-      return false;
-  return true;
+  GlobalIndex diff = chunkIndex - Player::OriginIndex();
+  return abs(diff.i) <= range && abs(diff.j) <= range && abs(diff.k) <= range;
 }
 
 bool Util::IsInRangeOfPlayer(const Chunk* chunk, globalIndex_t range)

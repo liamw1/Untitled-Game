@@ -37,7 +37,7 @@ namespace Terrain
 
   inline CompoundSurfaceData operator*(length_t x, const CompoundSurfaceData& other) { return other * static_cast<float>(x); }
 
-  struct SurfaceData
+  struct SurfaceInfo
   {
     length_t elevation;
     Block::Type blockType;
@@ -53,5 +53,5 @@ namespace Terrain
   Noise::OctaveNoiseData<Biome::NumOctaves()> GetElevationData(const Vec2& pointXY, const Biome& biome);
   float GetTemperatureData(const Vec2& pointXY, const Biome& biome);
 
-  SurfaceData GetSurfaceData(const Noise::OctaveNoiseData<Biome::NumOctaves()>& elevationData, float seaLevelTemperature, const Biome& biome);
+  SurfaceInfo GetSurfaceInfo(const Noise::OctaveNoiseData<Biome::NumOctaves()>& elevationData, float seaLevelTemperature, const Biome& biome);
 }

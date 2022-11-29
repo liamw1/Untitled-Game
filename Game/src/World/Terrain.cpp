@@ -12,68 +12,16 @@ public:
   static void SetData(Chunk& chunk, std::unique_ptr<Block::Type[]> composition) { chunk.setData(std::move(composition)); }
 };
 
-struct HeightMap
+using ElevationData = HeapArray2D<Noise::OctaveNoiseData<Biome::NumOctaves()>, Chunk::Size()>;
+using TemperatureData = HeapArray2D<float, Chunk::Size()>;
+
+struct SurfaceData
 {
-  HeightMap(const GlobalIndex& index)
-    : chunkI(index.i), chunkJ(index.j)
-  {
-    EN_PROFILE_FUNCTION();
-
-    for (blockIndex_t i = 0; i < Chunk::Size(); ++i)
-      for (blockIndex_t j = 0; j < Chunk::Size(); ++j)
-      {
-        Vec2 blockXY = Chunk::Length() * Vec2(chunkI, chunkJ) + Block::Length() * (Vec2(i, j) + Vec2(0.5));
-        elevationData[i][j] = Terrain::GetElevationData(blockXY, s_DefaultBiome);
-      }
-  }
-
-  globalIndex_t chunkI;
-  globalIndex_t chunkJ;
-  HeapArray2D<Noise::OctaveNoiseData<Biome::NumOctaves()>, Chunk::Size()> elevationData;
+  ElevationData elevationData;
+  TemperatureData temperatureData;
 };
 
-struct TemperatureMap
-{
-  TemperatureMap(const GlobalIndex& index)
-    : chunkI(index.i), chunkJ(index.j)
-  {
-    for (blockIndex_t i = 0; i < Chunk::Size(); ++i)
-      for (blockIndex_t j = 0; j < Chunk::Size(); ++j)
-      {
-        Vec2 blockXY = Chunk::Length() * Vec2(chunkI, chunkJ) + Block::Length() * (Vec2(i, j) + Vec2(0.5));
-        temperatureData[i][j] = Terrain::GetTemperatureData(blockXY, s_DefaultBiome);
-      }
-  }
-
-  globalIndex_t chunkI;
-  globalIndex_t chunkJ;
-  StackArray2D<float, Chunk::Size()> temperatureData{};
-};
-
-struct BiomeMap
-{
-  BiomeMap(const GlobalIndex& index)
-    : chunkI(index.i), chunkJ(index.j)
-  {
-    // Generate Voronoi points
-    std::array<Vec2, 9> voronoiPoints{};
-
-    for (blockIndex_t i = 0; i < Chunk::Size(); ++i)
-      for (blockIndex_t j = 0; j < Chunk::Size(); ++j)
-      {
-        Vec2 blockXY = Chunk::Length() * Vec2(chunkI, chunkJ) + Block::Length() * (Vec2(i, j) + Vec2(0.5));
-
-
-      }
-  }
-
-  globalIndex_t chunkI;
-  globalIndex_t chunkJ;
-  StackArray2D<Biome, Chunk::Size()> biomeData{};
-};
-
-static std::unordered_map<int, HeightMap> s_HeightMapCache;
-static std::unordered_map<int, TemperatureMap> s_TemperatureMapCache;
+static std::unordered_map<SurfaceMapIndex, SurfaceData> s_SurfaceDataCache;
 static std::mutex s_Mutex;
 
 Terrain::CompoundSurfaceData Terrain::CompoundSurfaceData::operator+(const CompoundSurfaceData& other) const
@@ -106,6 +54,39 @@ std::array<int, 2> Terrain::CompoundSurfaceData::getTextureIndices() const
 
 
 
+static const SurfaceData& getSurfaceData(const GlobalIndex& chunkIndex)
+{
+  SurfaceMapIndex mapIndex = static_cast<SurfaceMapIndex>(chunkIndex);
+  auto it = s_SurfaceDataCache.find(mapIndex);
+  if (it == s_SurfaceDataCache.end())
+  {
+    // Generate surface data
+    SurfaceData surfaceData{};
+    for (blockIndex_t i = 0; i < Chunk::Size(); ++i)
+      for (blockIndex_t j = 0; j < Chunk::Size(); ++j)
+      {
+        Vec2 blockXY = Chunk::Length() * static_cast<Vec2>(mapIndex) + Block::Length() * (Vec2(i, j) + Vec2(0.5));
+
+        surfaceData.elevationData[i][j] = Terrain::GetElevationData(blockXY, s_DefaultBiome);
+        surfaceData.temperatureData[i][j] = Terrain::GetTemperatureData(blockXY, s_DefaultBiome);
+      }
+
+    const auto& [insertionPosition, insertionSuccess] = s_SurfaceDataCache.insert({ mapIndex, std::move(surfaceData) });
+    it = insertionPosition;
+    EN_ASSERT(insertionSuccess, "HeightMap insertion failed!");
+  }
+
+  return it->second;
+}
+
+
+
+static float calcSurfaceTemperature(float seaLevelTemperature, length_t surfaceElevation)
+{
+  static constexpr float tempDropPerBlock = 0.25f;
+  return seaLevelTemperature - tempDropPerBlock * static_cast<float>(surfaceElevation / Block::Length());
+}
+
 static Block::Type getBlockType(const std::unique_ptr<Block::Type[]>& composition, blockIndex_t i, blockIndex_t j, blockIndex_t k)
 {
   EN_ASSERT(composition, "Composition does not exist!");
@@ -129,55 +110,18 @@ static bool isEmpty(const std::unique_ptr<Block::Type[]>& composition)
   return true;
 }
 
-static const HeightMap& getHeightMap(const GlobalIndex& chunkIndex)
-{
-  int heightMapKey = Util::Create2DMapKey(chunkIndex.i, chunkIndex.j);
-  auto it = s_HeightMapCache.find(heightMapKey);
-  if (it == s_HeightMapCache.end())
-  {
-    const auto& [insertionPosition, insertionSuccess] = s_HeightMapCache.emplace(heightMapKey, chunkIndex);
-    it = insertionPosition;
-    EN_ASSERT(insertionSuccess, "HeightMap insertion failed!");
-  }
-
-  return it->second;
-}
-
-static const TemperatureMap& getTemperatureMap(const GlobalIndex& chunkIndex)
-{
-  int temperatureMapKey = Util::Create2DMapKey(chunkIndex.i, chunkIndex.j);
-  auto it = s_TemperatureMapCache.find(temperatureMapKey);
-  if (it == s_TemperatureMapCache.end())
-  {
-    const auto& [insertionPosition, insertionSuccess] = s_TemperatureMapCache.emplace(temperatureMapKey, chunkIndex);
-    it = insertionPosition;
-    EN_ASSERT(insertionSuccess, "TemperatureMap insertion failed!");
-  }
-
-  return it->second;
-}
-
-
-
-static float calcSurfaceTemperature(float seaLevelTemperature, length_t surfaceElevation)
-{
-  static constexpr float tempDropPerBlock = 0.25f;
-  return seaLevelTemperature - tempDropPerBlock * static_cast<float>(surfaceElevation / Block::Length());
-}
-
 static void heightMapStage(std::unique_ptr<Block::Type[]>& composition, const GlobalIndex& chunkIndex)
 {
-  // Generates heightmap is none exists
-  const HeightMap& heightMap = getHeightMap(chunkIndex);
-  const TemperatureMap& temperatureMap = getTemperatureMap(chunkIndex);
+  // Generates surface data if none exists
+  const auto& [heightMap, temperatureMap] = getSurfaceData(chunkIndex);
 
   length_t chunkFloor = Chunk::Length() * chunkIndex.k;
   for (blockIndex_t i = 0; i < Chunk::Size(); ++i)
     for (blockIndex_t j = 0; j < Chunk::Size(); ++j)
     {
-      Terrain::SurfaceData surfaceData = Terrain::GetSurfaceData(heightMap.elevationData[i][j], temperatureMap.temperatureData[i][j], s_DefaultBiome);
+      Terrain::SurfaceInfo surfaceInfo = Terrain::GetSurfaceInfo(heightMap[i][j], temperatureMap[i][j], s_DefaultBiome);
 
-      int terrainElevationIndex = static_cast<int>(std::ceil((surfaceData.elevation - chunkFloor) / Block::Length()));
+      int terrainElevationIndex = static_cast<int>(std::ceil((surfaceInfo.elevation - chunkFloor) / Block::Length()));
       int surfaceDepth = static_cast<int>(std::ceil(s_DefaultBiome.averageSurfaceDepth));
       int soilDepth = surfaceDepth + static_cast<int>(std::ceil(s_DefaultBiome.averageSoilDepth));
 
@@ -194,7 +138,7 @@ static void heightMapStage(std::unique_ptr<Block::Type[]>& composition, const Gl
       }
       while (k < terrainElevationIndex && k < Chunk::Size())
       {
-        setBlockType(composition, i, j, k, surfaceData.blockType);
+        setBlockType(composition, i, j, k, surfaceInfo.blockType);
         k++;
       }
       while (k < Chunk::Size())
@@ -243,24 +187,13 @@ void Terrain::Clean(int unloadDistance)
 {
   std::lock_guard lock(s_Mutex);
 
-  // Destroy heightmaps outside of unload range
-  for (auto it = s_HeightMapCache.begin(); it != s_HeightMapCache.end();)
+  // Destroy surface maps outside of unload range
+  for (auto it = s_SurfaceDataCache.begin(); it != s_SurfaceDataCache.end();)
   {
-    const HeightMap& heightMap = it->second;
+    const auto& [index, heightMap] = *it;
 
-    if (!Util::IsInRangeOfPlayer(GlobalIndex(heightMap.chunkI, heightMap.chunkJ, Player::OriginIndex().k), unloadDistance))
-      it = s_HeightMapCache.erase(it);
-    else
-      ++it;
-  }
-
-  // Destory temperature maps outside of unload range
-  for (auto it = s_TemperatureMapCache.begin(); it != s_TemperatureMapCache.end();)
-  {
-    const TemperatureMap& temperatureMap = it->second;
-
-    if (!Util::IsInRangeOfPlayer(GlobalIndex(temperatureMap.chunkI, temperatureMap.chunkJ, Player::OriginIndex().k), unloadDistance))
-      it = s_TemperatureMapCache.erase(it);
+    if (!Util::IsInRangeOfPlayer(index, unloadDistance))
+      it = s_SurfaceDataCache.erase(it);
     else
       ++it;
   }
@@ -290,7 +223,7 @@ static Block::Type determineSurfaceBlockType(length_t surfaceElevation, float su
     return biome.surfaceType.getPrimary();
 }
 
-Terrain::SurfaceData Terrain::GetSurfaceData(const Noise::OctaveNoiseData<Biome::NumOctaves()>& elevationData, float seaLevelTemperature, const Biome& biome)
+Terrain::SurfaceInfo Terrain::GetSurfaceInfo(const Noise::OctaveNoiseData<Biome::NumOctaves()>& elevationData, float seaLevelTemperature, const Biome& biome)
 {
   length_t elevation = elevationData.sum();
   float surfaceTemperature = calcSurfaceTemperature(seaLevelTemperature, elevation);
