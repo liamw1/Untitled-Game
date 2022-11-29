@@ -52,7 +52,9 @@ struct Biome
 public:
   enum class Type
   {
-    Default = 0
+    Default = 0,
+    GrassField = 1,
+    Desert = 2
   };
 
   static const Biome& Get(Type type);

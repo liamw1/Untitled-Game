@@ -32,6 +32,7 @@ Biome& Biome::operator+=(const Biome& other)
   surfaceType += other.surfaceType;
   surfaceType_High += other.surfaceType_High;
   surfaceType_Cold += other.surfaceType_Cold;
+  soilType += other.soilType;
 
   highThreshold += other.highThreshold;
   coldThreshold += other.coldThreshold;
@@ -57,6 +58,7 @@ Biome& Biome::operator*=(float x)
   surfaceType *= x;
   surfaceType_High *= x;
   surfaceType_Cold *= x;
+  soilType *= x;
 
   highThreshold *= x;
   coldThreshold *= x;
@@ -66,5 +68,11 @@ Biome& Biome::operator*=(float x)
 
 const Biome& Biome::Get(Type type)
 {
-  return s_DefaultBiome;
+  switch (type)
+  {
+    case Biome::Type::Default:    return s_DefaultBiome;
+    case Biome::Type::GrassField: return s_GrassField;
+    case Biome::Type::Desert:     return s_Desert;
+    default: EN_ERROR("Unknown biome type!"); return s_DefaultBiome;
+  }
 }

@@ -9,9 +9,9 @@ struct HeightMap;
 class Chunk
 {
 /*
-  Almost all public functions can be safely accessed as long as a lock is held on either
-  the chunk's mutex OR the container mutex. The only exception is empty(), which requires
-  a lock on the chunk mutex specifically.
+  Most public functions can be safely accessed as long as a lock is held on either
+  the chunk's mutex OR the container mutex. The only exceptions are empty(), and
+  the getBlockType() variants, which require a lock on the chunk mutex specifically.
 */
 public:
   Chunk();

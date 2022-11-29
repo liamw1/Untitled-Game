@@ -55,15 +55,45 @@ struct Index3D
     k -= other.k;
     return *this;
   }
+  constexpr Index3D<intType> operator*=(intType n)
+  {
+    EN_ASSERT(n == 0 || ((i * n) / n == i && (j * n) / n == j && (k * n) / n == k), "Integer overflow!");
+    i *= n;
+    j *= n;
+    k *= n;
+    return *this;
+  }
+  constexpr Index3D<intType> operator/=(intType n)
+  {
+    i /= n;
+    j /= n;
+    k /= n;
+    return *this;
+  }
+
+  constexpr Index3D<intType> operator+(Index3D<intType> other) const { return other += *this; }
+  constexpr Index3D<intType> operator-(Index3D<intType> other) const { return -(other -= *this); }
+
+  constexpr Index3D<intType> operator+(intType n) const { return Index3D<intType>(n, n, n) += *this; }
+  constexpr Index3D<intType> operator-(intType n) const { return -(Index3D<intType>(n, n, n) -= *this); }
+
+  constexpr Index3D<intType> operator*(intType n) const
+  {
+    Index3D<intType> copy = *this;
+    return copy *= n;
+  }
+  constexpr Index3D<intType> operator/(intType n) const
+  {
+    Index3D<intType> copy = *this;
+    return copy /= n;
+  }
 
   constexpr operator Vec2() const { return { i, j }; }
   constexpr operator Vec3() const { return { i, j, k }; }
 
   static constexpr Index3D<intType> ToIndex(const Vec3& vec)
   {
-    return { static_cast<intType>(vec.x),
-             static_cast<intType>(vec.y),
-             static_cast<intType>(vec.z) };
+    return { static_cast<intType>(vec.x), static_cast<intType>(vec.y), static_cast<intType>(vec.z) };
   }
 
   static constexpr Index3D<intType> Dir(Block::Face face)
@@ -88,37 +118,9 @@ struct Index3D
 };
 
 template<typename intType>
-constexpr Index3D<intType> operator+(Index3D<intType> left, const Index3D<intType>& right)
+constexpr Index3D<intType> operator*(intType n, Index3D<intType> index)
 {
-  left += right;
-  return left;
-}
-template<typename intType>
-constexpr Index3D<intType> operator-(Index3D<intType> left, const Index3D<intType>& right)
-{
-  left -= right;
-  return left;
-}
-
-template<typename intType>
-constexpr Index3D<intType> operator+(Index3D<intType> index, intType n)
-{
-  index += n * Index3D<intType>(1, 1, 1);
-  return index;
-}
-template<typename intType>
-constexpr Index3D<intType> operator-(Index3D<intType> index, intType n)
-{
-  index -= n * Index3D<intType>(1, 1, 1);
-  return index;
-}
-
-template<typename intType>
-constexpr Index3D<intType> operator*(intType n, const Index3D<intType>& index)
-{
-  return { static_cast<intType>(n * index.i),
-           static_cast<intType>(n * index.j),
-           static_cast<intType>(n * index.k) };
+  return index *= n;
 }
 
 
@@ -145,7 +147,7 @@ namespace std
   template<typename intType>
   inline ostream& operator<<(ostream& os, const Index3D<intType>& index)
   {
-    return os << '(' << static_cast<int>(index.i) << ", " << static_cast<int>(index.j) << ", " << static_cast<int>(index.k) << ')';
+    return os << '[' << static_cast<int>(index.i) << ", " << static_cast<int>(index.j) << ", " << static_cast<int>(index.k) << ']';
   }
 
   template<>

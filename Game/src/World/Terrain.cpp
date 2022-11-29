@@ -209,8 +209,6 @@ Chunk Terrain::GenerateNew(const GlobalIndex& chunkIndex)
 {
   Chunk chunk(chunkIndex);
 
-  std::lock_guard lock(s_Mutex);
-
   static const length_t globalMinTerrainHeight = s_DefaultBiome.minElevation();
   static const length_t globalMaxTerrainHeight = s_DefaultBiome.maxElevation();
 
@@ -222,6 +220,8 @@ Chunk Terrain::GenerateNew(const GlobalIndex& chunkIndex)
   }
 
   std::unique_ptr<Block::Type[]> composition = std::make_unique_for_overwrite<Block::Type[]>(Chunk::TotalBlocks());
+  std::lock_guard lock(s_Mutex);
+
   heightMapStage(composition, chunkIndex);
 
   if (isEmpty(composition))

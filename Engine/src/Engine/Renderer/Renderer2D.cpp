@@ -12,7 +12,7 @@ namespace Engine
 {
   struct CameraUniforms
   {
-    Float4x4 viewProjection;
+    FMat4 viewProjection;
   };
 
   struct QuadVertex
