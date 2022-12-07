@@ -12,18 +12,6 @@ public:
   static void SetData(Chunk& chunk, std::unique_ptr<Block::Type[]> composition) { chunk.setData(std::move(composition)); }
 };
 
-using ElevationData = HeapArray2D<Noise::OctaveNoiseData<Biome::NumOctaves()>, Chunk::Size()>;
-using TemperatureData = HeapArray2D<float, Chunk::Size()>;
-
-struct SurfaceData
-{
-  ElevationData elevationData;
-  TemperatureData temperatureData;
-};
-
-static std::unordered_map<SurfaceMapIndex, SurfaceData> s_SurfaceDataCache;
-static std::mutex s_Mutex;
-
 Terrain::CompoundSurfaceData Terrain::CompoundSurfaceData::operator+(const CompoundSurfaceData& other) const
 {
   CompoundSurfaceData sum = *this;
@@ -53,6 +41,48 @@ std::array<int, 2> Terrain::CompoundSurfaceData::getTextureIndices() const
 }
 
 
+
+using ElevationData = HeapArray2D<Noise::OctaveNoiseData<Biome::NumOctaves()>, Chunk::Size()>;
+using TemperatureData = HeapArray2D<float, Chunk::Size()>;
+
+struct SurfaceData
+{
+  ElevationData elevationData;
+  TemperatureData temperatureData;
+};
+
+static std::unordered_map<SurfaceMapIndex, SurfaceData> s_SurfaceDataCache;
+static std::mutex s_Mutex;
+
+static float sampleElevation(const GlobalIndex& chunkIndex)
+{
+  static constexpr float averageElevation = 0 * Block::LengthF();
+  static constexpr float elevationScale = 64.0f;
+  static constexpr float elevationAmplitude = 100 * Block::LengthF();
+
+  Float2 samplingPosition = static_cast<Float2>(chunkIndex) / elevationScale;
+  return averageElevation + elevationAmplitude * Noise::SimplexNoise2D(samplingPosition);
+}
+
+static float sampleTemperature(const GlobalIndex& chunkIndex)
+{
+  static constexpr float averageTemperature = 20.0f;
+  static constexpr float temperatureScale = 32.0f;
+  static constexpr float temperatureAmplitude = 30.0f;
+
+  Float2 samplingPosition = static_cast<Float2>(chunkIndex) / temperatureScale;
+  return averageTemperature + temperatureAmplitude * Noise::SimplexNoise2D(samplingPosition);
+}
+
+static float sampleHumidity(const GlobalIndex& chunkIndex)
+{
+  static constexpr float averageHumidity = 50.0f;
+  static constexpr float humidityScale = 16.0f;
+  static constexpr float humidityAmplitude = 50.0f;
+
+  Float2 samplingPosition = static_cast<Float2>(chunkIndex) / humidityScale;
+  return averageHumidity + humidityAmplitude * Noise::SimplexNoise2D(samplingPosition);
+}
 
 static const SurfaceData& getSurfaceData(const GlobalIndex& chunkIndex)
 {

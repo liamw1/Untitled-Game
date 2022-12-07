@@ -38,7 +38,11 @@ namespace Noise
 
   length_t FastTerrainNoise3D(const Vec3& position);
 
-  length_t SimplexNoise2D(const Vec2& v);
+  template<typename floatType, glm::qualifier Q>
+  floatType SimplexNoise2D(const glm::vec<2, floatType, Q>& v)
+  {
+    return glm::simplex(v);
+  }
 
   template<int N>
   OctaveNoiseData<N> OctaveNoise2D(const Vec2& pointXY, length_t amplitude, length_t scale, float persistence, float lacunarity)

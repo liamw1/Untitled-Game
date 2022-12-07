@@ -30,7 +30,8 @@ namespace Block
 
   bool IsTransparent(Texture texture);
 
-  constexpr length_t Length() { return 0.5; }
+  constexpr length_t Length() { return 0.5_m; }
+  constexpr float LengthF() { return static_cast<float>(Length()); }
 };
 
 constexpr bool IsPositive(Block::Face face) { return static_cast<int>(face) % 2; }
