@@ -1,5 +1,5 @@
 #pragma once
-#include "Block/CompoundBlockType.h"
+#include "Block/Block.h"
 
 struct Biome
 {

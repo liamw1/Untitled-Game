@@ -1,8 +1,11 @@
 #pragma once
 #include "BlockIDs.h"
+#include "Util/CompoundType.h"
 
 namespace Block
 {
+  using CompoundType = ::CompoundType<Type, 4>;
+
   enum class Face : int
   {
     West, East, South, North, Bottom, Top,
@@ -19,6 +22,8 @@ namespace Block
     Face oppFace = static_cast<Face>(faceID % 2 ? faceID - 1 : faceID + 1);
     return oppFace;
   }
+
+
 
   void Initialize();
 

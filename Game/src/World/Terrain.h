@@ -18,19 +18,12 @@ namespace Terrain
 
     length_t getElevation() const { return m_Elevation; }
 
-    Block::Type getPrimaryBlockType() const { return m_Components.getType(0); }
+    Block::Type getPrimaryBlockType() const { return m_Components.getPrimary(); }
 
     std::array<int, 2> getTextureIndices() const;
     Float2 getTextureWeights() const { return { m_Components.getWeight(0), m_Components.getWeight(1) }; }
 
   private:
-    struct SurfaceComponent
-    {
-      Block::Type type = Block::Type::Air;
-      float weight = 0.0;
-    };
-    static constexpr int s_NumTypes = 4;
-
     length_t m_Elevation = 0.0;
     Block::CompoundType m_Components;
   };

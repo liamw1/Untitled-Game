@@ -1,5 +1,4 @@
 #pragma once
-#include "Block/CompoundBlockType.h"
 
 namespace Noise
 {

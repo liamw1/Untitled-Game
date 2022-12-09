@@ -206,7 +206,7 @@ struct Index3D
   }
 };
 
-template<typename IntType>
+template<IntegerType IntType>
 constexpr Index3D<IntType> operator*(IntType n, Index3D<IntType> index)
 {
   return index *= n;
@@ -234,7 +234,7 @@ using GlobalIndex = Index3D<globalIndex_t>;
 
 namespace std
 {
-  template<typename IntType>
+  template<IntegerType IntType>
   inline ostream& operator<<(ostream& os, const Index3D<IntType>& index)
   {
     return os << '[' << static_cast<int>(index.i) << ", " << static_cast<int>(index.j) << ", " << static_cast<int>(index.k) << ']';
