@@ -8,7 +8,7 @@ namespace Engine
 {
 	namespace DevCamera
 	{
-		static constexpr Angle s_RotationSpeed = 45_deg;
+		static constexpr Angle c_RotationSpeed = 45_deg;
 
 		static Angle s_FOV = 45_deg;
 		static float s_AspectRatio = 1.778f;
@@ -79,8 +79,8 @@ namespace Engine
 		static void mouseRotate(const glm::vec2& delta)
 		{
 			float yawSign = UpDirection().y < 0 ? -1.0f : 1.0f;
-			s_Yaw += Angle(yawSign * delta.x) * s_RotationSpeed;
-			s_Pitch += Angle(delta.y) * s_RotationSpeed;
+			s_Yaw += Angle(yawSign * delta.x) * c_RotationSpeed;
+			s_Pitch += Angle(delta.y) * c_RotationSpeed;
 		}
 
 		static void mouseZoom(float delta)

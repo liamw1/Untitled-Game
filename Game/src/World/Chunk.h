@@ -64,9 +64,9 @@ public:
   */
   bool isFaceOpaque(Block::Face face) const;
 
-  static constexpr blockIndex_t Size() { return s_ChunkSize; }
-  static constexpr length_t Length() { return Block::Length() * s_ChunkSize; }
-  static constexpr int TotalBlocks() { return s_ChunkSize * s_ChunkSize * s_ChunkSize; }
+  static constexpr blockIndex_t Size() { return c_ChunkSize; }
+  static constexpr length_t Length() { return Block::Length() * c_ChunkSize; }
+  static constexpr int TotalBlocks() { return c_ChunkSize * c_ChunkSize * c_ChunkSize; }
 
   static void Initialize(const Shared<Engine::TextureArray>& textureArray);
   static void BindBuffers();
@@ -78,15 +78,15 @@ private:
     Float3 anchorPosition;
   };
 
-  static constexpr int s_ChunkSize = 32;
+  static constexpr int c_ChunkSize = 32;
 
   // Mesh Data
   static inline Unique<Engine::Shader> s_Shader;
   static inline Shared<Engine::TextureArray> s_TextureArray;
   static inline Shared<const Engine::IndexBuffer> s_IndexBuffer;
   static inline const Engine::BufferLayout s_VertexBufferLayout = { { ShaderDataType::Uint32, "a_VertexData" } };
-  static constexpr int s_TextureSlot = 0;
-  static constexpr int s_UniformBinding = 2;
+  static constexpr int c_TextureSlot = 0;
+  static constexpr int c_UniformBinding = 2;
 
   mutable std::mutex m_Mutex;
   std::vector<uint32_t> m_Mesh;

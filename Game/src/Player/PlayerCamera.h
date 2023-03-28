@@ -12,22 +12,22 @@ public:
 
 private:
   // Camera properties
-  static constexpr float s_CameraSensitivity = 0.1f;
-  static constexpr float s_CameraZoomSensitivity = 0.2f;
-  static constexpr length_t s_TranslationSpeed = 300 * Block::Length();
+  static constexpr float c_CameraSensitivity = 0.1f;
+  static constexpr float c_CameraZoomSensitivity = 0.2f;
+  static constexpr length_t c_TranslationSpeed = 300 * Block::Length();
 
-  static constexpr Angle s_MinPitch = -89.99_deg;
-  static constexpr Angle s_MaxPitch = 89.99_deg;
-  static constexpr Angle s_MinFOV = 0.5_deg;
-  static constexpr Angle s_MaxFOV = 80_deg;
+  static constexpr Angle c_MinPitch = -89.99_deg;
+  static constexpr Angle c_MaxPitch = 89.99_deg;
+  static constexpr Angle c_MinFOV = 0.5_deg;
+  static constexpr Angle c_MaxFOV = 80_deg;
 
-  static constexpr Vec3 s_UpDirection = Vec3(0, 0, 1);
+  static constexpr Vec3 c_UpDirection = Vec3(0, 0, 1);
 
   // Camera initialization
-  static constexpr Angle s_FOV = 80_deg;
-  static constexpr float s_AspectRatio = 1280.0f / 720.0f;
-  static constexpr length_t s_NearClip = 0.125_m * Block::Length();
-  static constexpr length_t s_FarClip = 10000_m * Block::Length();
+  static constexpr Angle c_FOV = 80_deg;
+  static constexpr float c_AspectRatio = 1280.0f / 720.0f;
+  static constexpr length_t c_NearClip = 0.125_m * Block::Length();
+  static constexpr length_t c_FarClip = 10000_m * Block::Length();
 
   Engine::Entity m_Entity;
   Float2 m_LastMousePosition{};

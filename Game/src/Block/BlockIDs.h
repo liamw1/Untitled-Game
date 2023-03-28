@@ -36,10 +36,10 @@ namespace Block
     OakLogSide,
     OakLeaves,
 
-    Null,
     Invisible,
+    Null,
 
-    First = GrassTop, Last = OakLeaves
+    First = 0, Last = static_cast<blockTexID>(Invisible) - 1
   };
   using TextureIterator = Iterator<Texture, Texture::First, Texture::Last>;
 }

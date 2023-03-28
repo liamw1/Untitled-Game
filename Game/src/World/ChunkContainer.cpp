@@ -2,20 +2,20 @@
 #include "ChunkContainer.h"
 #include "Util/Util.h"
 
-static constexpr int s_MaxChunks = (2 * c_UnloadDistance + 1) * (2 * c_UnloadDistance + 1) * (2 * c_UnloadDistance + 1);
+static constexpr int c_MaxChunks = (2 * c_UnloadDistance + 1) * (2 * c_UnloadDistance + 1) * (2 * c_UnloadDistance + 1);
 
 ChunkContainer::ChunkContainer()
 {
-  m_ChunkArray = std::make_unique<Chunk[]>(s_MaxChunks);
+  m_ChunkArray = std::make_unique<Chunk[]>(c_MaxChunks);
 
   std::vector<int> stackData;
-  stackData.reserve(s_MaxChunks);
+  stackData.reserve(c_MaxChunks);
   m_OpenChunkSlots = std::stack<int, std::vector<int>>(std::move(stackData));
-  for (int i = s_MaxChunks - 1; i >= 0; --i)
+  for (int i = c_MaxChunks - 1; i >= 0; --i)
     m_OpenChunkSlots.push(i);
 }
 
-bool ChunkContainer::insert(Chunk chunk)
+bool ChunkContainer::insert(Chunk&& chunk)
 {
   std::lock_guard lock(m_ContainerMutex);
 
@@ -28,8 +28,8 @@ bool ChunkContainer::insert(Chunk chunk)
 
   // Insert chunk into array and load it
   m_ChunkArray[chunkSlot] = std::move(chunk);
-  Chunk* newChunk = &m_ChunkArray[chunkSlot];
-  auto [insertionPosition, insertionSuccess] = m_BoundaryChunks.insert({ Util::CreateKey(newChunk->getGlobalIndex()), newChunk });
+  Chunk& newChunk = m_ChunkArray[chunkSlot];
+  auto [insertionPosition, insertionSuccess] = m_BoundaryChunks.insert({ Util::CreateKey(newChunk.getGlobalIndex()), &newChunk });
 
   if (insertionSuccess)
     sendChunkLoadUpdate(newChunk);
@@ -70,7 +70,7 @@ bool ChunkContainer::update(const GlobalIndex& chunkIndex, const std::vector<uin
   if (!chunk)
     return false;
 
-  ChunkType source = getChunkType(chunk);
+  ChunkType source = getChunkType(*chunk);
   if (source == ChunkType::Boundary)
     return false;
 
@@ -87,7 +87,7 @@ bool ChunkContainer::update(const GlobalIndex& chunkIndex, const std::vector<uin
   if (source != destination)
   {
     std::lock_guard lock(m_ContainerMutex);
-    recategorizeChunk(chunk, source, destination);
+    recategorizeChunk(*chunk, source, destination);
   }
 
   return true;
@@ -198,7 +198,7 @@ void ChunkContainer::sendBlockUpdate(const GlobalIndex& chunkIndex, const BlockI
 bool ChunkContainer::empty() const
 {
   std::shared_lock lock(m_ContainerMutex);
-  return m_OpenChunkSlots.size() == s_MaxChunks;
+  return m_OpenChunkSlots.size() == c_MaxChunks;
 }
 
 bool ChunkContainer::contains(const GlobalIndex& chunkIndex) const
@@ -240,21 +240,21 @@ bool ChunkContainer::isLoaded(const GlobalIndex& chunkIndex) const
   return false;
 }
 
-bool ChunkContainer::isOnBoundary(const Chunk* chunk) const
+bool ChunkContainer::isOnBoundary(const Chunk& chunk) const
 {
   EN_ASSERT(chunk, "Chunk does not exist!");
 
   for (Block::Face face : Block::FaceIterator())
-    if (!isLoaded(chunk->getGlobalIndex() + GlobalIndex::Dir(face)) && !chunk->isFaceOpaque(face))
+    if (!isLoaded(chunk.getGlobalIndex() + GlobalIndex::Dir(face)) && !chunk.isFaceOpaque(face))
       return true;
   return false;
 }
 
-ChunkType ChunkContainer::getChunkType(const Chunk* chunk) const
+ChunkType ChunkContainer::getChunkType(const Chunk& chunk) const
 {
   EN_ASSERT(chunk, "Chunk does not exist");
 
-  for (int chunkType = 0; chunkType < s_ChunkTypes; ++chunkType)
+  for (int chunkType = 0; chunkType < c_ChunkTypes; ++chunkType)
     if (m_Chunks[chunkType].find(Util::CreateKey(chunk)) != m_Chunks[chunkType].end())
       return static_cast<ChunkType>(chunkType);
 
@@ -286,16 +286,16 @@ const Chunk* ChunkContainer::find(const GlobalIndex& chunkIndex) const
   return nullptr;
 }
 
-void ChunkContainer::sendChunkLoadUpdate(Chunk* newChunk)
+void ChunkContainer::sendChunkLoadUpdate(Chunk& newChunk)
 {
   boundaryChunkUpdate(newChunk);
 
   // Move cardinal neighbors out of m_BoundaryChunks if they are no longer on boundary
   for (Block::Face face : Block::FaceIterator())
   {
-    Chunk* neighbor = find(newChunk->getGlobalIndex() + GlobalIndex::Dir(face));
-    if (neighbor && getChunkType(neighbor) == ChunkType::Boundary)
-      boundaryChunkUpdate(neighbor);
+    Chunk* neighbor = find(newChunk.getGlobalIndex() + GlobalIndex::Dir(face));
+    if (neighbor && getChunkType(*neighbor) == ChunkType::Boundary)
+      boundaryChunkUpdate(*neighbor);
   }
 }
 
@@ -307,31 +307,30 @@ void ChunkContainer::sendChunkRemovalUpdate(const GlobalIndex& removalIndex)
 
     if (neighbor)
     {
-      ChunkType type = getChunkType(neighbor);
+      ChunkType type = getChunkType(*neighbor);
 
       if (type != ChunkType::Boundary)
-        recategorizeChunk(neighbor, type, ChunkType::Boundary);
+        recategorizeChunk(*neighbor, type, ChunkType::Boundary);
     }
   }
 }
 
-void ChunkContainer::boundaryChunkUpdate(Chunk* chunk)
+void ChunkContainer::boundaryChunkUpdate(Chunk& chunk)
 {
-  EN_ASSERT(chunk, "Chunk does not exist!");
   EN_ASSERT(getChunkType(chunk) == ChunkType::Boundary, "Chunk is not a boundary chunk!");
 
   if (!isOnBoundary(chunk))
   {
     ChunkType destination;
     {
-      std::lock_guard lock = chunk->acquireLock();
-      destination = chunk->empty() ? ChunkType::Empty : ChunkType::Renderable;
+      std::lock_guard lock = chunk.acquireLock();
+      destination = chunk.empty() ? ChunkType::Empty : ChunkType::Renderable;
     }
     recategorizeChunk(chunk, ChunkType::Boundary, destination);
   }
 }
 
-void ChunkContainer::recategorizeChunk(Chunk* chunk, ChunkType source, ChunkType destination)
+void ChunkContainer::recategorizeChunk(Chunk& chunk, ChunkType source, ChunkType destination)
 {
   EN_ASSERT(chunk, "Chunk does not exist!");
   EN_ASSERT(source != destination, "Source and destination are the same!");
@@ -343,7 +342,7 @@ void ChunkContainer::recategorizeChunk(Chunk* chunk, ChunkType source, ChunkType
       for (int j = -1; j <= 1; ++j)
         for (int k = -1; k <= 1; ++k)
         {
-          GlobalIndex neighborIndex = chunk->getGlobalIndex() + GlobalIndex(i, j, k);
+          GlobalIndex neighborIndex = chunk.getGlobalIndex() + GlobalIndex(i, j, k);
           if (isLoaded(neighborIndex))
             m_LazyUpdateQueue.add(neighborIndex);
         }
@@ -352,6 +351,6 @@ void ChunkContainer::recategorizeChunk(Chunk* chunk, ChunkType source, ChunkType
   int sourceTypeID = static_cast<int>(source);
   int destinationTypeID = static_cast<int>(destination);
 
-  m_Chunks[destinationTypeID].insert({ key, chunk });
+  m_Chunks[destinationTypeID].insert({ key, &chunk });
   m_Chunks[sourceTypeID].erase(m_Chunks[sourceTypeID].find(key));
 }

@@ -7,7 +7,7 @@
 
 namespace Engine
 {
-  static constexpr int s_MaxShaders = 2;
+  static constexpr int c_MaxShaders = 2;
 
   static GLenum shaderTypeFromString(const std::string& type)
   {
@@ -122,7 +122,7 @@ namespace Engine
     EN_CORE_ASSERT(shaderSources.size() <= s_MaxShaders, "A maximum of {0} shaders is supported", s_MaxShaders);
 
     GLuint program = glCreateProgram();
-    std::array<GLenum, s_MaxShaders> glShaderIDs = { 0, 0 };
+    std::array<GLenum, c_MaxShaders> glShaderIDs = { 0, 0 };
     int glShaderIDIndex = 0;
     for (auto& kv : shaderSources)
     {

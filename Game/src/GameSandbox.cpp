@@ -2,6 +2,7 @@
 #include "GameSandbox.h"
 #include "Player/Player.h"
 #include "World/World.h"
+#include "World/Biome.h"
 #include "World/LOD.h"
 
 GameSandbox::GameSandbox()
@@ -14,6 +15,7 @@ GameSandbox::GameSandbox()
   Engine::Renderer::Initialize();
 
   Block::Initialize();
+  Biome::Initialize();
 
   Shared<Engine::TextureArray> textureArray = Engine::TextureArray::Create(16, 128);
   for (Block::Texture texture : Block::TextureIterator())

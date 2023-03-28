@@ -5,7 +5,7 @@
 
 namespace Engine
 {
-  static constexpr uint32_t s_MaxFrameBufferSize = 8192;
+  static constexpr uint32_t c_MaxFrameBufferSize = 8192;
 
   static GLenum textureTarget(bool multiSampled) { return multiSampled ? GL_TEXTURE_2D_MULTISAMPLE : GL_TEXTURE_2D; }
   static void createTextures(bool multiSampled, uint32_t* outID, uint32_t count) { glCreateTextures(textureTarget(multiSampled), count, outID); }
@@ -190,7 +190,7 @@ namespace Engine
 
   void OpenGLFramebuffer::resize(uint32_t width, uint32_t height)
   {
-    if (width == 0 || width > s_MaxFrameBufferSize || height == 0 || height > s_MaxFrameBufferSize)
+    if (width == 0 || width > c_MaxFrameBufferSize || height == 0 || height > c_MaxFrameBufferSize)
     {
       EN_CORE_WARN("Attempted to resize framebuffer to {0}, {1}", width, height);
       return;

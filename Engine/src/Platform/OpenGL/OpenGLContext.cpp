@@ -7,7 +7,7 @@
 #include <GLFW/glfw3.h>
 #include <glad/glad.h>
 
-static constexpr bool verboseOpenGLDebugLog = false;
+static constexpr bool c_VerboseOpenGLDebugLog = false;
 
 namespace Engine
 {
@@ -15,7 +15,7 @@ namespace Engine
   {
     switch (severity)
     {
-      case GL_DEBUG_SEVERITY_NOTIFICATION:  if (verboseOpenGLDebugLog) EN_CORE_TRACE(message); return;
+      case GL_DEBUG_SEVERITY_NOTIFICATION:  if (c_VerboseOpenGLDebugLog) EN_CORE_TRACE(message); return;
       case GL_DEBUG_SEVERITY_LOW:           EN_CORE_INFO(message);  return;
       case GL_DEBUG_SEVERITY_MEDIUM:        EN_CORE_WARN(message);  return;
       case GL_DEBUG_SEVERITY_HIGH:          EN_CORE_ERROR(message); return;

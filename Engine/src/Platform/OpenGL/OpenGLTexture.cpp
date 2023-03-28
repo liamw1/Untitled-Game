@@ -5,8 +5,8 @@
 
 #include <stb_image.h>
 
-static constexpr uint32_t s_MipmapLevels = 8;
-static constexpr float s_AnistropicFilteringAmount = 16.0f;
+static constexpr uint32_t c_MipmapLevels = 8;
+static constexpr float c_AnistropicFilteringAmount = 16.0f;
 
 namespace Engine
 {
@@ -106,7 +106,7 @@ namespace Engine
     EN_CORE_ASSERT(std::this_thread::get_id() == Threads::GetMainThreadID(), "OpenGL calls must be made in main thread!");
 
     glCreateTextures(GL_TEXTURE_2D_ARRAY, 1, &m_RendererID);
-    glTextureStorage3D(m_RendererID, s_MipmapLevels, m_InternalFormat, m_TextureSize, m_TextureSize, m_MaxTextures);
+    glTextureStorage3D(m_RendererID, c_MipmapLevels, m_InternalFormat, m_TextureSize, m_TextureSize, m_MaxTextures);
   }
 
   OpenGLTextureArray::~OpenGLTextureArray()
@@ -160,7 +160,7 @@ namespace Engine
 
     glGenerateTextureMipmap(m_RendererID);
 
-    glTextureParameterf(m_RendererID, GL_TEXTURE_MAX_ANISOTROPY, s_AnistropicFilteringAmount);
+    glTextureParameterf(m_RendererID, GL_TEXTURE_MAX_ANISOTROPY, c_AnistropicFilteringAmount);
 
     glTextureParameteri(m_RendererID, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     glTextureParameteri(m_RendererID, GL_TEXTURE_MAG_FILTER, GL_NEAREST);

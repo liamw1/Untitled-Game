@@ -21,7 +21,7 @@ namespace Terrain
     Block::Type getPrimaryBlockType() const { return m_Components.getPrimary(); }
 
     std::array<int, 2> getTextureIndices() const;
-    Float2 getTextureWeights() const { return { m_Components.getWeight(0), m_Components.getWeight(1) }; }
+    Float2 getTextureWeights() const { return { m_Components[0].weight, m_Components[1].weight }; }
 
   private:
     length_t m_Elevation = 0.0;
@@ -42,9 +42,4 @@ namespace Terrain
   Chunk GenerateEmpty(const GlobalIndex& chunkIndex);
 
   void Clean(int unloadDistance);
-
-  Noise::OctaveNoiseData<Biome::NumOctaves()> GetElevationData(const Vec2& pointXY, const Biome& biome);
-  float GetTemperatureData(const Vec2& pointXY, const Biome& biome);
-
-  SurfaceInfo GetSurfaceInfo(const Noise::OctaveNoiseData<Biome::NumOctaves()>& elevationData, float seaLevelTemperature, const Biome& biome);
 }

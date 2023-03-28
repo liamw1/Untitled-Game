@@ -1,70 +1,47 @@
 #pragma once
 #include "Block/Block.h"
 #include "World/Indexing.h"
+#include "Util/Noise.h"
 
-struct Biome
+class Biome
 {
-  length_t averageElevation;
-  length_t elevationAmplitude;
-  length_t elevationScale;
-  float elevationPersistence;
-  float elevationLacunarity;
-
-  float averageTemperature;
-  float localTemperatureVariation;
-  length_t localTemperatureVariationScale;
-
-  length_t averageSurfaceDepth;
-  length_t averageSoilDepth;
-
-  Block::CompoundType surfaceType;
-  Block::CompoundType surfaceType_High;
-  Block::CompoundType surfaceType_Cold;
-  Block::CompoundType soilType;
-
-  length_t highThreshold;
-  float coldThreshold;
-
-  constexpr length_t minElevation() const
-  {
-    length_t totalAmplitude = maxElevation() - averageElevation;
-    return averageElevation - totalAmplitude;
-  }
-
-  constexpr length_t maxElevation() const
-  {
-    length_t totalAmplitude = 0.0;
-    length_t octaveAmplitude = elevationAmplitude;
-    for (int i = 0; i < s_Octaves; ++i)
-    {
-      totalAmplitude += octaveAmplitude;
-      octaveAmplitude *= elevationPersistence;
-    }
-
-    return averageElevation + totalAmplitude;
-  }
-
-  Biome operator+(const Biome& other) const;
-  Biome operator*(float x) const;
-  Biome& operator+=(const Biome& other);
-  Biome& operator*=(float x);
+protected:
+  static constexpr int c_LocalElevationOctaves = 6;
 
 public:
+  using NoiseSamples = Noise::OctaveNoiseData<c_LocalElevationOctaves>;
+
   enum class Type
   {
     Default = 0,
-    GrassField = 1,
-    Desert = 2,
+    GrassField,
+    Desert,
+    FlatStone,
 
-    First = Default, Last = Desert
+    Null,
+    Begin = 0, End = Null
   };
 
-  static const Biome& Get(Type type);
+  Biome()
+  {
+    s_BiomesInitialized++;
+  }
 
-  static constexpr int NumOctaves() { return s_Octaves; }
+  virtual Block::Type primarySurfaceType() const = 0;
+  virtual length_t localSurfaceElevation(const NoiseSamples& noiseSamples) const = 0;
+
+  static void Initialize();
+  static const Biome* Get(Type biome);
+
+  static constexpr int LocalElevationOctaves() { return c_LocalElevationOctaves; }
+  static constexpr int Count() { return c_BiomeCount; }
+
+protected:
+  static length_t CalculateOctaveNoise(const NoiseSamples& noiseSamples, length_t largestAmplitude, float persistence);
 
 private:
-  static constexpr int s_Octaves = 4;
-};
+  static constexpr int c_BiomeCount = static_cast<int>(Type::End) - static_cast<int>(Type::Begin);
 
-Biome GetBiomeData(const Vec2& surfaceLocation);
+  static int s_BiomesInitialized;
+  static std::array<Unique<Biome>, c_BiomeCount> s_Biomes;
+};

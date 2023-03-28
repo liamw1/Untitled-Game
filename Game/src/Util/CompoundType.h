@@ -4,24 +4,39 @@ template<typename ComponentType, int ComponentCount>
 class CompoundType
 {
 public:
+  struct Component
+  {
+    ComponentType type = ComponentType();
+    float weight = 0.0;
+  };
+
   constexpr CompoundType() = default;
   constexpr CompoundType(ComponentType initialValue)
     : m_Components({})
   {
-    m_Components.front() = {initialValue, 1.0f};
+    m_Components.front() = { initialValue, 1.0f };
+  }
+
+  template<int N>
+  CompoundType(const std::array<Component, N>& components)
+  {
+    float sumOfWeights = 0.0;
+    for (int i = 0; i < std::min(N, ComponentCount); ++i)
+    {
+      m_Components[i] = components[i];
+      sumOfWeights += components[i].weight;
+    }
+
+    for (Component& component : m_Components)
+      component.weight /= sumOfWeights;
   }
 
   ComponentType getPrimary() const { return m_Components.front().type; };
 
-  ComponentType getType(int index) const
+  const Component& operator[](int index) const
   {
     EN_ASSERT(0 <= index && index < ComponentCount, "Index out of bounds!");
-    return m_Components[index].type;
-  }
-  float getWeight(int index) const
-  {
-    EN_ASSERT(0 <= index && index < ComponentCount, "Index out of bounds!");
-    return m_Components[index].weight;
+    return m_Components[index];
   }
 
   CompoundType operator+(const CompoundType& other) const
@@ -54,6 +69,8 @@ public:
       }
     }
 
+    // NOTE: Can use i,j here to determine lost weights
+
     m_Components = mergedComposition;
     return *this;
   }
@@ -71,12 +88,6 @@ public:
   static constexpr int MaxTypes() { return ComponentCount; }
 
 private:
-  struct Component
-  {
-    ComponentType type = ComponentType();
-    float weight = 0.0;
-  };
-
   std::array<Component, ComponentCount> m_Components{};
 };
 

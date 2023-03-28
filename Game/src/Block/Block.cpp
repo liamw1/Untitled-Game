@@ -8,13 +8,13 @@ struct BlockUniforms
   const float blockLength = static_cast<float>(Block::Length());
 };
 
-static constexpr int s_MaxBlockTypes = std::numeric_limits<blockID>::max() + 1;
-static constexpr int s_MaxBlockTextures = 6 * s_MaxBlockTypes;
-static constexpr int s_UniformBinding = 1;
+static constexpr int c_MaxBlockTypes = std::numeric_limits<blockID>::max() + 1;
+static constexpr int c_MaxBlockTextures = 6 * c_MaxBlockTypes;
+static constexpr int c_UniformBinding = 1;
 static bool s_Initialized = false;
 
-static StackArray2D<Block::Texture, s_MaxBlockTypes, 6> s_TexIDs{};
-static std::array<std::string, s_MaxBlockTextures> s_TexturePaths{};
+static StackArray2D<Block::Texture, c_MaxBlockTypes, 6> s_TexIDs{};
+static std::array<std::string, c_MaxBlockTextures> s_TexturePaths{};
 static const BlockUniforms s_BlockUniforms{};
 
 static void assignTextures(Block::Type block, Block::Texture topTexture, Block::Texture sideTextures, Block::Texture bottomTexture)
@@ -46,8 +46,8 @@ static void assignTextures(Block::Type block, Block::Texture topBotTextures, Blo
 
 void Block::Initialize()
 {
-  Engine::UniformBuffer::Allocate(s_UniformBinding, sizeof(BlockUniforms));
-  Engine::UniformBuffer::SetData(s_UniformBinding, &s_BlockUniforms);
+  Engine::UniformBuffer::Allocate(c_UniformBinding, sizeof(BlockUniforms));
+  Engine::UniformBuffer::SetData(c_UniformBinding, &s_BlockUniforms);
 
   s_TexturePaths[static_cast<blockTexID>(Block::Texture::GrassTop)] = "assets/textures/voxel-pack/PNG/Tiles/grass_top.png";
   s_TexturePaths[static_cast<blockTexID>(Block::Texture::GrassSide)] = "assets/textures/voxel-pack/PNG/Tiles/grass_top.png";

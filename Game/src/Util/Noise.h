@@ -12,6 +12,7 @@ namespace Noise
       : m_Octaves(noiseData) {}
 
     length_t operator[](int octave) const { return m_Octaves[octave]; }
+    length_t& operator[](int octave) { return m_Octaves[octave]; }
 
     length_t sum() const
     {
@@ -20,6 +21,8 @@ namespace Noise
         result += x;
       return result;
     }
+
+    static int Levels() { return N; }
 
   private:
     std::array<length_t, N> m_Octaves{};
@@ -44,15 +47,14 @@ namespace Noise
   }
 
   template<int N>
-  OctaveNoiseData<N> OctaveNoise2D(const Vec2& pointXY, length_t amplitude, length_t scale, float persistence, float lacunarity)
+  OctaveNoiseData<N> OctaveNoise2D(const Vec2& pointXY, length_t lowestFrequency, float lacunarity)
   {
     std::array<length_t, N> octaves{};
 
-    length_t frequency = 1_m / scale;
+    length_t frequency = lowestFrequency;
     for (int i = 0; i < N; ++i)
     {
-      octaves[i] = amplitude * SimplexNoise2D(frequency * pointXY);
-      amplitude *= persistence;
+      octaves[i] = SimplexNoise2D(frequency * pointXY);
       frequency *= lacunarity;
     }
 

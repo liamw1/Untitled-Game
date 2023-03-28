@@ -35,7 +35,7 @@ struct RegularCellData
 	int getTriangleCount() const { return (geometryCounts & 0x0F); }
 };
 
-static constexpr int maxCellVertexCount = 12;
+static constexpr int c_MaxCellVertexCount = 12;
 
 /*
   The regularCellClass table maps an 8-bit regular Marching Cubes case index to
@@ -44,7 +44,7 @@ static constexpr int maxCellVertexCount = 12;
   just with different vertex locations. We combined those classes for this table so
   that the class index ranges from 0 to 15.
 */
-static constexpr uint8_t regularCellClass[256] =
+static constexpr uint8_t c_RegularCellClass[256] =
 {
 	0x00, 0x01, 0x01, 0x03, 0x01, 0x03, 0x02, 0x04, 0x01, 0x02, 0x03, 0x04, 0x03, 0x04, 0x04, 0x03,
 	0x01, 0x03, 0x02, 0x04, 0x02, 0x04, 0x06, 0x0C, 0x02, 0x05, 0x05, 0x0B, 0x05, 0x0A, 0x07, 0x04,
@@ -68,7 +68,7 @@ static constexpr uint8_t regularCellClass[256] =
   The regularCellData table holds the triangulation data for all 16 distinct classes to
   which a case can be mapped by the regularCellClass table.
 */
-static constexpr RegularCellData regularCellData[16] =
+static constexpr RegularCellData c_RegularCellData[16] =
 {
 	{0x00, {}},
 	{0x31, {0, 1, 2}},
@@ -95,7 +95,7 @@ static constexpr RegularCellData regularCellData[16] =
   The low byte contains the indexes for the two endpoints of the edge on which the vertex lies,
   as numbered in Figure 3.7. The high byte contains the vertex reuse data shown in Figure 3.8.
 */
-static constexpr uint16_t regularVertexData[256][12] =
+static constexpr uint16_t c_RegularVertexData[256][12] =
 {
 	{},
 	{0x6201, 0x5102, 0x3304},
@@ -372,9 +372,9 @@ struct TransitionCellData
 };
 
 // From Figures 4.16, 4.17, and 4.19 in Transvoxel paper
-static constexpr uint8_t sampleIndexToBitFlip[9] = { 0, 1, 2, 7, 8, 3, 6, 5, 4 };
-static constexpr uint8_t cornerIndexToSampleIndex[13] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 0, 2, 6, 8 };
-static constexpr uint8_t cornerVertexReuseInformation[13] = { 0x30, 0x21, 0x20, 0x12, 0x40, 0x82, 0x10, 0x81, 0x80, 0x37, 0x27, 0x17, 0x87 };
+static constexpr uint8_t c_SampleIndexToBitFlip[9] = { 0, 1, 2, 7, 8, 3, 6, 5, 4 };
+static constexpr uint8_t c_CornerIndexToSampleIndex[13] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 0, 2, 6, 8 };
+static constexpr uint8_t c_CornerVertexReuseInformation[13] = { 0x30, 0x21, 0x20, 0x12, 0x40, 0x82, 0x10, 0x81, 0x80, 0x37, 0x27, 0x17, 0x87 };
 
 /*
 	The transitionCellClass table maps a 9-bit transition cell case index to an equivalence
@@ -384,7 +384,7 @@ static constexpr uint8_t cornerVertexReuseInformation[13] = { 0x30, 0x21, 0x20, 
 	The high bit is set in the cases for which the inverse state of the voxel data maps to
 	the equivalence class, meaning that the winding order of each triangle should be reversed.
 */
-static constexpr uint8_t transitionCellClass[512] =
+static constexpr uint8_t c_TransitionCellClass[512] =
 {
 	0x00, 0x01, 0x02, 0x84, 0x01, 0x05, 0x04, 0x04, 0x02, 0x87, 0x09, 0x8C, 0x84, 0x0B, 0x05, 0x05,
 	0x01, 0x08, 0x07, 0x8D, 0x05, 0x0F, 0x8B, 0x0B, 0x04, 0x0D, 0x0C, 0x1C, 0x04, 0x8B, 0x85, 0x85,
@@ -425,7 +425,7 @@ static constexpr uint8_t transitionCellClass[512] =
 	which a case can be mapped by the transitionCellClass table. The class index should be ANDed
 	with 0x7F before using it to look up triangulation data in this table.
 */
-static constexpr TransitionCellData transitionCellData[56] =
+static constexpr TransitionCellData c_TransitionCellData[56] =
 {
 	{0x00, {}},
 	{0x42, {0, 1, 3, 1, 2, 3}},
@@ -492,7 +492,7 @@ static constexpr TransitionCellData transitionCellData[56] =
 	contains the indexes for the two endpoints of the edge on which the vertex lies, as numbered
 	in Figure 4.16. The high byte contains the vertex reuse data shown in Figure 4.17.
 */
-static constexpr uint16_t transitionVertexData[512][12] =
+static constexpr uint16_t c_TransitionVertexData[512][12] =
 {
 	{},
 	{0x2301, 0x1503, 0x199B, 0x289A},

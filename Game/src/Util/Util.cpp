@@ -7,9 +7,9 @@ int Util::CreateKey(const GlobalIndex& chunkIndex)
   return std::hash<GlobalIndex>{}(chunkIndex);
 }
 
-int Util::CreateKey(const Chunk* chunk)
+int Util::CreateKey(const Chunk& chunk)
 {
-  return CreateKey(chunk->getGlobalIndex());
+  return CreateKey(chunk.getGlobalIndex());
 }
 
 bool Util::IsInRangeOfPlayer(const SurfaceMapIndex& surfaceIndex, globalIndex_t range)
@@ -22,11 +22,6 @@ bool Util::IsInRangeOfPlayer(const GlobalIndex& chunkIndex, globalIndex_t range)
 {
   GlobalIndex diff = chunkIndex - Player::OriginIndex();
   return abs(diff.i) <= range && abs(diff.j) <= range && abs(diff.k) <= range;
-}
-
-bool Util::IsInRangeOfPlayer(const Chunk* chunk, globalIndex_t range)
-{
-  return IsInRangeOfPlayer(chunk->getGlobalIndex(), range);
 }
 
 bool Util::IsInRangeOfPlayer(const Chunk& chunk, globalIndex_t range)

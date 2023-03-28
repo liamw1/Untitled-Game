@@ -16,8 +16,8 @@ static constexpr blockIndex_t modulo(globalIndex_t a, blockIndex_t b)
 void World::initialize()
 {
   m_ChunkManager.setLoadModeTerrain();
-  m_ChunkManager.loadChunk({ 0, -1, 2 }, Block::Type::Air);
-  m_ChunkManager.loadChunk({ 0, -1, 1 }, Block::Type::Sand);
+  // m_ChunkManager.loadChunk({ 0, -1, 2 }, Block::Type::Air);
+  // m_ChunkManager.loadChunk({ 0, -1, 1 }, Block::Type::Sand);
   m_ChunkManager.launchLoadThread();
   m_ChunkManager.launchUpdateThread();
 
@@ -188,7 +188,7 @@ beginCollisionDetection:;
     length_t t = firstCollision.distance / distanceMoved;
 
     // Calculate distance player should be pushed out from solid block
-    Vec3 collisionDisplacement = ((1.0 - t) * dt *  glm::dot(normals[faceID], -Player::Velocity()) + s_MinDistanceToWall) * normals[faceID];
+    Vec3 collisionDisplacement = ((1.0 - t) * dt *  glm::dot(normals[faceID], -Player::Velocity()) + c_MinDistanceToWall) * normals[faceID];
 
     Player::SetPosition(Player::Position() + collisionDisplacement);
 

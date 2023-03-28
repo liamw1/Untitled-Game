@@ -42,19 +42,19 @@ namespace Engine
   /*
     Renderer 2D data
   */
-  static constexpr Float4 s_QuadVertexPositions[4] = { { -0.5f, -0.5f, 0.0f, 1.0f },
+  static constexpr Float4 c_QuadVertexPositions[4] = { { -0.5f, -0.5f, 0.0f, 1.0f },
                                                        {  0.5f, -0.5f, 0.0f, 1.0f },
                                                        {  0.5f,  0.5f, 0.0f, 1.0f },
                                                        { -0.5f,  0.5f, 0.0f, 1.0f } };
 
   // Maximum values per draw call
-  static constexpr uint32_t s_MaxQuads = 10000;
-  static constexpr uint32_t s_MaxQuadVertices = 4 * s_MaxQuads;
-  static constexpr uint32_t s_MaxQuadIndices = 6 * s_MaxQuads;
-  static constexpr uint32_t s_MaxCircles = 100;
-  static constexpr uint32_t s_MaxCircleVertices = 4 * s_MaxCircles;
-  static constexpr uint32_t s_MaxCircleIndices = 6 * s_MaxCircles;
-  static constexpr uint32_t s_MaxTextureSlots = 32;   // TODO: RenderCapabilities
+  static constexpr uint32_t c_MaxQuads = 10000;
+  static constexpr uint32_t c_MaxQuadVertices = 4 * c_MaxQuads;
+  static constexpr uint32_t c_MaxQuadIndices = 6 * c_MaxQuads;
+  static constexpr uint32_t c_MaxCircles = 100;
+  static constexpr uint32_t c_MaxCircleVertices = 4 * c_MaxCircles;
+  static constexpr uint32_t c_MaxCircleIndices = 6 * c_MaxCircles;
+  static constexpr uint32_t c_MaxTextureSlots = 32;   // TODO: RenderCapabilities
 
   static Unique<VertexArray> s_QuadVertexArray;
   static Unique<Shader> s_QuadShader;
@@ -71,7 +71,7 @@ namespace Engine
   static CircleVertex* s_CircleVertexBufferBase = nullptr;
   static CircleVertex* s_CircleVertexBufferPtr = nullptr;
 
-  static std::array<Shared<Texture2D>, s_MaxTextureSlots> s_TextureSlots;
+  static std::array<Shared<Texture2D>, c_MaxTextureSlots> s_TextureSlots;
   static uint32_t s_TextureSlotIndex = 1;   // 0 = white texture
 
   static Renderer2D::Statistics s_Stats;
@@ -111,7 +111,7 @@ namespace Engine
 
       if (textureIndex == 0)
       {
-        if (s_TextureSlotIndex > s_MaxTextureSlots - 1)
+        if (s_TextureSlotIndex > c_MaxTextureSlots - 1)
         {
           nextBatch();
           s_TextureSlotIndex = 1;
@@ -134,10 +134,10 @@ namespace Engine
 
     UniformBuffer::Allocate(0, sizeof(CameraUniforms));
 
-    uint32_t* quadIndices = new uint32_t[s_MaxQuadIndices];
+    uint32_t* quadIndices = new uint32_t[c_MaxQuadIndices];
 
     uint32_t offset = 0;
-    for (uint32_t i = 0; i < s_MaxQuadIndices; i += 6)
+    for (uint32_t i = 0; i < c_MaxQuadIndices; i += 6)
     {
       // Triangle 1
       quadIndices[i + 0] = offset + 0;
@@ -151,7 +151,7 @@ namespace Engine
 
       offset += 4;
     }
-    Shared<IndexBuffer> quadIndexBuffer = IndexBuffer::Create(quadIndices, s_MaxQuadIndices);
+    Shared<IndexBuffer> quadIndexBuffer = IndexBuffer::Create(quadIndices, c_MaxQuadIndices);
     delete[] quadIndices;
 
     s_QuadVertexArray = VertexArray::Create();
@@ -163,7 +163,7 @@ namespace Engine
                                    { ShaderDataType::Float,  "a_TilingFactor"  },
                                    { ShaderDataType::Int,    "a_EntityID"      } });
     s_QuadShader = Shader::Create("../Engine/assets/shaders/Quad.glsl");
-    s_QuadVertexBufferBase = new QuadVertex[s_MaxQuadVertices];
+    s_QuadVertexBufferBase = new QuadVertex[c_MaxQuadVertices];
 
     s_CircleVertexArray = VertexArray::Create();
     s_CircleVertexArray->setIndexBuffer(quadIndexBuffer);
@@ -174,7 +174,7 @@ namespace Engine
                                      { ShaderDataType::Int,    "a_QuadIndex"  },
                                      { ShaderDataType::Int,    "a_EntityID"   } });
     s_CircleShader = Shader::Create("../Engine/assets/shaders/Circle.glsl");
-    s_CircleVertexBufferBase = new CircleVertex[s_MaxCircleVertices];
+    s_CircleVertexBufferBase = new CircleVertex[c_MaxCircleVertices];
 
     s_WhiteTexture = Texture2D::Create(1, 1);
     uint32_t s_WhiteTextureData = 0xFFFFFFFF;
@@ -234,12 +234,12 @@ namespace Engine
                                                       {1.0f, 1.0f},
                                                       {0.0f, 1.0f} };
 
-    if (s_QuadIndexCount >= s_MaxQuadIndices)
+    if (s_QuadIndexCount >= c_MaxQuadIndices)
       nextBatch();
 
     for (int i = 0; i < 4; ++i)
     {
-      s_QuadVertexBufferPtr->position = transform * s_QuadVertexPositions[i];
+      s_QuadVertexBufferPtr->position = transform * c_QuadVertexPositions[i];
       s_QuadVertexBufferPtr->tintColor = tintColor;
       s_QuadVertexBufferPtr->texCoord = textureCoordinates[i];
       s_QuadVertexBufferPtr->textureIndex = getTextureIndex(texture);
@@ -274,7 +274,7 @@ namespace Engine
 
     for (int i = 0; i < 4; ++i)
     {
-      s_CircleVertexBufferPtr->position = transform * s_QuadVertexPositions[i];
+      s_CircleVertexBufferPtr->position = transform * c_QuadVertexPositions[i];
       s_CircleVertexBufferPtr->color = color;
       s_CircleVertexBufferPtr->thickness = thickness;
       s_CircleVertexBufferPtr->fade = fade;

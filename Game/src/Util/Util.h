@@ -7,11 +7,10 @@ namespace Util
     Generates a (nearly) unique key for hash maps.
   */
   int CreateKey(const GlobalIndex& chunkIndex);
-  int CreateKey(const Chunk* chunk);
+  int CreateKey(const Chunk& chunk);
 
   bool IsInRangeOfPlayer(const SurfaceMapIndex& surfaceIndex, globalIndex_t range);
   bool IsInRangeOfPlayer(const GlobalIndex& chunkIndex, globalIndex_t range);
-  bool IsInRangeOfPlayer(const Chunk* chunk, globalIndex_t range);
   bool IsInRangeOfPlayer(const Chunk& chunk, globalIndex_t range);
 
   bool BlockNeighborIsInAnotherChunk(const BlockIndex& blockIndex, Block::Face face);

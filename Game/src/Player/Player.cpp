@@ -3,8 +3,8 @@
 #include "PlayerCamera.h"
 
 // Hitbox dimensions
-static constexpr length_t s_Width = 1 * Block::Length();
-static constexpr length_t s_Height = 2 * Block::Length();
+static constexpr length_t c_Width = 1 * Block::Length();
+static constexpr length_t c_Height = 2 * Block::Length();
 
 // Controller for player camera, which is placed at the eyes
 // static Engine::CameraController s_CameraController;
@@ -98,5 +98,5 @@ GlobalIndex Player::OriginIndex()
   return s_OriginIndex;
 }
 
-length_t Player::Width() { return s_Width; }
-length_t Player::Height() { return s_Height; }
+length_t Player::Width() { return c_Width; }
+length_t Player::Height() { return c_Height; }

@@ -28,7 +28,7 @@ public:
 
     \returns True if the chunk was successfully inserted into the boundary map.
   */
-  bool insert(Chunk chunk);
+  bool insert(Chunk&& chunk);
 
   /*
     Removes chunk from boundary map, unloads it, and frees the slot it was occupying.
@@ -82,13 +82,13 @@ public:
   bool contains(const GlobalIndex& chunkIndex) const;
 
 private:
-  static constexpr int s_ChunkTypes = 3;
+  static constexpr int c_ChunkTypes = 3;
 
   template<typename Key, typename Val>
   using mapType = std::unordered_map<Key, Val>;
 
   // Chunk pointers
-  std::array<mapType<int, Chunk*>, s_ChunkTypes> m_Chunks;
+  std::array<mapType<int, Chunk*>, c_ChunkTypes> m_Chunks;
   mapType<int, Chunk*>& m_EmptyChunks = m_Chunks[static_cast<int>(ChunkType::Empty)];
   mapType<int, Chunk*>& m_BoundaryChunks = m_Chunks[static_cast<int>(ChunkType::Boundary)];
   mapType<int, Chunk*>& m_RenderableChunks = m_Chunks[static_cast<int>(ChunkType::Renderable)];
@@ -128,14 +128,14 @@ private:
 
     Requires at minimum a shared lock to be owned on the container mutex.
   */
-  bool isOnBoundary(const Chunk* chunk) const;
+  bool isOnBoundary(const Chunk& chunk) const;
 
   /*
     \returns What type the chunk is currently classified as.
 
     Requires at minimum a shared lock to be owned on the container mutex.
   */
-  ChunkType getChunkType(const Chunk* chunk) const;
+  ChunkType getChunkType(const Chunk& chunk) const;
 
   /*
     \returns The Chunk at the specified chunk index. If no such chunk can be found, returns nullptr.
@@ -151,7 +151,7 @@ private:
 
     Requires an exclusive lock on the container mutex, as it will modify chunk maps.
   */
-  void sendChunkLoadUpdate(Chunk* newChunk);
+  void sendChunkLoadUpdate(Chunk& newChunk);
 
   /*
     Re-categorizes the cardinal neighbors of a removed chunk as boundary chunks.
@@ -167,7 +167,7 @@ private:
 
     Requires an exclusive lock on the container mutex, as it will modify chunk maps.
   */
-  void boundaryChunkUpdate(Chunk* chunk);
+  void boundaryChunkUpdate(Chunk& chunk);
 
   /*
     Moves chunk from one grouping to another.
@@ -176,5 +176,5 @@ private:
 
     Requires an exclusive lock on the container mutex, as it will modify chunk maps.
   */
-  void recategorizeChunk(Chunk* chunk, ChunkType source, ChunkType destination);
+  void recategorizeChunk(Chunk& chunk, ChunkType source, ChunkType destination);
 };

@@ -6,7 +6,7 @@ namespace Engine
 {
   static Entity s_SelectionContext;
   static char s_TextBuffer[256];
-  static constexpr ImGuiTreeNodeFlags s_TreeNodeFlags = ImGuiTreeNodeFlags_DefaultOpen |
+  static constexpr ImGuiTreeNodeFlags c_TreeNodeFlags = ImGuiTreeNodeFlags_DefaultOpen |
     ImGuiTreeNodeFlags_Framed |
     ImGuiTreeNodeFlags_SpanAvailWidth |
     ImGuiTreeNodeFlags_AllowItemOverlap |
@@ -175,7 +175,7 @@ namespace Engine
       });
 
     if (entity.has<Component::Transform>())
-      if (ImGui::TreeNodeEx(reinterpret_cast<void*>(typeid(Component::Transform).hash_code()), s_TreeNodeFlags, "Transform"))
+      if (ImGui::TreeNodeEx(reinterpret_cast<void*>(typeid(Component::Transform).hash_code()), c_TreeNodeFlags, "Transform"))
       {
         Component::Transform& transformComponent = entity.get<Component::Transform>();
 

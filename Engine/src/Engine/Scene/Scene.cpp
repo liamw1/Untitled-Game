@@ -21,7 +21,7 @@ namespace Engine
     static Entity Create() { return Entity::Registry().create(); }
   };
 
-  static constexpr Vec3 s_UpDirection(0, 0, 1);
+  static constexpr Vec3 c_UpDirection(0, 0, 1);
   
   Entity Scene::CreateEntity(const std::string& name)
   {
@@ -130,7 +130,7 @@ namespace Engine
         {
           Vec3 viewDirection = entity.get<Component::Transform>().orientationDirection();
           const Vec3& position = entity.get<Component::Transform>().position;
-          viewMatrix = glm::lookAt(position, position + viewDirection, s_UpDirection);
+          viewMatrix = glm::lookAt(position, position + viewDirection, c_UpDirection);
         }
         else if (cameraComponent.camera.getProjectionType() == Camera::ProjectionType::Orthographic)
           viewMatrix = glm::inverse(entity.get<Component::Transform>().calculateTransform());

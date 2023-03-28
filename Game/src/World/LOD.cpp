@@ -6,12 +6,10 @@
 #include "Util/TransVoxel.h"
 
 // Number of cells in each direction
-static constexpr int s_NumCells = Chunk::Size();
+static constexpr int c_NumCells = Chunk::Size();
 
 // Width of a transition cell as a fraction of regular cell width
 static constexpr length_t s_TCFractionalWidth = 0.5f;
-
-static const Biome s_DefaultBiome = Biome::Get(Biome::Type::Default);
 
 struct NoiseData
 {
@@ -28,7 +26,7 @@ Vec3 LOD::Octree::Node::anchorPosition() const
 }
 
 LOD::Octree::Octree()
-  : m_Root(Node(nullptr, 0, s_RootNodeAnchor))
+  : m_Root(Node(nullptr, 0, c_RootNodeAnchor))
 {
   m_Root.data = new Data();
 }
@@ -105,7 +103,7 @@ void LOD::Octree::getLeavesPriv(Node* branch, std::vector<Node*>& leaves)
 {
   if (branch->isLeaf())
     leaves.push_back(branch);
-  else if (branch->depth < s_MaxNodeDepth)
+  else if (branch->depth < c_MaxNodeDepth)
     for (int i = 0; i < 8; ++i)
       if (branch->children[i] != nullptr)
         getLeavesPriv(branch->children[i], leaves);
@@ -132,19 +130,19 @@ void LOD::MeshData::Initialize(const Shared<Engine::TextureArray>& textureArray)
 {
   s_Shader = Engine::Shader::Create("assets/shaders/ChunkLOD.glsl");
   s_TextureArray = textureArray;
-  Engine::UniformBuffer::Allocate(s_UniformBinding, sizeof(LOD::Uniforms));
+  Engine::UniformBuffer::Allocate(c_UniformBinding, sizeof(LOD::Uniforms));
 }
 
 void LOD::MeshData::BindBuffers()
 {
   s_Shader->bind();
-  Engine::UniformBuffer::Bind(s_UniformBinding);
-  s_TextureArray->bind(s_TextureSlot);
+  Engine::UniformBuffer::Bind(c_UniformBinding);
+  s_TextureArray->bind(c_TextureSlot);
 }
 
 void LOD::MeshData::SetUniforms(const Uniforms& uniforms)
 {
-  Engine::UniformBuffer::SetData(s_UniformBinding, &uniforms);
+  Engine::UniformBuffer::SetData(c_UniformBinding, &uniforms);
 }
 
 void LOD::Draw(const Octree::Node* leaf)
@@ -201,35 +199,37 @@ static T LODInterpolation(float t, float s, const T& q0, const T& q1)
   return ((1 - s) / 2 + s * (1 - t)) * q0 + ((1 - s) / 2 + s * t) * q1;
 }
 
-static HeapArray2D<Terrain::CompoundSurfaceData, s_NumCells + 1> generateNoise(LOD::Octree::Node* node)
+static HeapArray2D<Terrain::CompoundSurfaceData, c_NumCells + 1> generateNoise(LOD::Octree::Node* node)
 {
   EN_PROFILE_FUNCTION();
 
-  length_t cellLength = node->length() / s_NumCells;
+  length_t cellLength = node->length() / c_NumCells;
   Vec2 LODAnchorXY = Chunk::Length() * static_cast<Vec2>(node->anchor);
 
-  HeapArray2D<Terrain::CompoundSurfaceData, s_NumCells + 1> noiseValues{};
-  for (int i = 0; i < s_NumCells + 1; ++i)
-    for (int j = 0; j < s_NumCells + 1; ++j)
+  HeapArray2D<Terrain::CompoundSurfaceData, c_NumCells + 1> noiseValues{};
+  for (int i = 0; i < c_NumCells + 1; ++i)
+    for (int j = 0; j < c_NumCells + 1; ++j)
     {
       // Sample noise at cell corners
       Vec2 pointXY = LODAnchorXY + cellLength * Vec2(i, j);
-      Noise::OctaveNoiseData<Biome::NumOctaves()> elevationData = Terrain::GetElevationData(pointXY, s_DefaultBiome);
-      float seaLevelTemperature = Terrain::GetTemperatureData(pointXY, s_DefaultBiome);
-      noiseValues[i][j] = Terrain::GetSurfaceInfo(elevationData, seaLevelTemperature, s_DefaultBiome);
+
+      // TODO: Replace with new terrain system
+      // Noise::OctaveNoiseData<Biome::NumOctaves()> elevationData = Terrain::GetElevationData(pointXY, s_DefaultBiome);
+      // float seaLevelTemperature = Terrain::GetTemperatureData(pointXY, s_DefaultBiome);
+      // noiseValues[i][j] = Terrain::GetSurfaceInfo(elevationData, seaLevelTemperature, s_DefaultBiome);
     }
   return noiseValues;
 }
 
-static bool needsMesh(LOD::Octree::Node* node, const HeapArray2D<Terrain::CompoundSurfaceData, s_NumCells + 1>& noiseValues)
+static bool needsMesh(LOD::Octree::Node* node, const HeapArray2D<Terrain::CompoundSurfaceData, c_NumCells + 1>& noiseValues)
 {
   length_t LODFloor = node->anchor.k * Chunk::Length();
   length_t LODCeiling = LODFloor + node->length();
 
   // Check if LOD is fully below or above surface, if so, no need to generate mesh
   bool needsMesh = false;
-  for (int i = 0; i < s_NumCells + 1; ++i)
-    for (int j = 0; j < s_NumCells + 1; ++j)
+  for (int i = 0; i < c_NumCells + 1; ++i)
+    for (int j = 0; j < c_NumCells + 1; ++j)
     {
       length_t terrainHeight = noiseValues[i][j].getElevation();
 
@@ -244,31 +244,32 @@ endCheck:;
   return needsMesh;
 }
 
-static HeapArray2D<Vec3, s_NumCells + 1> calcNoiseNormals(LOD::Octree::Node* node, const HeapArray2D<Terrain::CompoundSurfaceData, s_NumCells + 1>& noiseValues)
+static HeapArray2D<Vec3, c_NumCells + 1> calcNoiseNormals(LOD::Octree::Node* node, const HeapArray2D<Terrain::CompoundSurfaceData, c_NumCells + 1>& noiseValues)
 {
-  length_t cellLength = node->length() / s_NumCells;
+  length_t cellLength = node->length() / c_NumCells;
   Vec2 LODAnchorXY = Chunk::Length() * static_cast<Vec2>(node->anchor);
 
   // Calculate normals using central differences
-  HeapArray2D<Vec3, s_NumCells + 1> noiseNormals{};
-  for (int i = 0; i < s_NumCells + 1; ++i)
-    for (int j = 0; j < s_NumCells + 1; ++j)
+  HeapArray2D<Vec3, c_NumCells + 1> noiseNormals{};
+  for (int i = 0; i < c_NumCells + 1; ++i)
+    for (int j = 0; j < c_NumCells + 1; ++j)
     {
       // Surface heights in adjacent positions.  L - lower, C - center, U - upper
       length_t fLC, fUC, fCL, fCU;
 
+      // TODO: Replace with new elevation system
       if (i == 0)
       {
         Vec2 pointXY = LODAnchorXY + cellLength * Vec2(i - 1, j);
-        fLC = Terrain::GetElevationData(pointXY, s_DefaultBiome).sum();
+        // fLC = Terrain::GetElevationData(pointXY, s_DefaultBiome).sum();
       }
       else
         fLC = noiseValues[i - 1][j].getElevation();
 
-      if (i == s_NumCells)
+      if (i == c_NumCells)
       {
         Vec2 pointXY = LODAnchorXY + cellLength * Vec2(i + 1, j);
-        fUC = Terrain::GetElevationData(pointXY, s_DefaultBiome).sum();
+        // fUC = Terrain::GetElevationData(pointXY, s_DefaultBiome).sum();
       }
       else
         fUC = noiseValues[i + 1][j].getElevation();
@@ -276,15 +277,15 @@ static HeapArray2D<Vec3, s_NumCells + 1> calcNoiseNormals(LOD::Octree::Node* nod
       if (j == 0)
       {
         Vec2 pointXY = LODAnchorXY + cellLength * Vec2(i, j - 1);
-        fCL = Terrain::GetElevationData(pointXY, s_DefaultBiome).sum();
+        // fCL = Terrain::GetElevationData(pointXY, s_DefaultBiome).sum();
       }
       else
         fCL = noiseValues[i][j - 1].getElevation();
 
-      if (j == s_NumCells)
+      if (j == c_NumCells)
       {
         Vec2 pointXY = LODAnchorXY + cellLength * Vec2(i, j + 1);
-        fCU = Terrain::GetElevationData(pointXY, s_DefaultBiome).sum();
+        // fCU = Terrain::GetElevationData(pointXY, s_DefaultBiome).sum();
       }
       else
         fCU = noiseValues[i][j + 1].getElevation();
@@ -299,10 +300,10 @@ static HeapArray2D<Vec3, s_NumCells + 1> calcNoiseNormals(LOD::Octree::Node* nod
   return noiseNormals;
 }
 
-static NoiseData interpolateNoiseData(LOD::Octree::Node* node, const HeapArray2D<Terrain::CompoundSurfaceData, s_NumCells + 1>& noiseValues, const HeapArray2D<Vec3, s_NumCells + 1>& noiseNormals, const BlockIndex& cornerA, const BlockIndex& cornerB, float s)
+static NoiseData interpolateNoiseData(LOD::Octree::Node* node, const HeapArray2D<Terrain::CompoundSurfaceData, c_NumCells + 1>& noiseValues, const HeapArray2D<Vec3, c_NumCells + 1>& noiseNormals, const BlockIndex& cornerA, const BlockIndex& cornerB, float s)
 {
   length_t LODFloor = node->anchor.k * Chunk::Length();
-  length_t cellLength = node->length() / s_NumCells;
+  length_t cellLength = node->length() / c_NumCells;
 
   // Vertex positions
   Vec3 posA = static_cast<Vec3>(cornerA) * cellLength;
@@ -333,7 +334,7 @@ static NoiseData interpolateNoiseData(LOD::Octree::Node* node, const HeapArray2D
 }
 
 // Generate primary LOD mesh using Marching Cubes algorithm
-static void generatePrimaryMesh(LOD::Octree::Node* node, const HeapArray2D<Terrain::CompoundSurfaceData, s_NumCells + 1>& noiseValues, const HeapArray2D<Vec3, s_NumCells + 1>& noiseNormals)
+static void generatePrimaryMesh(LOD::Octree::Node* node, const HeapArray2D<Terrain::CompoundSurfaceData, c_NumCells + 1>& noiseValues, const HeapArray2D<Vec3, c_NumCells + 1>& noiseNormals)
 {
   EN_PROFILE_FUNCTION();
 
@@ -344,19 +345,19 @@ static void generatePrimaryMesh(LOD::Octree::Node* node, const HeapArray2D<Terra
   };
 
   length_t LODFloor = node->anchor.k * Chunk::Length();
-  length_t cellLength = node->length() / s_NumCells;
+  length_t cellLength = node->length() / c_NumCells;
   float smoothness = smoothnessLevel(node->LODLevel());
 
   int vertexCount = 0;
   std::vector<uint32_t> primaryMeshIndices{};
   std::vector<LOD::Vertex> primaryMeshVertices{};
-  HeapArray2D<VertexReuseData, s_NumCells> prevLayer{};
-  for (int i = 0; i < s_NumCells; ++i)
+  HeapArray2D<VertexReuseData, c_NumCells> prevLayer{};
+  for (int i = 0; i < c_NumCells; ++i)
   {
-    HeapArray2D<VertexReuseData, s_NumCells> currLayer{};
+    HeapArray2D<VertexReuseData, c_NumCells> currLayer{};
 
-    for (int j = 0; j < s_NumCells; ++j)
-      for (int k = 0; k < s_NumCells; ++k)
+    for (int j = 0; j < c_NumCells; ++j)
+      for (int k = 0; k < c_NumCells; ++k)
       {
         // Determine which of the 256 cases the cell belongs to
         uint8_t cellCase = 0;
@@ -377,13 +378,13 @@ static void generatePrimaryMesh(LOD::Octree::Node* node, const HeapArray2D<Terra
         currLayer[j][k].baseMeshIndex = vertexCount;
 
         // Use lookup table to determine which of 15 equivalence classes the cell belongs to
-        uint8_t cellEquivClass = regularCellClass[cellCase];
-        RegularCellData cellData = regularCellData[cellEquivClass];
+        uint8_t cellEquivClass = c_RegularCellClass[cellCase];
+        RegularCellData cellData = c_RegularCellData[cellEquivClass];
         int triangleCount = cellData.getTriangleCount();
 
         // Loop over all triangles in cell
         int cellVertexCount = 0;
-        std::array<uint32_t, maxCellVertexCount> prevCellVertexIndices{};
+        std::array<uint32_t, c_MaxCellVertexCount> prevCellVertexIndices{};
         for (int vert = 0; vert < 3 * triangleCount; ++vert)
         {
           int edgeIndex = cellData.vertexIndex[vert];
@@ -397,7 +398,7 @@ static void generatePrimaryMesh(LOD::Octree::Node* node, const HeapArray2D<Terra
           }
 
           // Lookup placement of corners A,B that form the cell edge new vertex lies on
-          uint16_t vertexData = regularVertexData[cellCase][edgeIndex];
+          uint16_t vertexData = c_RegularVertexData[cellCase][edgeIndex];
           uint8_t sharedVertexIndex = (vertexData & 0x0F00) >> 8;
           uint8_t sharedVertexDirection = (vertexData & 0xF000) >> 12;
           bool newVertex = sharedVertexDirection == 8;
@@ -457,7 +458,7 @@ static void generatePrimaryMesh(LOD::Octree::Node* node, const HeapArray2D<Terra
 }
 
 // Generate transition meshes using Transvoxel algorithm
-static void generateTransitionMeshes(LOD::Octree::Node* node, const HeapArray2D<Terrain::CompoundSurfaceData, s_NumCells + 1>& noiseValues, const HeapArray2D<Vec3, s_NumCells + 1>& noiseNormals)
+static void generateTransitionMeshes(LOD::Octree::Node* node, const HeapArray2D<Terrain::CompoundSurfaceData, c_NumCells + 1>& noiseValues, const HeapArray2D<Vec3, c_NumCells + 1>& noiseNormals)
 {
   EN_PROFILE_FUNCTION();
 
@@ -471,7 +472,7 @@ static void generateTransitionMeshes(LOD::Octree::Node* node, const HeapArray2D<
                                   //       West        East        South        North       Bottom        Top
 
   length_t LODFloor = node->anchor.k * Chunk::Length();
-  length_t cellLength = node->length() / s_NumCells;
+  length_t cellLength = node->length() / c_NumCells;
   length_t transitionCellWidth = s_TCFractionalWidth * cellLength;
 
   for (Block::Face face : Block::FaceIterator())
@@ -482,18 +483,18 @@ static void generateTransitionMeshes(LOD::Octree::Node* node, const HeapArray2D<
     int u = faceID / 2;
     int v = (u + 1) % 3;
     int w = (u + 2) % 3;
-    int uIndex = IsPositive(face) ? s_NumCells : 0;
+    int uIndex = IsPositive(face) ? c_NumCells : 0;
 
     // Generate transition mesh using Transvoxel algorithm
     int vertexCount = 0;
     std::vector<uint32_t> transitionMeshIndices{};
     std::vector<LOD::Vertex> transitionMeshVertices{};
-    std::array<VertexReuseData, s_NumCells / 2> prevRow{};
-    for (int i = 0; i < s_NumCells; i += 2)
+    std::array<VertexReuseData, c_NumCells / 2> prevRow{};
+    for (int i = 0; i < c_NumCells; i += 2)
     {
-      std::array<VertexReuseData, s_NumCells / 2> currRow{};
+      std::array<VertexReuseData, c_NumCells / 2> currRow{};
 
-      for (int j = 0; j < s_NumCells; j += 2)
+      for (int j = 0; j < c_NumCells; j += 2)
       {
         // Determine which of the 512 cases the cell belongs to
         uint16_t cellCase = 0;
@@ -506,7 +507,7 @@ static void generateTransitionMeshes(LOD::Octree::Node* node, const HeapArray2D<
 
           // If block face normal along negative axis, we must reverse v coordinate-axis to ensure correct orientation
           if (!IsPositive(face))
-            sample[v] = s_NumCells - sample[v];
+            sample[v] = c_NumCells - sample[v];
 
           const int& I = sample.i;
           const int& J = sample.j;
@@ -514,7 +515,7 @@ static void generateTransitionMeshes(LOD::Octree::Node* node, const HeapArray2D<
           length_t Z = LODFloor + K * cellLength;
 
           if (noiseValues[I][J].getElevation() > Z)
-            cellCase |= bit(sampleIndexToBitFlip[p]);
+            cellCase |= bit(c_SampleIndexToBitFlip[p]);
         }
         if (cellCase == 0 || cellCase == 511)
           continue;
@@ -522,14 +523,14 @@ static void generateTransitionMeshes(LOD::Octree::Node* node, const HeapArray2D<
         currRow[j / 2].baseMeshIndex = vertexCount;
 
         // Use lookup table to determine which of 56 equivalence classes the cell belongs to
-        uint8_t cellEquivClass = transitionCellClass[cellCase];
+        uint8_t cellEquivClass = c_TransitionCellClass[cellCase];
         bool reverseWindingOrder = cellEquivClass >> 7;
-        TransitionCellData cellData = transitionCellData[cellEquivClass & 0x7F];
+        TransitionCellData cellData = c_TransitionCellData[cellEquivClass & 0x7F];
         int triangleCount = cellData.getTriangleCount();
 
         // Loop over all triangles in cell
         int cellVertexCount = 0;
-        std::array<uint32_t, maxCellVertexCount> prevCellVertexIndices{};
+        std::array<uint32_t, c_MaxCellVertexCount> prevCellVertexIndices{};
         for (int vert = 0; vert < 3 * triangleCount; ++vert)
         {
           int edgeIndex = cellData.vertexIndex[reverseWindingOrder ? 3 * triangleCount - 1 - vert : vert];
@@ -543,7 +544,7 @@ static void generateTransitionMeshes(LOD::Octree::Node* node, const HeapArray2D<
           }
 
           // Lookup indices of vertices A,B of the cell edge that vertex v lies on
-          uint16_t vertexData = transitionVertexData[cellCase][edgeIndex];
+          uint16_t vertexData = c_TransitionVertexData[cellCase][edgeIndex];
           uint8_t sharedVertexIndex = (vertexData & 0x0F00) >> 8;
           uint8_t sharedVertexDirection = (vertexData & 0xF000) >> 12;
           bool isReusable = sharedVertexDirection != 4;
@@ -579,18 +580,18 @@ static void generateTransitionMeshes(LOD::Octree::Node* node, const HeapArray2D<
           // Indices of samples A,B
           BlockIndex sampleA{};
           sampleA[u] = uIndex;
-          sampleA[v] = i + cornerIndexToSampleIndex[cornerIndexA] % 3;
-          sampleA[w] = j + cornerIndexToSampleIndex[cornerIndexA] / 3;
+          sampleA[v] = i + c_CornerIndexToSampleIndex[cornerIndexA] % 3;
+          sampleA[w] = j + c_CornerIndexToSampleIndex[cornerIndexA] / 3;
           BlockIndex sampleB{};
           sampleB[u] = uIndex;
-          sampleB[v] = i + cornerIndexToSampleIndex[cornerIndexB] % 3;
-          sampleB[w] = j + cornerIndexToSampleIndex[cornerIndexB] / 3;
+          sampleB[v] = i + c_CornerIndexToSampleIndex[cornerIndexB] % 3;
+          sampleB[w] = j + c_CornerIndexToSampleIndex[cornerIndexB] / 3;
 
           // If block face normal along negative axis, we must reverse v coordinate-axis to ensure correct orientation
           if (!IsPositive(face))
           {
-            sampleA[v] = s_NumCells - sampleA[v];
-            sampleB[v] = s_NumCells - sampleB[v];
+            sampleA[v] = c_NumCells - sampleA[v];
+            sampleB[v] = c_NumCells - sampleB[v];
           }
 
           // If vertex is on low-resolution side, use smoothness level of low-resolution LOD
@@ -620,8 +621,8 @@ static void generateTransitionMeshes(LOD::Octree::Node* node, const HeapArray2D<
 void LOD::GenerateMesh(LOD::Octree::Node* node)
 {
   // NOTE: These values should come from biome system when implemented
-  static const length_t globalMinTerrainHeight = s_DefaultBiome.minElevation();
-  static const length_t globalMaxTerrainHeight = s_DefaultBiome.maxElevation();
+  static const length_t globalMinTerrainHeight = -400 * Block::Length();
+  static const length_t globalMaxTerrainHeight =  400 * Block::Length();
 
   length_t LODFloor = node->anchor.k * Chunk::Length();
   length_t LODCeiling = LODFloor + node->length();
@@ -635,13 +636,13 @@ void LOD::GenerateMesh(LOD::Octree::Node* node)
   EN_PROFILE_FUNCTION();
 
   // Generate voxel data using heightmap
-  HeapArray2D<Terrain::CompoundSurfaceData, s_NumCells + 1> noiseValues = generateNoise(node);
+  HeapArray2D<Terrain::CompoundSurfaceData, c_NumCells + 1> noiseValues = generateNoise(node);
 
   if (!needsMesh(node, noiseValues))
     return;
 
   // Generate normal data from heightmap
-  HeapArray2D<Vec3, s_NumCells + 1> noiseNormals = calcNoiseNormals(node, noiseValues);
+  HeapArray2D<Vec3, c_NumCells + 1> noiseNormals = calcNoiseNormals(node, noiseValues);
 
   generatePrimaryMesh(node, noiseValues, noiseNormals);
   generateTransitionMeshes(node, noiseValues, noiseNormals);
@@ -652,11 +653,11 @@ void LOD::GenerateMesh(LOD::Octree::Node* node)
 // Formulas can be found in section 4.4 of TransVoxel paper
 static bool isVertexNearFace(bool facingPositiveDir, length_t u, length_t cellLength)
 {
-  return facingPositiveDir ? u > cellLength * (s_NumCells - 1) : u < cellLength;
+  return facingPositiveDir ? u > cellLength * (c_NumCells - 1) : u < cellLength;
 }
 static length_t vertexAdjustment1D(bool facingPositiveDir, length_t u, length_t cellLength)
 {
-  return s_TCFractionalWidth * (facingPositiveDir ? ((s_NumCells - 1) * cellLength - u) : (cellLength - u));
+  return s_TCFractionalWidth * (facingPositiveDir ? ((c_NumCells - 1) * cellLength - u) : (cellLength - u));
 }
 static Mat3 calcVertexTransform(const Vec3& n)
 {
@@ -698,7 +699,7 @@ static void adjustVertex(LOD::Vertex& vertex, length_t cellLength, uint8_t trans
 
 static std::vector<LOD::Vertex> calcAdjustedPrimaryMesh(LOD::Octree::Node* node)
 {
-  length_t cellLength = node->length() / s_NumCells;
+  length_t cellLength = node->length() / c_NumCells;
 
   std::vector<LOD::Vertex> LODMesh = node->data->primaryMesh.vertices;
 
@@ -716,7 +717,7 @@ static std::vector<LOD::Vertex> calcAdjustedTransitionMesh(LOD::Octree::Node* no
   int faceID = static_cast<int>(face);
   int coordID = faceID / 2;
   bool facingPositiveDir = faceID % 2;
-  length_t cellLength = node->length() / s_NumCells;
+  length_t cellLength = node->length() / c_NumCells;
 
   std::vector<LOD::Vertex> LODMesh = node->data->transitionMeshes[faceID].vertices;
 
