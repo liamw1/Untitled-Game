@@ -17,7 +17,7 @@ namespace Engine
 
     m_Window = Window::Create(WindowProps(name));
     m_Window->setEventCallback(EN_BIND_EVENT_FN(onEvent));
-    m_Window->setVSync(false);
+    m_Window->setVSync(true);
 
     m_ImGuiLayer = new ImGuiLayer();
     pushOverlay(m_ImGuiLayer);

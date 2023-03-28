@@ -44,45 +44,17 @@ std::array<int, 2> Terrain::CompoundSurfaceData::getTextureIndices() const
 
 using ElevationData = HeapArray2D<Noise::OctaveNoiseData<Biome::NumOctaves()>, Chunk::Size()>;
 using TemperatureData = HeapArray2D<float, Chunk::Size()>;
+using BiomeData = HeapArray2D<Biome, Chunk::Size()>;
 
 struct SurfaceData
 {
   ElevationData elevationData;
   TemperatureData temperatureData;
+  BiomeData biomeData;
 };
 
 static std::unordered_map<SurfaceMapIndex, SurfaceData> s_SurfaceDataCache;
 static std::mutex s_Mutex;
-
-static float sampleElevation(const GlobalIndex& chunkIndex)
-{
-  static constexpr float averageElevation = 0 * Block::LengthF();
-  static constexpr float elevationScale = 64.0f;
-  static constexpr float elevationAmplitude = 100 * Block::LengthF();
-
-  Float2 samplingPosition = static_cast<Float2>(chunkIndex) / elevationScale;
-  return averageElevation + elevationAmplitude * Noise::SimplexNoise2D(samplingPosition);
-}
-
-static float sampleTemperature(const GlobalIndex& chunkIndex)
-{
-  static constexpr float averageTemperature = 20.0f;
-  static constexpr float temperatureScale = 32.0f;
-  static constexpr float temperatureAmplitude = 30.0f;
-
-  Float2 samplingPosition = static_cast<Float2>(chunkIndex) / temperatureScale;
-  return averageTemperature + temperatureAmplitude * Noise::SimplexNoise2D(samplingPosition);
-}
-
-static float sampleHumidity(const GlobalIndex& chunkIndex)
-{
-  static constexpr float averageHumidity = 50.0f;
-  static constexpr float humidityScale = 16.0f;
-  static constexpr float humidityAmplitude = 50.0f;
-
-  Float2 samplingPosition = static_cast<Float2>(chunkIndex) / humidityScale;
-  return averageHumidity + humidityAmplitude * Noise::SimplexNoise2D(samplingPosition);
-}
 
 static const SurfaceData& getSurfaceData(const GlobalIndex& chunkIndex)
 {
@@ -97,8 +69,10 @@ static const SurfaceData& getSurfaceData(const GlobalIndex& chunkIndex)
       {
         Vec2 blockXY = Chunk::Length() * static_cast<Vec2>(mapIndex) + Block::Length() * (Vec2(i, j) + Vec2(0.5));
 
-        surfaceData.elevationData[i][j] = Terrain::GetElevationData(blockXY, s_DefaultBiome);
-        surfaceData.temperatureData[i][j] = Terrain::GetTemperatureData(blockXY, s_DefaultBiome);
+        Biome biome = GetBiomeData(blockXY);
+        surfaceData.elevationData[i][j] = Terrain::GetElevationData(blockXY, biome);
+        surfaceData.temperatureData[i][j] = Terrain::GetTemperatureData(blockXY, biome);
+        surfaceData.biomeData[i][j] = biome;
       }
 
     const auto& [insertionPosition, insertionSuccess] = s_SurfaceDataCache.insert({ mapIndex, std::move(surfaceData) });
@@ -143,17 +117,17 @@ static bool isEmpty(const std::unique_ptr<Block::Type[]>& composition)
 static void heightMapStage(std::unique_ptr<Block::Type[]>& composition, const GlobalIndex& chunkIndex)
 {
   // Generates surface data if none exists
-  const auto& [heightMap, temperatureMap] = getSurfaceData(chunkIndex);
+  const auto& [heightMap, temperatureMap, biomeMap] = getSurfaceData(chunkIndex);
 
   length_t chunkFloor = Chunk::Length() * chunkIndex.k;
   for (blockIndex_t i = 0; i < Chunk::Size(); ++i)
     for (blockIndex_t j = 0; j < Chunk::Size(); ++j)
     {
-      Terrain::SurfaceInfo surfaceInfo = Terrain::GetSurfaceInfo(heightMap[i][j], temperatureMap[i][j], s_DefaultBiome);
+      Terrain::SurfaceInfo surfaceInfo = Terrain::GetSurfaceInfo(heightMap[i][j], temperatureMap[i][j], biomeMap[i][j]);
 
       int terrainElevationIndex = static_cast<int>(std::ceil((surfaceInfo.elevation - chunkFloor) / Block::Length()));
-      int surfaceDepth = static_cast<int>(std::ceil(s_DefaultBiome.averageSurfaceDepth));
-      int soilDepth = surfaceDepth + static_cast<int>(std::ceil(s_DefaultBiome.averageSoilDepth));
+      int surfaceDepth = static_cast<int>(std::ceil(biomeMap[i][j].averageSurfaceDepth));
+      int soilDepth = surfaceDepth + static_cast<int>(std::ceil(biomeMap[i][j].averageSoilDepth));
 
       blockIndex_t k = 0;
       while (k < terrainElevationIndex - soilDepth && k < Chunk::Size())
@@ -163,7 +137,7 @@ static void heightMapStage(std::unique_ptr<Block::Type[]>& composition, const Gl
       }
       while (k < terrainElevationIndex - surfaceDepth && k < Chunk::Size())
       {
-        setBlockType(composition, i, j, k, s_DefaultBiome.soilType.getPrimary());
+        setBlockType(composition, i, j, k, biomeMap[i][j].soilType.getPrimary());
         k++;
       }
       while (k < terrainElevationIndex && k < Chunk::Size())

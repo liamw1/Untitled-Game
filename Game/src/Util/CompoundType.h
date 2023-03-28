@@ -79,3 +79,9 @@ private:
 
   std::array<Component, ComponentCount> m_Components{};
 };
+
+template<typename ComponentType, int ComponentCount>
+CompoundType<ComponentType, ComponentCount> operator*(float x, const CompoundType<ComponentType, ComponentCount>& compoundType)
+{
+  return compoundType * x;
+}

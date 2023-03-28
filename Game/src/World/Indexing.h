@@ -83,7 +83,7 @@ struct Index2D
 
   static constexpr Index2D<IntType> ToIndex(const Vec2& vec)
   {
-    return { static_cast<IntType>(vec.x), static_cast<IntType>(vec.y) };
+    return { static_cast<IntType>(std::floor(vec.x)), static_cast<IntType>(std::floor(vec.y)) };
   }
 };
 
@@ -182,7 +182,7 @@ struct Index3D
 
   static constexpr Index3D<IntType> ToIndex(const Vec3& vec)
   {
-    return { static_cast<IntType>(vec.x), static_cast<IntType>(vec.y), static_cast<IntType>(vec.z) };
+    return { static_cast<IntType>(std::floor(vec.x)), static_cast<IntType>(std::floor(vec.y)), static_cast<IntType>(std::floor(vec.z)) };
   }
 
   static constexpr Index3D<IntType> Dir(Block::Face face)
@@ -235,9 +235,15 @@ using GlobalIndex = Index3D<globalIndex_t>;
 namespace std
 {
   template<IntegerType IntType>
+  inline ostream& operator<<(ostream& os, const Index2D<IntType>& index)
+  {
+    return os << '[' << index.i << ", " << index.j << ']';
+  }
+
+  template<IntegerType IntType>
   inline ostream& operator<<(ostream& os, const Index3D<IntType>& index)
   {
-    return os << '[' << static_cast<int>(index.i) << ", " << static_cast<int>(index.j) << ", " << static_cast<int>(index.k) << ']';
+    return os << '[' << index.i << ", " << index.j << ", " << index.k << ']';
   }
 
   template<>

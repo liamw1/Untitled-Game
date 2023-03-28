@@ -1,5 +1,6 @@
 #pragma once
 #include "Block/Block.h"
+#include "World/Indexing.h"
 
 struct Biome
 {
@@ -45,7 +46,6 @@ struct Biome
 
   Biome operator+(const Biome& other) const;
   Biome operator*(float x) const;
-
   Biome& operator+=(const Biome& other);
   Biome& operator*=(float x);
 
@@ -54,7 +54,9 @@ public:
   {
     Default = 0,
     GrassField = 1,
-    Desert = 2
+    Desert = 2,
+
+    First = Default, Last = Desert
   };
 
   static const Biome& Get(Type type);
@@ -64,3 +66,5 @@ public:
 private:
   static constexpr int s_Octaves = 4;
 };
+
+Biome GetBiomeData(const Vec2& surfaceLocation);
