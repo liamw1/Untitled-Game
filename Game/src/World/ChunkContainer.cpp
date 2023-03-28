@@ -4,7 +4,7 @@
 
 static constexpr int c_MaxChunks = (2 * c_UnloadDistance + 1) * (2 * c_UnloadDistance + 1) * (2 * c_UnloadDistance + 1);
 
-ChunkContainer::ChunkContainer()
+void ChunkContainer::initialize()
 {
   m_ChunkArray = std::make_unique<Chunk[]>(c_MaxChunks);
 
@@ -242,8 +242,6 @@ bool ChunkContainer::isLoaded(const GlobalIndex& chunkIndex) const
 
 bool ChunkContainer::isOnBoundary(const Chunk& chunk) const
 {
-  EN_ASSERT(chunk, "Chunk does not exist!");
-
   for (Block::Face face : Block::FaceIterator())
     if (!isLoaded(chunk.getGlobalIndex() + GlobalIndex::Dir(face)) && !chunk.isFaceOpaque(face))
       return true;
@@ -252,8 +250,6 @@ bool ChunkContainer::isOnBoundary(const Chunk& chunk) const
 
 ChunkType ChunkContainer::getChunkType(const Chunk& chunk) const
 {
-  EN_ASSERT(chunk, "Chunk does not exist");
-
   for (int chunkType = 0; chunkType < c_ChunkTypes; ++chunkType)
     if (m_Chunks[chunkType].find(Util::CreateKey(chunk)) != m_Chunks[chunkType].end())
       return static_cast<ChunkType>(chunkType);
@@ -332,7 +328,6 @@ void ChunkContainer::boundaryChunkUpdate(Chunk& chunk)
 
 void ChunkContainer::recategorizeChunk(Chunk& chunk, ChunkType source, ChunkType destination)
 {
-  EN_ASSERT(chunk, "Chunk does not exist!");
   EN_ASSERT(source != destination, "Source and destination are the same!");
   EN_ASSERT(getChunkType(chunk) == source, "Chunk is not of the source type!");
 

@@ -120,13 +120,10 @@ static CompoundType<Biome::Type, c_MaxCompoundBiomes> getBiomeData(const Vec2& s
 
 static const SurfaceData& getSurfaceData(const GlobalIndex& chunkIndex)
 {
-  std::lock_guard lock(s_Mutex);
-
   SurfaceMapIndex mapIndex = static_cast<SurfaceMapIndex>(chunkIndex);
   auto it = s_SurfaceDataCache.find(mapIndex);
   if (it == s_SurfaceDataCache.end())
   {
-    EN_PROFILE_FUNCTION();
     // NOTE: Voronoi points could be calculated here instead of each time getBiomeData is called
 
     // Generate surface data
@@ -181,7 +178,7 @@ static bool isEmpty(const std::unique_ptr<Block::Type[]>& composition)
 
 static void heightMapStage(std::unique_ptr<Block::Type[]>& composition, const GlobalIndex& chunkIndex)
 {
-  EN_PROFILE_FUNCTION();
+  std::lock_guard lock(s_Mutex);
 
   // Generates surface data if none exists
   const auto& [noiseSamples, biomeMap] = getSurfaceData(chunkIndex);

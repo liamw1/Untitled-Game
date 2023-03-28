@@ -20,7 +20,9 @@ enum class ChunkType
 class ChunkContainer
 {
 public:
-  ChunkContainer();
+  ChunkContainer() = default;
+
+  void initialize();
 
   /*
     Inserts chunk and adds it to boundary map. Its neighbors are moved from boundary map

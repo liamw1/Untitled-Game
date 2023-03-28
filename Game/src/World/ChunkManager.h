@@ -10,6 +10,8 @@ public:
   ChunkManager();
   ~ChunkManager();
 
+  void initialize();
+
   /*
     Decides which chunks to submit for rendering.
   */

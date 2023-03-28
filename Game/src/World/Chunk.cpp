@@ -9,6 +9,9 @@ Chunk::Chunk()
     m_QuadCount(0),
     m_GlobalIndex({})
 {
+  m_VertexArray = Engine::VertexArray::Create();
+  m_VertexArray->setLayout(s_VertexBufferLayout);
+  m_VertexArray->setIndexBuffer(s_IndexBuffer);
 }
 
 Chunk::Chunk(const GlobalIndex& chunkIndex)
@@ -21,20 +24,21 @@ Chunk::Chunk(const GlobalIndex& chunkIndex)
 
 Chunk::Chunk(Chunk&& other) noexcept
   : m_Mesh(std::move(other.m_Mesh)),
-    m_VertexArray(std::move(other.m_VertexArray)),
     m_Composition(std::move(other.m_Composition)),
     m_GlobalIndex(other.m_GlobalIndex),
     m_NonOpaqueFaces(other.m_NonOpaqueFaces.load()),
     m_QuadCount(other.m_QuadCount)
 {
+  EN_ASSERT(!other.m_VertexArray, "Chunks with initialized vertex arrays should not be moved!");
 }
 
 Chunk& Chunk::operator=(Chunk&& other) noexcept
 {
   if (this != &other)
   {
+    EN_ASSERT(!other.m_VertexArray, "Chunks with initialized vertex arrays should not be moved!");
+
     m_Mesh = std::move(other.m_Mesh);
-    m_VertexArray = std::move(other.m_VertexArray);
     m_Composition = std::move(other.m_Composition);
     m_GlobalIndex = other.m_GlobalIndex;
     m_NonOpaqueFaces.store(other.m_NonOpaqueFaces.load());
@@ -142,13 +146,6 @@ void Chunk::uploadMesh()
   if (m_Mesh.empty())
     return;
 
-  if (!m_VertexArray)
-  {
-    m_VertexArray = Engine::VertexArray::Create();
-    m_VertexArray->setLayout(s_VertexBufferLayout);
-    m_VertexArray->setIndexBuffer(s_IndexBuffer);
-  }
-
   m_QuadCount = static_cast<uint16_t>(m_Mesh.size() / 4);
   m_VertexArray->setVertexBuffer(m_Mesh.data(), 4 * sizeof(uint32_t) * m_QuadCount);
   m_Mesh.clear();
@@ -209,7 +206,6 @@ void Chunk::reset()
 {
   // Reset data to default values
   m_Mesh.clear();
-  m_VertexArray.reset();
   m_Composition.reset();
   m_GlobalIndex = {};
   m_NonOpaqueFaces.store(0);

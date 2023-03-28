@@ -35,7 +35,7 @@ void LOD::Octree::splitNode(Node* node)
 {
   EN_ASSERT(node != nullptr, "Node can't be nullptr!");
   EN_ASSERT(node->isLeaf(), "Node must be a leaf node!");
-  EN_ASSERT(node->depth != s_MaxNodeDepth, "Node is already at max depth!");
+  EN_ASSERT(node->depth != c_MaxNodeDepth, "Node is already at max depth!");
 
   const globalIndex_t nodeChildSize = node->size() / 2;
 

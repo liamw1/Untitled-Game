@@ -8,7 +8,7 @@ namespace Engine
   void OpenGLUniformBufferAPI::allocate(uint32_t binding, uint32_t size)
   {
     EN_CORE_ASSERT(std::this_thread::get_id() == Threads::GetMainThreadID(), "OpenGL calls must be made in main thread!");
-    EN_CORE_ASSERT(binding < s_MaxUniformBindings, "Binding exceeds maximum allowed uniform bindings!");
+    EN_CORE_ASSERT(binding < c_MaxUniformBindings, "Binding exceeds maximum allowed uniform bindings!");
 
     if (m_RendererIDs[binding] != 0)
       EN_CORE_WARN("Uniform buffer has already been allocated at binding {0}!", binding);
@@ -27,7 +27,7 @@ namespace Engine
   void OpenGLUniformBufferAPI::deallocate(uint32_t binding)
   {
     EN_CORE_ASSERT(std::this_thread::get_id() == Threads::GetMainThreadID(), "OpenGL calls must be made in main thread!");
-    EN_CORE_ASSERT(binding < s_MaxUniformBindings, "Binding exceeds maximum allowed uniform bindings!");
+    EN_CORE_ASSERT(binding < c_MaxUniformBindings, "Binding exceeds maximum allowed uniform bindings!");
 
     glDeleteBuffers(1, &m_RendererIDs[binding]);
     m_RendererIDs[binding] = 0;
@@ -37,7 +37,7 @@ namespace Engine
   void OpenGLUniformBufferAPI::bind(uint32_t binding) const
   {
     EN_CORE_ASSERT(std::this_thread::get_id() == Threads::GetMainThreadID(), "OpenGL calls must be made in main thread!");
-    EN_CORE_ASSERT(binding < s_MaxUniformBindings, "Binding exceeds maximum allowed uniform bindings!");
+    EN_CORE_ASSERT(binding < c_MaxUniformBindings, "Binding exceeds maximum allowed uniform bindings!");
 
     glBindBuffer(GL_UNIFORM_BUFFER, m_RendererIDs[binding]);
   }
@@ -50,14 +50,14 @@ namespace Engine
 
   uint32_t OpenGLUniformBufferAPI::getSize(uint32_t binding) const
   {
-    EN_CORE_ASSERT(binding < s_MaxUniformBindings, "Binding exceeds maximum allowed uniform bindings!");
+    EN_CORE_ASSERT(binding < c_MaxUniformBindings, "Binding exceeds maximum allowed uniform bindings!");
     return m_BufferSizes[binding];
   }
 
   void OpenGLUniformBufferAPI::setData(uint32_t binding, const void* data, uint32_t size, uint32_t offset)
   {
     EN_CORE_ASSERT(std::this_thread::get_id() == Threads::GetMainThreadID(), "OpenGL calls must be made in main thread!");
-    EN_CORE_ASSERT(binding < s_MaxUniformBindings, "Binding exceeds maximum allowed uniform bindings!");
+    EN_CORE_ASSERT(binding < c_MaxUniformBindings, "Binding exceeds maximum allowed uniform bindings!");
     EN_CORE_ASSERT(size + offset <= m_BufferSizes[binding], "Data exceeds uniform buffer size!");
 
     glNamedBufferSubData(m_RendererIDs[binding], offset, size, data);

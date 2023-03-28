@@ -19,7 +19,11 @@ void Biome::Initialize()
 
 const Biome* Biome::Get(Type biome)
 {
-  return s_Biomes[static_cast<int>(biome)].get();
+  int biomeIndex = static_cast<int>(biome);
+  if (biomeIndex < 0)
+    EN_INFO("Something is wrong!");
+  EN_ASSERT(biomeIndex >= 0 && biomeIndex < Biome::Count(), "Invalid biome type!");
+  return s_Biomes[biomeIndex].get();
 }
 
 length_t Biome::CalculateOctaveNoise(const NoiseSamples& noiseSamples, length_t largestAmplitude, float persistence)

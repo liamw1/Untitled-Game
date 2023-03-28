@@ -20,6 +20,11 @@ ChunkManager::~ChunkManager()
     m_UpdateThread.join();
 }
 
+void ChunkManager::initialize()
+{
+  m_ChunkContainer.initialize();
+}
+
 void ChunkManager::render()
 {
   EN_PROFILE_FUNCTION();
@@ -199,7 +204,7 @@ void ChunkManager::updateWorker()
 
 void ChunkManager::generateNewChunk(const GlobalIndex& chunkIndex)
 {
-  Chunk chunk;
+  Chunk chunk(chunkIndex);
   switch (m_LoadMode)
   {
     case ChunkManager::NotSet:  EN_ERROR("Load mode not set!");               break;

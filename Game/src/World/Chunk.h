@@ -12,6 +12,15 @@ class Chunk
   Most public functions can be safely accessed as long as a lock is held on either
   the chunk's mutex OR the container mutex. The only exceptions are empty(), and
   the getBlockType() variants, which require a lock on the chunk mutex specifically.
+
+  IMPORTANT: Because OpenGL calls can only be made in the main thread, the vertex arrays
+             of chunks are set once in the default constructor. An actual physical chunk
+             can only acquire a vertex array by 'stealing' it from a default constructed
+             chunk. This can be done via the move assignment operator.
+
+             This implementation isn't ideal, and is the result of a bit of technical debt.
+             Ideally, the GlobalIndex constructor would be removed and the chunk container
+             would simply feed chunk composition data into an already initialized chunk.
 */
 public:
   Chunk();
