@@ -11,6 +11,7 @@ void Biome::Initialize()
   s_Biomes[static_cast<int>(Biome::Type::Default)] = CreateUnique<DefaultBiome>();
   s_Biomes[static_cast<int>(Biome::Type::GrassField)] = CreateUnique<GrassFieldsBiome>();
   s_Biomes[static_cast<int>(Biome::Type::Desert)] = CreateUnique<DesertBoime>();
+  s_Biomes[static_cast<int>(Biome::Type::Flat)] = CreateUnique<FlatBiome>();
 
   if (s_BiomesInitialized != Biome::Count())
     EN_ERROR("{0} of {1} biomes have not been initialized!", Biome::Count() - s_BiomesInitialized, Biome::Count());

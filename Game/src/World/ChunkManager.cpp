@@ -99,7 +99,7 @@ std::pair<const Chunk*, std::unique_lock<std::mutex>> ChunkManager::acquireChunk
   return m_ChunkContainer.acquireChunk(GlobalIndex(originChunk.i + chunkIndex.i, originChunk.j + chunkIndex.j, originChunk.k + chunkIndex.k));
 }
 
-void ChunkManager::placeBlock(const GlobalIndex& chunkIndex, BlockIndex blockIndex, Block::Face face, Block::Type blockType)
+void ChunkManager::placeBlock(GlobalIndex chunkIndex, BlockIndex blockIndex, Block::Face face, Block::Type blockType)
 {
   {
     auto [chunk, lock] = m_ChunkContainer.acquireChunk(chunkIndex);
@@ -112,7 +112,8 @@ void ChunkManager::placeBlock(const GlobalIndex& chunkIndex, BlockIndex blockInd
 
     if (Util::BlockNeighborIsInAnotherChunk(blockIndex, face))
     {
-      auto [neighbor, neighborLock] = m_ChunkContainer.acquireChunk(chunk->getGlobalIndex() + GlobalIndex::Dir(face));
+      chunkIndex += GlobalIndex::Dir(face);
+      auto [neighbor, neighborLock] = m_ChunkContainer.acquireChunk(chunkIndex);
 
       if (!neighbor)
         return;

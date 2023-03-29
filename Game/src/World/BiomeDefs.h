@@ -38,3 +38,13 @@ public:
     return CalculateOctaveNoise(noiseSamples, largestElevationAmplitude, elevationPersistence);
   }
 };
+
+class FlatBiome : public Biome
+{
+public:
+  Block::Type primarySurfaceType() const override { return Block::Type::Stone; }
+  length_t localSurfaceElevation(const NoiseSamples& noiseSamples) const override
+  {
+    return 0_m;
+  }
+};
