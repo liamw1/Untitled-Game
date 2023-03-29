@@ -76,9 +76,10 @@ namespace Engine
       json << "\"ts\":" << static_cast<double>(startTimeInNanoseconds) / 1e3;
       json << "}";
 
-      std::lock_guard lock(m_Mutex);
       if (m_CurrentSession)
       {
+        std::lock_guard lock(m_Mutex);
+
         m_OutputStream << json.str();
         m_OutputStream.flush();
       }
@@ -157,7 +158,7 @@ namespace Engine
   };
 }
 
-#define EN_PROFILE 1
+#define EN_PROFILE 0
 #if EN_PROFILE
   #define EN_PROFILE_BEGIN_SESSION(name, filepath)  ::Engine::Instrumentor::Get().beginSession(name, filepath)
   #define EN_PROFILE_END_SESSION()                  ::Engine::Instrumentor::Get().endSession()

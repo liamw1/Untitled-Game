@@ -7,6 +7,8 @@ static constexpr int c_MaxChunks = (2 * c_UnloadDistance + 1) * (2 * c_UnloadDis
 void ChunkContainer::initialize()
 {
   m_ChunkArray = std::make_unique<Chunk[]>(c_MaxChunks);
+  for (int i = 0; i < c_MaxChunks; ++i)
+    m_ChunkArray[i].initializerVertexArray();
 
   std::vector<int> stackData;
   stackData.reserve(c_MaxChunks);

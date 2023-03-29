@@ -16,7 +16,6 @@ public:
     Default = 0,
     GrassField,
     Desert,
-    FlatStone,
 
     Null,
     Begin = 0, End = Null

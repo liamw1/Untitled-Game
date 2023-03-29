@@ -48,7 +48,7 @@ namespace Engine
       ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(4, 4));
       float lineHeight = GImGui->Font->FontSize + 2.0f * GImGui->Style.FramePadding.y;
       ImGui::Separator();
-      bool open = ImGui::TreeNodeEx(reinterpret_cast<void*>(typeid(T).hash_code()), s_TreeNodeFlags, name.c_str());
+      bool open = ImGui::TreeNodeEx(reinterpret_cast<void*>(typeid(T).hash_code()), c_TreeNodeFlags, name.c_str());
       ImGui::PopStyleVar();
 
       ImGui::SameLine(contentRegionWidth - lineHeight / 2);

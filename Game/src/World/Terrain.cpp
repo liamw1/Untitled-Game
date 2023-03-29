@@ -49,7 +49,8 @@ static constexpr int c_RegionRadius = 1;
 static constexpr int c_RegionWidth = 2 * c_RegionRadius + 1;
 
 using NoiseSamples = HeapArray2D<Noise::OctaveNoiseData<Biome::LocalElevationOctaves()>, Chunk::Size()>;
-using BiomeData = HeapArray2D<CompoundType<Biome::Type, c_MaxCompoundBiomes>, Chunk::Size()>;
+using CompoundBiome = CompoundType<Biome::Type, c_MaxCompoundBiomes, Biome::Type::Null>;
+using BiomeData = HeapArray2D<CompoundBiome, Chunk::Size()>;
 
 struct SurfaceData
 {
@@ -91,9 +92,9 @@ static std::pair<Biome::Type, Float2> getRegionVoronoiPoint(const SurfaceMapInde
   return { biomeType, relativeLocation };
 }
 
-static CompoundType<Biome::Type, c_MaxCompoundBiomes> getBiomeData(const Vec2& surfaceLocation)
+static CompoundBiome getBiomeData(const Vec2& surfaceLocation)
 {
-  using WeightedBiome = CompoundType<Biome::Type, c_MaxCompoundBiomes>::Component;
+  using WeightedBiome = CompoundBiome::Component;
 
   SurfaceMapIndex queryRegionIndex = SurfaceMapIndex::ToIndex(surfaceLocation / Chunk::Size() / c_BiomeRegionSize);
   Float2 queryLocationRelativeToQueryRegion = surfaceLocation / Chunk::Size() / c_BiomeRegionSize - static_cast<Vec2>(queryRegionIndex);
@@ -114,8 +115,23 @@ static CompoundType<Biome::Type, c_MaxCompoundBiomes> getBiomeData(const Vec2& s
       nearbyBiomes[index] = { biomeType, biomeWeight };
     }
 
-  std::sort(nearbyBiomes.begin(), nearbyBiomes.end(), [](const auto& biomeA, const auto& biomeB) { return biomeA.weight > biomeB.weight; });
-  return CompoundType<Biome::Type, c_MaxCompoundBiomes>(nearbyBiomes);
+  // Combine components of same type
+  std::sort(nearbyBiomes.begin(), nearbyBiomes.end(), [](const WeightedBiome& biomeA, const WeightedBiome& biomeB) { return static_cast<int>(biomeA.type) < static_cast<int>(biomeB.type); });
+  int lastUniqueElementIndex = 0;
+  for (int i = 1; i < nearbyBiomes.size(); ++i)
+  {
+    if (nearbyBiomes[i].type == nearbyBiomes[i - 1].type)
+    {
+      nearbyBiomes[lastUniqueElementIndex].weight += nearbyBiomes[i].weight;
+      nearbyBiomes[i] = { Biome::Type::Null, 0.0f };
+    }
+    else
+      lastUniqueElementIndex = i;
+  }
+
+  // Sort biomes by weight and create compound type
+  std::sort(nearbyBiomes.begin(), nearbyBiomes.end(), [](const WeightedBiome& biomeA, const WeightedBiome& biomeB) { return biomeA.weight > biomeB.weight; });
+  return CompoundBiome(nearbyBiomes);
 }
 
 static const SurfaceData& getSurfaceData(const GlobalIndex& chunkIndex)
@@ -190,7 +206,11 @@ static void heightMapStage(std::unique_ptr<Block::Type[]>& composition, const Gl
       length_t elevation = 0.0;
       for (int n = 0; n < c_MaxCompoundBiomes; ++n)
       {
-        const Biome* biome = Biome::Get(biomeMap[i][j][n].type);
+        Biome::Type biomeType = biomeMap[i][j][n].type;
+        if (biomeType == Biome::Type::Null)
+          break;
+
+        const Biome* biome = Biome::Get(biomeType);
         elevation += biome->localSurfaceElevation(noiseSamples[i][j]) * biomeMap[i][j][n].weight;
       }
       const Biome* primaryBiome = Biome::Get(biomeMap[i][j][0].type);

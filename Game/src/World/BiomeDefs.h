@@ -9,7 +9,9 @@ public:
   {
     static constexpr length_t largestElevationAmplitude = 150 * Block::Length();
     static constexpr float elevationPersistence = 1.0f / 3;
-    return CalculateOctaveNoise(noiseSamples, largestElevationAmplitude, elevationPersistence);
+
+    length_t h = CalculateOctaveNoise(noiseSamples, largestElevationAmplitude, elevationPersistence);
+    return std::sqrt(10 + h*h);
   }
 };
 
@@ -34,15 +36,5 @@ public:
     static constexpr length_t largestElevationAmplitude = 30 * Block::Length();
     static constexpr float elevationPersistence = 1.0f / 4;
     return CalculateOctaveNoise(noiseSamples, largestElevationAmplitude, elevationPersistence);
-  }
-};
-
-class FlatStoneBiome : public Biome
-{
-public:
-  Block::Type primarySurfaceType() const override { return Block::Type::Stone; }
-  length_t localSurfaceElevation(const NoiseSamples& noiseSamples) const override
-  {
-    return 0_m;
   }
 };

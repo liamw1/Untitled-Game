@@ -13,14 +13,10 @@ class Chunk
   the chunk's mutex OR the container mutex. The only exceptions are empty(), and
   the getBlockType() variants, which require a lock on the chunk mutex specifically.
 
-  IMPORTANT: Because OpenGL calls can only be made in the main thread, the vertex arrays
-             of chunks are set once in the default constructor. An actual physical chunk
-             can only acquire a vertex array by 'stealing' it from a default constructed
-             chunk. This can be done via the move assignment operator.
-
-             This implementation isn't ideal, and is the result of a bit of technical debt.
-             Ideally, the GlobalIndex constructor would be removed and the chunk container
-             would simply feed chunk composition data into an already initialized chunk.
+  IMPORTANT: Before calling uploadMesh or draw, the chunk's vertex array must be
+             initialized. This only has to be done once, and should only be done
+             for chunk objects that have a permanent location in memory, such as
+             the chunk's stored in the chunk container.
 */
 public:
   Chunk();
@@ -32,6 +28,12 @@ public:
   // Chunks are unique and so cannot be copied
   Chunk(const Chunk& other) = delete;
   Chunk& operator=(const Chunk& other) = delete;
+
+  /*
+    Creates vertex array for this chunk. Must be called at least once before chunk can be drawn.
+    Once called, it never needs to be called again for this chunk allocation.
+  */
+  void initializerVertexArray();
 
   /*
     \returns The chunk's global index, which identifies it uniquely.

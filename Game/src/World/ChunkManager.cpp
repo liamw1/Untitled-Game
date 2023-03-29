@@ -204,7 +204,7 @@ void ChunkManager::updateWorker()
 
 void ChunkManager::generateNewChunk(const GlobalIndex& chunkIndex)
 {
-  Chunk chunk(chunkIndex);
+  Chunk chunk;
   switch (m_LoadMode)
   {
     case ChunkManager::NotSet:  EN_ERROR("Load mode not set!");               break;

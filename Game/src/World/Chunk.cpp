@@ -9,9 +9,6 @@ Chunk::Chunk()
     m_QuadCount(0),
     m_GlobalIndex({})
 {
-  m_VertexArray = Engine::VertexArray::Create();
-  m_VertexArray->setLayout(s_VertexBufferLayout);
-  m_VertexArray->setIndexBuffer(s_IndexBuffer);
 }
 
 Chunk::Chunk(const GlobalIndex& chunkIndex)
@@ -45,6 +42,13 @@ Chunk& Chunk::operator=(Chunk&& other) noexcept
     m_QuadCount = other.m_QuadCount;
   }
   return *this;
+}
+
+void Chunk::initializerVertexArray()
+{
+  m_VertexArray = Engine::VertexArray::Create();
+  m_VertexArray->setLayout(s_VertexBufferLayout);
+  m_VertexArray->setIndexBuffer(s_IndexBuffer);
 }
 
 LocalIndex Chunk::getLocalIndex() const
@@ -143,6 +147,8 @@ void Chunk::setData(std::unique_ptr<Block::Type[]> composition)
 
 void Chunk::uploadMesh()
 {
+  EN_ASSERT(m_VertexArray, "Vertex array must be initialized before mesh can be uploaded!")
+
   if (m_Mesh.empty())
     return;
 
@@ -192,8 +198,9 @@ void Chunk::internalUpdate(const std::vector<uint32_t>& mesh)
 
 void Chunk::draw() const
 {
-  uint32_t meshIndexCount = 6 * static_cast<uint32_t>(m_QuadCount);
+  EN_ASSERT(m_VertexArray, "Vertex array must first be initialized before mesh can be drawn!");
 
+  uint32_t meshIndexCount = 6 * static_cast<uint32_t>(m_QuadCount);
   if (meshIndexCount == 0)
     return; // Nothing to draw
 

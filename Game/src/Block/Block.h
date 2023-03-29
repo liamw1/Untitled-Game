@@ -4,7 +4,7 @@
 
 namespace Block
 {
-  using CompoundType = ::CompoundType<Type, 4>;
+  using CompoundType = ::CompoundType<Type, 4, Block::Type::Null>;
 
   enum class Face : int
   {
