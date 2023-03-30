@@ -16,13 +16,8 @@ GameSandbox::GameSandbox()
 
   Block::Initialize();
   Biome::Initialize();
-
-  Shared<Engine::TextureArray> textureArray = Engine::TextureArray::Create(16, 128);
-  for (Block::Texture texture : Block::TextureIterator())
-    textureArray->addTexture(Block::GetTexturePath(texture));
-
-  Chunk::Initialize(textureArray);
-  LOD::MeshData::Initialize(textureArray);
+  Chunk::Initialize();
+  LOD::MeshData::Initialize();
   m_World.initialize();
 }
 

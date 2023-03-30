@@ -80,7 +80,7 @@ public:
   static constexpr length_t Length() { return Block::Length() * c_ChunkSize; }
   static constexpr int TotalBlocks() { return c_ChunkSize * c_ChunkSize * c_ChunkSize; }
 
-  static void Initialize(const Shared<Engine::TextureArray>& textureArray);
+  static void Initialize();
   static void BindBuffers();
 
 // All private functions require a lock on the chunk mutex.

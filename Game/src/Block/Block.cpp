@@ -17,6 +17,7 @@ static bool s_Initialized = false;
 
 static StackArray2D<Block::Texture, c_MaxBlockTypes, 6> s_TexIDs{};
 static std::array<std::string, c_MaxBlockTextures> s_TexturePaths{};
+static Shared<Engine::TextureArray> s_TextureArray;
 static const BlockUniforms s_BlockUniforms{};
 
 static void assignTextures(Block::Type block, std::array<Block::Texture, 6> faceTextures)
@@ -76,11 +77,16 @@ void Block::Initialize()
   assignTextures(Block::Type::OakLeaves, Block::Texture::OakLeaves);
   assignTextures(Block::Type::Null, Block::Texture::ErrorTexture);
 
+  s_TextureArray = Engine::TextureArray::Create(16, 128);
   for (Block::Texture texture : Block::TextureIterator())
   {
     blockTexID textureID = static_cast<blockTexID>(texture);
     if (s_TexturePaths[textureID] == "")
+    {
       EN_ERROR("Block texture {0} has not been assign a path!", textureID);
+      textureID = static_cast<blockTexID>(Block::Texture::ErrorTexture);
+    }
+    s_TextureArray->addTexture(s_TexturePaths[textureID]);
   }
 
   if (s_BlocksInitialized != c_BlockTypes)
@@ -89,21 +95,21 @@ void Block::Initialize()
     s_Initialized = true;
 }
 
-Block::Texture Block::GetTexture(Type block, Face face)
+Shared<Engine::TextureArray> Block::GetTextureArray()
 {
-  EN_ASSERT(s_Initialized, "Block class has not been initialized!");
-  return s_TexIDs[static_cast<blockID>(block)][static_cast<int>(face)];
+  EN_ASSERT(s_Initialized, "Blocks have not been initialized!");
+  return s_TextureArray;
 }
 
-std::string Block::GetTexturePath(Texture texture)
+Block::Texture Block::GetTexture(Type block, Face face)
 {
-  EN_ASSERT(s_Initialized, "Block class has not been initialized!");
-  return s_TexturePaths[static_cast<blockTexID>(texture)];
+  EN_ASSERT(s_Initialized, "Blocks have not been initialized!");
+  return s_TexIDs[static_cast<blockID>(block)][static_cast<int>(face)];
 }
 
 bool Block::HasTransparency(Type block)
 {
-  EN_ASSERT(s_Initialized, "Block class has not been initialized!");
+  EN_ASSERT(s_Initialized, "Blocks have not been initialized!");
   switch (block)
   {
     case Block::Type::Air:        return true;
@@ -114,7 +120,7 @@ bool Block::HasTransparency(Type block)
 
 bool Block::HasCollision(Type block)
 {
-  EN_ASSERT(s_Initialized, "Block class has not been initialized!");
+  EN_ASSERT(s_Initialized, "Blocks have not been initialized!");
   switch (block)
   {
     case Block::Type::Air:  return false;
@@ -124,7 +130,7 @@ bool Block::HasCollision(Type block)
 
 bool Block::IsTransparent(Texture texture)
 {
-  EN_ASSERT(s_Initialized, "Block class has not been initialized!");
+  EN_ASSERT(s_Initialized, "Blocks have not been initialized!");
   switch (texture)
   {
     case Block::Texture::Invisible: return true;

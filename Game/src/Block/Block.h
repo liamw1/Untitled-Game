@@ -1,6 +1,7 @@
 #pragma once
 #include "BlockIDs.h"
 #include "Util/CompoundType.h"
+#include <Engine.h>
 
 namespace Block
 {
@@ -25,12 +26,10 @@ namespace Block
     return oppFace;
   }
 
-
-
   void Initialize();
+  Shared<Engine::TextureArray> GetTextureArray();
 
   Texture GetTexture(Type block, Face face);
-  std::string GetTexturePath(Texture texture);
 
   bool HasTransparency(Type block);
   bool HasCollision(Type block);

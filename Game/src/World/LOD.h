@@ -52,7 +52,7 @@ namespace LOD
     std::vector<uint32_t> indices;
     Unique<Engine::VertexArray> vertexArray;
 
-    static void Initialize(const Shared<Engine::TextureArray>& textureArray);
+    static void Initialize();
     static void BindBuffers();
     static void SetUniforms(const Uniforms& uniforms);
 

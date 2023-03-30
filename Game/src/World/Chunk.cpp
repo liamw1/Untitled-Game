@@ -82,7 +82,7 @@ bool Chunk::isFaceOpaque(Block::Face face) const
   return !(nonOpaqueFaces & bit(static_cast<int>(face)));
 }
 
-void Chunk::Initialize(const Shared<Engine::TextureArray>& textureArray)
+void Chunk::Initialize()
 {
   constexpr uint32_t maxIndices = 6 * 6 * TotalBlocks();
 
@@ -105,7 +105,7 @@ void Chunk::Initialize(const Shared<Engine::TextureArray>& textureArray)
   s_IndexBuffer = Engine::IndexBuffer::Create(indices, maxIndices);
 
   s_Shader = Engine::Shader::Create("assets/shaders/Chunk.glsl");
-  s_TextureArray = textureArray;
+  s_TextureArray = Block::GetTextureArray();
   Engine::UniformBuffer::Allocate(c_UniformBinding, sizeof(Uniforms));
 
   delete[] indices;

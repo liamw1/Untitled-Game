@@ -126,10 +126,10 @@ LOD::Octree::Node* LOD::Octree::findLeafPriv(Node* branch, const GlobalIndex& in
 
 
 
-void LOD::MeshData::Initialize(const Shared<Engine::TextureArray>& textureArray)
+void LOD::MeshData::Initialize()
 {
   s_Shader = Engine::Shader::Create("assets/shaders/ChunkLOD.glsl");
-  s_TextureArray = textureArray;
+  s_TextureArray = Block::GetTextureArray();
   Engine::UniformBuffer::Allocate(c_UniformBinding, sizeof(LOD::Uniforms));
 }
 
@@ -255,7 +255,7 @@ static HeapArray2D<Vec3, c_NumCells + 1> calcNoiseNormals(LOD::Octree::Node* nod
     for (int j = 0; j < c_NumCells + 1; ++j)
     {
       // Surface heights in adjacent positions.  L - lower, C - center, U - upper
-      length_t fLC, fUC, fCL, fCU;
+      length_t fLC = 0_m, fUC = 0_m, fCL = 0_m, fCU = 0_m;
 
       // TODO: Replace with new elevation system
       if (i == 0)
