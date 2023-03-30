@@ -4,19 +4,20 @@
 #include "Util/MultiDimArrays.h"
 #include <Engine.h>
 
-struct HeightMap;
+/*
+  A class representing a NxNxN cube of blocks.
 
+  IMPORTANT: Before calling uploadMesh or draw, the chunk's vertex array must be
+             initialized. This only has to be done once, and should only be done
+             for chunk objects that have a permanent location in memory, such as
+             the chunk's stored in the chunk container.
+*/
 class Chunk
 {
 /*
   Most public functions can be safely accessed as long as a lock is held on either
   the chunk's mutex OR the container mutex. The only exceptions are empty(), and
   the getBlockType() variants, which require a lock on the chunk mutex specifically.
-
-  IMPORTANT: Before calling uploadMesh or draw, the chunk's vertex array must be
-             initialized. This only has to be done once, and should only be done
-             for chunk objects that have a permanent location in memory, such as
-             the chunk's stored in the chunk container.
 */
 public:
   Chunk();
@@ -118,7 +119,7 @@ private:
   void draw() const;
   void reset();
 
-  std::lock_guard<std::mutex> acquireLock() const { return std::lock_guard(m_Mutex); };
+  _Acquires_lock_(return) std::lock_guard<std::mutex> acquireLock() const { return std::lock_guard(m_Mutex); };
 
   friend class ChunkFiller;
   friend class ChunkManager;

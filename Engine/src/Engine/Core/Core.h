@@ -198,11 +198,7 @@ public:
   bool operator!=(const Iterator& other) { return value != other.value; }
 
   Iterator begin() { return *this; }
-  Iterator end()
-  {
-    static const Iterator endIter = ++Iterator(endEnum);
-    return endIter;
-  }
+  Iterator end() { return Iterator(endEnum); }
   Iterator next() const
   {
     Iterator copy = *this;

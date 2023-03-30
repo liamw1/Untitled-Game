@@ -9,16 +9,18 @@ namespace Block
   enum class Face : int
   {
     West, East, South, North, Bottom, Top,
-    First = West, Last = Top
+    Null,
+
+    Begin = 0, End = Null
   };
-  using FaceIterator = Iterator<Face, Face::First, Face::Last>;
+  using FaceIterator = Iterator<Face, Face::Begin, Face::End>;
   
   /*
     \returns The face directly opposite the given face.
   */
   constexpr Face operator!(const Face& face)
   {
-    const int faceID = static_cast<int>(face);
+    int faceID = static_cast<int>(face);
     Face oppFace = static_cast<Face>(faceID % 2 ? faceID - 1 : faceID + 1);
     return oppFace;
   }

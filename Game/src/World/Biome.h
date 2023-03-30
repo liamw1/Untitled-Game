@@ -42,6 +42,6 @@ protected:
 private:
   static constexpr int c_BiomeCount = static_cast<int>(Type::End) - static_cast<int>(Type::Begin);
 
-  static int s_BiomesInitialized;
-  static std::array<Unique<Biome>, c_BiomeCount> s_Biomes;
+  static inline int s_BiomesInitialized = 0;
+  static inline std::array<Unique<Biome>, c_BiomeCount> s_Biomes;
 };

@@ -19,7 +19,8 @@ namespace Block
     OakLog,
     OakLeaves,
 
-    Null
+    Null,
+    Begin = 0, End = Null
   };
 
   enum class Texture : blockTexID
@@ -37,9 +38,10 @@ namespace Block
     OakLeaves,
 
     Invisible,
-    Null,
+    ErrorTexture,
 
-    First = 0, Last = static_cast<blockTexID>(Invisible) - 1
+    Null,
+    Begin = 0, End = Null
   };
-  using TextureIterator = Iterator<Texture, Texture::First, Texture::Last>;
+  using TextureIterator = Iterator<Texture, Texture::Begin, Texture::End>;
 }

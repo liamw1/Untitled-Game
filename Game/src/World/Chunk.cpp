@@ -66,7 +66,9 @@ Block::Type Chunk::getBlockType(blockIndex_t i, blockIndex_t j, blockIndex_t k) 
 {
   EN_ASSERT(!empty(), "Chunk is empty!");
   EN_ASSERT(0 <= i && i < Chunk::Size() && 0 <= j && j < Chunk::Size() && 0 <= k && k < Chunk::Size(), "Index is out of bounds!");
-  return m_Composition[i * Chunk::Size() * Chunk::Size() + j * Chunk::Size() + k];
+
+  int index = i * Chunk::Size() * Chunk::Size() + j * Chunk::Size() + k;
+  return m_Composition[index];
 }
 
 Block::Type Chunk::getBlockType(const BlockIndex& blockIndex) const
@@ -129,7 +131,8 @@ void Chunk::setBlockType(blockIndex_t i, blockIndex_t j, blockIndex_t k, Block::
     m_Composition = std::make_unique<Block::Type[]>(Chunk::TotalBlocks());
   }
 
-  m_Composition[i * Chunk::Size() * Chunk::Size() + j * Chunk::Size() + k] = blockType;
+  int index = i * Chunk::Size() * Chunk::Size() + j * Chunk::Size() + k;
+  m_Composition[index] = blockType;
 }
 
 void Chunk::setBlockType(const BlockIndex& blockIndex, Block::Type blockType)

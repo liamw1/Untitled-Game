@@ -3,9 +3,6 @@
 #include "BiomeDefs.h"
 #include "Chunk.h"
 
-int Biome::s_BiomesInitialized = 0;
-std::array<Unique<Biome>, Biome::Count()> Biome::s_Biomes{};
-
 void Biome::Initialize()
 {
   s_Biomes[static_cast<int>(Biome::Type::Default)] = CreateUnique<DefaultBiome>();

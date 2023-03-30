@@ -8,40 +8,41 @@ struct BlockUniforms
   const float blockLength = static_cast<float>(Block::Length());
 };
 
+static constexpr int c_BlockTypes = static_cast<int>(Block::Type::End) - static_cast<int>(Block::Type::Begin) + 1;  // Includes Null block
 static constexpr int c_MaxBlockTypes = std::numeric_limits<blockID>::max() + 1;
 static constexpr int c_MaxBlockTextures = 6 * c_MaxBlockTypes;
 static constexpr int c_UniformBinding = 1;
+static int s_BlocksInitialized = 0;
 static bool s_Initialized = false;
 
 static StackArray2D<Block::Texture, c_MaxBlockTypes, 6> s_TexIDs{};
 static std::array<std::string, c_MaxBlockTextures> s_TexturePaths{};
 static const BlockUniforms s_BlockUniforms{};
 
-static void assignTextures(Block::Type block, Block::Texture topTexture, Block::Texture sideTextures, Block::Texture bottomTexture)
+static void assignTextures(Block::Type block, std::array<Block::Texture, 6> faceTextures)
 {
   const blockID ID = static_cast<blockID>(block);
-
   for (Block::Face face : Block::FaceIterator())
   {
-    const int faceID = static_cast<int>(face);
-    switch (face)
-    {
-      case Block::Face::Top:    s_TexIDs[ID][faceID] = topTexture;      break;
-      case Block::Face::Bottom: s_TexIDs[ID][faceID] = bottomTexture;   break;
-      default:                s_TexIDs[ID][faceID] = sideTextures;
-    }
+    int faceID = static_cast<int>(face);
+    s_TexIDs[ID][faceID] = faceTextures[faceID];
   }
+  s_BlocksInitialized++;
 }
 
-static void assignTextures(Block::Type block, Block::Texture faceTextures)
+static void assignTextures(Block::Type block, Block::Texture topTexture, Block::Texture sideTextures, Block::Texture bottomTexture)
 {
-  for (Block::Face face : Block::FaceIterator())
-    s_TexIDs[static_cast<blockID>(block)][static_cast<int>(face)] = faceTextures;
+  assignTextures(block, { sideTextures, sideTextures, sideTextures, sideTextures, bottomTexture, topTexture });
 }
 
 static void assignTextures(Block::Type block, Block::Texture topBotTextures, Block::Texture sideTextures)
 {
-  assignTextures(block, topBotTextures, sideTextures, topBotTextures);
+  assignTextures(block, { sideTextures, sideTextures, sideTextures, sideTextures, topBotTextures, topBotTextures });
+}
+
+static void assignTextures(Block::Type block, Block::Texture faceTextures)
+{
+  assignTextures(block, { faceTextures, faceTextures, faceTextures, faceTextures, faceTextures, faceTextures });
 }
 
 void Block::Initialize()
@@ -60,7 +61,8 @@ void Block::Initialize()
   s_TexturePaths[static_cast<blockTexID>(Block::Texture::OakLogTop)] = "assets/textures/voxel-pack/PNG/Tiles/trunk_top.png";
   s_TexturePaths[static_cast<blockTexID>(Block::Texture::OakLogSide)] = "assets/textures/voxel-pack/PNG/Tiles/trunk_side.png";
   s_TexturePaths[static_cast<blockTexID>(Block::Texture::OakLeaves)] = "assets/textures/voxel-pack/PNG/Tiles/leaves_transparent.png";
-  s_TexturePaths[static_cast<blockTexID>(Block::Texture::Null)] = "assets/textures/Checkerboard.png";
+  s_TexturePaths[static_cast<blockTexID>(Block::Texture::Invisible)] = "assets/textures/Invisible.png";
+  s_TexturePaths[static_cast<blockTexID>(Block::Texture::ErrorTexture)] = "assets/textures/Checkerboard.png";
 
   assignTextures(Block::Type::Air, Block::Texture::Invisible);
   assignTextures(Block::Type::Grass, Block::Texture::GrassTop, Block::Texture::GrassSide, Block::Texture::Dirt);
@@ -72,9 +74,19 @@ void Block::Initialize()
   assignTextures(Block::Type::Stone, Block::Texture::Stone);
   assignTextures(Block::Type::OakLog, Block::Texture::OakLogTop, Block::Texture::OakLogSide);
   assignTextures(Block::Type::OakLeaves, Block::Texture::OakLeaves);
-  assignTextures(Block::Type::Null, Block::Texture::Null);
+  assignTextures(Block::Type::Null, Block::Texture::ErrorTexture);
 
-  s_Initialized = true;
+  for (Block::Texture texture : Block::TextureIterator())
+  {
+    blockTexID textureID = static_cast<blockTexID>(texture);
+    if (s_TexturePaths[textureID] == "")
+      EN_ERROR("Block texture {0} has not been assign a path!", textureID);
+  }
+
+  if (s_BlocksInitialized != c_BlockTypes)
+    EN_ERROR("{0} of {1} blocks haven't been assigned textures!", c_BlockTypes - s_BlocksInitialized, c_BlockTypes);
+  else
+    s_Initialized = true;
 }
 
 Block::Texture Block::GetTexture(Type block, Face face)
