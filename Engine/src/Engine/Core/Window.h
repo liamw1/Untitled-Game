@@ -41,6 +41,6 @@ namespace Engine
 
     virtual void* getNativeWindow() const = 0;
 
-    static Unique<Window> Create(const WindowProps& properties = WindowProps());
+    static std::unique_ptr<Window> Create(const WindowProps& properties = WindowProps());
   };
 }

@@ -5,15 +5,15 @@
 
 namespace Engine
 {
-  static Unique<RendererAPI> s_RendererAPI = nullptr;
+  static std::unique_ptr<RendererAPI> s_RendererAPI = nullptr;
 
   void RenderCommand::Initialize()
   {
     switch (RendererAPI::GetAPI())
     {
       case RendererAPI::API::None:          EN_CORE_ASSERT(false, "RendererAPI::None is currently not supported!"); return;
-      case RendererAPI::API::OpenGL:        s_RendererAPI = CreateUnique<OpenGLRendererAPI>();  break;
-      case RendererAPI::API::OpenGL_Legacy: s_RendererAPI = CreateUnique<OpenGLRendererAPI>();  break;
+      case RendererAPI::API::OpenGL:        s_RendererAPI = std::make_unique<OpenGLRendererAPI>();  break;
+      case RendererAPI::API::OpenGL_Legacy: s_RendererAPI = std::make_unique<OpenGLRendererAPI>();  break;
       default:                              EN_CORE_ASSERT(false, "Unknown RendererAPI!");      return;
     }
   }

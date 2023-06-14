@@ -25,7 +25,7 @@ namespace Engine
 
     SceneState m_SceneState = SceneState::Edit;
 
-    Unique<Framebuffer> m_Framebuffer;
+    std::unique_ptr<Framebuffer> m_Framebuffer;
 
     Entity m_GreenSquareEntity;
     Entity m_RedSquareEntity;
@@ -33,9 +33,9 @@ namespace Engine
     Entity m_SecondCamera;
     Entity m_HoveredEntity;
 
-    Unique<Texture2D> m_CheckerboardTexture;
-    Unique<Texture2D> m_PlayButtonIcon;
-    Unique<Texture2D> m_StopButtonIcon;
+    std::unique_ptr<Texture2D> m_CheckerboardTexture;
+    std::unique_ptr<Texture2D> m_PlayButtonIcon;
+    std::unique_ptr<Texture2D> m_StopButtonIcon;
 
     bool m_ViewportFocused = false;
     bool m_ViewportHovered = false;

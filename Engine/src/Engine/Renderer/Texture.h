@@ -34,8 +34,8 @@ namespace Engine
   class Texture2D : public Texture
   {
   public:
-    static Unique<Texture2D> Create(uint32_t width, uint32_t height);
-    static Unique<Texture2D> Create(const std::string& path);
+    static std::unique_ptr<Texture2D> Create(uint32_t width, uint32_t height);
+    static std::unique_ptr<Texture2D> Create(const std::string& path);
   };
 
 
@@ -49,6 +49,6 @@ namespace Engine
 
     virtual void addTexture(const std::string& path) = 0;
 
-    static Unique<TextureArray> Create(uint32_t textureCount, uint32_t textureSize);
+    static std::unique_ptr<TextureArray> Create(uint32_t textureCount, uint32_t textureSize);
   };
 }

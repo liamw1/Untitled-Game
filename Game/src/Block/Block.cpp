@@ -17,7 +17,7 @@ static bool s_Initialized = false;
 
 static StackArray2D<Block::Texture, c_MaxBlockTypes, 6> s_TexIDs{};
 static std::array<std::string, c_MaxBlockTextures> s_TexturePaths{};
-static Shared<Engine::TextureArray> s_TextureArray;
+static std::shared_ptr<Engine::TextureArray> s_TextureArray;
 static const BlockUniforms s_BlockUniforms{};
 
 static void assignTextures(Block::Type block, std::array<Block::Texture, 6> faceTextures)
@@ -95,7 +95,7 @@ void Block::Initialize()
     s_Initialized = true;
 }
 
-Shared<Engine::TextureArray> Block::GetTextureArray()
+std::shared_ptr<Engine::TextureArray> Block::GetTextureArray()
 {
   EN_ASSERT(s_Initialized, "Blocks have not been initialized!");
   return s_TextureArray;

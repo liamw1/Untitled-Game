@@ -4,10 +4,10 @@
 
 namespace Engine
 {
-	Unique<Window> Window::Create(const WindowProps& props)
+  std::unique_ptr<Window> Window::Create(const WindowProps& props)
 	{
 #ifdef EN_PLATFORM_WINDOWS
-		return CreateUnique<WindowsWindow>(props);
+		return std::make_unique<WindowsWindow>(props);
 #else
 		EN_CORE_ASSERT(false, "Unknown platform!");
 		return nullptr;

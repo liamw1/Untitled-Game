@@ -39,7 +39,7 @@ namespace Engine
 
     WindowData m_Data;
     GLFWwindow* m_Window;
-    Unique<GraphicsContext> m_Context;
+    std::unique_ptr<GraphicsContext> m_Context;
 
     void initialize(const WindowProps& properties);
     void shutdown();

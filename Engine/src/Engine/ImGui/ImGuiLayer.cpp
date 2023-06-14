@@ -1,6 +1,7 @@
 #include "ENpch.h"
 #include "ImGuiLayer.h"
 #include "Engine/Core/Application.h"
+#include "Engine/Core/Window.h"
 #include "Engine/Debug/Instrumentor.h"
 
 #include <imgui.h>

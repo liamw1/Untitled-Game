@@ -16,7 +16,7 @@ namespace Engine
 
     virtual const std::string& getName() const = 0;
 
-    static Unique<Shader> Create(const std::string& filepath);
-    static Unique<Shader> Create(const std::string& name, const std::string& vertexSource, const std::string& fragmentSource);
+    static std::unique_ptr<Shader> Create(const std::string& filepath);
+    static std::unique_ptr<Shader> Create(const std::string& name, const std::string& vertexSource, const std::string& fragmentSource);
   };
 }

@@ -120,20 +120,20 @@ namespace Engine
   OpenGLShader::~OpenGLShader()
   {
     EN_PROFILE_FUNCTION();
-    EN_CORE_ASSERT(std::this_thread::get_id() == Threads::GetMainThreadID(), "OpenGL calls must be made in main thread!");
+    EN_CORE_ASSERT(std::this_thread::get_id() == Threads::MainThreadID(), "OpenGL calls must be made in main thread!");
 
     glDeleteProgram(m_RendererID);
   }
 
   void OpenGLShader::bind() const
   {
-    EN_CORE_ASSERT(std::this_thread::get_id() == Threads::GetMainThreadID(), "OpenGL calls must be made in main thread!");
+    EN_CORE_ASSERT(std::this_thread::get_id() == Threads::MainThreadID(), "OpenGL calls must be made in main thread!");
     glUseProgram(m_RendererID);
   }
 
   void OpenGLShader::unBind() const
   {
-    EN_CORE_ASSERT(std::this_thread::get_id() == Threads::GetMainThreadID(), "OpenGL calls must be made in main thread!");
+    EN_CORE_ASSERT(std::this_thread::get_id() == Threads::MainThreadID(), "OpenGL calls must be made in main thread!");
     glUseProgram(0);
   }
 
@@ -189,7 +189,7 @@ namespace Engine
 
   void OpenGLShader::compileOrGetVulkanBinaries(const std::unordered_map<GLenum, std::string>& shaderSources)
   {
-    EN_CORE_ASSERT(std::this_thread::get_id() == Threads::GetMainThreadID(), "OpenGL calls must be made in main thread!");
+    EN_CORE_ASSERT(std::this_thread::get_id() == Threads::MainThreadID(), "OpenGL calls must be made in main thread!");
 
     static constexpr bool optimize = true;
 
@@ -302,7 +302,7 @@ namespace Engine
 
   void OpenGLShader::createProgram()
   {
-    EN_CORE_ASSERT(std::this_thread::get_id() == Threads::GetMainThreadID(), "OpenGL calls must be made in main thread!");
+    EN_CORE_ASSERT(std::this_thread::get_id() == Threads::MainThreadID(), "OpenGL calls must be made in main thread!");
 
     GLuint program = glCreateProgram();
 
@@ -369,7 +369,7 @@ namespace Engine
 
   GLint OpenGLShader::getUniformLocation(const std::string& name) const
   {
-    EN_CORE_ASSERT(std::this_thread::get_id() == Threads::GetMainThreadID(), "OpenGL calls must be made in main thread!");
+    EN_CORE_ASSERT(std::this_thread::get_id() == Threads::MainThreadID(), "OpenGL calls must be made in main thread!");
 
     if (m_UniformLocationCache.find(name) != m_UniformLocationCache.end())
       return m_UniformLocationCache[name];

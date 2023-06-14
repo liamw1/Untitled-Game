@@ -56,13 +56,13 @@ namespace Component
 
   struct NativeScript
   {
-    Unique<Engine::EntityScript> instance;
-    Unique<Engine::EntityScript> (*instantiateScript)(Engine::Entity entity);
+    std::unique_ptr<Engine::EntityScript> instance;
+    std::unique_ptr<Engine::EntityScript> (*instantiateScript)(Engine::Entity entity);
 
     template<typename T, typename... Args>
     void bind(Args... args)
     {
-      instantiateScript = [args...](Engine::Entity entity)->Unique<Engine::EntityScript> { return CreateUnique<T>(entity, args...); };
+      instantiateScript = [args...](Engine::Entity entity)->std::unique_ptr<Engine::EntityScript> { return std::make_unique<T>(entity, args...); };
     }
   };
 }

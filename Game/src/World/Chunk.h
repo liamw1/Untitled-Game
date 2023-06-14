@@ -12,7 +12,7 @@
              for chunk objects that have a permanent location in memory, such as
              the chunk's stored in the chunk container.
 */
-class Chunk
+class alignas(128) Chunk
 {
 /*
   Most public functions can be safely accessed as long as a lock is held on either
@@ -34,7 +34,7 @@ public:
     Creates vertex array for this chunk. Must be called at least once before chunk can be drawn.
     Once called, it never needs to be called again for this chunk allocation.
   */
-  void initializerVertexArray();
+  void initializeVertexArray();
 
   /*
     \returns The chunk's global index, which identifies it uniquely.
@@ -93,16 +93,15 @@ private:
   static constexpr int c_ChunkSize = 32;
 
   // Mesh Data
-  static inline Unique<Engine::Shader> s_Shader;
-  static inline Shared<Engine::TextureArray> s_TextureArray;
-  static inline Shared<const Engine::IndexBuffer> s_IndexBuffer;
+  static inline std::unique_ptr<Engine::Shader> s_Shader;
+  static inline std::shared_ptr<Engine::TextureArray> s_TextureArray;
+  static inline std::shared_ptr<const Engine::IndexBuffer> s_IndexBuffer;
   static inline const Engine::BufferLayout s_VertexBufferLayout = { { ShaderDataType::Uint32, "a_VertexData" } };
   static constexpr int c_TextureSlot = 0;
   static constexpr int c_UniformBinding = 2;
 
   mutable std::mutex m_Mutex;
-  std::vector<uint32_t> m_Mesh;
-  Unique<Engine::VertexArray> m_VertexArray;
+  std::unique_ptr<Engine::VertexArray> m_VertexArray;
   std::unique_ptr<Block::Type[]> m_Composition;
   GlobalIndex m_GlobalIndex;
   std::atomic<uint16_t> m_NonOpaqueFaces;
@@ -112,7 +111,6 @@ private:
   void setBlockType(const BlockIndex& blockIndex, Block::Type blockType);
 
   void setData(std::unique_ptr<Block::Type[]> composition);
-  void uploadMesh();
   void determineOpacity();
 
   void internalUpdate(const std::vector<uint32_t>& mesh);

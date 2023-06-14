@@ -6,15 +6,15 @@
 
 namespace Engine
 {
-  static Unique<UniformBufferAPI> s_UniformBufferAPI = nullptr;
+  static std::unique_ptr<UniformBufferAPI> s_UniformBufferAPI = nullptr;
 
   void UniformBuffer::Initialize()
   {
     switch (RendererAPI::GetAPI())
     {
       case RendererAPI::API::None:          EN_CORE_ASSERT(false, "RendererAPI::None is currently not supported!"); return;
-      case RendererAPI::API::OpenGL:        s_UniformBufferAPI = CreateUnique<OpenGLUniformBufferAPI>();  break;
-      case RendererAPI::API::OpenGL_Legacy: s_UniformBufferAPI = CreateUnique<OpenGLUniformBufferAPI>();  break;
+      case RendererAPI::API::OpenGL:        s_UniformBufferAPI = std::make_unique<OpenGLUniformBufferAPI>();  break;
+      case RendererAPI::API::OpenGL_Legacy: s_UniformBufferAPI = std::make_unique<OpenGLUniformBufferAPI>();  break;
       default:                              EN_CORE_ASSERT(false, "Unknown RendererAPI!");                return;
     }
   }

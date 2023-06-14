@@ -50,7 +50,7 @@ namespace LOD
 
     std::vector<Vertex> vertices;
     std::vector<uint32_t> indices;
-    Unique<Engine::VertexArray> vertexArray;
+    std::unique_ptr<Engine::VertexArray> vertexArray;
 
     static void Initialize();
     static void BindBuffers();
@@ -59,8 +59,8 @@ namespace LOD
   private:
     static constexpr int c_TextureSlot = 0;
     static constexpr int c_UniformBinding = 3;
-    static inline Unique<Engine::Shader> s_Shader = nullptr;
-    static inline Shared<Engine::TextureArray> s_TextureArray = nullptr;
+    static inline std::unique_ptr<Engine::Shader> s_Shader = nullptr;
+    static inline std::shared_ptr<Engine::TextureArray> s_TextureArray = nullptr;
     static inline const Engine::BufferLayout s_VertexBufferLayout = { { ShaderDataType::Float3, "a_Position"        },
                                                                       { ShaderDataType::Float3, "a_IsoNormal"       },
                                                                       { ShaderDataType::Int2,   "a_TextureIndices"  },

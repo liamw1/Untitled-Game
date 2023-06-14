@@ -58,6 +58,6 @@ namespace Engine
 
     virtual void clearAttachment(uint32_t attachmentIndex, const std::variant<int, float>& value) = 0;
 
-    static Unique<Framebuffer> Create(const FramebufferSpecification& specification);
+    static std::unique_ptr<Framebuffer> Create(const FramebufferSpecification& specification);
   };
 }

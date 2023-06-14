@@ -4,7 +4,7 @@
 static bool mainThreadSet = false;
 static std::thread::id mainThreadID{};
 
-std::thread::id Threads::GetMainThreadID()
+std::thread::id Threads::MainThreadID()
 {
   EN_CORE_ASSERT(mainThreadID != std::thread::id(), "Main thread has not been set!");
   return mainThreadID;

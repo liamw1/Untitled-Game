@@ -15,11 +15,7 @@ namespace Engine
     int count = 0;
     char** args = nullptr;
 
-    const char* operator[](int index) const
-    {
-      EN_CORE_ASSERT(index < count, "Index is out of bounds!");
-      return args[index];
-    }
+    const char* operator[](int index) const;
   };
 
   class Application
@@ -45,9 +41,9 @@ namespace Engine
   private:
     static Application* s_Instance;
     ApplicationCommandLineArgs m_CommandLineArgs;
-    Unique<Window> m_Window;
+    std::unique_ptr<Window> m_Window;
     ImGuiLayer* m_ImGuiLayer;
-    LayerStack m_LayerStack;
+    std::unique_ptr<LayerStack> m_LayerStack;
     bool m_Running = true;
     bool m_Minimized = false;
     std::chrono::steady_clock::time_point m_LastFrameTime = std::chrono::steady_clock::now();

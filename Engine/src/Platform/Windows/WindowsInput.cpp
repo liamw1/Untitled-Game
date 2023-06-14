@@ -1,6 +1,7 @@
 #include "ENpch.h"
 #include "Engine/Core/Input.h"
 #include "Engine/Core/Application.h"
+#include "Engine/Core/Window.h"
 #include <GLFW/glfw3.h>
 
 namespace Engine

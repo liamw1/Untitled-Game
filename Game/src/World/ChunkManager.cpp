@@ -42,13 +42,11 @@ void ChunkManager::render()
 
   // Render chunks in view frustum
   Chunk::BindBuffers();
-  m_ChunkContainer.forEach(ChunkType::Renderable, [&](Chunk& chunk)
+  m_ChunkContainer.forEach(ChunkType::Renderable, [&](const Chunk& chunk)
     {
       if (Util::IsInRangeOfPlayer(chunk, c_RenderDistance) && Util::IsInFrustum(chunk.center(), frustumPlanes))
       {
         std::lock_guard lock = chunk.acquireLock();
-
-        chunk.uploadMesh();
         chunk.draw();
       }
     });

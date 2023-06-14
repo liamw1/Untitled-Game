@@ -27,7 +27,7 @@ namespace Block
   }
 
   void Initialize();
-  Shared<Engine::TextureArray> GetTextureArray();
+  std::shared_ptr<Engine::TextureArray> GetTextureArray();
 
   Texture GetTexture(Type block, Face face);
 

@@ -51,7 +51,7 @@ public:
   /*
     Used to operate on each chunk of the specified type.
   */
-  void forEach(ChunkType chunkType, const std::function<void(Chunk& chunk)>& func) const;
+  void forEach(ChunkType chunkType, const std::function<void(const Chunk& chunk)>& func) const;
 
   /*
     \returns All chunks of the specified type that match the given conditional.

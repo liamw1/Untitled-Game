@@ -20,8 +20,7 @@ Chunk::Chunk(const GlobalIndex& chunkIndex)
 }
 
 Chunk::Chunk(Chunk&& other) noexcept
-  : m_Mesh(std::move(other.m_Mesh)),
-    m_Composition(std::move(other.m_Composition)),
+  : m_Composition(std::move(other.m_Composition)),
     m_GlobalIndex(other.m_GlobalIndex),
     m_NonOpaqueFaces(other.m_NonOpaqueFaces.load()),
     m_QuadCount(other.m_QuadCount)
@@ -35,7 +34,6 @@ Chunk& Chunk::operator=(Chunk&& other) noexcept
   {
     EN_ASSERT(!other.m_VertexArray, "Chunks with initialized vertex arrays should not be moved!");
 
-    m_Mesh = std::move(other.m_Mesh);
     m_Composition = std::move(other.m_Composition);
     m_GlobalIndex = other.m_GlobalIndex;
     m_NonOpaqueFaces.store(other.m_NonOpaqueFaces.load());
@@ -44,7 +42,7 @@ Chunk& Chunk::operator=(Chunk&& other) noexcept
   return *this;
 }
 
-void Chunk::initializerVertexArray()
+void Chunk::initializeVertexArray()
 {
   m_VertexArray = Engine::VertexArray::Create();
   m_VertexArray->setLayout(s_VertexBufferLayout);
@@ -148,18 +146,6 @@ void Chunk::setData(std::unique_ptr<Block::Type[]> composition)
   determineOpacity();
 }
 
-void Chunk::uploadMesh()
-{
-  EN_ASSERT(m_VertexArray, "Vertex array must be initialized before mesh can be uploaded!")
-
-  if (m_Mesh.empty())
-    return;
-
-  m_QuadCount = static_cast<uint16_t>(m_Mesh.size() / 4);
-  m_VertexArray->setVertexBuffer(m_Mesh.data(), 4 * sizeof(uint32_t) * m_QuadCount);
-  m_Mesh.clear();
-}
-
 void Chunk::determineOpacity()
 {
   static constexpr blockIndex_t chunkLimits[2] = { 0, Chunk::Size() - 1 };
@@ -190,10 +176,14 @@ void Chunk::determineOpacity()
 
 void Chunk::internalUpdate(const std::vector<uint32_t>& mesh)
 {
+  EN_ASSERT(m_VertexArray, "Vertex array must first be initialized before mesh can be updated!");
   EN_ASSERT(mesh.size() / 4 < std::numeric_limits<uint16_t>::max(), "Mesh has more than the maximum allowable number of quads!");
 
-  m_Mesh = mesh;
-  if (!empty() && m_Mesh.empty() && getBlockType(0, 0, 0) == Block::Type::Air)
+  m_QuadCount = static_cast<uint16_t>(mesh.size() / 4);
+  if (!mesh.empty())
+    m_VertexArray->setVertexBuffer(mesh.data(), 4 * sizeof(uint32_t) * m_QuadCount);
+
+  if (!empty() && mesh.empty() && getBlockType(0, 0, 0) == Block::Type::Air)
     m_Composition.reset();
 
   determineOpacity();
@@ -215,7 +205,6 @@ void Chunk::draw() const
 void Chunk::reset()
 {
   // Reset data to default values
-  m_Mesh.clear();
   m_Composition.reset();
   m_GlobalIndex = {};
   m_NonOpaqueFaces.store(0);

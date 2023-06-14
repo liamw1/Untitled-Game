@@ -34,11 +34,11 @@ namespace Engine
   /*
     Renderer data
   */
-  static Unique<VertexArray> s_CubeVertexArray;
-  static Unique<VertexArray> s_WireFrameVertexArray;
-  static Unique<Shader> s_TextureShader;
-  static Unique<Shader> s_WireFrameShader;
-  static Unique<Texture2D> s_WhiteTexture;
+  static std::unique_ptr<VertexArray> s_CubeVertexArray;
+  static std::unique_ptr<VertexArray> s_WireFrameVertexArray;
+  static std::unique_ptr<Shader> s_TextureShader;
+  static std::unique_ptr<Shader> s_WireFrameShader;
+  static std::unique_ptr<Texture2D> s_WhiteTexture;
 
   static CameraUniforms s_CameraUniforms;
   

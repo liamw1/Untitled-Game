@@ -14,7 +14,7 @@ private:
   // Camera properties
   static constexpr float c_CameraSensitivity = 0.1f;
   static constexpr float c_CameraZoomSensitivity = 0.2f;
-  static constexpr length_t c_TranslationSpeed = 300 * Block::Length();
+  static constexpr length_t c_TranslationSpeed = 200 * Block::Length();
 
   static constexpr Angle c_MinPitch = -89.99_deg;
   static constexpr Angle c_MaxPitch = 89.99_deg;

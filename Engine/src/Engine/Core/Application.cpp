@@ -5,6 +5,12 @@
 
 namespace Engine
 {
+  const char* ApplicationCommandLineArgs::operator[](int index) const
+  {
+    EN_CORE_ASSERT(index < count, "Index is out of bounds!");
+    return args[index];
+  }
+
   Application* Application::s_Instance = nullptr;
 
   Application::Application(const std::string& name, ApplicationCommandLineArgs args)
@@ -19,6 +25,7 @@ namespace Engine
     m_Window->setEventCallback(EN_BIND_EVENT_FN(onEvent));
     m_Window->setVSync(true);
 
+    m_LayerStack = std::make_unique<LayerStack>();
     m_ImGuiLayer = new ImGuiLayer();
     pushOverlay(m_ImGuiLayer);
   }
@@ -44,11 +51,11 @@ namespace Engine
 
       if (!m_Minimized)
       {
-        for (Layer* layer : m_LayerStack)
+        for (Layer* layer : *m_LayerStack)
           layer->onUpdate(timestep);
 
         m_ImGuiLayer->begin();
-        for (Layer* layer : m_LayerStack)
+        for (Layer* layer : *m_LayerStack)
           layer->onImGuiRender();
         m_ImGuiLayer->end();
       }
@@ -63,7 +70,7 @@ namespace Engine
     dispatcher.dispatch<WindowCloseEvent>(EN_BIND_EVENT_FN(onWindowClose));
     dispatcher.dispatch<WindowResizeEvent>(EN_BIND_EVENT_FN(onWindowResize));
 
-    for (auto it = m_LayerStack.rbegin(); it != m_LayerStack.rend(); ++it)
+    for (auto it = m_LayerStack->rbegin(); it != m_LayerStack->rend(); ++it)
     {
       if (event.handled)
         break;
@@ -73,13 +80,13 @@ namespace Engine
 
   void Application::pushLayer(Layer* layer)
   {
-    m_LayerStack.pushLayer(layer);
+    m_LayerStack->pushLayer(layer);
     layer->onAttach();
   }
 
   void Application::pushOverlay(Layer* layer)
   {
-    m_LayerStack.pushOverlay(layer);
+    m_LayerStack->pushOverlay(layer);
     layer->onAttach();
   }
 

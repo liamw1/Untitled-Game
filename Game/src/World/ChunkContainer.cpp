@@ -8,7 +8,7 @@ void ChunkContainer::initialize()
 {
   m_ChunkArray = std::make_unique<Chunk[]>(c_MaxChunks);
   for (int i = 0; i < c_MaxChunks; ++i)
-    m_ChunkArray[i].initializerVertexArray();
+    m_ChunkArray[i].initializeVertexArray();
 
   std::vector<int> stackData;
   stackData.reserve(c_MaxChunks);
@@ -95,7 +95,7 @@ bool ChunkContainer::update(const GlobalIndex& chunkIndex, const std::vector<uin
   return true;
 }
 
-void ChunkContainer::forEach(ChunkType chunkType, const std::function<void(Chunk& chunk)>& func) const
+void ChunkContainer::forEach(ChunkType chunkType, const std::function<void(const Chunk& chunk)>& func) const
 {
   std::shared_lock lock(m_ContainerMutex);
 
