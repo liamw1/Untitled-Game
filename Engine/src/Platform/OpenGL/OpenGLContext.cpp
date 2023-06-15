@@ -32,7 +32,7 @@ namespace Engine
   void OpenGLContext::initialize()
   {
     EN_PROFILE_FUNCTION();
-    EN_CORE_ASSERT(std::this_thread::get_id() == Threads::MainThreadID(), "OpenGL calls must be made in main thread!");
+    EN_CORE_ASSERT(std::this_thread::get_id() == Threads::MainThreadID(), "OpenGL calls must be made on the main thread!");
 
     glfwMakeContextCurrent(m_WindowHandle);
     int status = gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
@@ -56,7 +56,7 @@ namespace Engine
   void OpenGLContext::swapBuffers()
   {
     EN_PROFILE_FUNCTION();
-    EN_CORE_ASSERT(std::this_thread::get_id() == Threads::MainThreadID(), "OpenGL calls must be made in main thread!");
+    EN_CORE_ASSERT(std::this_thread::get_id() == Threads::MainThreadID(), "OpenGL calls must be made on the main thread!");
 
     glfwSwapBuffers(m_WindowHandle);
   }

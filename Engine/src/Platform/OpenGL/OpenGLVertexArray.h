@@ -30,7 +30,7 @@ namespace Engine
     void bind() const override;
     void unBind() const override;
 
-    void clean() const override;
+    void clear() const override;
 
     void setLayout(const BufferLayout& layout) override;
 

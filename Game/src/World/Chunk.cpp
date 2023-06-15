@@ -211,5 +211,5 @@ void Chunk::reset()
   m_QuadCount = 0;
 
   if (m_VertexArray)
-    m_VertexArray->clean();
+    m_VertexArray->clear();
 }
