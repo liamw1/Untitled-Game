@@ -6,59 +6,6 @@ using StackArray2D = std::array<std::array<T, M>, N>;
 template<typename T, int N, int M = N, int D = M>
 using StackArray3D = std::array<std::array<std::array<T, D>, M>, N>;
 
-
-
-// Helper class that stores data for HeapArray2D
-template<typename T, int N, int M = N>
-class Container
-{
-public:
-  Container(const Container& other) = delete;
-  Container& operator=(const Container& other) = delete;
-
-  T& operator[](int colIndex)
-  {
-    EN_ASSERT(colIndex < M, "Column index is out of bounds!");
-    return m_Data[m_RowIndex * M + colIndex];
-  }
-  const T& operator[](int colIndex) const
-  {
-    EN_ASSERT(colIndex < M, "Column index is out of bounds!");
-    return m_Data[m_RowIndex * M + colIndex];
-  }
-
-private:
-  mutable int m_RowIndex = 0;
-  T* m_Data = nullptr;
-
-  Container()
-    : m_Data(new T[N * M]) {}
-  ~Container() { delete[] m_Data; }
-
-  Container(Container&& other) noexcept
-    : m_RowIndex(other.m_RowIndex)
-  {
-    m_Data = other.m_Data;
-    other.m_Data = nullptr;
-  }
-
-  Container& operator=(Container&& other) noexcept
-  {
-    if (&other != this)
-    {
-      m_RowIndex = other.m_RowIndex;
-
-      delete[] m_Data;
-      m_Data = other.m_Data;
-      other.m_Data = nullptr;
-    }
-    return *this;
-  }
-
-  template<typename U, int N, int M>
-  friend class HeapArray2D;
-};
-
 /*
   A 2D-style array that stores its members in a single
   heap-allocated block in memory.
@@ -76,38 +23,66 @@ class HeapArray2D
 {
 public:
   HeapArray2D() = default;
+  ~HeapArray2D() { delete[] m_Data; }
 
   HeapArray2D(const HeapArray2D& other) = delete;
   HeapArray2D& operator=(const HeapArray2D& other) = delete;
 
   HeapArray2D(HeapArray2D&& other) noexcept
-    : m_Container(std::move(other.m_Container))
   {
+    m_Data = other.m_Data;
+    other.m_Data = nullptr;
   }
 
   HeapArray2D& operator=(HeapArray2D&& other) noexcept
   {
     if (&other != this)
-      m_Container = std::move(other.m_Container);
+    {
+      delete[] m_Data;
+      m_Data = other.m_Data;
+      other.m_Data = nullptr;
+    }
     return *this;
   }
 
-  [[nodiscard]]
-  Container<T, N, M>& operator[](int rowIndex)
+  T& operator()(int index1, int index2)
   {
-    EN_ASSERT(rowIndex < N, "Row index is out of bounds!");
-    m_Container.m_RowIndex = rowIndex;
-    return m_Container;
+    EN_ASSERT(m_Data, "Data has not yet been allocated!");
+    EN_ASSERT(index1 < N && index2 < M, "Index is out of bounds!");
+    return m_Data[N * index1 + index2];
   }
 
-  [[nodiscard]]
-  const Container<T, N, M>& operator[](int rowIndex) const
+  const T& operator()(int index1, int index2) const
   {
-    EN_ASSERT(rowIndex < N, "Row index is out of bounds!");
-    m_Container.m_RowIndex = rowIndex;
-    return m_Container;
+    EN_ASSERT(m_Data, "Data has not yet been allocated!");
+    EN_ASSERT(index1 < N && index2 < M, "Index is out of bounds!");
+    return m_Data[N * index1 + index2];
   }
+
+  constexpr int size() { return N * M; }
 
 private:
-  Container<T, N, M> m_Container;
+  T* m_Data = nullptr;
+
+  void allocate() { m_Data = new T[size()]; }
+  void fill(const T& initialValue) { std::fill(m_Data, m_Data + size(), initialValue); }
+
+  friend HeapArray2D AllocateHeapArray2D<T, N, M>();
+  friend HeapArray2D AllocateHeapArray2D<T, N, M>(const T& initialValue);
 };
+
+template<typename T, int N, int M = N>
+HeapArray2D<T, N, M> AllocateHeapArray2D()
+{
+  HeapArray2D<T, N, M> arr;
+  arr.allocate();
+  return arr;
+}
+
+template<typename T, int N, int M = N>
+HeapArray2D<T, N, M> AllocateHeapArray2D(const T& initialValue)
+{
+  HeapArray2D<T, N, M> arr = AllocateArray2D<T, N, M>();
+  arr.fill(initialValue);
+  return arr;
+}

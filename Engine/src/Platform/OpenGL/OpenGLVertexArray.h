@@ -30,6 +30,8 @@ namespace Engine
     void bind() const override;
     void unBind() const override;
 
+    void clean() const override;
+
     void setLayout(const BufferLayout& layout) override;
 
     void setVertexBuffer(const void* data, uintptr_t size) const override;
@@ -43,7 +45,7 @@ namespace Engine
     std::shared_ptr<const IndexBuffer> m_IndexBuffer;
 
     // Buffer for storing vertex buffer data set on a thread that is not the main thread
-    mutable void* m_VertexData = nullptr;
+    mutable std::unique_ptr<char[]> m_VertexData = nullptr;
     mutable uintptr_t m_VertexDataSize = 0;
 
     void clearStoredVertexData() const;

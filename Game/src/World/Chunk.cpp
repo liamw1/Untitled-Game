@@ -209,4 +209,7 @@ void Chunk::reset()
   m_GlobalIndex = {};
   m_NonOpaqueFaces.store(0);
   m_QuadCount = 0;
+
+  if (m_VertexArray)
+    m_VertexArray->clean();
 }

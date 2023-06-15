@@ -85,10 +85,7 @@ namespace Engine
     EN_CORE_ASSERT(std::this_thread::get_id() == Threads::MainThreadID(), "OpenGL calls must be made in main thread!");
 
     if (m_VertexData)
-    {
-      setVertexBuffer(m_VertexData, m_VertexDataSize);
-      clearStoredVertexData();
-    }
+      setVertexBuffer(m_VertexData.get(), m_VertexDataSize);
     glBindVertexArray(m_RendererID);
 
     if (m_IndexBuffer)
@@ -99,6 +96,11 @@ namespace Engine
   {
     EN_CORE_ASSERT(std::this_thread::get_id() == Threads::MainThreadID(), "OpenGL calls must be made in main thread!");
     glBindVertexArray(0);
+  }
+
+  void OpenGLVertexArray::clean() const
+  {
+    clearStoredVertexData();
   }
 
   void OpenGLVertexArray::setLayout(const BufferLayout& layout)
@@ -166,15 +168,17 @@ namespace Engine
     {
       clearStoredVertexData();
 
-      m_VertexData = new char[size];
+      m_VertexData = std::make_unique_for_overwrite<char[]>(size);
       m_VertexDataSize = size;
-      std::memcpy(m_VertexData, data, size);
+      std::memcpy(m_VertexData.get(), data, size);
     }
     else
     {
       glBindVertexArray(m_RendererID);
       glBindBuffer(GL_ARRAY_BUFFER, m_VertexBufferID);
       glBufferData(GL_ARRAY_BUFFER, size, data, GL_DYNAMIC_DRAW);
+
+      clearStoredVertexData();
 
 #if EN_DEBUG
       glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -199,11 +203,7 @@ namespace Engine
 
   void OpenGLVertexArray::clearStoredVertexData() const
   {
-    if (m_VertexData)
-    {
-      delete[] m_VertexData;
-      m_VertexData = nullptr;
-    }
+    m_VertexData.reset();
     m_VertexDataSize = 0;
   }
 }

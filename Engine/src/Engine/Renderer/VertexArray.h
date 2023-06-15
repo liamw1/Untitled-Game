@@ -40,6 +40,8 @@ namespace Engine
     virtual void bind() const = 0;
     virtual void unBind() const = 0;
 
+    virtual void clean() const = 0;
+
     virtual void setLayout(const BufferLayout& layout) = 0;
 
     /*

@@ -54,8 +54,8 @@ using BiomeData = HeapArray2D<CompoundBiome, Chunk::Size()>;
 
 struct SurfaceData
 {
-  NoiseSamples noiseSamples;
-  BiomeData biomeData;
+  NoiseSamples noiseSamples = AllocateHeapArray2D<Noise::OctaveNoiseData<Biome::LocalElevationOctaves()>, Chunk::Size()>();
+  BiomeData biomeData = AllocateHeapArray2D<CompoundBiome, Chunk::Size()>();
 };
 
 static std::unordered_map<SurfaceMapIndex, SurfaceData> s_SurfaceDataCache;
@@ -149,8 +149,8 @@ static const SurfaceData& getSurfaceData(const GlobalIndex& chunkIndex)
       {
         Vec2 blockXY = Chunk::Length() * static_cast<Vec2>(mapIndex) + Block::Length() * (Vec2(i, j) + Vec2(0.5));
 
-        surfaceData.noiseSamples[i][j] = Noise::OctaveNoise2D<Biome::LocalElevationOctaves()>(blockXY, 1_m / c_LargestNoiseScale, c_NoiseLacunarity);
-        surfaceData.biomeData[i][j] = getBiomeData(blockXY);
+        surfaceData.noiseSamples(i, j) = Noise::OctaveNoise2D<Biome::LocalElevationOctaves()>(blockXY, 1_m / c_LargestNoiseScale, c_NoiseLacunarity);
+        surfaceData.biomeData(i, j) = getBiomeData(blockXY);
       }
 
     const auto& [insertionPosition, insertionSuccess] = s_SurfaceDataCache.insert({ mapIndex, std::move(surfaceData) });
@@ -206,14 +206,14 @@ static void heightMapStage(std::unique_ptr<Block::Type[]>& composition, const Gl
       length_t elevation = 0.0;
       for (int n = 0; n < c_MaxCompoundBiomes; ++n)
       {
-        Biome::Type biomeType = biomeMap[i][j][n].type;
+        Biome::Type biomeType = biomeMap(i, j)[n].type;
         if (biomeType == Biome::Type::Null)
           break;
 
         const Biome* biome = Biome::Get(biomeType);
-        elevation += biome->localSurfaceElevation(noiseSamples[i][j]) * biomeMap[i][j][n].weight;
+        elevation += biome->localSurfaceElevation(noiseSamples(i, j)) * biomeMap(i, j)[n].weight;
       }
-      const Biome* primaryBiome = Biome::Get(biomeMap[i][j][0].type);
+      const Biome* primaryBiome = Biome::Get(biomeMap(i, j)[0].type);
 
       int surfaceDepth = 1;
       int soilDepth = 5;
