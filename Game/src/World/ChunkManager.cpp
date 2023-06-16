@@ -149,7 +149,7 @@ void ChunkManager::removeBlock(const GlobalIndex& chunkIndex, const BlockIndex& 
 
 void ChunkManager::loadChunk(const GlobalIndex& chunkIndex, Block::Type blockType)
 {
-  std::unique_ptr<Block::Type[]> composition = std::make_unique_for_overwrite<Block::Type[]>(Chunk::TotalBlocks());
+  Array3D<Block::Type, Chunk::Size()> composition = AllocateArray3D<Block::Type, Chunk::Size()>();
   for (int i = 0; i < Chunk::TotalBlocks(); ++i)
     composition[i] = blockType;
 
@@ -215,37 +215,31 @@ void ChunkManager::generateNewChunk(const GlobalIndex& chunkIndex)
   m_ChunkContainer.insert(std::move(chunk));
 }
 
-static Block::Type getBlockType(const Block::Type* blockData, blockIndex_t i, blockIndex_t j, blockIndex_t k)
+static Block::Type getBlockType(const Array3D<Block::Type, Chunk::Size() + 2>& blockData, blockIndex_t i, blockIndex_t j, blockIndex_t k)
 {
-  EN_ASSERT(blockData, "Block data does not exist!");
-  EN_ASSERT(-1 <= i && i <= Chunk::Size() && -1 <= j && j <= Chunk::Size() && -1 <= k && k <= Chunk::Size(), "Index is out of bounds!");
-  return blockData[(Chunk::Size() + 2) * (Chunk::Size() + 2) * (i + 1) + (Chunk::Size() + 2) * (j + 1) + (k + 1)];
+  return blockData(i + 1, j + 1, k + 1);
 }
 
-static Block::Type getBlockType(const Block::Type* blockData, const BlockIndex& blockIndex)
+static Block::Type getBlockType(const Array3D<Block::Type, Chunk::Size() + 2>& blockData, const BlockIndex& blockIndex)
 {
   return getBlockType(blockData, blockIndex.i, blockIndex.j, blockIndex.k);
 }
 
-static void setBlockType(Block::Type* blockData, blockIndex_t i, blockIndex_t j, blockIndex_t k, Block::Type blockType)
+static void setBlockType(Array3D<Block::Type, Chunk::Size() + 2>& blockData, blockIndex_t i, blockIndex_t j, blockIndex_t k, Block::Type blockType)
 {
-  EN_ASSERT(blockData, "Block data does not exist!");
-  EN_ASSERT(-1 <= i && i <= Chunk::Size() && -1 <= j && j <= Chunk::Size() && -1 <= k && k <= Chunk::Size(), "Index is out of bounds!");
-  blockData[(Chunk::Size() + 2) * (Chunk::Size() + 2) * (i + 1) + (Chunk::Size() + 2) * (j + 1) + (k + 1)] = blockType;
+  blockData(i + 1, j + 1, k + 1) = blockType;
 }
 
-static void setBlockType(Block::Type* blockData, const BlockIndex& blockIndex, Block::Type blockType)
+static void setBlockType(Array3D<Block::Type, Chunk::Size() + 2>& blockData, const BlockIndex& blockIndex, Block::Type blockType)
 {
   setBlockType(blockData, blockIndex.i, blockIndex.j, blockIndex.k, blockType);
 }
 
 std::vector<uint32_t> ChunkManager::createMesh(const GlobalIndex& chunkIndex) const
 {
-  static constexpr int totalVolumeNeeded = (Chunk::Size() + 2) * (Chunk::Size() + 2) * (Chunk::Size() + 2);
-  thread_local Block::Type* const blockData = new Block::Type[totalVolumeNeeded];
+  thread_local Array3D<Block::Type, Chunk::Size() + 2> blockData = AllocateArray3D<Block::Type, Chunk::Size() + 2>();
 
-  for (int i = 0; i < totalVolumeNeeded; ++i)
-    blockData[i] = Block::Type::Null;
+  blockData.fill(Block::Type::Null);
 
   // Load blocks from chunk
   {

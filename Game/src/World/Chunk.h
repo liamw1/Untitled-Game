@@ -60,7 +60,7 @@ public:
   */
   Vec3 center() const { return anchorPosition() + Chunk::Length() / 2; }
 
-  bool empty() const { return m_Composition == nullptr; }
+  bool empty() const { return !m_Composition; }
 
   Block::Type getBlockType(blockIndex_t i, blockIndex_t j, blockIndex_t k) const;
   Block::Type getBlockType(const BlockIndex& blockIndex) const;
@@ -102,7 +102,7 @@ private:
 
   mutable std::mutex m_Mutex;
   std::unique_ptr<Engine::VertexArray> m_VertexArray;
-  std::unique_ptr<Block::Type[]> m_Composition;
+  Array3D<Block::Type, c_ChunkSize> m_Composition;
   GlobalIndex m_GlobalIndex;
   std::atomic<uint16_t> m_NonOpaqueFaces;
   uint16_t m_QuadCount;
@@ -110,7 +110,7 @@ private:
   void setBlockType(blockIndex_t i, blockIndex_t j, blockIndex_t k, Block::Type blockType);
   void setBlockType(const BlockIndex& blockIndex, Block::Type blockType);
 
-  void setData(std::unique_ptr<Block::Type[]> composition);
+  void setData(Array3D<Block::Type, c_ChunkSize> composition);
   void determineOpacity();
 
   void internalUpdate(const std::vector<uint32_t>& mesh);

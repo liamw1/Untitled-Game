@@ -49,6 +49,9 @@ constexpr uint64_t bitUi64(int n) { return 1Ui64 << n; }
 constexpr uint64_t bit(int n) { return bitUi64(n); }
 constexpr uint64_t pow2(int n) { return bitUi64(n); }
 
+// Returns true if val is on the interval [a, b)
+constexpr bool boundsCheck(int val, int a, int b) { return a <= val && val < b; }
+
 #define EN_BIND_EVENT_FN(fn) [this](auto&&... args) -> decltype(auto) { return this->fn(std::forward<decltype(args)>(args)...); }
 
 class Timestep

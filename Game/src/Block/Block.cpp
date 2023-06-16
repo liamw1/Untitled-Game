@@ -15,7 +15,7 @@ static constexpr int c_UniformBinding = 1;
 static int s_BlocksInitialized = 0;
 static bool s_Initialized = false;
 
-static StackArray2D<Block::Texture, c_MaxBlockTypes, 6> s_TexIDs{};
+static Array2D<Block::Texture, c_MaxBlockTypes, 6> s_TexIDs = AllocateArray2D<Block::Texture, c_MaxBlockTypes, 6>(Block::Texture::ErrorTexture);
 static std::array<std::string, c_MaxBlockTextures> s_TexturePaths{};
 static std::shared_ptr<Engine::TextureArray> s_TextureArray;
 static const BlockUniforms s_BlockUniforms{};
@@ -26,7 +26,7 @@ static void assignTextures(Block::Type block, std::array<Block::Texture, 6> face
   for (Block::Face face : Block::FaceIterator())
   {
     int faceID = static_cast<int>(face);
-    s_TexIDs[ID][faceID] = faceTextures[faceID];
+    s_TexIDs(ID, faceID) = faceTextures[faceID];
   }
   s_BlocksInitialized++;
 }
@@ -104,7 +104,7 @@ std::shared_ptr<Engine::TextureArray> Block::GetTextureArray()
 Block::Texture Block::GetTexture(Type block, Face face)
 {
   EN_ASSERT(s_Initialized, "Blocks have not been initialized!");
-  return s_TexIDs[static_cast<blockID>(block)][static_cast<int>(face)];
+  return s_TexIDs(static_cast<blockID>(block), static_cast<int>(face));
 }
 
 bool Block::HasTransparency(Type block)

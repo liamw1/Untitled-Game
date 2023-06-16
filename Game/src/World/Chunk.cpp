@@ -4,7 +4,7 @@
 #include <iostream>
 
 Chunk::Chunk()
-  : m_Composition(nullptr),
+  : m_Composition(),
     m_NonOpaqueFaces(0),
     m_QuadCount(0),
     m_GlobalIndex({})
@@ -12,7 +12,7 @@ Chunk::Chunk()
 }
 
 Chunk::Chunk(const GlobalIndex& chunkIndex)
-  : m_Composition(nullptr),
+  : m_Composition(),
     m_NonOpaqueFaces(0),
     m_QuadCount(0),
     m_GlobalIndex(chunkIndex)
@@ -62,11 +62,7 @@ LocalIndex Chunk::getLocalIndex() const
 
 Block::Type Chunk::getBlockType(blockIndex_t i, blockIndex_t j, blockIndex_t k) const
 {
-  EN_ASSERT(!empty(), "Chunk is empty!");
-  EN_ASSERT(0 <= i && i < Chunk::Size() && 0 <= j && j < Chunk::Size() && 0 <= k && k < Chunk::Size(), "Index is out of bounds!");
-
-  int index = i * Chunk::Size() * Chunk::Size() + j * Chunk::Size() + k;
-  return m_Composition[index];
+  return m_Composition(i, j, k);
 }
 
 Block::Type Chunk::getBlockType(const BlockIndex& blockIndex) const
@@ -118,19 +114,15 @@ void Chunk::BindBuffers()
 
 void Chunk::setBlockType(blockIndex_t i, blockIndex_t j, blockIndex_t k, Block::Type blockType)
 {
-  EN_ASSERT(0 <= i && i < Chunk::Size() && 0 <= j && j < Chunk::Size() && 0 <= k && k < Chunk::Size(), "Index is out of bounds!");
-
   if (empty())
   {
     if (blockType == Block::Type::Air)
       return;
 
-    // Elements will be default initialized to 0 (Air)
-    m_Composition = std::make_unique<Block::Type[]>(Chunk::TotalBlocks());
+    // Elements will be default initialized to Air
+    m_Composition = AllocateArray3D<Block::Type, c_ChunkSize>(Block::Type::Air);
   }
-
-  int index = i * Chunk::Size() * Chunk::Size() + j * Chunk::Size() + k;
-  m_Composition[index] = blockType;
+  m_Composition(i, j, k) = blockType;
 }
 
 void Chunk::setBlockType(const BlockIndex& blockIndex, Block::Type blockType)
@@ -138,7 +130,7 @@ void Chunk::setBlockType(const BlockIndex& blockIndex, Block::Type blockType)
   setBlockType(blockIndex.i, blockIndex.j, blockIndex.k, blockType);
 }
 
-void Chunk::setData(std::unique_ptr<Block::Type[]> composition)
+void Chunk::setData(Array3D<Block::Type, c_ChunkSize> composition)
 {
   if (m_Composition)
     EN_WARN("Calling setData on a non-empty chunk!  Deleting previous allocation...");
@@ -150,7 +142,7 @@ void Chunk::determineOpacity()
 {
   static constexpr blockIndex_t chunkLimits[2] = { 0, Chunk::Size() - 1 };
 
-  if (m_Composition == nullptr)
+  if (empty())
   {
     m_NonOpaqueFaces.store(0x3F);
     return;

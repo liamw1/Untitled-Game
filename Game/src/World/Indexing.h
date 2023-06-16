@@ -17,13 +17,12 @@ struct Index2D
 
   constexpr IntType& operator[](int index)
   {
-    EN_ASSERT(0 <= index && index < 2, "Index is out of bounds!");
-    return *(&i + index);
+    return const_cast<IntType&>(static_cast<const Index2D&>(*this).operator[](index));
   }
 
   constexpr const IntType& operator[](int index) const
   {
-    EN_ASSERT(0 <= index && index < 2, "Index is out of bounds!");
+    EN_ASSERT(boundsCheck(index, 0, 3), "Index is out of bounds!");
     return *(&i + index);
   }
 
@@ -110,13 +109,12 @@ struct Index3D
 
   constexpr IntType& operator[](int index)
   {
-    EN_ASSERT(0 <= index && index < 3, "Index is out of bounds!");
-    return *(&i + index);
+    return const_cast<IntType&>(static_cast<const Index3D&>(*this).operator[](index));
   }
 
   constexpr const IntType& operator[](int index) const
   {
-    EN_ASSERT(0 <= index && index < 3, "Index is out of bounds!");
+    EN_ASSERT(boundsCheck(index, 0, 3), "Index is out of bounds!");
     return *(&i + index);
   }
 

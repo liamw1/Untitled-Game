@@ -7,7 +7,7 @@
 class ChunkFiller
 {
 public:
-  static void SetData(Chunk& chunk, std::unique_ptr<Block::Type[]> composition) { chunk.setData(std::move(composition)); }
+  static void SetData(Chunk& chunk, Array3D<Block::Type, Chunk::Size()> composition) { chunk.setData(std::move(composition)); }
 };
 
 Terrain::CompoundSurfaceData Terrain::CompoundSurfaceData::operator+(const CompoundSurfaceData& other) const
@@ -48,14 +48,14 @@ static constexpr int c_BiomeRegionSize = 4;
 static constexpr int c_RegionRadius = 1;
 static constexpr int c_RegionWidth = 2 * c_RegionRadius + 1;
 
-using NoiseSamples = HeapArray2D<Noise::OctaveNoiseData<Biome::LocalElevationOctaves()>, Chunk::Size()>;
+using NoiseSamples = Array2D<Noise::OctaveNoiseData<Biome::LocalElevationOctaves()>, Chunk::Size()>;
 using CompoundBiome = CompoundType<Biome::Type, c_MaxCompoundBiomes, Biome::Type::Null>;
-using BiomeData = HeapArray2D<CompoundBiome, Chunk::Size()>;
+using BiomeData = Array2D<CompoundBiome, Chunk::Size()>;
 
 struct SurfaceData
 {
-  NoiseSamples noiseSamples = AllocateHeapArray2D<Noise::OctaveNoiseData<Biome::LocalElevationOctaves()>, Chunk::Size()>();
-  BiomeData biomeData = AllocateHeapArray2D<CompoundBiome, Chunk::Size()>();
+  NoiseSamples noiseSamples = AllocateArray2D<Noise::OctaveNoiseData<Biome::LocalElevationOctaves()>, Chunk::Size()>();
+  BiomeData biomeData = AllocateArray2D<CompoundBiome, Chunk::Size()>();
 };
 
 static std::unordered_map<SurfaceMapIndex, SurfaceData> s_SurfaceDataCache;
@@ -169,21 +169,7 @@ static float calcSurfaceTemperature(float seaLevelTemperature, length_t surfaceE
   return seaLevelTemperature - tempDropPerBlock * static_cast<float>(surfaceElevation / Block::Length());
 }
 
-static Block::Type getBlockType(const std::unique_ptr<Block::Type[]>& composition, blockIndex_t i, blockIndex_t j, blockIndex_t k)
-{
-  EN_ASSERT(composition, "Composition does not exist!");
-  EN_ASSERT(0 <= i && i < Chunk::Size() && 0 <= j && j < Chunk::Size() && 0 <= k && k < Chunk::Size(), "Index is out of bounds!");
-  return composition[Chunk::Size() * Chunk::Size() * i + Chunk::Size() * j + k];
-}
-
-static void setBlockType(std::unique_ptr<Block::Type[]>& composition, blockIndex_t i, blockIndex_t j, blockIndex_t k, Block::Type blockType)
-{
-  EN_ASSERT(composition, "Composition does not exist!");
-  EN_ASSERT(0 <= i && i < Chunk::Size() && 0 <= j && j < Chunk::Size() && 0 <= k && k < Chunk::Size(), "Index is out of bounds!");
-  composition[Chunk::Size() * Chunk::Size() * i + Chunk::Size() * j + k] = blockType;
-}
-
-static bool isEmpty(const std::unique_ptr<Block::Type[]>& composition)
+static bool isEmpty(const Array3D<Block::Type, Chunk::Size()>& composition)
 {
   EN_ASSERT(composition, "Composition does not exist!");
   for (int i = 0; i < Chunk::TotalBlocks(); ++i)
@@ -192,7 +178,7 @@ static bool isEmpty(const std::unique_ptr<Block::Type[]>& composition)
   return true;
 }
 
-static void heightMapStage(std::unique_ptr<Block::Type[]>& composition, const GlobalIndex& chunkIndex)
+static void heightMapStage(Array3D<Block::Type, Chunk::Size()>& composition, const GlobalIndex& chunkIndex)
 {
   std::lock_guard lock(s_Mutex);
 
@@ -225,22 +211,22 @@ static void heightMapStage(std::unique_ptr<Block::Type[]>& composition, const Gl
       blockIndex_t k = 0;
       while (k < terrainElevationIndex - soilDepth && k < Chunk::Size())
       {
-        setBlockType(composition, i, j, k, Block::Type::Stone);
+        composition(i, j, k) = Block::Type::Stone;
         k++;
       }
       while (k < terrainElevationIndex - surfaceDepth && k < Chunk::Size())
       {
-        setBlockType(composition, i, j, k, soilType);
+        composition(i, j, k) = soilType;
         k++;
       }
       while (k < terrainElevationIndex && k < Chunk::Size())
       {
-        setBlockType(composition, i, j, k, surfaceType);
+        composition(i, j, k) = surfaceType;
         k++;
       }
       while (k < Chunk::Size())
       {
-        setBlockType(composition, i, j, k, Block::Type::Air);
+        composition(i, j, k) = Block::Type::Air;
         k++;
       }
     }
@@ -250,7 +236,7 @@ Chunk Terrain::GenerateNew(const GlobalIndex& chunkIndex)
 {
   Chunk chunk(chunkIndex);
 
-  std::unique_ptr<Block::Type[]> composition = std::make_unique_for_overwrite<Block::Type[]>(Chunk::TotalBlocks());
+  Array3D<Block::Type, Chunk::Size()> composition = AllocateArray3D<Block::Type, Chunk::Size()>();
   heightMapStage(composition, chunkIndex);
 
   if (isEmpty(composition))
@@ -264,7 +250,7 @@ Chunk Terrain::GenerateNew(const GlobalIndex& chunkIndex)
 Chunk Terrain::GenerateEmpty(const GlobalIndex& chunkIndex)
 {
   Chunk chunk(chunkIndex);
-  ChunkFiller::SetData(chunk, nullptr);
+  ChunkFiller::SetData(chunk, {});
   return chunk;
 }
 
