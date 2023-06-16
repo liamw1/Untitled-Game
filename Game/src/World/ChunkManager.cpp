@@ -149,13 +149,8 @@ void ChunkManager::removeBlock(const GlobalIndex& chunkIndex, const BlockIndex& 
 
 void ChunkManager::loadChunk(const GlobalIndex& chunkIndex, Block::Type blockType)
 {
-  Array3D<Block::Type, Chunk::Size()> composition = AllocateArray3D<Block::Type, Chunk::Size()>();
-  for (int i = 0; i < Chunk::TotalBlocks(); ++i)
-    composition[i] = blockType;
-
-  Chunk newChunk(chunkIndex);
-  newChunk.setData(std::move(composition));
-  m_ChunkContainer.insert(std::move(newChunk));
+  Array3D<Block::Type, Chunk::Size()> composition = AllocateArray3D<Block::Type, Chunk::Size()>(blockType);
+  m_ChunkContainer.insert(chunkIndex, std::move(composition));
 }
 
 
@@ -203,16 +198,16 @@ void ChunkManager::updateWorker()
 
 void ChunkManager::generateNewChunk(const GlobalIndex& chunkIndex)
 {
-  Chunk chunk;
+  Array3D<Block::Type, Chunk::Size()> composition;
   switch (m_LoadMode)
   {
     case ChunkManager::NotSet:  EN_ERROR("Load mode not set!");               break;
-    case ChunkManager::Void:    chunk = Terrain::GenerateEmpty(chunkIndex);   break;
-    case ChunkManager::Terrain: chunk = Terrain::GenerateNew(chunkIndex);     break;
+    case ChunkManager::Void:    composition = Terrain::GenerateEmpty(chunkIndex);   break;
+    case ChunkManager::Terrain: composition = Terrain::GenerateNew(chunkIndex);     break;
     default:                    EN_ERROR("Unknown load mode!");
   }
 
-  m_ChunkContainer.insert(std::move(chunk));
+  m_ChunkContainer.insert(chunkIndex, std::move(composition));
 }
 
 static Block::Type getBlockType(const Array3D<Block::Type, Chunk::Size() + 2>& blockData, blockIndex_t i, blockIndex_t j, blockIndex_t k)

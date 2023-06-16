@@ -1,6 +1,5 @@
 #pragma once
 #include "Indexing.h"
-#include "Util/Noise.h"
 #include "Util/MultiDimArrays.h"
 #include <Engine.h>
 
@@ -116,10 +115,10 @@ private:
   void internalUpdate(const std::vector<uint32_t>& mesh);
   void draw() const;
   void reset();
+  void repurpose(const GlobalIndex& chunkIndex, Array3D<Block::Type, c_ChunkSize> composition);
 
   _Acquires_lock_(return) std::lock_guard<std::mutex> acquireLock() const { return std::lock_guard(m_Mutex); };
 
-  friend class ChunkFiller;
   friend class ChunkManager;
   friend class ChunkContainer;
 };

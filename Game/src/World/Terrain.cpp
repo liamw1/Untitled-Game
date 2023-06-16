@@ -4,12 +4,6 @@
 #include "Util/Noise.h"
 #include "Player/Player.h"
 
-class ChunkFiller
-{
-public:
-  static void SetData(Chunk& chunk, Array3D<Block::Type, Chunk::Size()> composition) { chunk.setData(std::move(composition)); }
-};
-
 Terrain::CompoundSurfaceData Terrain::CompoundSurfaceData::operator+(const CompoundSurfaceData& other) const
 {
   CompoundSurfaceData sum = *this;
@@ -232,26 +226,20 @@ static void heightMapStage(Array3D<Block::Type, Chunk::Size()>& composition, con
     }
 }
 
-Chunk Terrain::GenerateNew(const GlobalIndex& chunkIndex)
+Array3D<Block::Type, Chunk::Size()> Terrain::GenerateNew(const GlobalIndex& chunkIndex)
 {
-  Chunk chunk(chunkIndex);
-
   Array3D<Block::Type, Chunk::Size()> composition = AllocateArray3D<Block::Type, Chunk::Size()>();
   heightMapStage(composition, chunkIndex);
 
   if (isEmpty(composition))
     composition.reset();
 
-  // Chunk takes ownership of composition
-  ChunkFiller::SetData(chunk, std::move(composition));
-  return chunk;
+  return composition;
 }
 
-Chunk Terrain::GenerateEmpty(const GlobalIndex& chunkIndex)
+Array3D<Block::Type, Chunk::Size()> Terrain::GenerateEmpty(const GlobalIndex& chunkIndex)
 {
-  Chunk chunk(chunkIndex);
-  ChunkFiller::SetData(chunk, {});
-  return chunk;
+  return AllocateArray3D<Block::Type, Chunk::Size()>(Block::Type::Air);
 }
 
 void Terrain::Clean(int unloadDistance)

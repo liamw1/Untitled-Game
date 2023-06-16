@@ -5,7 +5,7 @@
 
 // Will be removed eventually and replaced with settings system
 constexpr int c_RenderDistance = 16;
-constexpr int c_LoadDistance = c_RenderDistance + 2;
+constexpr int c_LoadDistance = c_RenderDistance + 1;
 constexpr int c_UnloadDistance = c_LoadDistance;
 
 enum class ChunkType
@@ -30,7 +30,7 @@ public:
 
     \returns True if the chunk was successfully inserted into the boundary map.
   */
-  bool insert(Chunk&& chunk);
+  bool insert(const GlobalIndex& chunkIndex, Array3D<Block::Type, Chunk::Size()> chunkComposition);
 
   /*
     Removes chunk from boundary map, unloads it, and frees the slot it was occupying.

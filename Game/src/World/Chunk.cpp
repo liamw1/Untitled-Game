@@ -205,3 +205,9 @@ void Chunk::reset()
   if (m_VertexArray)
     m_VertexArray->clear();
 }
+
+void Chunk::repurpose(const GlobalIndex& chunkIndex, Array3D<Block::Type, c_ChunkSize> composition)
+{
+  m_GlobalIndex = chunkIndex;
+  setData(std::move(composition));
+}
