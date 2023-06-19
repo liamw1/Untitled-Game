@@ -62,7 +62,7 @@ LocalIndex Chunk::getLocalIndex() const
 
 Block::Type Chunk::getBlockType(blockIndex_t i, blockIndex_t j, blockIndex_t k) const
 {
-  return m_Composition(i, j, k);
+  return m_Composition[i][j][k];
 }
 
 Block::Type Chunk::getBlockType(const BlockIndex& blockIndex) const
@@ -122,7 +122,7 @@ void Chunk::setBlockType(blockIndex_t i, blockIndex_t j, blockIndex_t k, Block::
     // Elements will be default initialized to Air
     m_Composition = AllocateArray3D<Block::Type, c_ChunkSize>(Block::Type::Air);
   }
-  m_Composition(i, j, k) = blockType;
+  m_Composition[i][j][k] = blockType;
 }
 
 void Chunk::setBlockType(const BlockIndex& blockIndex, Block::Type blockType)

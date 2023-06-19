@@ -26,7 +26,7 @@ static void assignTextures(Block::Type block, std::array<Block::Texture, 6> face
   for (Direction face : Directions())
   {
     int faceID = static_cast<int>(face);
-    s_TexIDs(ID, faceID) = faceTextures[faceID];
+    s_TexIDs[ID][faceID] = faceTextures[faceID];
   }
   s_BlocksInitialized++;
 }
@@ -104,7 +104,7 @@ std::shared_ptr<Engine::TextureArray> Block::GetTextureArray()
 Block::Texture Block::GetTexture(Type block, Direction face)
 {
   EN_ASSERT(s_Initialized, "Blocks have not been initialized!");
-  return s_TexIDs(static_cast<blockID>(block), static_cast<int>(face));
+  return s_TexIDs[static_cast<blockID>(block)][static_cast<int>(face)];
 }
 
 bool Block::HasTransparency(Type block)

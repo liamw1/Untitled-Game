@@ -212,7 +212,7 @@ void ChunkManager::generateNewChunk(const GlobalIndex& chunkIndex)
 
 static Block::Type getBlockType(const Array3D<Block::Type, Chunk::Size() + 2>& blockData, blockIndex_t i, blockIndex_t j, blockIndex_t k)
 {
-  return blockData(i + 1, j + 1, k + 1);
+  return blockData[i + 1][j + 1][k + 1];
 }
 
 static Block::Type getBlockType(const Array3D<Block::Type, Chunk::Size() + 2>& blockData, const BlockIndex& blockIndex)
@@ -222,7 +222,7 @@ static Block::Type getBlockType(const Array3D<Block::Type, Chunk::Size() + 2>& b
 
 static void setBlockType(Array3D<Block::Type, Chunk::Size() + 2>& blockData, blockIndex_t i, blockIndex_t j, blockIndex_t k, Block::Type blockType)
 {
-  blockData(i + 1, j + 1, k + 1) = blockType;
+  blockData[i + 1][j + 1][k + 1] = blockType;
 }
 
 static void setBlockType(Array3D<Block::Type, Chunk::Size() + 2>& blockData, const BlockIndex& blockIndex, Block::Type blockType)

@@ -34,3 +34,30 @@ length_t Biome::CalculateOctaveNoise(const NoiseSamples& noiseSamples, length_t 
   }
   return sum;
 }
+
+void Biome::StandardColumnFill(ArraySection<Block::Type, Chunk::Size()> column, length_t chunkFloor, length_t elevation, Block::Type surfaceType, int surfaceDepth, Block::Type soilType, int soilDepth)
+{
+  int terrainElevationIndex = static_cast<int>(std::ceil((elevation - chunkFloor) / Block::Length()));
+
+  blockIndex_t k = 0;
+  while (k < terrainElevationIndex - soilDepth - surfaceDepth && k < Chunk::Size())
+  {
+    column[k] = Block::Type::Stone;
+    k++;
+  }
+  while (k < terrainElevationIndex - surfaceDepth && k < Chunk::Size())
+  {
+    column[k] = soilType;
+    k++;
+  }
+  while (k < terrainElevationIndex && k < Chunk::Size())
+  {
+    column[k] = surfaceType;
+    k++;
+  }
+  while (k < Chunk::Size())
+  {
+    column[k] = Block::Type::Air;
+    k++;
+  }
+}

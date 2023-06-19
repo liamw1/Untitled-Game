@@ -9,9 +9,7 @@ namespace Terrain
   public:
     CompoundSurfaceData() = default;
     CompoundSurfaceData(length_t surfaceElevation, Block::Type blockType)
-      : m_Elevation(surfaceElevation), m_Components(blockType)
-    {
-    }
+      : m_Elevation(surfaceElevation), m_Components(blockType) {}
 
     CompoundSurfaceData operator+(const CompoundSurfaceData& other) const;
     CompoundSurfaceData operator*(float x) const;

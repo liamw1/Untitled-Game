@@ -231,7 +231,7 @@ static bool needsMesh(LOD::Octree::Node* node, const Array2D<Terrain::CompoundSu
   for (int i = 0; i < c_NumCells + 1; ++i)
     for (int j = 0; j < c_NumCells + 1; ++j)
     {
-      length_t terrainHeight = noiseValues(i, j).getElevation();
+      length_t terrainHeight = noiseValues[i][j].getElevation();
 
       if (LODFloor <= terrainHeight && terrainHeight <= LODCeiling)
       {
@@ -264,7 +264,7 @@ static Array2D<Vec3, c_NumCells + 1> calcNoiseNormals(LOD::Octree::Node* node, c
         // fLC = Terrain::GetElevationData(pointXY, s_DefaultBiome).sum();
       }
       else
-        fLC = noiseValues(i - 1, j).getElevation();
+        fLC = noiseValues[i - 1][j].getElevation();
 
       if (i == c_NumCells)
       {
@@ -272,7 +272,7 @@ static Array2D<Vec3, c_NumCells + 1> calcNoiseNormals(LOD::Octree::Node* node, c
         // fUC = Terrain::GetElevationData(pointXY, s_DefaultBiome).sum();
       }
       else
-        fUC = noiseValues(i + 1, j).getElevation();
+        fUC = noiseValues[i + 1][j].getElevation();
 
       if (j == 0)
       {
@@ -280,7 +280,7 @@ static Array2D<Vec3, c_NumCells + 1> calcNoiseNormals(LOD::Octree::Node* node, c
         // fCL = Terrain::GetElevationData(pointXY, s_DefaultBiome).sum();
       }
       else
-        fCL = noiseValues(i, j - 1).getElevation();
+        fCL = noiseValues[i][j - 1].getElevation();
 
       if (j == c_NumCells)
       {
@@ -288,14 +288,14 @@ static Array2D<Vec3, c_NumCells + 1> calcNoiseNormals(LOD::Octree::Node* node, c
         // fCU = Terrain::GetElevationData(pointXY, s_DefaultBiome).sum();
       }
       else
-        fCU = noiseValues(i, j + 1).getElevation();
+        fCU = noiseValues[i][j + 1].getElevation();
 
       Vec2 gradient{};
       gradient.x = (fUC - fLC) / (2 * cellLength);
       gradient.y = (fCU - fCL) / (2 * cellLength);
 
       Vec3 normal = glm::normalize(Vec3(-gradient, 1));
-      noiseNormals(i, j) = normal;
+      noiseNormals[i][j] = normal;
     }
   return noiseNormals;
 }
@@ -312,8 +312,8 @@ static NoiseData interpolateNoiseData(LOD::Octree::Node* node, const Array2D<Ter
   length_t zA = LODFloor + cornerA.k * cellLength;
   length_t zB = LODFloor + cornerB.k * cellLength;
 
-  const Terrain::CompoundSurfaceData& surfaceDataA = noiseValues(cornerA.i, cornerA.j);
-  const Terrain::CompoundSurfaceData& surfaceDataB = noiseValues(cornerB.i, cornerB.j);
+  const Terrain::CompoundSurfaceData& surfaceDataA = noiseValues[cornerA.i][cornerA.j];
+  const Terrain::CompoundSurfaceData& surfaceDataB = noiseValues[cornerB.i][cornerB.j];
 
   // Isovalues of corners A and B
   length_t tA = surfaceDataA.getElevation() - zA;
@@ -326,8 +326,8 @@ static NoiseData interpolateNoiseData(LOD::Octree::Node* node, const Array2D<Ter
   Terrain::CompoundSurfaceData surfaceData = LODInterpolation(t, s, surfaceDataA, surfaceDataB);
 
   // Estimate isosurface normal using linear interpolation between corners
-  const Vec3& n0 = noiseNormals(cornerA.i, cornerA.j);
-  const Vec3& n1 = noiseNormals(cornerB.i, cornerB.j);
+  const Vec3& n0 = noiseNormals[cornerA.i][cornerA.j];
+  const Vec3& n1 = noiseNormals[cornerB.i][cornerB.j];
   Vec3 isoNormal = LODInterpolation(t, s, n0, n1);
 
   return { vertexPosition, isoNormal, surfaceData };
@@ -369,13 +369,13 @@ static void generatePrimaryMesh(LOD::Octree::Node* node, const Array2D<Terrain::
           int K = v & bit(2) ? k + 1 : k;
           length_t Z = LODFloor + K * cellLength;
 
-          if (noiseValues(I, J).getElevation() > Z)
+          if (noiseValues[I][J].getElevation() > Z)
             cellCase |= bit(v);
         }
         if (cellCase == 0 || cellCase == 255)
           continue;
 
-        currLayer(j, k).baseMeshIndex = vertexCount;
+        currLayer[j][k].baseMeshIndex = vertexCount;
 
         // Use lookup table to determine which of 15 equivalence classes the cell belongs to
         uint8_t cellEquivClass = c_RegularCellClass[cellCase];
@@ -405,7 +405,7 @@ static void generatePrimaryMesh(LOD::Octree::Node* node, const Array2D<Terrain::
 
           // If a new vertex must be created, store vertex index information for later reuse.  If not, attempt to reuse previous vertex
           if (newVertex)
-            currLayer(j, k).vertexOrder[sharedVertexIndex] = cellVertexCount;
+            currLayer[j][k].vertexOrder[sharedVertexIndex] = cellVertexCount;
           else
           {
             int I = sharedVertexDirection & bit(0) ? i - 1 : i;
@@ -416,8 +416,8 @@ static void generatePrimaryMesh(LOD::Octree::Node* node, const Array2D<Terrain::
             {
               const auto& targetLayer = I == i ? currLayer : prevLayer;
 
-              int baseMeshIndex = targetLayer(J, K).baseMeshIndex;
-              int vertexOrder = targetLayer(J, K).vertexOrder[sharedVertexIndex];
+              int baseMeshIndex = targetLayer[J][K].baseMeshIndex;
+              int vertexOrder = targetLayer[J][K].vertexOrder[sharedVertexIndex];
               if (baseMeshIndex > 0 && vertexOrder >= 0)
               {
                 primaryMeshIndices.push_back(baseMeshIndex + vertexOrder);
@@ -514,7 +514,7 @@ static void generateTransitionMeshes(LOD::Octree::Node* node, const Array2D<Terr
           const int& K = sample.k;
           length_t Z = LODFloor + K * cellLength;
 
-          if (noiseValues(I, J).getElevation() > Z)
+          if (noiseValues[I][J].getElevation() > Z)
             cellCase |= bit(c_SampleIndexToBitFlip[p]);
         }
         if (cellCase == 0 || cellCase == 511)

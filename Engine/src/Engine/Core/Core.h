@@ -177,17 +177,17 @@ class Iterator
 
 public:
   Iterator(Enum valEnum)
-    : value(static_cast<val_t>(valEnum)) {}
+    : m_Value(static_cast<val_t>(valEnum)) {}
   Iterator()
-    : value(static_cast<val_t>(beginEnum)) {}
+    : m_Value(static_cast<val_t>(beginEnum)) {}
 
   Iterator& operator++()
   {
-    ++value;
+    ++m_Value;
     return *this;
   }
-  Enum operator*() { return static_cast<Enum>(value); }
-  bool operator!=(const Iterator& other) { return value != other.value; }
+  Enum operator*() { return static_cast<Enum>(m_Value); }
+  bool operator!=(const Iterator& other) { return m_Value != other.m_Value; }
 
   Iterator begin() { return *this; }
   Iterator end() { return Iterator(endEnum); }
@@ -198,5 +198,5 @@ public:
   }
 
 private:
-  val_t value;
+  val_t m_Value;
 };

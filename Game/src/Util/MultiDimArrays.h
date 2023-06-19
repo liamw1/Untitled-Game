@@ -1,5 +1,49 @@
 #pragma once
 
+template<typename T, int Size>
+class ArraySection
+{
+public:
+  ArraySection(T* begin)
+    : m_Begin(begin) {}
+
+  T& operator[](int index)
+  {
+    return const_cast<T&>(static_cast<const ArraySection&>(*this).operator[](index));
+  }
+  const T& operator[](int index) const
+  {
+    EN_ASSERT(boundsCheck(index, 0, Size), "Index is out of bounds!");
+    return m_Begin[index];
+  }
+
+private:
+  T* m_Begin;
+};
+
+template<typename T, int Columns, int Depth = Columns>
+class ArraySection2D
+{
+public:
+  ArraySection2D(T* begin)
+    : m_Begin(begin) {}
+
+  ArraySection<T, Depth> operator[](int columnIndex)
+  {
+    return static_cast<const ArraySection2D&>(*this).operator[](columnIndex);
+  }
+  const ArraySection<T, Depth> operator[](int columnIndex) const
+  {
+    EN_ASSERT(boundsCheck(columnIndex, 0, Columns), "Index is out of bounds!");
+    return ArraySection<T, Depth>(m_Begin + Depth * columnIndex);
+  }
+
+private:
+  T* m_Begin;
+};
+
+
+
 /*
   A 2D-style array that stores its members in a single
   heap-allocated block in memory.
@@ -36,28 +80,15 @@ public:
     return *this;
   }
 
-  T& operator()(int rowIndex, int columnIndex)
+  ArraySection<T, Columns> operator[](int rowIndex)
   {
-    return const_cast<T&>(static_cast<const Array2D&>(*this).operator()(rowIndex, columnIndex));
+    return static_cast<const Array2D&>(*this).operator[](rowIndex);
   }
-
-  const T& operator()(int rowIndex, int columnIndex) const
+  const ArraySection<T, Columns> operator[](int rowIndex) const
   {
     EN_ASSERT(m_Data, "Data has not yet been allocated!");
-    EN_ASSERT(boundsCheck(rowIndex, 0, Rows) && boundsCheck(columnIndex, 0, Columns), "Index is out of bounds!");
-    return m_Data[Columns * rowIndex + columnIndex];
-  }
-
-  T& operator[](int index)
-  {
-    return const_cast<T&>(static_cast<const Array2D&>(*this).operator[](index));
-  }
-
-  const T& operator[](int index) const
-  {
-    EN_ASSERT(m_Data, "Data has not yet been allocated!");
-    EN_ASSERT(boundsCheck(index, 0, size()), "Index is out of bounds!");
-    return m_Data[index];
+    EN_ASSERT(boundsCheck(rowIndex, 0, Rows), "Index is out of bounds!");
+    return ArraySection<T, Columns>(m_Data + Columns * rowIndex);
   }
 
   operator bool() const { return m_Data; }
@@ -137,28 +168,15 @@ public:
     return *this;
   }
 
-  T& operator()(int rowIndex, int columnIndex, int depthIndex)
+  ArraySection2D<T, Columns, Depth> operator[](int rowIndex)
   {
-    return const_cast<T&>(static_cast<const Array3D&>(*this).operator()(rowIndex, columnIndex, depthIndex));
+    return static_cast<const Array3D&>(*this).operator[](rowIndex);
   }
-
-  const T& operator()(int rowIndex, int columnIndex, int depthIndex) const
+  const ArraySection2D<T, Columns, Depth> operator[](int rowIndex) const
   {
     EN_ASSERT(m_Data, "Data has not yet been allocated!");
-    EN_ASSERT(boundsCheck(rowIndex, 0, Rows) && boundsCheck(columnIndex, 0, Columns) && boundsCheck(depthIndex, 0, Depth), "Index is out of bounds!");
-    return m_Data[Columns * Depth * rowIndex + Depth * columnIndex + depthIndex];
-  }
-
-  T& operator[](int index)
-  {
-    return const_cast<T&>(static_cast<const Array3D&>(*this).operator[](index));
-  }
-
-  const T& operator[](int index) const
-  {
-    EN_ASSERT(m_Data, "Data has not yet been allocated!");
-    EN_ASSERT(boundsCheck(index, 0, size()), "Index is out of bounds!");
-    return m_Data[index];
+    EN_ASSERT(boundsCheck(rowIndex, 0, Rows), "Index is out of bounds!");
+    return ArraySection2D<T, Columns, Depth>(m_Data + Columns * Depth * rowIndex);
   }
 
   operator bool() const { return m_Data; }

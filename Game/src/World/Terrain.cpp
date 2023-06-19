@@ -143,8 +143,8 @@ static const SurfaceData& getSurfaceData(const GlobalIndex& chunkIndex)
       {
         Vec2 blockXY = Chunk::Length() * static_cast<Vec2>(mapIndex) + Block::Length() * (Vec2(i, j) + Vec2(0.5));
 
-        surfaceData.noiseSamples(i, j) = Noise::OctaveNoise2D<Biome::LocalElevationOctaves()>(blockXY, 1_m / c_LargestNoiseScale, c_NoiseLacunarity);
-        surfaceData.biomeData(i, j) = getBiomeData(blockXY);
+        surfaceData.noiseSamples[i][j] = Noise::OctaveNoise2D<Biome::LocalElevationOctaves()>(blockXY, 1_m / c_LargestNoiseScale, c_NoiseLacunarity);
+        surfaceData.biomeData[i][j] = getBiomeData(blockXY);
       }
 
     const auto& [insertionPosition, insertionSuccess] = s_SurfaceDataCache.insert({ mapIndex, std::move(surfaceData) });
@@ -166,16 +166,38 @@ static float calcSurfaceTemperature(float seaLevelTemperature, length_t surfaceE
 static bool isEmpty(const Array3D<Block::Type, Chunk::Size()>& composition)
 {
   EN_ASSERT(composition, "Composition does not exist!");
-  for (int i = 0; i < Chunk::TotalBlocks(); ++i)
-    if (composition[i] != Block::Type::Air)
-      return false;
+  for (blockIndex_t i = 0; i < Chunk::Size(); ++i)
+    for (blockIndex_t j = 0; j < Chunk::Size(); ++j)
+      for (blockIndex_t k = 0; k < Chunk::Size(); ++k)
+        if (composition[i][j][k] != Block::Type::Air)
+          return false;
   return true;
 }
 
-static void heightMapStage(Array3D<Block::Type, Chunk::Size()>& composition, const GlobalIndex& chunkIndex)
+static void heightMapStage(Array2D<length_t, Chunk::Size()>& heightMap, const GlobalIndex& chunkIndex)
 {
-  std::lock_guard lock(s_Mutex);
+  // Generates surface data if none exists
+  const auto& [noiseSamples, biomeMap] = getSurfaceData(chunkIndex);
 
+  for (blockIndex_t i = 0; i < Chunk::Size(); ++i)
+    for (blockIndex_t j = 0; j < Chunk::Size(); ++j)
+    {
+      length_t elevation = 0.0;
+      for (int n = 0; n < c_MaxCompoundBiomes; ++n)
+      {
+        const auto& [biomeType, biomeWeight] = biomeMap[i][j][n];
+        if (biomeType == Biome::Type::Null)
+          break;
+
+        const Biome* biome = Biome::Get(biomeType);
+        elevation += biome->localSurfaceElevation(noiseSamples[i][j]) * biomeWeight;
+      }
+      heightMap[i][j] = elevation;
+    }
+}
+
+static void soilStage(Array3D<Block::Type, Chunk::Size()>& composition, const Array2D<length_t, Chunk::Size()>& heightMap, const GlobalIndex& chunkIndex)
+{
   // Generates surface data if none exists
   const auto& [noiseSamples, biomeMap] = getSurfaceData(chunkIndex);
 
@@ -183,53 +205,21 @@ static void heightMapStage(Array3D<Block::Type, Chunk::Size()>& composition, con
   for (blockIndex_t i = 0; i < Chunk::Size(); ++i)
     for (blockIndex_t j = 0; j < Chunk::Size(); ++j)
     {
-      length_t elevation = 0.0;
-      for (int n = 0; n < c_MaxCompoundBiomes; ++n)
-      {
-        Biome::Type biomeType = biomeMap(i, j)[n].type;
-        if (biomeType == Biome::Type::Null)
-          break;
-
-        const Biome* biome = Biome::Get(biomeType);
-        elevation += biome->localSurfaceElevation(noiseSamples(i, j)) * biomeMap(i, j)[n].weight;
-      }
-      const Biome* primaryBiome = Biome::Get(biomeMap(i, j)[0].type);
-
-      int surfaceDepth = 1;
-      int soilDepth = 5;
-      Block::Type surfaceType = primaryBiome->primarySurfaceType();
-      Block::Type soilType = Block::Type::Dirt;
-
-      int terrainElevationIndex = static_cast<int>(std::ceil((elevation - chunkFloor) / Block::Length()));
-
-      blockIndex_t k = 0;
-      while (k < terrainElevationIndex - soilDepth && k < Chunk::Size())
-      {
-        composition(i, j, k) = Block::Type::Stone;
-        k++;
-      }
-      while (k < terrainElevationIndex - surfaceDepth && k < Chunk::Size())
-      {
-        composition(i, j, k) = soilType;
-        k++;
-      }
-      while (k < terrainElevationIndex && k < Chunk::Size())
-      {
-        composition(i, j, k) = surfaceType;
-        k++;
-      }
-      while (k < Chunk::Size())
-      {
-        composition(i, j, k) = Block::Type::Air;
-        k++;
-      }
+      const length_t& elevation = heightMap[i][j];
+      const Biome* primaryBiome = Biome::Get(biomeMap[i][j][0].type);
+      primaryBiome->fillColumn(composition[i][j], chunkFloor, elevation);
     }
 }
 
 Array3D<Block::Type, Chunk::Size()> Terrain::GenerateNew(const GlobalIndex& chunkIndex)
 {
+  Array2D<length_t, Chunk::Size()> heightMap = AllocateArray2D<length_t, Chunk::Size()>();
   Array3D<Block::Type, Chunk::Size()> composition = AllocateArray3D<Block::Type, Chunk::Size()>();
-  heightMapStage(composition, chunkIndex);
+
+  std::lock_guard lock(s_Mutex);
+
+  heightMapStage(heightMap, chunkIndex);
+  soilStage(composition, heightMap, chunkIndex);
 
   if (isEmpty(composition))
     composition.reset();

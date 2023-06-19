@@ -1,7 +1,9 @@
 #pragma once
+#include "Indexing.h"
+#include "Chunk.h"
 #include "Block/Block.h"
-#include "World/Indexing.h"
 #include "Util/Noise.h"
+#include "Util/MultiDimArrays.h"
 
 class Biome
 {
@@ -29,6 +31,7 @@ public:
 
   virtual Block::Type primarySurfaceType() const = 0;
   virtual length_t localSurfaceElevation(const NoiseSamples& noiseSamples) const = 0;
+  virtual void fillColumn(ArraySection<Block::Type, Chunk::Size()> column, length_t chunkFloor, length_t elevation) const = 0;
 
   static void Initialize();
   static const Biome* Get(Type biome);
@@ -38,6 +41,7 @@ public:
 
 protected:
   static length_t CalculateOctaveNoise(const NoiseSamples& noiseSamples, length_t largestAmplitude, float persistence);
+  static void StandardColumnFill(ArraySection<Block::Type, Chunk::Size()> column, length_t chunkFloor, length_t elevation, Block::Type surfaceType, int surfaceDepth, Block::Type soilType, int soilDepth);
 
 private:
   static constexpr int c_BiomeCount = static_cast<int>(Type::End) - static_cast<int>(Type::Begin);
