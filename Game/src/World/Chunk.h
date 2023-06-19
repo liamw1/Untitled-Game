@@ -1,5 +1,6 @@
 #pragma once
 #include "Indexing.h"
+#include "Block/Block.h"
 #include "Util/MultiDimArrays.h"
 #include <Engine.h>
 
@@ -73,7 +74,7 @@ public:
     is a costly operation (at least relative to the cost of changing a single block), so we prefer to only compute opacity
     when the chunk is updated via setData or internalUpdate. Use with caution.
   */
-  bool isFaceOpaque(Block::Face face) const;
+  bool isFaceOpaque(Direction face) const;
 
   static constexpr blockIndex_t Size() { return c_ChunkSize; }
   static constexpr length_t Length() { return Block::Length() * c_ChunkSize; }

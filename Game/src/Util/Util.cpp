@@ -29,13 +29,10 @@ bool Util::IsInRangeOfPlayer(const Chunk& chunk, globalIndex_t range)
   return IsInRangeOfPlayer(chunk.getGlobalIndex(), range);
 }
 
-bool Util::BlockNeighborIsInAnotherChunk(const BlockIndex& blockIndex, Block::Face face)
+bool Util::BlockNeighborIsInAnotherChunk(const BlockIndex& blockIndex, Direction direction)
 {
   static constexpr blockIndex_t chunkLimits[2] = { 0, Chunk::Size() - 1 };
-  int faceID = static_cast<int>(face);
-  int coordID = faceID / 2;
-
-  return blockIndex[coordID] == chunkLimits[faceID % 2];
+  return blockIndex[GetCoordID(direction)] == chunkLimits[IsUpstream(direction)];
 }
 
 std::array<Vec4, 6> Util::CalculateViewFrustumPlanes(const Mat4& viewProjection)

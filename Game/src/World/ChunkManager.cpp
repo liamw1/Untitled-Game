@@ -97,7 +97,7 @@ std::pair<const Chunk*, std::unique_lock<std::mutex>> ChunkManager::acquireChunk
   return m_ChunkContainer.acquireChunk(GlobalIndex(originChunk.i + chunkIndex.i, originChunk.j + chunkIndex.j, originChunk.k + chunkIndex.k));
 }
 
-void ChunkManager::placeBlock(GlobalIndex chunkIndex, BlockIndex blockIndex, Block::Face face, Block::Type blockType)
+void ChunkManager::placeBlock(GlobalIndex chunkIndex, BlockIndex blockIndex, Direction face, Block::Type blockType)
 {
   {
     auto [chunk, lock] = m_ChunkContainer.acquireChunk(chunkIndex);
@@ -249,34 +249,34 @@ std::vector<uint32_t> ChunkManager::createMesh(const GlobalIndex& chunkIndex) co
   }
 
   // Load blocks from cardinal neighbors
-  for (Block::Face face : Block::FaceIterator())
+  for (Direction direction : Directions())
   {
-    int faceIndex = IsPositive(face) ? Chunk::Size() : -1;
-    int neighborFaceIndex = IsPositive(face) ? 0 : Chunk::Size() - 1;
+    int faceIndex = IsUpstream(direction) ? Chunk::Size() : -1;
+    int neighborFaceIndex = IsUpstream(direction) ? 0 : Chunk::Size() - 1;
 
-    auto [neighbor, lock] = m_ChunkContainer.acquireChunk(chunkIndex + GlobalIndex::Dir(face));
+    auto [neighbor, lock] = m_ChunkContainer.acquireChunk(chunkIndex + GlobalIndex::Dir(direction));
     if (neighbor)
       for (blockIndex_t i = 0; i < Chunk::Size(); ++i)
         for (blockIndex_t j = 0; j < Chunk::Size(); ++j)
         {
-          BlockIndex relativeBlockIndex = BlockIndex::CreatePermuted(faceIndex, i, j, GetCoordID(face));
+          BlockIndex relativeBlockIndex = BlockIndex::CreatePermuted(faceIndex, i, j, GetCoordID(direction));
 
           if (neighbor->empty())
             setBlockType(blockData, relativeBlockIndex, Block::Type::Air);
           else
           {
-            BlockIndex neighborBlockIndex = BlockIndex::CreatePermuted(neighborFaceIndex, i, j, GetCoordID(face));
+            BlockIndex neighborBlockIndex = BlockIndex::CreatePermuted(neighborFaceIndex, i, j, GetCoordID(direction));
             setBlockType(blockData, relativeBlockIndex, neighbor->getBlockType(neighborBlockIndex));
           }
         }
   }
 
   // Load blocks from edge neighbors
-  for (auto itA = Block::FaceIterator().begin(); itA != Block::FaceIterator().end(); ++itA)
-    for (auto itB = itA.next(); itB != Block::FaceIterator().end(); ++itB)
+  for (auto itA = Directions().begin(); itA != Directions().end(); ++itA)
+    for (auto itB = itA.next(); itB != Directions().end(); ++itB)
     {
-      Block::Face faceA = *itA;
-      Block::Face faceB = *itB;
+      Direction faceA = *itA;
+      Direction faceB = *itB;
 
       // Opposite faces cannot form edge
       if (faceB == !faceA)
@@ -291,8 +291,8 @@ std::vector<uint32_t> ChunkManager::createMesh(const GlobalIndex& chunkIndex) co
         for (blockIndex_t i = 0; i < Chunk::Size(); ++i)
         {
           BlockIndex relativeBlockIndex{};
-          relativeBlockIndex[u] = IsPositive(faceA) ? Chunk::Size() : -1;
-          relativeBlockIndex[v] = IsPositive(faceB) ? Chunk::Size() : -1;
+          relativeBlockIndex[u] = IsUpstream(faceA) ? Chunk::Size() : -1;
+          relativeBlockIndex[v] = IsUpstream(faceB) ? Chunk::Size() : -1;
           relativeBlockIndex[w] = i;
 
           if (neighbor->empty())
@@ -300,8 +300,8 @@ std::vector<uint32_t> ChunkManager::createMesh(const GlobalIndex& chunkIndex) co
           else
           {
             BlockIndex neighborBlockIndex{};
-            neighborBlockIndex[u] = IsPositive(faceA) ? 0 : Chunk::Size() - 1;
-            neighborBlockIndex[v] = IsPositive(faceB) ? 0 : Chunk::Size() - 1;
+            neighborBlockIndex[u] = IsUpstream(faceA) ? 0 : Chunk::Size() - 1;
+            neighborBlockIndex[v] = IsUpstream(faceB) ? 0 : Chunk::Size() - 1;
             neighborBlockIndex[w] = i;
 
             setBlockType(blockData, relativeBlockIndex, neighbor->getBlockType(neighborBlockIndex));
@@ -347,30 +347,30 @@ std::vector<uint32_t> ChunkManager::createMesh(const GlobalIndex& chunkIndex) co
         Block::Type blockType = getBlockType(blockData, i, j, k);
 
         if (blockType != Block::Type::Air)
-          for (Block::Face face : Block::FaceIterator())
-            if (Block::HasTransparency(getBlockType(blockData, BlockIndex(i, j, k) + BlockIndex::Dir(face))))
+          for (Direction direction : Directions())
+            if (Block::HasTransparency(getBlockType(blockData, BlockIndex(i, j, k) + BlockIndex::Dir(direction))))
             {
-              int textureID = static_cast<int>(Block::GetTexture(blockType, face));
-              int faceID = static_cast<int>(face);
-              int u = faceID / 2;
+              int textureID = static_cast<int>(Block::GetTexture(blockType, direction));
+              int directionID = static_cast<int>(direction);
+              int u = directionID / 2;
               int v = (u + 1) % 3;
               int w = (u + 2) % 3;
 
               for (int vert = 0; vert < 4; ++vert)
               {
-                Block::Face sideADir = static_cast<Block::Face>(2 * v + offsets[faceID][vert][v]);
-                Block::Face sideBDir = static_cast<Block::Face>(2 * w + offsets[faceID][vert][w]);
+                Direction sideADir = static_cast<Direction>(2 * v + offsets[directionID][vert][v]);
+                Direction sideBDir = static_cast<Direction>(2 * w + offsets[directionID][vert][w]);
 
-                BlockIndex sideA = BlockIndex(i, j, k) + BlockIndex::Dir(face) + BlockIndex::Dir(sideADir);
-                BlockIndex sideB = BlockIndex(i, j, k) + BlockIndex::Dir(face) + BlockIndex::Dir(sideBDir);
-                BlockIndex corner = BlockIndex(i, j, k) + BlockIndex::Dir(face) + BlockIndex::Dir(sideADir) + BlockIndex::Dir(sideBDir);
+                BlockIndex sideA = BlockIndex(i, j, k) + BlockIndex::Dir(direction) + BlockIndex::Dir(sideADir);
+                BlockIndex sideB = BlockIndex(i, j, k) + BlockIndex::Dir(direction) + BlockIndex::Dir(sideBDir);
+                BlockIndex corner = BlockIndex(i, j, k) + BlockIndex::Dir(direction) + BlockIndex::Dir(sideADir) + BlockIndex::Dir(sideBDir);
 
                 bool sideAIsOpaque = !Block::HasTransparency(getBlockType(blockData, sideA));
                 bool sideBIsOpaque = !Block::HasTransparency(getBlockType(blockData, sideB));
                 bool cornerIsOpaque = !Block::HasTransparency(getBlockType(blockData, corner));
                 int AO = sideAIsOpaque && sideBIsOpaque ? 0 : 3 - (sideAIsOpaque + sideBIsOpaque + cornerIsOpaque);
 
-                BlockIndex vertexIndex = BlockIndex(i, j, k) + offsets[faceID][vert];
+                BlockIndex vertexIndex = BlockIndex(i, j, k) + offsets[directionID][vert];
 
                 uint32_t vertexData = vertexIndex.i + (vertexIndex.j << 6) + (vertexIndex.k << 12);   // Local vertex coordinates
                 vertexData |= vert << 18;                                                             // Quad vertex index

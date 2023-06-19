@@ -159,7 +159,7 @@ void LOD::Draw(const Octree::Node* leaf)
   MeshData::SetUniforms(uniforms);
 
   Engine::RenderCommand::DrawIndexed(leaf->data->primaryMesh.vertexArray.get(), primaryMeshIndexCount);
-  for (Block::Face face : Block::FaceIterator())
+  for (Direction face : Directions())
   {
     int faceID = static_cast<int>(face);
 
@@ -475,7 +475,7 @@ static void generateTransitionMeshes(LOD::Octree::Node* node, const Array2D<Terr
   length_t cellLength = node->length() / c_NumCells;
   length_t transitionCellWidth = s_TCFractionalWidth * cellLength;
 
-  for (Block::Face face : Block::FaceIterator())
+  for (Direction face : Directions())
   {
     int faceID = static_cast<int>(face);
 
@@ -483,7 +483,7 @@ static void generateTransitionMeshes(LOD::Octree::Node* node, const Array2D<Terr
     int u = faceID / 2;
     int v = (u + 1) % 3;
     int w = (u + 2) % 3;
-    int uIndex = IsPositive(face) ? c_NumCells : 0;
+    int uIndex = IsUpstream(face) ? c_NumCells : 0;
 
     // Generate transition mesh using Transvoxel algorithm
     int vertexCount = 0;
@@ -506,7 +506,7 @@ static void generateTransitionMeshes(LOD::Octree::Node* node, const Array2D<Terr
           sample[w] = j + p / 3;
 
           // If block face normal along negative axis, we must reverse v coordinate-axis to ensure correct orientation
-          if (!IsPositive(face))
+          if (!IsUpstream(face))
             sample[v] = c_NumCells - sample[v];
 
           const int& I = sample.i;
@@ -588,7 +588,7 @@ static void generateTransitionMeshes(LOD::Octree::Node* node, const Array2D<Terr
           sampleB[w] = j + c_CornerIndexToSampleIndex[cornerIndexB] / 3;
 
           // If block face normal along negative axis, we must reverse v coordinate-axis to ensure correct orientation
-          if (!IsPositive(face))
+          if (!IsUpstream(face))
           {
             sampleA[v] = c_NumCells - sampleA[v];
             sampleB[v] = c_NumCells - sampleB[v];
@@ -670,7 +670,7 @@ static void adjustVertex(LOD::Vertex& vertex, length_t cellLength, uint8_t trans
 {
   Vec3 vertexAdjustment{};
   bool isNearSameResolutionLOD = false;
-  for (Block::Face face : Block::FaceIterator())
+  for (Direction face : Directions())
   {
     int faceID = static_cast<int>(face);
     int coordID = faceID / 2;
@@ -710,7 +710,7 @@ static std::vector<LOD::Vertex> calcAdjustedPrimaryMesh(LOD::Octree::Node* node)
   return LODMesh;
 }
 
-static std::vector<LOD::Vertex> calcAdjustedTransitionMesh(LOD::Octree::Node* node, Block::Face face)
+static std::vector<LOD::Vertex> calcAdjustedTransitionMesh(LOD::Octree::Node* node, Direction face)
 {
   static constexpr length_t small = 128 * std::numeric_limits<length_t>::epsilon();
 
@@ -747,7 +747,7 @@ static void determineTransitionFaces(LOD::Octree& tree, LOD::Octree::Node* node)
 
   // Determine which faces transition to a lower resolution LOD
   uint8_t transitionFaces = 0;
-  for (Block::Face face : Block::FaceIterator())
+  for (Direction face : Directions())
   {
     int faceID = static_cast<int>(face);
 
@@ -775,7 +775,7 @@ void LOD::UpdateMesh(LOD::Octree& tree, LOD::Octree::Node* node)
   LOD::MeshData& primaryMesh = node->data->primaryMesh;
   Engine::Renderer::UploadMesh(primaryMesh.vertexArray.get(), calcAdjustedPrimaryMesh(node), primaryMesh.indices);
 
-  for (Block::Face face : Block::FaceIterator())
+  for (Direction face : Directions())
   {
     int faceID = static_cast<int>(face);
 
@@ -792,18 +792,17 @@ void LOD::MessageNeighbors(LOD::Octree& tree, LOD::Octree::Node* node)
                               //       East               West              North              South               Top               Bottom
 
   // Tell LOD neighbors to update
-  for (Block::Face face : Block::FaceIterator())
+  for (Direction direction : Directions())
   {
-    int faceID = static_cast<int>(face);
-    int oppFaceID = static_cast<int>(!face);
+    int directionID = static_cast<int>(direction);
 
     // Relabel coordinates, u being the coordinate normal to face
-    int u = faceID / 2;
+    int u = directionID / 2;
     int v = (u + 1) % 3;
     int w = (u + 2) % 3;
 
     globalIndex_t neighborSize = node->size();
-    GlobalIndex neighborIndexBase = node->anchor + offsets[faceID];
+    GlobalIndex neighborIndexBase = node->anchor + offsets[directionID];
     for (globalIndex_t i = 0; i < node->size(); i += neighborSize)
       for (globalIndex_t j = 0; j < node->size(); j += neighborSize)
       {

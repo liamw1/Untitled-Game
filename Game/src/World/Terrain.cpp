@@ -26,8 +26,8 @@ std::array<int, 2> Terrain::CompoundSurfaceData::getTextureIndices() const
 {
   std::array<int, 2> textureIndices{};
 
-  textureIndices[0] = static_cast<int>(Block::GetTexture(m_Components[0].type, Block::Face::Top));
-  textureIndices[1] = static_cast<int>(Block::GetTexture(m_Components[1].type, Block::Face::Top));
+  textureIndices[0] = static_cast<int>(Block::GetTexture(m_Components[0].type, Direction::Top));
+  textureIndices[1] = static_cast<int>(Block::GetTexture(m_Components[1].type, Direction::Top));
 
   return textureIndices;
 }

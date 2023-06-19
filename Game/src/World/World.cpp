@@ -68,11 +68,11 @@ RayIntersection World::castRaySegment(const Vec3& pointA, const Vec3& pointB) co
   RayIntersection firstIntersection{};
   for (int i = 0; i < 3; ++i)
   {
-    const bool alignedWithPositiveAxis = rayDirection[i] > 0.0;
+    const bool pointedUpstream = rayDirection[i] > 0.0;
 
     // Global indices of first and last planes that segment will intersect in direction i
     globalIndex_t n0, nf;
-    if (alignedWithPositiveAxis)
+    if (pointedUpstream)
     {
       n0 = static_cast<globalIndex_t>(ceil(pointA[i] / Block::Length()));
       nf = static_cast<globalIndex_t>(ceil(pointB[i] / Block::Length()));
@@ -84,7 +84,7 @@ RayIntersection World::castRaySegment(const Vec3& pointA, const Vec3& pointB) co
     }
 
     // n increases to nf if ray is aligned with positive i-axis and decreases to nf otherwise
-    for (globalIndex_t n = n0; alignedWithPositiveAxis ? n <= nf : n >= nf; alignedWithPositiveAxis ? ++n : --n)
+    for (globalIndex_t n = n0; pointedUpstream ? n <= nf : n >= nf; pointedUpstream ? ++n : --n)
     {
       const length_t t = (n * Block::Length() - pointA[i]) / rayDirection[i];
 
@@ -103,7 +103,7 @@ RayIntersection World::castRaySegment(const Vec3& pointA, const Vec3& pointB) co
 
         // If ray hit West/South/Bottom block face, we can use n for block coordinate, otherwise, we need to step back a block
         globalIndex_t N = n;
-        if (!alignedWithPositiveAxis)
+        if (!pointedUpstream)
           N--;
 
         // Get index of chunk in which intersection took place
@@ -126,10 +126,10 @@ RayIntersection World::castRaySegment(const Vec3& pointA, const Vec3& pointB) co
         // If block has collision, note the intersection and move to next spatial direction
         if (Block::HasCollision(chunk->getBlockType(blockIndex)))
         {
-          int faceID = 2 * u + !alignedWithPositiveAxis;
+          int faceID = 2 * u + !pointedUpstream;
           tmin = t;
 
-          firstIntersection.face = static_cast<Block::Face>(faceID);
+          firstIntersection.face = static_cast<Direction>(faceID);
           firstIntersection.blockIndex = blockIndex;
           firstIntersection.chunkIndex = chunkIndex;
         }
@@ -153,9 +153,6 @@ RayIntersection World::castRay(const Vec3& rayOrigin, const Vec3& rayDirection, 
 
 void World::playerCollisionHandling(Timestep timestep) const
 {
-  static constexpr Vec3 normals[6] = { { -1, 0, 0}, { 1, 0, 0}, { 0, -1, 0}, { 0, 1, 0}, { 0, 0, -1}, { 0, 0, 1} };
-                                  //       West        East        South        North       Bottom        Top
-
   // Player width and height in blocks
   static const int playerWidth = static_cast<int>(ceil(Player::Width() / Block::Length()));
   static const int playerHeight = static_cast<int>(ceil(Player::Height() / Block::Length()));
@@ -186,11 +183,11 @@ beginCollisionDetection:;
 
   if (firstCollision.distance <= distanceMoved)
   {
-    int faceID = static_cast<int>(firstCollision.face);
     length_t t = firstCollision.distance / distanceMoved;
 
     // Calculate distance player should be pushed out from solid block
-    Vec3 collisionDisplacement = ((1.0 - t) * dt *  glm::dot(normals[faceID], -Player::Velocity()) + c_MinDistanceToWall) * normals[faceID];
+    Vec3 blockFaceNormal = static_cast<Vec3>(BlockIndex::Dir(firstCollision.face));
+    Vec3 collisionDisplacement = ((1.0 - t) * dt *  glm::dot(blockFaceNormal, -Player::Velocity()) + c_MinDistanceToWall) * blockFaceNormal;
 
     Player::SetPosition(Player::Position() + collisionDisplacement);
 
@@ -220,7 +217,7 @@ void World::playerWorldInteraction()
   {
     const LocalIndex& localIndex = m_PlayerRayCast.chunkIndex;
     const BlockIndex& blockIndex = m_PlayerRayCast.blockIndex;
-    const Block::Face& rayCastFace = m_PlayerRayCast.face;
+    const Direction& rayCastFace = m_PlayerRayCast.face;
 
     GlobalIndex originChunk = Player::OriginIndex();
     GlobalIndex chunkIndex(originChunk.i + localIndex.i, originChunk.j + localIndex.j, originChunk.k + localIndex.k);

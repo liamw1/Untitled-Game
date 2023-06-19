@@ -121,11 +121,11 @@ std::unordered_set<GlobalIndex> ChunkContainer::findAllLoadableIndices() const
 
   std::unordered_set<GlobalIndex> newChunkIndices;
   for (const auto& [key, chunk] : m_BoundaryChunks)
-    for (Block::Face face : Block::FaceIterator())
+    for (Direction direction : Directions())
     {
-      GlobalIndex neighborIndex = chunk->getGlobalIndex() + GlobalIndex::Dir(face);
+      GlobalIndex neighborIndex = chunk->getGlobalIndex() + GlobalIndex::Dir(direction);
       if (Util::IsInRangeOfPlayer(neighborIndex, c_LoadDistance) && newChunkIndices.find(neighborIndex) == newChunkIndices.end())
-        if (!chunk->isFaceOpaque(face) && !isLoaded(neighborIndex))
+        if (!chunk->isFaceOpaque(direction) && !isLoaded(neighborIndex))
           newChunkIndices.insert(neighborIndex);
     }
   return newChunkIndices;
@@ -159,17 +159,17 @@ void ChunkContainer::sendBlockUpdate(const GlobalIndex& chunkIndex, const BlockI
 {
   m_ForceUpdateQueue.add(chunkIndex);
 
-  std::vector<Block::Face> updateDirections{};
-  for (Block::Face face : Block::FaceIterator())
-    if (Util::BlockNeighborIsInAnotherChunk(blockIndex, face))
-      updateDirections.push_back(face);
+  std::vector<Direction> updateDirections{};
+  for (Direction direction : Directions())
+    if (Util::BlockNeighborIsInAnotherChunk(blockIndex, direction))
+      updateDirections.push_back(direction);
 
   EN_ASSERT(updateDirections.size() <= 3, "Too many update directions for a single block update!");
 
   // Update neighbors in cardinal directions
-  for (Block::Face face : updateDirections)
+  for (Direction direction : updateDirections)
   {
-    GlobalIndex neighborIndex = chunkIndex + GlobalIndex::Dir(face);
+    GlobalIndex neighborIndex = chunkIndex + GlobalIndex::Dir(direction);
     m_ForceUpdateQueue.add(neighborIndex);
   }
 
@@ -244,8 +244,8 @@ bool ChunkContainer::isLoaded(const GlobalIndex& chunkIndex) const
 
 bool ChunkContainer::isOnBoundary(const Chunk& chunk) const
 {
-  for (Block::Face face : Block::FaceIterator())
-    if (!isLoaded(chunk.getGlobalIndex() + GlobalIndex::Dir(face)) && !chunk.isFaceOpaque(face))
+  for (Direction direction : Directions())
+    if (!isLoaded(chunk.getGlobalIndex() + GlobalIndex::Dir(direction)) && !chunk.isFaceOpaque(direction))
       return true;
   return false;
 }
@@ -289,9 +289,9 @@ void ChunkContainer::sendChunkLoadUpdate(Chunk& newChunk)
   boundaryChunkUpdate(newChunk);
 
   // Move cardinal neighbors out of m_BoundaryChunks if they are no longer on boundary
-  for (Block::Face face : Block::FaceIterator())
+  for (Direction direction : Directions())
   {
-    Chunk* neighbor = find(newChunk.getGlobalIndex() + GlobalIndex::Dir(face));
+    Chunk* neighbor = find(newChunk.getGlobalIndex() + GlobalIndex::Dir(direction));
     if (neighbor && getChunkType(*neighbor) == ChunkType::Boundary)
       boundaryChunkUpdate(*neighbor);
   }
@@ -299,9 +299,9 @@ void ChunkContainer::sendChunkLoadUpdate(Chunk& newChunk)
 
 void ChunkContainer::sendChunkRemovalUpdate(const GlobalIndex& removalIndex)
 {
-  for (Block::Face face : Block::FaceIterator())
+  for (Direction direction : Directions())
   {
-    Chunk* neighbor = find(removalIndex + GlobalIndex::Dir(face));
+    Chunk* neighbor = find(removalIndex + GlobalIndex::Dir(direction));
 
     if (neighbor)
     {

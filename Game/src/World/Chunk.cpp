@@ -70,7 +70,7 @@ Block::Type Chunk::getBlockType(const BlockIndex& blockIndex) const
   return getBlockType(blockIndex.i, blockIndex.j, blockIndex.k);
 }
 
-bool Chunk::isFaceOpaque(Block::Face face) const
+bool Chunk::isFaceOpaque(Direction face) const
 {
   uint16_t nonOpaqueFaces = m_NonOpaqueFaces.load();
   return !(nonOpaqueFaces & bit(static_cast<int>(face)));
@@ -149,12 +149,12 @@ void Chunk::determineOpacity()
   }
 
   uint16_t nonOpaqueFaces = 0;
-  for (Block::Face face : Block::FaceIterator())
+  for (Direction face : Directions())
   {
     for (blockIndex_t i = 0; i < Chunk::Size(); ++i)
       for (blockIndex_t j = 0; j < Chunk::Size(); ++j)
       {
-        BlockIndex blockIndex = BlockIndex::CreatePermuted(chunkLimits[IsPositive(face)], i, j, GetCoordID(face));
+        BlockIndex blockIndex = BlockIndex::CreatePermuted(chunkLimits[IsUpstream(face)], i, j, GetCoordID(face));
         if (Block::HasTransparency(getBlockType(blockIndex)))
         {
           nonOpaqueFaces |= bit(static_cast<int>(face));

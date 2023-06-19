@@ -1,5 +1,28 @@
 #pragma once
-#include "Block/Block.h"
+
+enum class Direction : int
+{
+  West, East, South, North, Bottom, Top,
+  Null,
+
+  Begin = 0, End = Null
+};
+using Directions = Iterator<Direction, Direction::Begin, Direction::End>;
+
+/*
+  \returns The direction opposite the given direction.
+*/
+constexpr Direction operator!(const Direction& direction)
+{
+  int directionID = static_cast<int>(direction);
+  Direction oppositeDirection = static_cast<Direction>(directionID % 2 ? directionID - 1 : directionID + 1);
+  return oppositeDirection;
+}
+
+constexpr bool IsUpstream(Direction direction) { return static_cast<int>(direction) % 2; }
+constexpr int GetCoordID(Direction direction) { return static_cast<int>(direction) / 2; }
+
+
 
 template<typename T>
 concept IntegerType = std::is_integral_v<T>;
@@ -183,12 +206,12 @@ struct Index3D
     return { static_cast<IntType>(std::floor(vec.x)), static_cast<IntType>(std::floor(vec.y)), static_cast<IntType>(std::floor(vec.z)) };
   }
 
-  static constexpr Index3D<IntType> Dir(Block::Face face)
+  static constexpr Index3D<IntType> Dir(Direction direction)
   {
     static constexpr Index3D<IntType> directions[6] = { { -1, 0, 0}, { 1, 0, 0}, { 0, -1, 0}, { 0, 1, 0}, { 0, 0, -1}, { 0, 0, 1} };
                                                    //       West        East        South        North       Bottom        Top
 
-    return directions[static_cast<int>(face)];
+    return directions[static_cast<int>(direction)];
   }
 
   static constexpr Index3D<IntType> CreatePermuted(IntType i, IntType j, IntType k, int permutation)

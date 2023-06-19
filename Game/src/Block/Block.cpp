@@ -23,7 +23,7 @@ static const BlockUniforms s_BlockUniforms{};
 static void assignTextures(Block::Type block, std::array<Block::Texture, 6> faceTextures)
 {
   const blockID ID = static_cast<blockID>(block);
-  for (Block::Face face : Block::FaceIterator())
+  for (Direction face : Directions())
   {
     int faceID = static_cast<int>(face);
     s_TexIDs(ID, faceID) = faceTextures[faceID];
@@ -101,7 +101,7 @@ std::shared_ptr<Engine::TextureArray> Block::GetTextureArray()
   return s_TextureArray;
 }
 
-Block::Texture Block::GetTexture(Type block, Face face)
+Block::Texture Block::GetTexture(Type block, Direction face)
 {
   EN_ASSERT(s_Initialized, "Blocks have not been initialized!");
   return s_TexIDs(static_cast<blockID>(block), static_cast<int>(face));

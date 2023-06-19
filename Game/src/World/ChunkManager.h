@@ -32,7 +32,7 @@ public:
   */
   [[nodiscard]] std::pair<const Chunk*, std::unique_lock<std::mutex>> acquireChunk(const LocalIndex& chunkIndex) const;
 
-  void placeBlock(GlobalIndex chunkIndex, BlockIndex blockIndex, Block::Face face, Block::Type blockType);
+  void placeBlock(GlobalIndex chunkIndex, BlockIndex blockIndex, Direction face, Block::Type blockType);
   void removeBlock(const GlobalIndex& chunkIndex, const BlockIndex& blockIndex);
 
   void setLoadModeTerrain() { m_LoadMode = LoadMode::Terrain; }
