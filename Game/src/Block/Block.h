@@ -13,10 +13,9 @@ namespace Block
 
   Texture GetTexture(Type block, Direction face);
 
+  bool HasTransparency(Texture texture);
   bool HasTransparency(Type block);
   bool HasCollision(Type block);
-
-  bool IsTransparent(Texture texture);
 
   constexpr length_t Length() { return 0.5_m; }
   constexpr float LengthF() { return static_cast<float>(Length()); }

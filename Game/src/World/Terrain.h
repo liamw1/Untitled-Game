@@ -38,6 +38,4 @@ namespace Terrain
 
   Array3D<Block::Type, Chunk::Size()> GenerateNew(const GlobalIndex& chunkIndex);
   Array3D<Block::Type, Chunk::Size()> GenerateEmpty(const GlobalIndex& chunkIndex);
-
-  void Clean(int unloadDistance);
 }

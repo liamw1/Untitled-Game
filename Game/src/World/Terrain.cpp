@@ -1,7 +1,9 @@
 #include "GMpch.h"
 #include "Terrain.h"
-#include "Util/Util.h"
+#include "ChunkContainer.h"
 #include "Util/Noise.h"
+#include "Util/Util.h"
+#include "Util/LRUCache.h"
 #include "Player/Player.h"
 
 Terrain::CompoundSurfaceData Terrain::CompoundSurfaceData::operator+(const CompoundSurfaceData& other) const
@@ -38,7 +40,7 @@ static constexpr length_t c_LargestNoiseScale = 1024 * Block::Length();
 static constexpr float c_NoiseLacunarity = 2.0f;
 
 static constexpr int c_MaxCompoundBiomes = 4;
-static constexpr int c_BiomeRegionSize = 4;
+static constexpr int c_BiomeRegionSize = 8;
 static constexpr int c_RegionRadius = 1;
 static constexpr int c_RegionWidth = 2 * c_RegionRadius + 1;
 
@@ -52,7 +54,8 @@ struct SurfaceData
   BiomeData biomeData = AllocateArray2D<CompoundBiome, Chunk::Size()>();
 };
 
-static std::unordered_map<SurfaceMapIndex, SurfaceData> s_SurfaceDataCache;
+static constexpr int c_CacheSize = (2 * c_UnloadDistance + 5) * (2 * c_UnloadDistance + 5);
+static LRUCache<SurfaceMapIndex, SurfaceData> s_SurfaceDataCache(c_CacheSize);
 static std::mutex s_Mutex;
 
 // From https://stackoverflow.com/questions/664014/what-integer-hash-function-are-good-that-accepts-an-integer-hash-key
@@ -131,8 +134,8 @@ static CompoundBiome getBiomeData(const Vec2& surfaceLocation)
 static const SurfaceData& getSurfaceData(const GlobalIndex& chunkIndex)
 {
   SurfaceMapIndex mapIndex = static_cast<SurfaceMapIndex>(chunkIndex);
-  auto it = s_SurfaceDataCache.find(mapIndex);
-  if (it == s_SurfaceDataCache.end())
+  auto cachePosition = s_SurfaceDataCache.find(mapIndex);
+  if (cachePosition == s_SurfaceDataCache.end())
   {
     // NOTE: Voronoi points could be calculated here instead of each time getBiomeData is called
 
@@ -147,21 +150,15 @@ static const SurfaceData& getSurfaceData(const GlobalIndex& chunkIndex)
         surfaceData.biomeData[i][j] = getBiomeData(blockXY);
       }
 
-    const auto& [insertionPosition, insertionSuccess] = s_SurfaceDataCache.insert({ mapIndex, std::move(surfaceData) });
-    it = insertionPosition;
+    auto [insertionPosition, insertionSuccess] = s_SurfaceDataCache.insert(mapIndex, std::move(surfaceData));
+    cachePosition = insertionPosition;
     EN_ASSERT(insertionSuccess, "HeightMap insertion failed!");
   }
 
-  return it->second;
+  return cachePosition->second;
 }
 
 
-
-static float calcSurfaceTemperature(float seaLevelTemperature, length_t surfaceElevation)
-{
-  static constexpr float tempDropPerBlock = 0.25f;
-  return seaLevelTemperature - tempDropPerBlock * static_cast<float>(surfaceElevation / Block::Length());
-}
 
 static bool isEmpty(const Array3D<Block::Type, Chunk::Size()>& composition)
 {
@@ -176,7 +173,6 @@ static bool isEmpty(const Array3D<Block::Type, Chunk::Size()>& composition)
 
 static void heightMapStage(Array2D<length_t, Chunk::Size()>& heightMap, const GlobalIndex& chunkIndex)
 {
-  // Generates surface data if none exists
   const auto& [noiseSamples, biomeMap] = getSurfaceData(chunkIndex);
 
   for (blockIndex_t i = 0; i < Chunk::Size(); ++i)
@@ -198,7 +194,6 @@ static void heightMapStage(Array2D<length_t, Chunk::Size()>& heightMap, const Gl
 
 static void soilStage(Array3D<Block::Type, Chunk::Size()>& composition, const Array2D<length_t, Chunk::Size()>& heightMap, const GlobalIndex& chunkIndex)
 {
-  // Generates surface data if none exists
   const auto& [noiseSamples, biomeMap] = getSurfaceData(chunkIndex);
 
   length_t chunkFloor = Chunk::Length() * chunkIndex.k;
@@ -211,6 +206,39 @@ static void soilStage(Array3D<Block::Type, Chunk::Size()>& composition, const Ar
     }
 }
 
+static void foliageStage(Array3D<Block::Type, Chunk::Size()>& composition, const Array2D<length_t, Chunk::Size()>& heightMap, const GlobalIndex& chunkIndex)
+{
+  const auto createTree = [](Array3D<Block::Type, Chunk::Size()>& composition, const BlockIndex& treeIndex)
+  {
+    int i = treeIndex.i;
+    int j = treeIndex.j;
+    int k = treeIndex.k;
+
+    for (int n = 0; n < 5; ++n)
+      composition[i][j][k + n] = Block::Type::OakLog;
+
+    for (int I = -3; I < 3; ++I)
+      for (int J = -3; J < 3; ++J)
+        for (int K = 0; K < 3; ++K)
+          if (I * I + J * J + K * K < 9)
+            composition[i + I][j + J][k + K + 5] = Block::Type::OakLeaves;
+  };
+
+  length_t chunkFloor = Chunk::Length() * chunkIndex.k;
+  for (blockIndex_t i = 0; i < Chunk::Size(); ++i)
+    for (blockIndex_t j = 0; j < Chunk::Size(); ++j)
+    {
+      const length_t& elevation = heightMap[i][j];
+      length_t heightInChunk = elevation - chunkFloor;
+      if (0 < heightInChunk && heightInChunk < Chunk::Length() - 8 * Block::Length() && 3 < i && i < Chunk::Size() - 4 && 3 < j && j < Chunk::Size() - 4)
+        if (rand() % 100 == 0)
+        {
+          blockIndex_t k = static_cast<blockIndex_t>(std::ceil(heightInChunk / Block::Length()));
+          createTree(composition, { i, j, k });
+        }
+    }
+}
+
 Array3D<Block::Type, Chunk::Size()> Terrain::GenerateNew(const GlobalIndex& chunkIndex)
 {
   Array2D<length_t, Chunk::Size()> heightMap = AllocateArray2D<length_t, Chunk::Size()>();
@@ -220,6 +248,7 @@ Array3D<Block::Type, Chunk::Size()> Terrain::GenerateNew(const GlobalIndex& chun
 
   heightMapStage(heightMap, chunkIndex);
   soilStage(composition, heightMap, chunkIndex);
+  foliageStage(composition, heightMap, chunkIndex);
 
   if (isEmpty(composition))
     composition.reset();
@@ -230,20 +259,4 @@ Array3D<Block::Type, Chunk::Size()> Terrain::GenerateNew(const GlobalIndex& chun
 Array3D<Block::Type, Chunk::Size()> Terrain::GenerateEmpty(const GlobalIndex& chunkIndex)
 {
   return AllocateArray3D<Block::Type, Chunk::Size()>(Block::Type::Air);
-}
-
-void Terrain::Clean(int unloadDistance)
-{
-  std::lock_guard lock(s_Mutex);
-
-  // Destroy surface maps outside of unload range
-  for (auto it = s_SurfaceDataCache.begin(); it != s_SurfaceDataCache.end();)
-  {
-    const auto& [index, heightMap] = *it;
-
-    if (!Util::IsInRangeOfPlayer(index, unloadDistance))
-      it = s_SurfaceDataCache.erase(it);
-    else
-      ++it;
-  }
 }

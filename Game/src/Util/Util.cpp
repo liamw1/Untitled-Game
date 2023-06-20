@@ -2,16 +2,6 @@
 #include "Util.h"
 #include "Player/Player.h"
 
-int Util::CreateKey(const GlobalIndex& chunkIndex)
-{
-  return std::hash<GlobalIndex>{}(chunkIndex);
-}
-
-int Util::CreateKey(const Chunk& chunk)
-{
-  return CreateKey(chunk.getGlobalIndex());
-}
-
 bool Util::IsInRangeOfPlayer(const SurfaceMapIndex& surfaceIndex, globalIndex_t range)
 {
   GlobalIndex originIndex = Player::OriginIndex();

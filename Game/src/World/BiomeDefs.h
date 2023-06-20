@@ -53,7 +53,7 @@ public:
 
   void fillColumn(ArraySection<Block::Type, Chunk::Size()> column, length_t chunkFloor, length_t elevation) const override
   {
-    StandardColumnFill(column, chunkFloor, elevation, Block::Type::Sand, 5, Block::Type::Dirt, 3);
+    StandardColumnFill(column, chunkFloor, elevation, Block::Type::Sand, 1, Block::Type::Dirt, 3);
   }
 };
 
@@ -69,6 +69,6 @@ public:
 
   void fillColumn(ArraySection<Block::Type, Chunk::Size()> column, length_t chunkFloor, length_t elevation) const override
   {
-    StandardColumnFill(column, chunkFloor, elevation, Block::Type::Stone, 5, Block::Type::Dirt, 5);
+    StandardColumnFill(column, chunkFloor, elevation, Block::Type::Stone, 1, Block::Type::Dirt, 5);
   }
 };

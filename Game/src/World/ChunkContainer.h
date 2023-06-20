@@ -90,10 +90,10 @@ private:
   using mapType = std::unordered_map<Key, Val>;
 
   // Chunk pointers
-  std::array<mapType<int, Chunk*>, c_ChunkTypes> m_Chunks;
-  mapType<int, Chunk*>& m_EmptyChunks = m_Chunks[static_cast<int>(ChunkType::Empty)];
-  mapType<int, Chunk*>& m_BoundaryChunks = m_Chunks[static_cast<int>(ChunkType::Boundary)];
-  mapType<int, Chunk*>& m_RenderableChunks = m_Chunks[static_cast<int>(ChunkType::Renderable)];
+  std::array<mapType<GlobalIndex, Chunk*>, c_ChunkTypes> m_Chunks;
+  mapType<GlobalIndex, Chunk*>& m_EmptyChunks = m_Chunks[static_cast<int>(ChunkType::Empty)];
+  mapType<GlobalIndex, Chunk*>& m_BoundaryChunks = m_Chunks[static_cast<int>(ChunkType::Boundary)];
+  mapType<GlobalIndex, Chunk*>& m_RenderableChunks = m_Chunks[static_cast<int>(ChunkType::Renderable)];
 
   // Chunk data
   std::unique_ptr<Chunk[]> m_ChunkArray;

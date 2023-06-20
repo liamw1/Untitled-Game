@@ -87,7 +87,6 @@ void ChunkManager::clean()
     for (const GlobalIndex& chunkIndex : chunksMarkedForDeletion)
       if (!Util::IsInRangeOfPlayer(chunkIndex, c_UnloadDistance))
         m_ChunkContainer.erase(chunkIndex);
-    Terrain::Clean(c_UnloadDistance);
   }
 }
 

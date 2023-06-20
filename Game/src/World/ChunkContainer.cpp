@@ -31,7 +31,7 @@ bool ChunkContainer::insert(const GlobalIndex& chunkIndex, Array3D<Block::Type, 
   // Insert chunk into array and load it
   Chunk& chunk = m_ChunkArray[chunkSlot];
   chunk.repurpose(chunkIndex, std::move(chunkComposition));
-  auto [insertionPosition, insertionSuccess] = m_BoundaryChunks.insert({ Util::CreateKey(chunk.getGlobalIndex()), &chunk });
+  auto [insertionPosition, insertionSuccess] = m_BoundaryChunks.insert({ chunk.getGlobalIndex(), &chunk });
 
   if (insertionSuccess)
     sendChunkLoadUpdate(chunk);
@@ -43,7 +43,7 @@ bool ChunkContainer::erase(const GlobalIndex& chunkIndex)
 {
   std::lock_guard lock(m_ContainerMutex);
 
-  mapType<int, Chunk*>::iterator erasePosition = m_BoundaryChunks.find(Util::CreateKey(chunkIndex));
+  mapType<GlobalIndex, Chunk*>::iterator erasePosition = m_BoundaryChunks.find(chunkIndex);
   if (erasePosition == m_BoundaryChunks.end())
     return false;
   const Chunk* chunk = erasePosition->second;
@@ -236,8 +236,8 @@ std::optional<GlobalIndex> ChunkContainer::IndexSet::tryRemove()
 
 bool ChunkContainer::isLoaded(const GlobalIndex& chunkIndex) const
 {
-  for (const mapType<int, Chunk*>& chunkGroup : m_Chunks)
-    if (chunkGroup.find(Util::CreateKey(chunkIndex)) != chunkGroup.end())
+  for (const mapType<GlobalIndex, Chunk*>& chunkGroup : m_Chunks)
+    if (chunkGroup.find(chunkIndex) != chunkGroup.end())
       return true;
   return false;
 }
@@ -253,7 +253,7 @@ bool ChunkContainer::isOnBoundary(const Chunk& chunk) const
 ChunkType ChunkContainer::getChunkType(const Chunk& chunk) const
 {
   for (int chunkType = 0; chunkType < c_ChunkTypes; ++chunkType)
-    if (m_Chunks[chunkType].find(Util::CreateKey(chunk)) != m_Chunks[chunkType].end())
+    if (m_Chunks[chunkType].find(chunk.getGlobalIndex()) != m_Chunks[chunkType].end())
       return static_cast<ChunkType>(chunkType);
 
   EN_ERROR("Could not find chunk!");
@@ -262,9 +262,9 @@ ChunkType ChunkContainer::getChunkType(const Chunk& chunk) const
 
 Chunk* ChunkContainer::find(const GlobalIndex& chunkIndex)
 {
-  for (mapType<int, Chunk*>& chunkGroup : m_Chunks)
+  for (mapType<GlobalIndex, Chunk*>& chunkGroup : m_Chunks)
   {
-    mapType<int, Chunk*>::iterator it = chunkGroup.find(Util::CreateKey(chunkIndex));
+    mapType<GlobalIndex, Chunk*>::iterator it = chunkGroup.find(chunkIndex);
 
     if (it != chunkGroup.end())
       return it->second;
@@ -274,9 +274,9 @@ Chunk* ChunkContainer::find(const GlobalIndex& chunkIndex)
 
 const Chunk* ChunkContainer::find(const GlobalIndex& chunkIndex) const
 {
-  for (const mapType<int, Chunk*>& chunkGroup : m_Chunks)
+  for (const mapType<GlobalIndex, Chunk*>& chunkGroup : m_Chunks)
   {
-    mapType<int, Chunk*>::const_iterator it = chunkGroup.find(Util::CreateKey(chunkIndex));
+    mapType<GlobalIndex, Chunk*>::const_iterator it = chunkGroup.find(chunkIndex);
 
     if (it != chunkGroup.end())
       return it->second;
@@ -344,10 +344,9 @@ void ChunkContainer::recategorizeChunk(Chunk& chunk, ChunkType source, ChunkType
             m_LazyUpdateQueue.add(neighborIndex);
         }
 
-  int key = Util::CreateKey(chunk);
   int sourceTypeID = static_cast<int>(source);
   int destinationTypeID = static_cast<int>(destination);
 
-  m_Chunks[destinationTypeID].insert({ key, &chunk });
-  m_Chunks[sourceTypeID].erase(m_Chunks[sourceTypeID].find(key));
+  m_Chunks[destinationTypeID].insert({ chunk.getGlobalIndex(), &chunk});
+  m_Chunks[sourceTypeID].erase(m_Chunks[sourceTypeID].find(chunk.getGlobalIndex()));
 }
