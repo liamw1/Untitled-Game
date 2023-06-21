@@ -5,6 +5,13 @@
 
 namespace Engine
 {
+  static GLint s_MaxUniformBlockSize = 0;
+
+  OpenGLUniformBufferAPI::OpenGLUniformBufferAPI()
+  {
+    glGetIntegerv(GL_MAX_UNIFORM_BLOCK_SIZE, &s_MaxUniformBlockSize);
+  }
+
   void OpenGLUniformBufferAPI::allocate(uint32_t binding, uint32_t size)
   {
     EN_CORE_ASSERT(std::this_thread::get_id() == Threads::MainThreadID(), "OpenGL calls must be made on the main thread!");
@@ -13,6 +20,12 @@ namespace Engine
     if (m_RendererIDs[binding] != 0)
       EN_CORE_WARN("Uniform buffer has already been allocated at binding {0}!", binding);
 
+    if (size > static_cast<uint32_t>(s_MaxUniformBlockSize))
+    {
+      EN_CORE_ERROR("Requested uniform buffer is larger than the maximum allowable uniform block size!");
+      return;
+    }
+
     uint32_t rendererID;
     glCreateBuffers(1, &rendererID);
     glNamedBufferData(rendererID, size, nullptr, GL_DYNAMIC_DRAW);
@@ -20,8 +33,6 @@ namespace Engine
 
     m_RendererIDs[binding] = rendererID;
     m_BufferSizes[binding] = size;
-
-    // TODO: Check if sum of allocation exceeds uniform size limits
   }
 
   void OpenGLUniformBufferAPI::deallocate(uint32_t binding)
@@ -48,7 +59,12 @@ namespace Engine
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
   }
 
-  uint32_t OpenGLUniformBufferAPI::getSize(uint32_t binding) const
+  int OpenGLUniformBufferAPI::maxSize() const
+  {
+    return s_MaxUniformBlockSize;
+  }
+
+  int OpenGLUniformBufferAPI::getSize(uint32_t binding) const
   {
     EN_CORE_ASSERT(binding < c_MaxUniformBindings, "Binding exceeds maximum allowed uniform bindings!");
     return m_BufferSizes[binding];

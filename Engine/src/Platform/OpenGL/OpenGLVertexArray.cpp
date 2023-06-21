@@ -171,8 +171,6 @@ namespace Engine
   {
     if (std::this_thread::get_id() != Threads::MainThreadID())
     {
-      clearStoredVertexData();
-
       m_VertexData = std::make_unique_for_overwrite<char[]>(size);
       m_VertexDataSize = size;
       std::memcpy(m_VertexData.get(), data, size);

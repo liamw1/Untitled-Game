@@ -14,7 +14,8 @@ namespace Engine
     virtual void bind(uint32_t binding) const = 0;
     virtual void unbind() const = 0;
 
-    virtual uint32_t getSize(uint32_t binding) const = 0;
+    virtual int maxSize() const = 0;
+    virtual int getSize(uint32_t binding) const = 0;
 
     virtual void setData(uint32_t binding, const void* data, uint32_t size, uint32_t offset = 0) = 0;
   };
