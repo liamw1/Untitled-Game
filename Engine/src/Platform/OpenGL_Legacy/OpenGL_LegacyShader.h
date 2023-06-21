@@ -24,8 +24,6 @@ namespace Engine
     std::string m_Name;
     mutable std::unordered_map<std::string, GLint> m_UniformLocationCache;
 
-    std::string readFile(const std::string& filepath);
-    std::unordered_map<GLenum, std::string> preProcess(const std::string& source);
     void compile(const std::unordered_map<GLenum, std::string>& shaderSources);
 
     /*
