@@ -1,6 +1,7 @@
 #include "GMpch.h"
 #include "ChunkContainer.h"
 #include "Util/Util.h"
+#include "Player/Player.h"
 
 static constexpr int c_MaxChunks = (2 * c_UnloadDistance + 1) * (2 * c_UnloadDistance + 1) * (2 * c_UnloadDistance + 1);
 
@@ -34,7 +35,7 @@ void ChunkContainer::initialize()
     Engine::UniformBuffer::Allocate(c_UniformBinding, 1024 * sizeof(Float4));
   }
 
-  m_MultiDrawArray = std::make_unique<Engine::MultiDrawArray>(s_VertexBufferLayout);
+  m_MultiDrawArray = std::make_unique<Engine::MultiDrawArray<GlobalIndex>>(s_VertexBufferLayout);
   m_MultiDrawArray->setIndexBuffer(s_IndexBuffer);
   m_ChunkArray = std::make_unique<Chunk[]>(c_MaxChunks);
 
@@ -60,41 +61,61 @@ void ChunkContainer::render()
     plane.w += chunkSphereRadius * planeNormalMag;
   }
 
-  std::vector<Float4> chunkAnchors;
+  GlobalIndex originIndex = Player::OriginIndex();
+
+  std::vector<std::vector<Float4>> uniforms;
+  std::vector<std::vector<Engine::DrawElementsIndirectCommand>> drawCommands;
 
   std::shared_lock lock(m_ContainerMutex);
 
+  updateMeshes();
+
+  Engine::MultiDrawArray<GlobalIndex>::const_iterator memoryRegion = m_MultiDrawArray->begin();
+  while (memoryRegion != m_MultiDrawArray->end())
   {
-    EN_PROFILE_SCOPE("Rendering Preparation");
+    std::vector<Float4> uniformBatch;
+    uniformBatch.reserve(1024);
 
-    updateMeshes();
+    std::vector<Engine::DrawElementsIndirectCommand> drawCommandBatch;
+    drawCommandBatch.reserve(1024);
 
-    // Render chunks in view frustum
-    for (const auto& [key, chunk] : m_Chunks[static_cast<int>(ChunkType::Renderable)])
-      if (Util::IsInRangeOfPlayer(key, c_RenderDistance) && Util::IsInFrustum(chunk->center(), frustumPlanes))
+    while (memoryRegion != m_MultiDrawArray->end() && drawCommandBatch.size() < drawCommandBatch.capacity())
+    {
+      if (!memoryRegion->isFree())
       {
-        std::lock_guard lock = chunk->acquireLock();
-
-        if (chunk->m_QuadCount > 0)
+        const GlobalIndex& chunkIndex = *memoryRegion->ID;
+        Vec3 anchorPosition = Chunk::AnchorPosition(chunkIndex, originIndex);
+        Vec3 chunkCenter = Chunk::Center(anchorPosition);
+        if (Util::IsInRangeOfPlayer(chunkIndex, c_RenderDistance) && Util::IsInFrustum(chunkCenter, frustumPlanes))
         {
-          int hash = std::hash<GlobalIndex>()(key);
-          m_MultiDrawArray->queue(hash, 6 * chunk->m_QuadCount);
-          chunkAnchors.push_back(Float4(chunk->anchorPosition(), 0.0));
+          uniformBatch.emplace_back(anchorPosition, 0.0);
+
+          Engine::DrawElementsIndirectCommand drawCommand{};
+          drawCommand.count = memoryRegion->indexCount;
+          drawCommand.instanceCount = 1;
+          drawCommand.firstIndex = 0;
+          drawCommand.baseVertex = memoryRegion->offset / s_VertexBufferLayout.stride();
+          drawCommand.baseInstance = 0;
+          drawCommandBatch.push_back(drawCommand);
         }
       }
+
+      memoryRegion++;
+    }
+
+    uniforms.push_back(std::move(uniformBatch));
+    drawCommands.push_back(std::move(drawCommandBatch));
   }
 
-  // EN_INFO("Size: {0}\nUsage: {1}\nFragmentation: {2}\n", m_MultiDrawArray->size(), m_MultiDrawArray->usage(), m_MultiDrawArray->fragmentation());
+  s_Shader->bind();
+  s_TextureArray->bind(c_TextureSlot);
+  m_MultiDrawArray->bind();
+  Engine::UniformBuffer::Bind(c_UniformBinding);
 
+  for (int i = 0; i < drawCommands.size(); ++i)
   {
-    EN_PROFILE_SCOPE("Rendering");
-
-    s_Shader->bind();
-    s_TextureArray->bind(c_TextureSlot);
-    Engine::UniformBuffer::Bind(c_UniformBinding);
-    Engine::UniformBuffer::SetData(2, chunkAnchors.data(), static_cast<uint32_t>(chunkAnchors.size() * sizeof(Float4)));
-    Engine::RenderCommand::MultiDrawIndexed(m_MultiDrawArray.get());
-    m_MultiDrawArray->clear();
+    Engine::UniformBuffer::SetData(2, uniforms[i].data(), static_cast<uint32_t>(uniforms[i].size() * sizeof(Float4)));
+    Engine::RenderCommand::MultiDrawImpl(drawCommands[i]);
   }
 }
 
@@ -134,8 +155,7 @@ bool ChunkContainer::erase(const GlobalIndex& chunkIndex)
   int chunkSlot = static_cast<int>(chunk - &m_ChunkArray[0]);
   m_OpenChunkSlots.push(chunkSlot);
 
-  int hash = std::hash<GlobalIndex>()(chunkIndex);
-  m_MultiDrawArray->remove(hash);
+  m_MultiDrawArray->remove(chunkIndex);
 
   // Delete chunk data
   {
@@ -291,19 +311,16 @@ void ChunkContainer::updateMeshes()
   while (meshUpdate)
   {
     const GlobalIndex& updateIndex = meshUpdate->first;
-    int hash = std::hash<GlobalIndex>()(updateIndex);
 
-    m_MultiDrawArray->remove(hash);
+    m_MultiDrawArray->remove(updateIndex);
 
-    Chunk* chunk = find(updateIndex);
-    if (chunk)
+    if (isLoaded(updateIndex))
     {
       const std::vector<uint32_t>& mesh = meshUpdate->second;
+      uint32_t meshSize = static_cast<uint32_t>(mesh.size() * sizeof(uint32_t));
+      uint32_t indexCount = static_cast<uint32_t>(3 * mesh.size() / 2);
 
-      m_MultiDrawArray->add(hash, mesh.data(), static_cast<uint32_t>(mesh.size() * sizeof(uint32_t)));
-
-      EN_ASSERT(mesh.size() / 4 < std::numeric_limits<uint16_t>::max(), "Mesh has more than the maximum allowable number of quads!");
-      chunk->m_QuadCount = static_cast<uint16_t>(mesh.size() / 4);
+      m_MultiDrawArray->add(updateIndex, mesh.data(), meshSize, indexCount);
     }
 
     meshUpdate = m_MeshUpdateQueue.tryRemove();

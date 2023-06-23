@@ -46,9 +46,10 @@ namespace Engine
       \param data Buffer of vertex data
       \param size Size of buffer in bytes
     */
-    virtual void setVertexBuffer(const void* data, uint32_t size) const = 0;
-    void setVertexBuffer(const void* data, uint64_t size) const;
+    void setVertexBuffer(const void* data, uint64_t size);
+    virtual void setVertexBuffer(const void* data, uint32_t size) = 0;
 
+    virtual void resizeVertexBuffer(uint32_t newSize) = 0;
     virtual void modifyVertexBuffer(const void* data, uint32_t offset, uint32_t size) const = 0;
 
     /*

@@ -32,8 +32,12 @@ namespace Engine
 
     void setLayout(const BufferLayout& layout) override;
 
-    void setVertexBuffer(const void* data, uint32_t size) const override;
+    void setVertexBuffer(const void* data, uint32_t size) override;
+
+    void resizeVertexBuffer(uint32_t newSize) override;
+
     void modifyVertexBuffer(const void* data, uint32_t offset, uint32_t size) const override;
+
     void setIndexBuffer(const std::shared_ptr<const IndexBuffer>& indexBuffer) override;
 
     const std::shared_ptr<const IndexBuffer>& getIndexBuffer() const override { return m_IndexBuffer; }
@@ -41,6 +45,7 @@ namespace Engine
   private:
     uint32_t m_RendererID;
     uint32_t m_VertexBufferID;
+    BufferLayout m_VertexBufferLayout;
     std::shared_ptr<const IndexBuffer> m_IndexBuffer;
   };
 }

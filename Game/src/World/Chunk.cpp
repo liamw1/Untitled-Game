@@ -6,24 +6,21 @@
 Chunk::Chunk()
   : m_Composition(),
     m_GlobalIndex(),
-    m_NonOpaqueFaces(0),
-    m_QuadCount(0)
+    m_NonOpaqueFaces(0)
 {
 }
 
 Chunk::Chunk(const GlobalIndex& chunkIndex)
   : m_Composition(),
     m_GlobalIndex(chunkIndex),
-    m_NonOpaqueFaces(0),
-    m_QuadCount(0)
+    m_NonOpaqueFaces(0)
 {
 }
 
 Chunk::Chunk(Chunk&& other) noexcept
   : m_Composition(std::move(other.m_Composition)),
     m_GlobalIndex(other.m_GlobalIndex),
-    m_NonOpaqueFaces(other.m_NonOpaqueFaces.load()),
-    m_QuadCount(other.m_QuadCount)
+    m_NonOpaqueFaces(other.m_NonOpaqueFaces.load())
 {
 }
 
@@ -34,7 +31,6 @@ Chunk& Chunk::operator=(Chunk&& other) noexcept
     m_Composition = std::move(other.m_Composition);
     m_GlobalIndex = other.m_GlobalIndex;
     m_NonOpaqueFaces.store(other.m_NonOpaqueFaces.load());
-    m_QuadCount = other.m_QuadCount;
   }
   return *this;
 }
@@ -48,6 +44,11 @@ LocalIndex Chunk::getLocalIndex() const
   return { static_cast<localIndex_t>(m_GlobalIndex.i - Player::OriginIndex().i),
            static_cast<localIndex_t>(m_GlobalIndex.j - Player::OriginIndex().j),
            static_cast<localIndex_t>(m_GlobalIndex.k - Player::OriginIndex().k) };
+}
+
+Vec3 Chunk::anchorPosition() const
+{
+  return Chunk::AnchorPosition(m_GlobalIndex, Player::OriginIndex());
 }
 
 Block::Type Chunk::getBlockType(blockIndex_t i, blockIndex_t j, blockIndex_t k) const
@@ -64,6 +65,11 @@ bool Chunk::isFaceOpaque(Direction face) const
 {
   uint16_t nonOpaqueFaces = m_NonOpaqueFaces.load();
   return !(nonOpaqueFaces & bit(static_cast<int>(face)));
+}
+
+Vec3 Chunk::AnchorPosition(const GlobalIndex& chunkIndex, const GlobalIndex& originIndex)
+{
+  return Chunk::Length() * static_cast<Vec3>(chunkIndex - originIndex);
 }
 
 void Chunk::setBlockType(blockIndex_t i, blockIndex_t j, blockIndex_t k, Block::Type blockType)
@@ -134,5 +140,4 @@ void Chunk::reset()
   m_Composition.reset();
   m_GlobalIndex = {};
   m_NonOpaqueFaces.store(0);
-  m_QuadCount = 0;
 }

@@ -109,7 +109,7 @@ private:
   // Chunk data
   std::unique_ptr<Chunk[]> m_ChunkArray;
   std::stack<int, std::vector<int>> m_OpenChunkSlots;
-  std::unique_ptr<Engine::MultiDrawArray> m_MultiDrawArray;
+  std::unique_ptr<Engine::MultiDrawArray<GlobalIndex>> m_MultiDrawArray;
 
   mutable std::shared_mutex m_ContainerMutex;
 

@@ -53,9 +53,9 @@ namespace Engine
     s_RendererAPI->drawIndexedLines(vertexArray, indexCount);
   }
 
-  void RenderCommand::MultiDrawIndexed(const MultiDrawArray* multiDrawArray)
+  void RenderCommand::MultiDrawImpl(const std::vector<DrawElementsIndirectCommand>& drawCommands)
   {
-    s_RendererAPI->multiDrawIndexed(multiDrawArray);
+    s_RendererAPI->multiDrawIndexed(drawCommands);
   }
 
   void RenderCommand::ClearDepthBuffer()

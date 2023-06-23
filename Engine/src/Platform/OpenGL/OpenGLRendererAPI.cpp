@@ -73,13 +73,9 @@ namespace Engine
     glDrawElements(GL_LINES, count, GL_UNSIGNED_INT, nullptr);
   }
 
-  void OpenGLRendererAPI::multiDrawIndexed(const MultiDrawArray* multiDrawArray)
+  void OpenGLRendererAPI::multiDrawIndexed(const std::vector<DrawElementsIndirectCommand>& drawCommands)
   {
     EN_CORE_ASSERT(std::this_thread::get_id() == Threads::MainThreadID(), "OpenGL calls must be made on the main thread!");
-    EN_CORE_ASSERT(multiDrawArray, "Vertex array has not been initialized!");
-
-    multiDrawArray->bind();
-    const std::vector<DrawElementsIndirectCommand>& drawCommands = multiDrawArray->getQueuedDrawCommands();
     glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, drawCommands.data(), static_cast<GLsizei>(drawCommands.size()), 0);
   }
 

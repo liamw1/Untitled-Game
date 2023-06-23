@@ -104,6 +104,8 @@ namespace Engine
   {
     EN_CORE_ASSERT(std::this_thread::get_id() == Threads::MainThreadID(), "OpenGL calls must be made on the main thread!");
 
+    m_VertexBufferLayout = layout;
+
     glBindVertexArray(m_RendererID);
     glBindBuffer(GL_ARRAY_BUFFER, m_VertexBufferID);
 
@@ -159,7 +161,7 @@ namespace Engine
 #endif
   }
 
-  void OpenGLVertexArray::setVertexBuffer(const void* data, uint32_t size) const
+  void OpenGLVertexArray::setVertexBuffer(const void* data, uint32_t size)
   {
     EN_CORE_ASSERT(std::this_thread::get_id() == Threads::MainThreadID(), "OpenGL calls must be made on the main thread!");
 
@@ -171,6 +173,27 @@ namespace Engine
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
 #endif
+  }
+
+  void OpenGLVertexArray::resizeVertexBuffer(uint32_t newSize)
+  {
+    EN_CORE_ASSERT(std::this_thread::get_id() == Threads::MainThreadID(), "OpenGL calls must be made on the main thread!");
+
+    uint32_t oldVertexBufferID = m_VertexBufferID;
+
+    // Set up new vertex buffer
+    glCreateBuffers(1, &m_VertexBufferID);
+    setLayout(m_VertexBufferLayout);
+    glBindBuffer(GL_COPY_WRITE_BUFFER, m_VertexBufferID);
+    glBufferData(GL_COPY_WRITE_BUFFER, newSize, nullptr, GL_DYNAMIC_DRAW);
+
+    // Prepare old vertex buffer to be read from
+    GLint oldSize;
+    glBindBuffer(GL_COPY_READ_BUFFER, oldVertexBufferID);
+    glGetBufferParameteriv(GL_COPY_READ_BUFFER, GL_BUFFER_SIZE, &oldSize);
+
+    glCopyBufferSubData(GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, 0, 0, std::min(oldSize, static_cast<GLint>(newSize)));
+    glDeleteBuffers(1, &oldVertexBufferID);
   }
 
   void OpenGLVertexArray::modifyVertexBuffer(const void* data, uint32_t offset, uint32_t size) const

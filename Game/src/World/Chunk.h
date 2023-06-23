@@ -47,12 +47,12 @@ public:
     If the anchor point is denoted by A, then for any point
     X within the chunk, X_i >= A_i.
   */
-  Vec3 anchorPosition() const { return Chunk::Length() * static_cast<Vec3>(getLocalIndex()); }
+  Vec3 anchorPosition() const;
 
   /*
     \returns The chunk's geometric center relative to origin chunk.
   */
-  Vec3 center() const { return anchorPosition() + Chunk::Length() / 2; }
+  Vec3 center() const { return Chunk::Center(anchorPosition()); }
 
   bool empty() const { return !m_Composition; }
 
@@ -74,6 +74,9 @@ public:
   static constexpr length_t Length() { return Block::Length() * c_ChunkSize; }
   static constexpr int TotalBlocks() { return c_ChunkSize * c_ChunkSize * c_ChunkSize; }
 
+  static Vec3 Center(const Vec3& anchorPosition) { return anchorPosition + Chunk::Length() / 2; }
+  static Vec3 AnchorPosition(const GlobalIndex& chunkIndex, const GlobalIndex& originIndex);
+
 // All private functions require a lock on the chunk mutex.
 private:
   struct Uniforms
@@ -87,7 +90,6 @@ private:
   Array3D<Block::Type, c_ChunkSize> m_Composition;
   GlobalIndex m_GlobalIndex;
   std::atomic<uint16_t> m_NonOpaqueFaces;
-  uint16_t m_QuadCount;
 
   void setBlockType(blockIndex_t i, blockIndex_t j, blockIndex_t k, Block::Type blockType);
   void setBlockType(const BlockIndex& blockIndex, Block::Type blockType);
