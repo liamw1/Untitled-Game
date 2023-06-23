@@ -35,6 +35,7 @@ namespace Engine
     using const_iterator = std::vector<MemoryRegion>::const_iterator;
 
     MultiDrawArray(const BufferLayout& layout)
+      : m_Capacity(64), m_Stride(layout.stride())
     {
       m_VertexArray = VertexArray::Create();
       m_VertexArray->setLayout(layout);
@@ -44,14 +45,31 @@ namespace Engine
       m_MemoryPool.emplace_back(0, m_Capacity);
     }
 
-    void bind() const
+    /*
+      Sets an array of indices that represent the order in which vertices will be drawn.
+      The count of this array should be a multiple of 3 (for drawing triangles).
+      OpenGL expects vertices to be in counter-clockwise orientation.
+    */
+    void setIndexBuffer(const std::shared_ptr<const IndexBuffer>& indexBuffer)
     {
-      m_VertexArray->bind();
+      m_VertexArray->setIndexBuffer(indexBuffer);
     }
 
-    void unBind() const
+    void bind() const { m_VertexArray->bind(); }
+    void unBind() const { m_VertexArray->unBind(); }
+
+    const_iterator begin() { return m_MemoryPool.begin(); }
+    const_iterator end() { return m_MemoryPool.end(); }
+
+    DrawElementsIndirectCommand createDrawCommand(const_iterator memoryRegion)
     {
-      m_VertexArray->unBind();
+      Engine::DrawElementsIndirectCommand drawCommand{};
+      drawCommand.count = memoryRegion->indexCount;
+      drawCommand.instanceCount = 1;
+      drawCommand.firstIndex = 0;
+      drawCommand.baseVertex = memoryRegion->offset / m_Stride;
+      drawCommand.baseInstance = 0;
+      return drawCommand;
     }
 
     void add(const T& ID, const void* data, uint32_t size, uint32_t indexCount)
@@ -125,53 +143,6 @@ namespace Engine
       }
     }
 
-    uint32_t capacity()
-    {
-      return m_Capacity;
-    }
-
-    int size() const
-    {
-      int size = 0;
-      for (const MemoryRegion& memoryRegion : m_MemoryPool)
-        if (!memoryRegion.isFree())
-          size++;
-      return size;
-    }
-
-    float usage() const
-    {
-      int usedMemory = 0;
-      for (const MemoryRegion& memoryRegion : m_MemoryPool)
-        if (!memoryRegion.isFree())
-          usedMemory += memoryRegion.size;
-      return static_cast<float>(usedMemory) / m_Capacity;
-    }
-
-    float fragmentation() const
-    {
-      uint32_t touchedMemory = m_MemoryPool.back().isFree() ? m_MemoryPool.back().offset : m_Capacity;
-
-      uint32_t wastedMemory = 0;
-      for (int i = 0; i < m_MemoryPool.size() - 1; ++i)
-        if (m_MemoryPool[i].isFree())
-          wastedMemory += m_MemoryPool[i].size;
-      return static_cast<float>(wastedMemory) / touchedMemory;
-    }
-
-    const_iterator begin() { return m_MemoryPool.begin(); }
-    const_iterator end() { return m_MemoryPool.end(); }
-
-    /*
-      Sets an array of indices that represent the order in which vertices will be drawn.
-      The count of this array should be a multiple of 3 (for drawing triangles).
-      OpenGL expects vertices to be in counter-clockwise orientation.
-    */
-    void setIndexBuffer(const std::shared_ptr<const IndexBuffer>& indexBuffer)
-    {
-      m_VertexArray->setIndexBuffer(indexBuffer);
-    }
-
   private:
     using iterator = std::vector<MemoryRegion>::iterator;
 
@@ -179,7 +150,8 @@ namespace Engine
 
     std::unique_ptr<VertexArray> m_VertexArray;
     std::vector<MemoryRegion> m_MemoryPool;
-    uint32_t m_Capacity = 64;
+    uint32_t m_Capacity;
+    uint32_t m_Stride;
 
     iterator find(const T& ID)
     {

@@ -17,6 +17,12 @@ enum class ChunkType
   Error
 };
 
+/*
+  Class that handles the classification of chunks.
+
+  NOTE: With the changes to chunk rendering, its possible that ChunkType::Renderable
+        is no longer needed. Implementation may be made simpler by removing that category.
+*/
 class ChunkContainer
 {
 public:
@@ -81,8 +87,6 @@ public:
 
   std::optional<GlobalIndex> getLazyUpdateIndex() { return m_LazyUpdateQueue.tryRemove(); }
   std::optional<GlobalIndex> getForceUpdateIndex() { return m_ForceUpdateQueue.tryRemove(); }
-
-  void updateMeshes();
 
   bool empty() const;
   bool contains(const GlobalIndex& chunkIndex) const;
@@ -203,4 +207,11 @@ private:
     Requires an exclusive lock on the container mutex, as it will modify chunk maps.
   */
   void recategorizeChunk(Chunk& chunk, ChunkType source, ChunkType destination);
+
+  /*
+    Uploads queued mesh data to the GPU.
+
+    Requires at minimum a shared lock to be owned on the container mutex.
+  */
+  void uploadMeshes();
 };
