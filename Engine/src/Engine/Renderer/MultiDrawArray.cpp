@@ -3,7 +3,7 @@
 
 namespace Engine
 {
-  static constexpr uint64_t c_BufferSize = bit(27);
+  static constexpr uint64_t c_BufferSize = bit(26);
 
   MultiDrawArray::MultiDrawArray(const BufferLayout& layout)
   {
@@ -33,7 +33,7 @@ namespace Engine
       return;
     if (m_AllocatedMemory.find(ID) != m_AllocatedMemory.end())
     {
-      EN_CORE_ERROR("Memory already allocated for region with ID {0}!", ID);
+      EN_CORE_ERROR("Memory has already been allocated for region with ID {0}!", ID);
       return;
     }
 
@@ -63,8 +63,6 @@ namespace Engine
     bestRegion->free = false;
     if (minimumMemoryLeftover > 0)
       m_MemoryPool.insert(std::next(bestRegion), { bestRegion->offset + size, minimumMemoryLeftover, true });
-
-    checkForOverlaps();
   }
 
   void MultiDrawArray::remove(int ID)
@@ -103,8 +101,6 @@ namespace Engine
     }
 
     m_AllocatedMemory.erase(mapPosition);
-
-    checkForOverlaps();
   }
 
   uint32_t MultiDrawArray::getSize(int ID)
@@ -177,19 +173,6 @@ namespace Engine
       if (m_MemoryPool[i].free)
         wastedMemory += m_MemoryPool[i].size;
     return static_cast<float>(wastedMemory) / touchedMemory;
-  }
-
-  void MultiDrawArray::checkForOverlaps() const
-  {
-    uint32_t lastBlockEnd = m_MemoryPool.front().size;
-    for (int i = 1; i < m_MemoryPool.size(); ++i)
-    {
-      uint32_t blockBegin = m_MemoryPool[i].offset;
-      if (lastBlockEnd != blockBegin)
-        EN_CORE_ERROR("Memory blocks are not contiguous!");
-
-      lastBlockEnd = blockBegin + m_MemoryPool[i].size;
-    }
   }
 
   const std::vector<DrawElementsIndirectCommand>& MultiDrawArray::getQueuedDrawCommands() const

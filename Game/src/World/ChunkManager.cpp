@@ -56,7 +56,7 @@ void ChunkManager::clean()
 
   std::vector<GlobalIndex> chunksMarkedForDeletion = m_ChunkContainer.findAll(ChunkType::Boundary, [](const Chunk& chunk)
     {
-      return !Util::IsInRangeOfPlayer(chunk, c_UnloadDistance);
+      return !Util::IsInRangeOfPlayer(chunk.getGlobalIndex(), c_UnloadDistance);
     });
 
   if (!chunksMarkedForDeletion.empty())

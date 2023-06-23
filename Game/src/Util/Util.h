@@ -1,11 +1,10 @@
 #pragma once
-#include "World/Chunk.h"
+#include "World/Indexing.h"
 
 namespace Util
 {
   bool IsInRangeOfPlayer(const SurfaceMapIndex& surfaceIndex, globalIndex_t range);
   bool IsInRangeOfPlayer(const GlobalIndex& chunkIndex, globalIndex_t range);
-  bool IsInRangeOfPlayer(const Chunk& chunk, globalIndex_t range);
 
   bool BlockNeighborIsInAnotherChunk(const BlockIndex& blockIndex, Direction direction);
 

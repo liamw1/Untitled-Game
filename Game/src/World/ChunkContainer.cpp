@@ -71,20 +71,20 @@ void ChunkContainer::render()
 
     // Render chunks in view frustum
     for (const auto& [key, chunk] : m_Chunks[static_cast<int>(ChunkType::Renderable)])
-      if (Util::IsInRangeOfPlayer(*chunk, c_RenderDistance) && Util::IsInFrustum(chunk->center(), frustumPlanes))
+      if (Util::IsInRangeOfPlayer(key, c_RenderDistance) && Util::IsInFrustum(chunk->center(), frustumPlanes))
       {
         std::lock_guard lock = chunk->acquireLock();
 
         if (chunk->m_QuadCount > 0)
         {
-          int hash = std::hash<GlobalIndex>()(chunk->getGlobalIndex());
-          if (m_MultiDrawArray->queue(hash, 6 * chunk->m_QuadCount))
-            chunkAnchors.push_back(Float4(chunk->anchorPosition(), 0.0));
+          int hash = std::hash<GlobalIndex>()(key);
+          m_MultiDrawArray->queue(hash, 6 * chunk->m_QuadCount);
+          chunkAnchors.push_back(Float4(chunk->anchorPosition(), 0.0));
         }
       }
   }
 
-  EN_INFO("Size: {0}\nUsage: {1}\nFragmentation: {2}\n", m_MultiDrawArray->size(), m_MultiDrawArray->usage(), m_MultiDrawArray->fragmentation());
+  // EN_INFO("Size: {0}\nUsage: {1}\nFragmentation: {2}\n", m_MultiDrawArray->size(), m_MultiDrawArray->usage(), m_MultiDrawArray->fragmentation());
 
   {
     EN_PROFILE_SCOPE("Rendering");
@@ -166,7 +166,9 @@ bool ChunkContainer::update(const GlobalIndex& chunkIndex, std::vector<uint32_t>
     std::lock_guard chunkLock = chunk->acquireLock();
     sharedLock.unlock();
 
-    chunk->update(static_cast<int>(mesh.size()));
+    bool madeEmpty = !chunk->empty() && mesh.empty() && chunk->getBlockType(0, 0, 0) == Block::Type::Air;
+
+    chunk->update(madeEmpty);
     m_MeshUpdateQueue.add(chunkIndex, std::move(mesh));
 
     destination = chunk->empty() ? ChunkType::Empty : ChunkType::Renderable;
@@ -292,10 +294,16 @@ void ChunkContainer::updateMeshes()
     int hash = std::hash<GlobalIndex>()(updateIndex);
 
     m_MultiDrawArray->remove(hash);
-    if (isLoaded(updateIndex))
+
+    Chunk* chunk = find(updateIndex);
+    if (chunk)
     {
       const std::vector<uint32_t>& mesh = meshUpdate->second;
+
       m_MultiDrawArray->add(hash, mesh.data(), static_cast<uint32_t>(mesh.size() * sizeof(uint32_t)));
+
+      EN_ASSERT(mesh.size() / 4 < std::numeric_limits<uint16_t>::max(), "Mesh has more than the maximum allowable number of quads!");
+      chunk->m_QuadCount = static_cast<uint16_t>(mesh.size() / 4);
     }
 
     meshUpdate = m_MeshUpdateQueue.tryRemove();

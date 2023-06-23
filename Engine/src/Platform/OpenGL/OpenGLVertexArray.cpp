@@ -84,8 +84,6 @@ namespace Engine
   {
     EN_CORE_ASSERT(std::this_thread::get_id() == Threads::MainThreadID(), "OpenGL calls must be made on the main thread!");
 
-    if (m_VertexData)
-      setVertexBuffer(m_VertexData.get(), m_VertexDataSize);
     glBindVertexArray(m_RendererID);
 
     if (m_IndexBuffer)
@@ -100,16 +98,6 @@ namespace Engine
 
     if (m_IndexBuffer)
       m_IndexBuffer->bind();
-  }
-
-  void OpenGLVertexArray::clear() const
-  {
-    EN_CORE_ASSERT(std::this_thread::get_id() == Threads::MainThreadID(), "Clear should be called on the main thread!");
-
-    // TODO: If clear() is called off the main thread, the stored vertex data will be cleared but the buffer
-    // on the GPU will not until the next call to bind() or setVertexBuffer(). Need to find a fix for this.
-
-    setVertexBuffer(nullptr, 0);
   }
 
   void OpenGLVertexArray::setLayout(const BufferLayout& layout)
@@ -173,25 +161,16 @@ namespace Engine
 
   void OpenGLVertexArray::setVertexBuffer(const void* data, uint32_t size) const
   {
-    if (std::this_thread::get_id() != Threads::MainThreadID())
-    {
-      m_VertexData = std::make_unique_for_overwrite<char[]>(size);
-      m_VertexDataSize = size;
-      std::memcpy(m_VertexData.get(), data, size);
-    }
-    else
-    {
-      glBindVertexArray(m_RendererID);
-      glBindBuffer(GL_ARRAY_BUFFER, m_VertexBufferID);
-      glBufferData(GL_ARRAY_BUFFER, size, data, GL_DYNAMIC_DRAW);
+    EN_CORE_ASSERT(std::this_thread::get_id() == Threads::MainThreadID(), "OpenGL calls must be made on the main thread!");
 
-      clearStoredVertexData();
+    glBindVertexArray(m_RendererID);
+    glBindBuffer(GL_ARRAY_BUFFER, m_VertexBufferID);
+    glBufferData(GL_ARRAY_BUFFER, size, data, GL_DYNAMIC_DRAW);
 
 #if EN_DEBUG
-      glBindBuffer(GL_ARRAY_BUFFER, 0);
-      glBindVertexArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
 #endif
-    }
   }
 
   void OpenGLVertexArray::modifyVertexBuffer(const void* data, uint32_t offset, uint32_t size) const
@@ -220,11 +199,5 @@ namespace Engine
     m_IndexBuffer->unBind();
     glBindVertexArray(0);
 #endif
-  }
-
-  void OpenGLVertexArray::clearStoredVertexData() const
-  {
-    m_VertexData.reset();
-    m_VertexDataSize = 0;
   }
 }

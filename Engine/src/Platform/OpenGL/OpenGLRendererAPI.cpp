@@ -80,7 +80,7 @@ namespace Engine
 
     multiDrawArray->bind();
     const std::vector<DrawElementsIndirectCommand>& drawCommands = multiDrawArray->getQueuedDrawCommands();
-    glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, drawCommands.data(), drawCommands.size(), 0);
+    glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, drawCommands.data(), static_cast<GLsizei>(drawCommands.size()), 0);
   }
 
   void OpenGLRendererAPI::clearDepthBuffer()

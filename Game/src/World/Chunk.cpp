@@ -120,13 +120,9 @@ void Chunk::determineOpacity()
   m_NonOpaqueFaces.store(nonOpaqueFaces);
 }
 
-void Chunk::update(int meshSize)
+void Chunk::update(bool madeEmpty)
 {
-  EN_ASSERT(meshSize / 4 < std::numeric_limits<uint16_t>::max(), "Mesh has more than the maximum allowable number of quads!");
-
-  m_QuadCount = static_cast<uint16_t>(meshSize / 4);
-
-  if (!empty() && m_QuadCount == 0 && getBlockType(0, 0, 0) == Block::Type::Air)
+  if (madeEmpty)
     m_Composition.reset();
 
   determineOpacity();

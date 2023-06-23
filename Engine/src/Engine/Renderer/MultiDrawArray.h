@@ -31,7 +31,6 @@ namespace Engine
     int size() const;
     float usage() const;
     float fragmentation() const;
-    void checkForOverlaps() const;
 
     const std::vector<DrawElementsIndirectCommand>& getQueuedDrawCommands() const;
 
