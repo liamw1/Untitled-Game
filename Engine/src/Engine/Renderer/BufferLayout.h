@@ -99,8 +99,8 @@ namespace Engine
       calculateOffsetsAndStride();
     }
 
-    uint32_t getStride() const { return m_Stride; }
-    const std::vector<BufferElement>& getElements() const { return m_Elements; }
+    uint32_t stride() const { return m_Stride; }
+    const std::vector<BufferElement>& elements() const { return m_Elements; }
 
     std::vector<BufferElement>::iterator begin() { return m_Elements.begin(); }
     std::vector<BufferElement>::iterator end() { return m_Elements.end(); }

@@ -1,5 +1,5 @@
 #type vertex
-#version 450 core
+#version 460 core
 
 const vec2 s_TexCoords[4] = vec2[4]( vec2(0.0f, 0.0f),
                                      vec2(1.0f, 0.0f),
@@ -16,9 +16,9 @@ layout(std140, binding = 1) uniform Block
 {
   float u_BlockLength;
 };
-layout(std140, binding = 2) uniform Chunk
+layout(std140, binding = 2) uniform Chunks
 {
-  vec3 u_AnchorPosition;
+  vec4 u_AnchorPosition[1024];
 };
 
 layout(location = 0) in uint a_VertexData;
@@ -41,7 +41,7 @@ void main()
   v_TexCoord = s_TexCoords[quadIndex];
   v_BasicLight = vec4(vec3(s_AO[AOIndex]), 1.0f);
 
-  gl_Position = u_ViewProjection * vec4(u_AnchorPosition + relPos, 1.0f);
+  gl_Position = u_ViewProjection * vec4(u_AnchorPosition[gl_DrawID].xyz + relPos, 1.0f);
 }
 
 

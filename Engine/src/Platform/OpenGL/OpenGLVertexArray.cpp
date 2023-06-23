@@ -95,7 +95,11 @@ namespace Engine
   void OpenGLVertexArray::unBind() const
   {
     EN_CORE_ASSERT(std::this_thread::get_id() == Threads::MainThreadID(), "OpenGL calls must be made on the main thread!");
+
     glBindVertexArray(0);
+
+    if (m_IndexBuffer)
+      m_IndexBuffer->bind();
   }
 
   void OpenGLVertexArray::clear() const
@@ -127,7 +131,7 @@ namespace Engine
           element.getComponentCount(),
           convertToOpenGLBaseType(element.type),
           element.normalized ? GL_TRUE : GL_FALSE,
-          layout.getStride(),
+          layout.stride(),
           (const void*)(const size_t)element.offset);
         vertexBufferIndex++;
       }
@@ -137,7 +141,7 @@ namespace Engine
         glVertexAttribIPointer(vertexBufferIndex,
           element.getComponentCount(),
           convertToOpenGLBaseType(element.type),
-          layout.getStride(),
+          layout.stride(),
           (const void*)(const size_t)element.offset);
         vertexBufferIndex++;
       }
@@ -151,7 +155,7 @@ namespace Engine
             count,
             convertToOpenGLBaseType(element.type),
             element.normalized ? GL_TRUE : GL_FALSE,
-            layout.getStride(),
+            layout.stride(),
             (const void*)(const size_t)(element.offset + sizeof(float) * count * i));
           glVertexAttribDivisor(vertexBufferIndex, 1);
           vertexBufferIndex++;
@@ -167,7 +171,7 @@ namespace Engine
 #endif
   }
 
-  void OpenGLVertexArray::setVertexBuffer(const void* data, uintptr_t size) const
+  void OpenGLVertexArray::setVertexBuffer(const void* data, uint32_t size) const
   {
     if (std::this_thread::get_id() != Threads::MainThreadID())
     {
@@ -188,6 +192,20 @@ namespace Engine
       glBindVertexArray(0);
 #endif
     }
+  }
+
+  void OpenGLVertexArray::modifyVertexBuffer(const void* data, uint32_t offset, uint32_t size) const
+  {
+    EN_CORE_ASSERT(std::this_thread::get_id() == Threads::MainThreadID(), "OpenGL calls must be made on the main thread!");
+
+    glBindVertexArray(m_RendererID);
+    glBindBuffer(GL_ARRAY_BUFFER, m_VertexBufferID);
+    glBufferSubData(GL_ARRAY_BUFFER, offset, size, data);
+
+#if EN_DEBUG
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
+#endif
   }
 
   void OpenGLVertexArray::setIndexBuffer(const std::shared_ptr<const IndexBuffer>& indexBuffer)

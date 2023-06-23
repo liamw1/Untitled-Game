@@ -53,6 +53,11 @@ namespace Engine
     s_RendererAPI->drawIndexedLines(vertexArray, indexCount);
   }
 
+  void RenderCommand::MultiDrawIndexed(const MultiDrawArray* multiDrawArray)
+  {
+    s_RendererAPI->multiDrawIndexed(multiDrawArray);
+  }
+
   void RenderCommand::ClearDepthBuffer()
   {
     s_RendererAPI->clearDepthBuffer();

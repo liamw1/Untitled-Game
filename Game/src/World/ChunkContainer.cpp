@@ -6,15 +6,96 @@ static constexpr int c_MaxChunks = (2 * c_UnloadDistance + 1) * (2 * c_UnloadDis
 
 void ChunkContainer::initialize()
 {
+  if (!s_IndexBuffer)
+  {
+    constexpr uint32_t maxIndices = 6 * 6 * Chunk::TotalBlocks();
+
+    uint32_t offset = 0;
+    uint32_t* indices = new uint32_t[maxIndices];
+    for (uint32_t i = 0; i < maxIndices; i += 6)
+    {
+      // Triangle 1
+      indices[i + 0] = offset + 0;
+      indices[i + 1] = offset + 1;
+      indices[i + 2] = offset + 2;
+
+      // Triangle 2
+      indices[i + 3] = offset + 2;
+      indices[i + 4] = offset + 3;
+      indices[i + 5] = offset + 0;
+
+      offset += 4;
+    }
+    s_IndexBuffer = Engine::IndexBuffer::Create(indices, maxIndices);
+    delete[] indices;
+
+    s_Shader = Engine::Shader::Create("assets/shaders/Chunk.glsl");
+    s_TextureArray = Block::GetTextureArray();
+    Engine::UniformBuffer::Allocate(c_UniformBinding, 1024 * sizeof(Float4));
+  }
+
+  m_MultiDrawArray = std::make_unique<Engine::MultiDrawArray>(s_VertexBufferLayout);
+  m_MultiDrawArray->setIndexBuffer(s_IndexBuffer);
   m_ChunkArray = std::make_unique<Chunk[]>(c_MaxChunks);
-  for (int i = 0; i < c_MaxChunks; ++i)
-    m_ChunkArray[i].initializeVertexArray();
 
   std::vector<int> stackData;
   stackData.reserve(c_MaxChunks);
   m_OpenChunkSlots = std::stack<int, std::vector<int>>(std::move(stackData));
   for (int i = c_MaxChunks - 1; i >= 0; --i)
     m_OpenChunkSlots.push(i);
+}
+
+void ChunkContainer::render()
+{
+  EN_PROFILE_FUNCTION();
+
+  const Mat4& viewProjection = Engine::Scene::ActiveCameraViewProjection();
+  std::array<Vec4, 6> frustumPlanes = Util::CalculateViewFrustumPlanes(viewProjection);
+
+  // Shift each plane by distance equal to radius of sphere that circumscribes chunk
+  static constexpr length_t chunkSphereRadius = Constants::SQRT3 * Chunk::Length() / 2;
+  for (Vec4& plane : frustumPlanes)
+  {
+    length_t planeNormalMag = glm::length(Vec3(plane));
+    plane.w += chunkSphereRadius * planeNormalMag;
+  }
+
+  std::vector<Float4> chunkAnchors;
+
+  std::shared_lock lock(m_ContainerMutex);
+
+  {
+    EN_PROFILE_SCOPE("Rendering Preparation");
+
+    updateMeshes();
+
+    // Render chunks in view frustum
+    for (const auto& [key, chunk] : m_Chunks[static_cast<int>(ChunkType::Renderable)])
+      if (Util::IsInRangeOfPlayer(*chunk, c_RenderDistance) && Util::IsInFrustum(chunk->center(), frustumPlanes))
+      {
+        std::lock_guard lock = chunk->acquireLock();
+
+        if (chunk->m_QuadCount > 0)
+        {
+          int hash = std::hash<GlobalIndex>()(chunk->getGlobalIndex());
+          if (m_MultiDrawArray->queue(hash, 6 * chunk->m_QuadCount))
+            chunkAnchors.push_back(Float4(chunk->anchorPosition(), 0.0));
+        }
+      }
+  }
+
+  EN_INFO("Size: {0}\nUsage: {1}\nFragmentation: {2}\n", m_MultiDrawArray->size(), m_MultiDrawArray->usage(), m_MultiDrawArray->fragmentation());
+
+  {
+    EN_PROFILE_SCOPE("Rendering");
+
+    s_Shader->bind();
+    s_TextureArray->bind(c_TextureSlot);
+    Engine::UniformBuffer::Bind(c_UniformBinding);
+    Engine::UniformBuffer::SetData(2, chunkAnchors.data(), static_cast<uint32_t>(chunkAnchors.size() * sizeof(Float4)));
+    Engine::RenderCommand::MultiDrawIndexed(m_MultiDrawArray.get());
+    m_MultiDrawArray->clear();
+  }
 }
 
 bool ChunkContainer::insert(const GlobalIndex& chunkIndex, Array3D<Block::Type, Chunk::Size()> chunkComposition)
@@ -30,7 +111,8 @@ bool ChunkContainer::insert(const GlobalIndex& chunkIndex, Array3D<Block::Type, 
 
   // Insert chunk into array and load it
   Chunk& chunk = m_ChunkArray[chunkSlot];
-  chunk.repurpose(chunkIndex, std::move(chunkComposition));
+  chunk = Chunk(chunkIndex);
+  chunk.setData(std::move(chunkComposition));
   auto [insertionPosition, insertionSuccess] = m_BoundaryChunks.insert({ chunk.getGlobalIndex(), &chunk });
 
   if (insertionSuccess)
@@ -52,6 +134,9 @@ bool ChunkContainer::erase(const GlobalIndex& chunkIndex)
   int chunkSlot = static_cast<int>(chunk - &m_ChunkArray[0]);
   m_OpenChunkSlots.push(chunkSlot);
 
+  int hash = std::hash<GlobalIndex>()(chunkIndex);
+  m_MultiDrawArray->remove(hash);
+
   // Delete chunk data
   {
     std::lock_guard chunkLock = chunk->acquireLock();
@@ -64,7 +149,7 @@ bool ChunkContainer::erase(const GlobalIndex& chunkIndex)
   return true;
 }
 
-bool ChunkContainer::update(const GlobalIndex& chunkIndex, const std::vector<uint32_t>& mesh)
+bool ChunkContainer::update(const GlobalIndex& chunkIndex, std::vector<uint32_t>&& mesh)
 {
   std::shared_lock sharedLock(m_ContainerMutex);
 
@@ -81,7 +166,8 @@ bool ChunkContainer::update(const GlobalIndex& chunkIndex, const std::vector<uin
     std::lock_guard chunkLock = chunk->acquireLock();
     sharedLock.unlock();
 
-    chunk->internalUpdate(mesh);
+    chunk->update(static_cast<int>(mesh.size()));
+    m_MeshUpdateQueue.add(chunkIndex, std::move(mesh));
 
     destination = chunk->empty() ? ChunkType::Empty : ChunkType::Renderable;
   }
@@ -197,6 +283,25 @@ void ChunkContainer::sendBlockUpdate(const GlobalIndex& chunkIndex, const BlockI
   }
 }
 
+void ChunkContainer::updateMeshes()
+{
+  std::optional<std::pair<GlobalIndex, std::vector<uint32_t>>> meshUpdate = m_MeshUpdateQueue.tryRemove();
+  while (meshUpdate)
+  {
+    const GlobalIndex& updateIndex = meshUpdate->first;
+    int hash = std::hash<GlobalIndex>()(updateIndex);
+
+    m_MultiDrawArray->remove(hash);
+    if (isLoaded(updateIndex))
+    {
+      const std::vector<uint32_t>& mesh = meshUpdate->second;
+      m_MultiDrawArray->add(hash, mesh.data(), static_cast<uint32_t>(mesh.size() * sizeof(uint32_t)));
+    }
+
+    meshUpdate = m_MeshUpdateQueue.tryRemove();
+  }
+}
+
 bool ChunkContainer::empty() const
 {
   std::shared_lock lock(m_ContainerMutex);
@@ -231,6 +336,26 @@ std::optional<GlobalIndex> ChunkContainer::IndexSet::tryRemove()
   }
   return std::nullopt;
 }
+
+void ChunkContainer::MeshMap::add(const GlobalIndex& index, std::vector<uint32_t>&& mesh)
+{
+  std::lock_guard lock(m_Mutex);
+  m_Data[index] = std::move(mesh);
+}
+
+std::optional<std::pair<GlobalIndex, std::vector<uint32_t>>> ChunkContainer::MeshMap::tryRemove()
+{
+  std::lock_guard lock(m_Mutex);
+
+  if (!m_Data.empty())
+  {
+    std::pair<GlobalIndex, std::vector<uint32_t>> keyVal = std::move(*m_Data.begin());
+    m_Data.erase(m_Data.begin());
+    return keyVal;
+  }
+  return std::nullopt;
+}
+
 
 
 

@@ -47,7 +47,7 @@ namespace Engine
   void OpenGLRendererAPI::drawVertices(const VertexArray* vertexArray, uint32_t vertexCount)
   {
     EN_CORE_ASSERT(std::this_thread::get_id() == Threads::MainThreadID(), "OpenGL calls must be made on the main thread!");
-    EN_CORE_ASSERT(vertexArray != nullptr, "Vertex array has not been initialized!");
+    EN_CORE_ASSERT(vertexArray, "Vertex array has not been initialized!");
 
     vertexArray->bind();
     glDrawArrays(GL_TRIANGLES, 0, vertexCount);
@@ -66,11 +66,21 @@ namespace Engine
   void OpenGLRendererAPI::drawIndexedLines(const VertexArray* vertexArray, uint32_t indexCount)
   {
     EN_CORE_ASSERT(std::this_thread::get_id() == Threads::MainThreadID(), "OpenGL calls must be made on the main thread!");
-    EN_CORE_ASSERT(vertexArray != nullptr, "Vertex array has not been initialized!");
+    EN_CORE_ASSERT(vertexArray, "Vertex array has not been initialized!");
 
     vertexArray->bind();
     uint32_t count = indexCount == 0 ? vertexArray->getIndexBuffer()->getCount() : indexCount;
     glDrawElements(GL_LINES, count, GL_UNSIGNED_INT, nullptr);
+  }
+
+  void OpenGLRendererAPI::multiDrawIndexed(const MultiDrawArray* multiDrawArray)
+  {
+    EN_CORE_ASSERT(std::this_thread::get_id() == Threads::MainThreadID(), "OpenGL calls must be made on the main thread!");
+    EN_CORE_ASSERT(multiDrawArray, "Vertex array has not been initialized!");
+
+    multiDrawArray->bind();
+    const std::vector<DrawElementsIndirectCommand>& drawCommands = multiDrawArray->getQueuedDrawCommands();
+    glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, drawCommands.data(), drawCommands.size(), 0);
   }
 
   void OpenGLRendererAPI::clearDepthBuffer()

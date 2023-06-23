@@ -16,7 +16,6 @@ GameSandbox::GameSandbox()
 
   Block::Initialize();
   Biome::Initialize();
-  Chunk::Initialize();
   LOD::MeshData::Initialize();
   m_World.initialize();
 }

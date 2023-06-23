@@ -119,7 +119,8 @@ namespace Engine
   {
     EN_PROFILE_FUNCTION();
 
-    UniformBuffer::Allocate(0, sizeof(CameraUniforms));
+    if (UniformBuffer::GetSize(0) == 0)
+      UniformBuffer::Allocate(0, sizeof(CameraUniforms));
     
     /* Wire Frame Initialization */
     s_WireFrameVertexArray = VertexArray::Create();

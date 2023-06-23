@@ -24,6 +24,8 @@ public:
 
   void initialize();
 
+  void render();
+
   /*
     Inserts chunk and adds it to boundary map. Its neighbors are moved from boundary map
     if they are no longer on the boundary.
@@ -46,7 +48,7 @@ public:
 
     \returns True if the chunk existed, was not a boundary chunk, and was successfully updated.
   */
-  bool update(const GlobalIndex& chunkIndex, const std::vector<uint32_t>& mesh);
+  bool update(const GlobalIndex& chunkIndex, std::vector<uint32_t>&& mesh);
 
   /*
     Used to operate on each chunk of the specified type.
@@ -80,11 +82,20 @@ public:
   std::optional<GlobalIndex> getLazyUpdateIndex() { return m_LazyUpdateQueue.tryRemove(); }
   std::optional<GlobalIndex> getForceUpdateIndex() { return m_ForceUpdateQueue.tryRemove(); }
 
+  void updateMeshes();
+
   bool empty() const;
   bool contains(const GlobalIndex& chunkIndex) const;
 
 private:
   static constexpr int c_ChunkTypes = 3;
+
+  static inline std::unique_ptr<Engine::Shader> s_Shader;
+  static inline std::shared_ptr<Engine::TextureArray> s_TextureArray;
+  static inline std::shared_ptr<const Engine::IndexBuffer> s_IndexBuffer;
+  static inline const Engine::BufferLayout s_VertexBufferLayout = { { ShaderDataType::Uint32, "a_VertexData" } };
+  static constexpr int c_TextureSlot = 0;
+  static constexpr int c_UniformBinding = 2;
 
   template<typename Key, typename Val>
   using mapType = std::unordered_map<Key, Val>;
@@ -98,6 +109,7 @@ private:
   // Chunk data
   std::unique_ptr<Chunk[]> m_ChunkArray;
   std::stack<int, std::vector<int>> m_OpenChunkSlots;
+  std::unique_ptr<Engine::MultiDrawArray> m_MultiDrawArray;
 
   mutable std::shared_mutex m_ContainerMutex;
 
@@ -112,8 +124,20 @@ private:
     std::mutex m_Mutex;
   };
 
+  class MeshMap
+  {
+  public:
+    void add(const GlobalIndex& index, std::vector<uint32_t>&& mesh);
+    std::optional<std::pair<GlobalIndex, std::vector<uint32_t>>> tryRemove();
+
+  private:
+    std::unordered_map<GlobalIndex, std::vector<uint32_t>> m_Data;
+    std::mutex m_Mutex;
+  };
+
   IndexSet m_LazyUpdateQueue;
   IndexSet m_ForceUpdateQueue;
+  MeshMap m_MeshUpdateQueue;
 
 // Helper functions for chunk container access. These assume the map mutex has already been locked by one of the public functions
 private:

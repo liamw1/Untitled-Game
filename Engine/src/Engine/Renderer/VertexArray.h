@@ -48,7 +48,10 @@ namespace Engine
       \param data Buffer of vertex data
       \param size Size of buffer in bytes
     */
-    virtual void setVertexBuffer(const void* data, uintptr_t size) const = 0;
+    virtual void setVertexBuffer(const void* data, uint32_t size) const = 0;
+    void setVertexBuffer(const void* data, uint64_t size) const;
+
+    virtual void modifyVertexBuffer(const void* data, uint32_t offset, uint32_t size) const = 0;
 
     /*
       Sets an array of indices that represent the order in which vertices will be drawn.

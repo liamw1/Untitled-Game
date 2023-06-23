@@ -27,29 +27,7 @@ void ChunkManager::initialize()
 
 void ChunkManager::render()
 {
-  EN_PROFILE_FUNCTION();
-
-  const Mat4& viewProjection = Engine::Scene::ActiveCameraViewProjection();
-  std::array<Vec4, 6> frustumPlanes = Util::CalculateViewFrustumPlanes(viewProjection);
-
-  // Shift each plane by distance equal to radius of sphere that circumscribes chunk
-  static constexpr length_t chunkSphereRadius = Constants::SQRT3 * Chunk::Length() / 2;
-  for (Vec4& plane : frustumPlanes)
-  {
-    length_t planeNormalMag = glm::length(Vec3(plane));
-    plane.w += chunkSphereRadius * planeNormalMag;
-  }
-
-  // Render chunks in view frustum
-  Chunk::BindBuffers();
-  m_ChunkContainer.forEach(ChunkType::Renderable, [&](const Chunk& chunk)
-    {
-      if (Util::IsInRangeOfPlayer(chunk, c_RenderDistance) && Util::IsInFrustum(chunk.center(), frustumPlanes))
-      {
-        std::lock_guard lock = chunk.acquireLock();
-        chunk.draw();
-      }
-    });
+  m_ChunkContainer.render();
 }
 
 void ChunkManager::update()
@@ -62,8 +40,7 @@ void ChunkManager::update()
     if (!m_ChunkContainer.contains(*updateIndex))
       generateNewChunk(*updateIndex);
 
-    std::vector<uint32_t> mesh = createMesh(*updateIndex);
-    m_ChunkContainer.update(*updateIndex, mesh);
+    m_ChunkContainer.update(*updateIndex, createMesh(*updateIndex));
 
     updateIndex = m_ChunkContainer.getForceUpdateIndex();
   }
@@ -186,10 +163,7 @@ void ChunkManager::updateWorker()
 
     std::optional<GlobalIndex> updateIndex = m_ChunkContainer.getLazyUpdateIndex();
     if (updateIndex)
-    {
-      std::vector<uint32_t> mesh = createMesh(*updateIndex);
-      m_ChunkContainer.update(*updateIndex, mesh);
-    }
+      m_ChunkContainer.update(*updateIndex, createMesh(*updateIndex));
     else
       std::this_thread::sleep_for(100ms);
   }

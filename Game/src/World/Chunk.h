@@ -12,7 +12,7 @@
              for chunk objects that have a permanent location in memory, such as
              the chunk's stored in the chunk container.
 */
-class alignas(128) Chunk
+class Chunk
 {
 /*
   Most public functions can be safely accessed as long as a lock is held on either
@@ -29,12 +29,6 @@ public:
   // Chunks are unique and so cannot be copied
   Chunk(const Chunk& other) = delete;
   Chunk& operator=(const Chunk& other) = delete;
-
-  /*
-    Creates vertex array for this chunk. Must be called at least once before chunk can be drawn.
-    Once called, it never needs to be called again for this chunk allocation.
-  */
-  void initializeVertexArray();
 
   /*
     \returns The chunk's global index, which identifies it uniquely.
@@ -80,9 +74,6 @@ public:
   static constexpr length_t Length() { return Block::Length() * c_ChunkSize; }
   static constexpr int TotalBlocks() { return c_ChunkSize * c_ChunkSize * c_ChunkSize; }
 
-  static void Initialize();
-  static void BindBuffers();
-
 // All private functions require a lock on the chunk mutex.
 private:
   struct Uniforms
@@ -92,16 +83,7 @@ private:
 
   static constexpr int c_ChunkSize = 32;
 
-  // Mesh Data
-  static inline std::unique_ptr<Engine::Shader> s_Shader;
-  static inline std::shared_ptr<Engine::TextureArray> s_TextureArray;
-  static inline std::shared_ptr<const Engine::IndexBuffer> s_IndexBuffer;
-  static inline const Engine::BufferLayout s_VertexBufferLayout = { { ShaderDataType::Uint32, "a_VertexData" } };
-  static constexpr int c_TextureSlot = 0;
-  static constexpr int c_UniformBinding = 2;
-
   mutable std::mutex m_Mutex;
-  std::unique_ptr<Engine::VertexArray> m_VertexArray;
   Array3D<Block::Type, c_ChunkSize> m_Composition;
   GlobalIndex m_GlobalIndex;
   std::atomic<uint16_t> m_NonOpaqueFaces;
@@ -113,10 +95,8 @@ private:
   void setData(Array3D<Block::Type, c_ChunkSize> composition);
   void determineOpacity();
 
-  void internalUpdate(const std::vector<uint32_t>& mesh);
-  void draw() const;
+  void update(int meshSize);
   void reset();
-  void repurpose(const GlobalIndex& chunkIndex, Array3D<Block::Type, c_ChunkSize> composition);
 
   _Acquires_lock_(return) std::lock_guard<std::mutex> acquireLock() const { return std::lock_guard(m_Mutex); };
 

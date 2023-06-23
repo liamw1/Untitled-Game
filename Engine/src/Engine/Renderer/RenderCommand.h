@@ -1,5 +1,6 @@
 #pragma once
 #include "VertexArray.h"
+#include "MultiDrawArray.h"
 
 namespace Engine
 {
@@ -15,6 +16,7 @@ namespace Engine
     void DrawVertices(const VertexArray* vertexArray, uint32_t vertexCount);
     void DrawIndexed(const VertexArray* vertexArray, uint32_t indexCount = 0);
     void DrawIndexedLines(const VertexArray* vertexArray, uint32_t indexCount = 0);
+    void MultiDrawIndexed(const MultiDrawArray* multiDrawArray);
 
     void ClearDepthBuffer();
   };

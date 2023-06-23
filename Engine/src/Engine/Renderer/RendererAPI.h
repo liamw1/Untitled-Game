@@ -1,5 +1,6 @@
 #pragma once
 #include "VertexArray.h"
+#include "MultiDrawArray.h"
 
 /*
   API for basic renderer commands.
@@ -28,6 +29,7 @@ namespace Engine
     virtual void drawVertices(const VertexArray* vertexArray, uint32_t vertexCount) = 0;
     virtual void drawIndexed(const VertexArray* vertexArray, uint32_t indexCount) = 0;
     virtual void drawIndexedLines(const VertexArray* vertexArray, uint32_t indexCount) = 0;
+    virtual void multiDrawIndexed(const MultiDrawArray* multiDrawArray) = 0;
 
     virtual void clearDepthBuffer() = 0;
 

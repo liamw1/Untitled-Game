@@ -132,7 +132,8 @@ namespace Engine
   {
     EN_PROFILE_FUNCTION();
 
-    UniformBuffer::Allocate(0, sizeof(CameraUniforms));
+    if (UniformBuffer::GetSize(0) == 0)
+      UniformBuffer::Allocate(0, sizeof(CameraUniforms));
 
     uint32_t* quadIndices = new uint32_t[c_MaxQuadIndices];
 
