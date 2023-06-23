@@ -18,7 +18,7 @@ public:
     Default = 0,
     GrassField,
     Desert,
-    Flat,
+    SuperFlat,
 
     Null,
     Begin = 0, End = Null
@@ -29,7 +29,6 @@ public:
     s_BiomesInitialized++;
   }
 
-  virtual Block::Type primarySurfaceType() const = 0;
   virtual length_t localSurfaceElevation(const NoiseSamples& noiseSamples) const = 0;
   virtual void fillColumn(ArraySection<Block::Type, Chunk::Size()> column, length_t chunkFloor, length_t elevation) const = 0;
 

@@ -4,8 +4,6 @@
 class DefaultBiome : public Biome
 {
 public:
-  Block::Type primarySurfaceType() const override { return Block::Type::Snow; }
-
   length_t localSurfaceElevation(const NoiseSamples& noiseSamples) const override
   {
     static constexpr length_t largestElevationAmplitude = 150 * Block::Length();
@@ -24,8 +22,6 @@ public:
 class GrassFieldsBiome : public Biome
 {
 public:
-  Block::Type primarySurfaceType() const override { return Block::Type::Grass; }
-
   length_t localSurfaceElevation(const NoiseSamples& noiseSamples) const override
   {
     static constexpr length_t largestElevationAmplitude = 10 * Block::Length();
@@ -42,8 +38,6 @@ public:
 class DesertBoime : public Biome
 {
 public:
-  Block::Type primarySurfaceType() const override { return Block::Type::Sand; }
-
   length_t localSurfaceElevation(const NoiseSamples& noiseSamples) const override
   {
     static constexpr length_t largestElevationAmplitude = 30 * Block::Length();
@@ -57,18 +51,16 @@ public:
   }
 };
 
-class FlatBiome : public Biome
+class SuperFlatBiome : public Biome
 {
 public:
-  Block::Type primarySurfaceType() const override { return Block::Type::Stone; }
-
   length_t localSurfaceElevation(const NoiseSamples& noiseSamples) const override
   {
-    return 0_m;
+    return Block::Length() / 2;
   }
 
   void fillColumn(ArraySection<Block::Type, Chunk::Size()> column, length_t chunkFloor, length_t elevation) const override
   {
-    StandardColumnFill(column, chunkFloor, elevation, Block::Type::Stone, 1, Block::Type::Dirt, 5);
+    StandardColumnFill(column, chunkFloor, elevation, Block::Type::Grass, 1, Block::Type::Dirt, 5);
   }
 };

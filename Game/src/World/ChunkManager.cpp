@@ -174,7 +174,7 @@ void ChunkManager::generateNewChunk(const GlobalIndex& chunkIndex)
   Array3D<Block::Type, Chunk::Size()> composition;
   switch (m_LoadMode)
   {
-    case ChunkManager::NotSet:  EN_ERROR("Load mode not set!");               break;
+    case ChunkManager::NotSet:  EN_ERROR("Load mode not set!");                     break;
     case ChunkManager::Void:    composition = Terrain::GenerateEmpty(chunkIndex);   break;
     case ChunkManager::Terrain: composition = Terrain::GenerateNew(chunkIndex);     break;
     default:                    EN_ERROR("Unknown load mode!");
