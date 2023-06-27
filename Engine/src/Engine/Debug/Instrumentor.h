@@ -5,6 +5,19 @@
 #include <sstream>
 #include <mutex>
 
+#define EN_PROFILE 0
+#if EN_PROFILE
+#define EN_PROFILE_BEGIN_SESSION(name, filepath)  ::Engine::Instrumentor::Get().beginSession(name, filepath)
+#define EN_PROFILE_END_SESSION()                  ::Engine::Instrumentor::Get().endSession()
+#define EN_PROFILE_SCOPE(name)                    ::Engine::InstrumentationTimer timer##__LINE__(name)
+#define EN_PROFILE_FUNCTION()                     EN_PROFILE_SCOPE(__FUNCTION__)
+#else
+#define EN_PROFILE_BEGIN_SESSION(name, filepath)
+#define EN_PROFILE_END_SESSION()
+#define EN_PROFILE_SCOPE(name)
+#define EN_PROFILE_FUNCTION()
+#endif
+
 /*
   Tool for easily profiling functions and scopes.
   Outputs formatted .json files for visualization by chrome://tracing.
@@ -157,16 +170,3 @@ namespace Engine
     bool m_Stopped;
   };
 }
-
-#define EN_PROFILE 0
-#if EN_PROFILE
-  #define EN_PROFILE_BEGIN_SESSION(name, filepath)  ::Engine::Instrumentor::Get().beginSession(name, filepath)
-  #define EN_PROFILE_END_SESSION()                  ::Engine::Instrumentor::Get().endSession()
-  #define EN_PROFILE_SCOPE(name)                    ::Engine::InstrumentationTimer timer##__LINE__(name)
-  #define EN_PROFILE_FUNCTION()                     EN_PROFILE_SCOPE(__FUNCTION__)
-#else
-  #define EN_PROFILE_BEGIN_SESSION(name, filepath)
-  #define EN_PROFILE_END_SESSION()
-  #define EN_PROFILE_SCOPE(name)
-  #define EN_PROFILE_FUNCTION()
-#endif

@@ -1,8 +1,6 @@
 #pragma once
 #include "VertexArray.h"
-#include "Shader.h"
 #include "Texture.h"
-#include "UniformBuffer.h"
 
 /*
   A general-purpose renderer for 3D objects/effects.

@@ -1,6 +1,8 @@
 #include "ENpch.h"
 #include "Renderer.h"
 #include "RenderCommand.h"
+#include "Shader.h"
+#include "Uniform.h"
 #include "Engine/Scene/Scene.h"
 #include "Engine/Debug/Instrumentor.h"
 
@@ -8,7 +10,7 @@
 
 namespace Engine
 {
-  struct CameraUniforms
+  struct CameraUniformData
   {
     FMat4 viewProjection;
   };
@@ -37,10 +39,11 @@ namespace Engine
   static std::unique_ptr<VertexArray> s_CubeVertexArray;
   static std::unique_ptr<VertexArray> s_WireFrameVertexArray;
   static std::unique_ptr<Shader> s_TextureShader;
+  static std::unique_ptr<Uniform> s_CameraUniform;
   static std::unique_ptr<Shader> s_WireFrameShader;
   static std::unique_ptr<Texture2D> s_WhiteTexture;
 
-  static CameraUniforms s_CameraUniforms;
+  static CameraUniformData s_CameraUniformData;
   
   static constexpr Float4 c_CubeFrameVertexPositions[8] = { { -0.5f, -0.5f, -0.5f, 1.0f },
                                                             {  0.5f, -0.5f, -0.5f, 1.0f },
@@ -119,8 +122,7 @@ namespace Engine
   {
     EN_PROFILE_FUNCTION();
 
-    if (UniformBuffer::GetSize(0) == 0)
-      UniformBuffer::Allocate(0, sizeof(CameraUniforms));
+    s_CameraUniform = Uniform::Create(0, sizeof(CameraUniformData));
     
     /* Wire Frame Initialization */
     s_WireFrameVertexArray = VertexArray::Create();
@@ -165,8 +167,8 @@ namespace Engine
 
   void Renderer::BeginScene(const Mat4& viewProjection)
   {
-    s_CameraUniforms.viewProjection = viewProjection;
-    UniformBuffer::SetData(0, &s_CameraUniforms);
+    s_CameraUniformData.viewProjection = viewProjection;
+    s_CameraUniform->set(&s_CameraUniformData, sizeof(CameraUniformData));
   }
 
   void Renderer::EndScene()

@@ -126,9 +126,9 @@ void Chunk::determineOpacity()
   m_NonOpaqueFaces.store(nonOpaqueFaces);
 }
 
-void Chunk::update(bool madeEmpty)
+void Chunk::update(bool hasMesh)
 {
-  if (madeEmpty)
+  if (!empty() && !hasMesh && getBlockType(0, 0, 0) == Block::Type::Air)
     m_Composition.reset();
 
   determineOpacity();

@@ -22,12 +22,85 @@ ChunkManager::~ChunkManager()
 
 void ChunkManager::initialize()
 {
-  m_ChunkContainer.initialize();
+  if (!s_IndexBuffer)
+  {
+    constexpr uint32_t maxIndices = 6 * 6 * Chunk::TotalBlocks();
+
+    uint32_t offset = 0;
+    uint32_t* indices = new uint32_t[maxIndices];
+    for (uint32_t i = 0; i < maxIndices; i += 6)
+    {
+      // Triangle 1
+      indices[i + 0] = offset + 0;
+      indices[i + 1] = offset + 1;
+      indices[i + 2] = offset + 2;
+
+      // Triangle 2
+      indices[i + 3] = offset + 2;
+      indices[i + 4] = offset + 3;
+      indices[i + 5] = offset + 0;
+
+      offset += 4;
+    }
+    s_IndexBuffer = Engine::IndexBuffer::Create(indices, maxIndices);
+    delete[] indices;
+
+    s_Shader = Engine::Shader::Create("assets/shaders/Chunk.glsl");
+    s_TextureArray = Block::GetTextureArray();
+
+    s_SSBO = Engine::StorageBuffer::Create(Engine::StorageBuffer::Type::SSBO, c_StorageBufferBinding);
+    s_SSBO->set(nullptr, c_StorageBufferSize);
+  }
+
+  m_MultiDrawArray = std::make_unique<Engine::MultiDrawArray<GlobalIndex>>(s_VertexBufferLayout);
+  m_MultiDrawArray->setIndexBuffer(s_IndexBuffer);
 }
 
 void ChunkManager::render()
 {
-  m_ChunkContainer.render();
+  EN_PROFILE_FUNCTION();
+
+  const Mat4& viewProjection = Engine::Scene::ActiveCameraViewProjection();
+  std::array<Vec4, 6> frustumPlanes = Util::CalculateViewFrustumPlanes(viewProjection);
+
+  // Shift each plane by distance equal to radius of sphere that circumscribes chunk
+  static constexpr length_t chunkSphereRadius = Constants::SQRT3 * Chunk::Length() / 2;
+  for (Vec4& plane : frustumPlanes)
+  {
+    length_t planeNormalMag = glm::length(Vec3(plane));
+    plane.w += chunkSphereRadius * planeNormalMag;
+  }
+
+  Vec3 playerPosition = Player::Position();
+  GlobalIndex originIndex = Player::OriginIndex();
+  int commandCount = m_MultiDrawArray->mask([&originIndex, &frustumPlanes](const GlobalIndex& chunkIndex)
+    {
+      Vec3 anchorPosition = Chunk::AnchorPosition(chunkIndex, originIndex);
+      Vec3 chunkCenter = Chunk::Center(anchorPosition);
+      return Util::IsInFrustum(chunkCenter, frustumPlanes) && Util::IsInRange(chunkIndex, originIndex, c_RenderDistance);
+    });
+
+  std::vector<Float4> storageBufferData;
+  storageBufferData.reserve(commandCount);
+  const std::vector<Engine::MultiDrawArray<GlobalIndex>::DrawCommand>& drawCommands = m_MultiDrawArray->getDrawCommandBuffer();
+  for (int i = 0; i < commandCount; ++i)
+  {
+    const GlobalIndex& chunkIndex = drawCommands[i].ID;
+    Vec3 chunkAnchor = Chunk::AnchorPosition(chunkIndex, originIndex);
+    storageBufferData.emplace_back(chunkAnchor, 0);
+  }
+
+  uint32_t bufferDataSize = static_cast<uint32_t>(storageBufferData.size() * sizeof(Float4));
+  if (bufferDataSize > c_StorageBufferSize)
+    EN_ERROR("Chunk anchor data exceeds SSBO size!");
+
+  s_Shader->bind();
+  s_SSBO->bind();
+  s_TextureArray->bind(c_TextureSlot);
+  m_MultiDrawArray->bind();
+
+  s_SSBO->update(storageBufferData.data(), 0, bufferDataSize);
+  Engine::RenderCommand::MultiDrawIndexed(drawCommands.data(), commandCount, sizeof(Engine::MultiDrawArray<GlobalIndex>::DrawCommand));
 }
 
 void ChunkManager::update()
@@ -40,19 +113,23 @@ void ChunkManager::update()
     if (!m_ChunkContainer.contains(*updateIndex))
       generateNewChunk(*updateIndex);
 
-    m_ChunkContainer.update(*updateIndex, createMesh(*updateIndex));
+    bool meshGenerated = meshChunk(*updateIndex);
+    m_ChunkContainer.update(*updateIndex, meshGenerated);
 
     updateIndex = m_ChunkContainer.getForceUpdateIndex();
   }
+
+  if (!m_MeshUpdateQueue.empty())
+    uploadMeshes();
 }
 
 void ChunkManager::clean()
 {
-  EN_PROFILE_FUNCTION();
-
   GlobalIndex originIndex = Player::OriginIndex();
   if (m_PrevPlayerOriginIndex == originIndex)
     return;
+
+  EN_PROFILE_FUNCTION();
 
   std::vector<GlobalIndex> chunksMarkedForDeletion = m_ChunkContainer.findAll(ChunkType::Boundary, [&originIndex](const Chunk& chunk)
     {
@@ -63,7 +140,10 @@ void ChunkManager::clean()
   {
     for (const GlobalIndex& chunkIndex : chunksMarkedForDeletion)
       if (!Util::IsInRange(chunkIndex, originIndex, c_UnloadDistance))
+      {
         m_ChunkContainer.erase(chunkIndex);
+        m_MultiDrawArray->remove(chunkIndex);
+      }
   }
 
   m_PrevPlayerOriginIndex = originIndex;
@@ -133,6 +213,33 @@ void ChunkManager::loadChunk(const GlobalIndex& chunkIndex, Block::Type blockTyp
 
 
 
+void ChunkManager::MeshQueue::add(const GlobalIndex& index, std::vector<uint32_t>&& mesh)
+{
+  std::lock_guard lock(m_Mutex);
+  m_Data[index] = std::move(mesh);
+}
+
+std::optional<std::pair<GlobalIndex, std::vector<uint32_t>>> ChunkManager::MeshQueue::tryRemove()
+{
+  std::lock_guard lock(m_Mutex);
+
+  if (!m_Data.empty())
+  {
+    std::pair<GlobalIndex, std::vector<uint32_t>> keyVal = std::move(*m_Data.begin());
+    m_Data.erase(m_Data.begin());
+    return keyVal;
+  }
+  return std::nullopt;
+}
+
+std::size_t ChunkManager::MeshQueue::empty()
+{
+  std::lock_guard lock(m_Mutex);
+  return m_Data.empty();
+}
+
+
+
 void ChunkManager::loadWorker()
 {
   using namespace std::chrono_literals;
@@ -165,7 +272,10 @@ void ChunkManager::updateWorker()
 
     std::optional<GlobalIndex> updateIndex = m_ChunkContainer.getLazyUpdateIndex();
     if (updateIndex)
-      m_ChunkContainer.update(*updateIndex, createMesh(*updateIndex));
+    {
+      bool meshGenerated = meshChunk(*updateIndex);
+      m_ChunkContainer.update(*updateIndex, meshGenerated);
+    }
     else
       std::this_thread::sleep_for(100ms);
   }
@@ -205,7 +315,7 @@ static void setBlockType(Array3D<Block::Type, Chunk::Size() + 2>& blockData, con
   setBlockType(blockData, blockIndex.i, blockIndex.j, blockIndex.k, blockType);
 }
 
-std::vector<uint32_t> ChunkManager::createMesh(const GlobalIndex& chunkIndex) const
+bool ChunkManager::meshChunk(const GlobalIndex& chunkIndex)
 {
   thread_local Array3D<Block::Type, Chunk::Size() + 2> blockData = AllocateArray3D<Block::Type, Chunk::Size() + 2>();
 
@@ -215,7 +325,10 @@ std::vector<uint32_t> ChunkManager::createMesh(const GlobalIndex& chunkIndex) co
   {
     auto [chunk, lock] = m_ChunkContainer.acquireChunk(chunkIndex);
     if (!chunk || chunk->empty())
-      return {};
+    {
+      m_MeshUpdateQueue.add(chunkIndex, {});
+      return false;
+    }
 
     for (blockIndex_t i = 0; i < Chunk::Size(); ++i)
       for (blockIndex_t j = 0; j < Chunk::Size(); ++j)
@@ -356,5 +469,28 @@ std::vector<uint32_t> ChunkManager::createMesh(const GlobalIndex& chunkIndex) co
               }
             }
       }
-  return mesh;
+
+  std::size_t meshSize = mesh.size();
+  m_MeshUpdateQueue.add(chunkIndex, std::move(mesh));
+  return meshSize > 0;
+}
+
+void ChunkManager::uploadMeshes()
+{
+  EN_PROFILE_FUNCTION();
+
+  std::optional<std::pair<GlobalIndex, std::vector<uint32_t>>> meshUpdate = m_MeshUpdateQueue.tryRemove();
+  while (meshUpdate)
+  {
+    const auto& [updateIndex, mesh] = *meshUpdate;
+
+    m_MultiDrawArray->remove(updateIndex);
+    if (m_ChunkContainer.contains(updateIndex))
+    {
+      uint32_t indexCount = static_cast<uint32_t>(3 * mesh.size() / 2);
+      m_MultiDrawArray->add(updateIndex, mesh.data(), static_cast<int>(mesh.size()), indexCount);
+    }
+
+    meshUpdate = m_MeshUpdateQueue.tryRemove();
+  }
 }

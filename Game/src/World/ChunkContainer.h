@@ -26,11 +26,7 @@ enum class ChunkType
 class ChunkContainer
 {
 public:
-  ChunkContainer() = default;
-
-  void initialize();
-
-  void render();
+  ChunkContainer();
 
   /*
     Inserts chunk and adds it to boundary map. Its neighbors are moved from boundary map
@@ -54,7 +50,7 @@ public:
 
     \returns True if the chunk existed, was not a boundary chunk, and was successfully updated.
   */
-  bool update(const GlobalIndex& chunkIndex, std::vector<uint32_t>&& mesh);
+  bool update(const GlobalIndex& chunkIndex, bool meshGenerated);
 
   /*
     \returns All chunks of the specified type that match the given conditional.
@@ -100,13 +96,6 @@ public:
 private:
   static constexpr int c_ChunkTypes = 3;
 
-  static inline std::unique_ptr<Engine::Shader> s_Shader;
-  static inline std::shared_ptr<Engine::TextureArray> s_TextureArray;
-  static inline std::shared_ptr<const Engine::IndexBuffer> s_IndexBuffer;
-  static inline const Engine::BufferLayout s_VertexBufferLayout = { { ShaderDataType::Uint32, "a_VertexData" } };
-  static constexpr int c_TextureSlot = 0;
-  static constexpr int c_UniformBinding = 2;
-
   template<typename Key, typename Val>
   using mapType = std::unordered_map<Key, Val>;
 
@@ -119,7 +108,6 @@ private:
   // Chunk data
   std::unique_ptr<Chunk[]> m_ChunkArray;
   std::stack<int, std::vector<int>> m_OpenChunkSlots;
-  std::unique_ptr<Engine::MultiArray<GlobalIndex>> m_MultiDrawArray;
 
   mutable std::shared_mutex m_ContainerMutex;
 
@@ -134,21 +122,8 @@ private:
     std::mutex m_Mutex;
   };
 
-  class MeshMap
-  {
-  public:
-    void add(const GlobalIndex& index, std::vector<uint32_t>&& mesh);
-    std::optional<std::pair<GlobalIndex, std::vector<uint32_t>>> tryRemove();
-    std::size_t empty();
-
-  private:
-    std::unordered_map<GlobalIndex, std::vector<uint32_t>> m_Data;
-    std::mutex m_Mutex;
-  };
-
   IndexSet m_LazyUpdateQueue;
   IndexSet m_ForceUpdateQueue;
-  MeshMap m_MeshUpdateQueue;
 
 // Helper functions for chunk container access. These assume the map mutex has already been locked by one of the public functions
 private:
@@ -214,11 +189,4 @@ private:
     Requires an exclusive lock on the container mutex, as it will modify chunk maps.
   */
   void recategorizeChunk(Chunk& chunk, ChunkType source, ChunkType destination);
-
-  /*
-    Uploads queued mesh data to the GPU.
-
-    Requires at minimum a shared lock to be owned on the container mutex.
-  */
-  void uploadMeshes();
 };

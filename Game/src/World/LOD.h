@@ -31,7 +31,7 @@ namespace LOD
     int quadIndex;
   };
 
-  struct Uniforms
+  struct UniformData
   {
     Float3 anchor;
     float textureScaling;
@@ -54,12 +54,13 @@ namespace LOD
 
     static void Initialize();
     static void BindBuffers();
-    static void SetUniforms(const Uniforms& uniforms);
+    static void SetUniforms(const UniformData& uniformData);
 
   private:
     static constexpr int c_TextureSlot = 0;
     static constexpr int c_UniformBinding = 3;
     static inline std::unique_ptr<Engine::Shader> s_Shader = nullptr;
+    static inline std::unique_ptr<Engine::Uniform> s_Uniform = nullptr;
     static inline std::shared_ptr<Engine::TextureArray> s_TextureArray = nullptr;
     static inline const Engine::BufferLayout s_VertexBufferLayout = { { ShaderDataType::Float3, "a_Position"        },
                                                                       { ShaderDataType::Float3, "a_IsoNormal"       },

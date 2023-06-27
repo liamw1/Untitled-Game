@@ -97,7 +97,7 @@ private:
   void setData(Array3D<Block::Type, c_ChunkSize> composition);
   void determineOpacity();
 
-  void update(bool madeEmpty);
+  void update(bool hasMesh);
   void reset();
 
   _Acquires_lock_(return) std::lock_guard<std::mutex> acquireLock() const { return std::lock_guard(m_Mutex); };

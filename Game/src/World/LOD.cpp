@@ -128,21 +128,21 @@ LOD::Octree::Node* LOD::Octree::findLeafPriv(Node* branch, const GlobalIndex& in
 
 void LOD::MeshData::Initialize()
 {
+  s_Uniform = Engine::Uniform::Create(c_UniformBinding, sizeof(LOD::UniformData));
   s_Shader = Engine::Shader::Create("assets/shaders/ChunkLOD.glsl");
   s_TextureArray = Block::GetTextureArray();
-  Engine::UniformBuffer::Allocate(c_UniformBinding, sizeof(LOD::Uniforms));
 }
 
 void LOD::MeshData::BindBuffers()
 {
+  s_Uniform->bind();
   s_Shader->bind();
-  Engine::UniformBuffer::Bind(c_UniformBinding);
   s_TextureArray->bind(c_TextureSlot);
 }
 
-void LOD::MeshData::SetUniforms(const Uniforms& uniforms)
+void LOD::MeshData::SetUniforms(const UniformData& uniformData)
 {
-  Engine::UniformBuffer::SetData(c_UniformBinding, &uniforms);
+  s_Uniform->set(&uniformData, sizeof(UniformData));
 }
 
 void LOD::Draw(const Octree::Node* leaf)
@@ -153,10 +153,10 @@ void LOD::Draw(const Octree::Node* leaf)
     return; // Nothing to draw
 
   // Set local anchor position and texture scaling
-  LOD::Uniforms uniforms{};
-  uniforms.anchor = Chunk::Length() * static_cast<Vec3>(leaf->anchor - Player::OriginIndex());
-  uniforms.textureScaling = static_cast<float>(bit(leaf->LODLevel()));
-  MeshData::SetUniforms(uniforms);
+  LOD::UniformData uniformData{};
+  uniformData.anchor = Chunk::Length() * static_cast<Vec3>(leaf->anchor - Player::OriginIndex());
+  uniformData.textureScaling = static_cast<float>(bit(leaf->LODLevel()));
+  MeshData::SetUniforms(uniformData);
 
   Engine::RenderCommand::DrawIndexed(leaf->data->primaryMesh.vertexArray.get(), primaryMeshIndexCount);
   for (Direction face : Directions())

@@ -2,7 +2,7 @@
 #include "Renderer2D.h"
 #include "RenderCommand.h"
 #include "Shader.h"
-#include "UniformBuffer.h"
+#include "Uniform.h"
 #include "Engine/Scene/Scene.h"
 #include "Engine/Debug/Instrumentor.h"
 
@@ -10,7 +10,7 @@
 
 namespace Engine
 {
-  struct CameraUniforms
+  struct CameraUniformData
   {
     FMat4 viewProjection;
   };
@@ -56,9 +56,10 @@ namespace Engine
   static constexpr uint32_t c_MaxCircleIndices = 6 * c_MaxCircles;
   static constexpr uint32_t c_MaxTextureSlots = 32;   // TODO: RenderCapabilities
 
-  static std::unique_ptr<VertexArray> s_QuadVertexArray;
   static std::unique_ptr<Shader> s_QuadShader;
+  static std::unique_ptr<Uniform> s_CameraUniform;
   static std::shared_ptr<Texture2D> s_WhiteTexture;
+  static std::unique_ptr<VertexArray> s_QuadVertexArray;
 
   static uint32_t s_QuadIndexCount = 0;
   static QuadVertex* s_QuadVertexBufferBase = nullptr;
@@ -76,7 +77,7 @@ namespace Engine
 
   static Renderer2D::Statistics s_Stats;
 
-  static CameraUniforms s_CameraUniforms;
+  static CameraUniformData s_CameraUniformData;
 
 
 
@@ -132,8 +133,7 @@ namespace Engine
   {
     EN_PROFILE_FUNCTION();
 
-    if (UniformBuffer::GetSize(0) == 0)
-      UniformBuffer::Allocate(0, sizeof(CameraUniforms));
+    s_CameraUniform = Uniform::Create(0, sizeof(CameraUniformData));
 
     uint32_t* quadIndices = new uint32_t[c_MaxQuadIndices];
 
@@ -190,8 +190,8 @@ namespace Engine
 
   void Renderer2D::BeginScene(const Mat4& viewProjection)
   {
-    s_CameraUniforms.viewProjection = viewProjection;
-    UniformBuffer::SetData(0, &s_CameraUniforms);
+    s_CameraUniformData.viewProjection = viewProjection;
+    s_CameraUniform->set(&s_CameraUniformData, sizeof(CameraUniformData));
 
     startBatch();
   }

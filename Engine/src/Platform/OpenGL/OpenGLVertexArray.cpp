@@ -14,7 +14,7 @@ namespace Engine
     glNamedBufferData(m_RendererID, sizeof(uint32_t) * count, indices, GL_DYNAMIC_DRAW);
 
 #if EN_DEBUG
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    unBind();
 #endif
   }
 
@@ -63,15 +63,13 @@ namespace Engine
     EN_CORE_ASSERT(std::this_thread::get_id() == Threads::MainThreadID(), "OpenGL calls must be made on the main thread!");
 
     glCreateVertexArrays(1, &m_RendererID);
-    glCreateBuffers(1, &m_VertexBufferID);
+    m_VertexBuffer = StorageBuffer::Create(StorageBuffer::Type::VertexBuffer);
   }
 
   OpenGLVertexArray::~OpenGLVertexArray()
   {
     EN_CORE_ASSERT(std::this_thread::get_id() == Threads::MainThreadID(), "OpenGL calls must be made on the main thread!");
-
     glDeleteVertexArrays(1, &m_RendererID);
-    glDeleteBuffers(1, &m_VertexBufferID);
   }
 
   void OpenGLVertexArray::bind() const
@@ -89,10 +87,11 @@ namespace Engine
     EN_CORE_ASSERT(std::this_thread::get_id() == Threads::MainThreadID(), "OpenGL calls must be made on the main thread!");
 
     glBindVertexArray(0);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
 
+    if (m_VertexBuffer)
+      m_VertexBuffer->unBind();
     if (m_IndexBuffer)
-      m_IndexBuffer->bind();
+      m_IndexBuffer->unBind();
   }
 
   void OpenGLVertexArray::setLayout(const BufferLayout& layout)
@@ -102,7 +101,7 @@ namespace Engine
     m_VertexBufferLayout = layout;
 
     glBindVertexArray(m_RendererID);
-    glBindBuffer(GL_ARRAY_BUFFER, m_VertexBufferID);
+    m_VertexBuffer->bind();
 
     uint32_t vertexBufferIndex = 0;
     for (const BufferElement& element : layout)
@@ -157,9 +156,16 @@ namespace Engine
 
   void OpenGLVertexArray::setVertexBuffer(const void* data, uint32_t size)
   {
-    EN_CORE_ASSERT(std::this_thread::get_id() == Threads::MainThreadID(), "OpenGL calls must be made on the main thread!");
+    m_VertexBuffer->set(data, size);
 
-    glNamedBufferData(m_VertexBufferID, size, data, GL_DYNAMIC_DRAW);
+#if EN_DEBUG
+    unBind();
+#endif
+  }
+
+  void OpenGLVertexArray::updateVertexBuffer(const void* data, uint32_t offset, uint32_t size) const
+  {
+    m_VertexBuffer->update(data, offset, size);
 
 #if EN_DEBUG
     unBind();
@@ -168,32 +174,8 @@ namespace Engine
 
   void OpenGLVertexArray::resizeVertexBuffer(uint32_t newSize)
   {
-    EN_CORE_ASSERT(std::this_thread::get_id() == Threads::MainThreadID(), "OpenGL calls must be made on the main thread!");
-
-    // Prepare old vertex buffer to be read from
-    GLint oldSize;
-    uint32_t oldVertexBufferID = m_VertexBufferID;
-    glGetNamedBufferParameteriv(oldVertexBufferID, GL_BUFFER_SIZE, &oldSize);
-
-    // Set up new vertex buffer
-    glCreateBuffers(1, &m_VertexBufferID);
+    m_VertexBuffer->resize(newSize);
     setLayout(m_VertexBufferLayout);
-    glNamedBufferData(m_VertexBufferID, newSize, nullptr, GL_DYNAMIC_DRAW);
-
-    // Copy old buffer and free its memory
-    glCopyNamedBufferSubData(oldVertexBufferID, m_VertexBufferID, 0, 0, std::min(oldSize, static_cast<GLint>(newSize)));
-    glDeleteBuffers(1, &oldVertexBufferID);
-
-#if EN_DEBUG
-    unBind();
-#endif
-  }
-
-  void OpenGLVertexArray::modifyVertexBuffer(const void* data, uint32_t offset, uint32_t size) const
-  {
-    EN_CORE_ASSERT(std::this_thread::get_id() == Threads::MainThreadID(), "OpenGL calls must be made on the main thread!");
-
-    glNamedBufferSubData(m_VertexBufferID, offset, size, data);
 
 #if EN_DEBUG
     unBind();

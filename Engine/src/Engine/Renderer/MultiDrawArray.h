@@ -4,7 +4,7 @@
 namespace Engine
 {
   template<typename T>
-  class MultiArray
+  class MultiDrawArray
   {
   public:
     struct DrawCommand
@@ -29,12 +29,12 @@ namespace Engine
     };
 
   public:
-    MultiArray(const BufferLayout& layout)
-      : m_Capacity(64), m_Stride(layout.stride())
+    MultiDrawArray(const BufferLayout& layout)
+      : m_Capacity(c_InitialCapacity), m_Stride(layout.stride())
     {
       m_VertexArray = VertexArray::Create();
-      m_VertexArray->setLayout(layout);
       m_VertexArray->setVertexBuffer(nullptr, m_Capacity * m_Stride);
+      m_VertexArray->setLayout(layout);
 
       addFreeRegion(0, m_Capacity);
     }
@@ -96,7 +96,7 @@ namespace Engine
 
       auto& [allocationOffset, allocationRegion] = *bestMemoryRegion;
 
-      m_VertexArray->modifyVertexBuffer(data, allocationOffset * m_Stride, vertexCount * m_Stride);
+      m_VertexArray->updateVertexBuffer(data, allocationOffset * m_Stride, vertexCount * m_Stride);
 
       m_DrawCommands.emplace_back(indexCount, allocationOffset, ID, m_DrawCommands.size());
       m_Allocations.emplace(ID, m_DrawCommands.back().commandIndex);
@@ -159,23 +159,36 @@ namespace Engine
     }
 
     template<typename F, typename... Args>
-    int mask(F function, Args&&... args)
+    int mask(F condition, Args&&... args)
     {
-      int M = 0;
-      int J = static_cast<int>(m_DrawCommands.size() - 1);
+      int leftIndex = 0;
+      int rightIndex = static_cast<int>(m_DrawCommands.size() - 1);
 
-      while (M <= J)
+      while (leftIndex <= rightIndex)
       {
-        while (function(m_DrawCommands[M].ID, args...) && M < J)
-          M++;
-        while (!function(m_DrawCommands[J].ID, args...) && M < J)
-          J--;
+        while (condition(m_DrawCommands[leftIndex].ID, std::forward<Args>(args)...) && leftIndex < rightIndex)
+          leftIndex++;
+        while (!condition(m_DrawCommands[rightIndex].ID, std::forward<Args>(args)...) && leftIndex < rightIndex)
+          rightIndex--;
 
-        *m_DrawCommands[M].commandIndex = J;
-        *m_DrawCommands[J].commandIndex = M;
-        std::swap(m_DrawCommands[M++], m_DrawCommands[J--]);
+        std::swap(m_DrawCommands[leftIndex], m_DrawCommands[rightIndex]);
+        std::swap(*m_DrawCommands[leftIndex].commandIndex, *m_DrawCommands[rightIndex].commandIndex);
+        leftIndex++;
+        rightIndex--;
       }
-      return M;
+      return leftIndex;
+    }
+
+    template<typename F, typename... Args>
+    void sort(int drawCount, F comparision, Args&&... args)
+    {
+      std::sort(m_DrawCommands.begin(), m_DrawCommands.begin() + drawCount, [&](const DrawCommand& drawA, const DrawCommand& drawB)
+        {
+          return comparision(drawA.ID, drawB.ID, std::forward<Args>(args)...);
+        });
+
+      for (int i = 0; i < drawCount; ++i)
+        *m_DrawCommands[i].commandIndex = i;
     }
 
     const std::vector<DrawCommand>& getDrawCommandBuffer() const { return m_DrawCommands; }
@@ -206,6 +219,7 @@ namespace Engine
     using FreeRegionsIterator = std::multimap<int, int>::iterator;
     using AllocationsIterator = std::unordered_map<T, std::shared_ptr<std::size_t>>::iterator;
 
+    static constexpr int c_InitialCapacity = 64;
     static constexpr float c_CapacityIncreaseOnResize = 1.25f;
 
     std::unique_ptr<VertexArray> m_VertexArray;

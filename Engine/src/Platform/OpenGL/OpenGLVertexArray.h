@@ -1,5 +1,6 @@
 #pragma once
 #include "Engine/Renderer/VertexArray.h"
+#include "Engine/Renderer/StorageBuffer.h"
 
 namespace Engine
 {
@@ -33,10 +34,8 @@ namespace Engine
     void setLayout(const BufferLayout& layout) override;
 
     void setVertexBuffer(const void* data, uint32_t size) override;
-
+    void updateVertexBuffer(const void* data, uint32_t offset, uint32_t size) const override;
     void resizeVertexBuffer(uint32_t newSize) override;
-
-    void modifyVertexBuffer(const void* data, uint32_t offset, uint32_t size) const override;
 
     void setIndexBuffer(const std::shared_ptr<const IndexBuffer>& indexBuffer) override;
 
@@ -44,8 +43,8 @@ namespace Engine
 
   private:
     uint32_t m_RendererID;
-    uint32_t m_VertexBufferID;
     BufferLayout m_VertexBufferLayout;
+    std::unique_ptr<StorageBuffer> m_VertexBuffer;
     std::shared_ptr<const IndexBuffer> m_IndexBuffer;
   };
 }

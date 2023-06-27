@@ -16,9 +16,9 @@ layout(std140, binding = 1) uniform Block
 {
   float u_BlockLength;
 };
-layout(std140, binding = 2) uniform Chunks
+layout(std430, binding = 0) buffer ChunkAnchors
 {
-  vec4 u_AnchorPosition[1024];
+  vec4 u_AnchorPosition[];
 };
 
 layout(location = 0) in uint a_VertexData;

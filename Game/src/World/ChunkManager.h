@@ -49,6 +49,31 @@ private:
     Terrain
   };
 
+  class MeshQueue
+  {
+  public:
+    void add(const GlobalIndex& index, std::vector<uint32_t>&& mesh);
+    std::optional<std::pair<GlobalIndex, std::vector<uint32_t>>> tryRemove();
+    std::size_t empty();
+
+  private:
+    std::unordered_map<GlobalIndex, std::vector<uint32_t>> m_Data;
+    std::mutex m_Mutex;
+  };
+
+  // Rendering
+  static inline std::unique_ptr<Engine::Shader> s_Shader;
+  static inline std::unique_ptr<Engine::StorageBuffer> s_SSBO;
+  static inline std::shared_ptr<Engine::TextureArray> s_TextureArray;
+  static inline std::shared_ptr<const Engine::IndexBuffer> s_IndexBuffer;
+  static inline const Engine::BufferLayout s_VertexBufferLayout = { { ShaderDataType::Uint32, "a_VertexData" } };
+  static constexpr int c_TextureSlot = 0;
+  static constexpr int c_StorageBufferBinding = 0;
+  static constexpr uint32_t c_StorageBufferSize = static_cast<uint32_t>(pow2(20));
+
+  MeshQueue m_MeshUpdateQueue;
+  std::unique_ptr<Engine::MultiDrawArray<GlobalIndex>> m_MultiDrawArray;
+
   // Multi-threading
   std::atomic<bool> m_Running;
   std::thread m_LoadThread;
@@ -73,5 +98,10 @@ private:
      bits 22-31: Texure ID
      Uses AO algorithm outlined in https://0fps.net/2013/07/03/ambient-occlusion-for-minecraft-like-worlds/
   */
-  std::vector<uint32_t> createMesh(const GlobalIndex& chunkIndex) const;
+  bool meshChunk(const GlobalIndex& chunkIndex);
+
+  /*
+    Uploads queued mesh data to the GPU.
+  */
+  void uploadMeshes();
 };
