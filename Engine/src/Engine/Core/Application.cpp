@@ -23,7 +23,7 @@ namespace Engine
 
     m_Window = Window::Create(WindowProps(name));
     m_Window->setEventCallback(EN_BIND_EVENT_FN(onEvent));
-    m_Window->setVSync(true);
+    m_Window->setVSync(false);
 
     m_LayerStack = std::make_unique<LayerStack>();
     m_ImGuiLayer = new ImGuiLayer();

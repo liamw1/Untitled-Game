@@ -18,7 +18,7 @@ namespace Engine
     void drawVertices(const VertexArray* vertexArray, uint32_t vertexCount) override;
     void drawIndexed(const VertexArray* vertexArray, uint32_t indexCount) override;
     void drawIndexedLines(const VertexArray* vertexArray, uint32_t indexCount) override;
-    void multiDrawIndexed(const std::vector<DrawElementsIndirectCommand>& drawCommands) override;
+    void multiDrawIndexed(const void* drawCommands, std::size_t drawCount, int stride) override;
 
     void clearDepthBuffer() override;
   };

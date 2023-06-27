@@ -3,8 +3,7 @@
 
 namespace Util
 {
-  bool IsInRangeOfPlayer(const SurfaceMapIndex& surfaceIndex, globalIndex_t range);
-  bool IsInRangeOfPlayer(const GlobalIndex& chunkIndex, globalIndex_t range);
+  bool IsInRange(const GlobalIndex& chunkIndex, const GlobalIndex& originIndex, globalIndex_t range);
 
   bool BlockNeighborIsInAnotherChunk(const BlockIndex& blockIndex, Direction direction);
 

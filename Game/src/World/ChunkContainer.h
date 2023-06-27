@@ -57,14 +57,20 @@ public:
   bool update(const GlobalIndex& chunkIndex, std::vector<uint32_t>&& mesh);
 
   /*
-    Used to operate on each chunk of the specified type.
-  */
-  void forEach(ChunkType chunkType, const std::function<void(const Chunk& chunk)>& func) const;
-
-  /*
     \returns All chunks of the specified type that match the given conditional.
   */
-  std::vector<GlobalIndex> findAll(ChunkType chunkType, bool (*condition)(const Chunk& chunk)) const;
+  template<typename F, typename... Args>
+  std::vector<GlobalIndex> findAll(ChunkType chunkType, F condition, Args&&... args) const
+  {
+    std::vector<GlobalIndex> indexList;
+
+    std::shared_lock lock(m_ContainerMutex);
+
+    for (const auto& [key, chunk] : m_Chunks[static_cast<int>(chunkType)])
+      if (condition(*chunk, args...))
+        indexList.push_back(chunk->getGlobalIndex());
+    return indexList;
+  }
 
   /*
     Scans boundary for places where new chunks can be loaded and returns possible locations
@@ -113,7 +119,7 @@ private:
   // Chunk data
   std::unique_ptr<Chunk[]> m_ChunkArray;
   std::stack<int, std::vector<int>> m_OpenChunkSlots;
-  std::unique_ptr<Engine::MultiDrawArray<GlobalIndex>> m_MultiDrawArray;
+  std::unique_ptr<Engine::MultiArray<GlobalIndex>> m_MultiDrawArray;
 
   mutable std::shared_mutex m_ContainerMutex;
 
@@ -133,6 +139,7 @@ private:
   public:
     void add(const GlobalIndex& index, std::vector<uint32_t>&& mesh);
     std::optional<std::pair<GlobalIndex, std::vector<uint32_t>>> tryRemove();
+    std::size_t empty();
 
   private:
     std::unordered_map<GlobalIndex, std::vector<uint32_t>> m_Data;

@@ -17,15 +17,7 @@ namespace Engine
     void DrawIndexed(const VertexArray* vertexArray, uint32_t indexCount = 0);
     void DrawIndexedLines(const VertexArray* vertexArray, uint32_t indexCount = 0);
 
-    void MultiDrawImpl(const std::vector<DrawElementsIndirectCommand>& drawCommands);
-
-    template<typename T>
-    void MultiDrawIndexed(const MultiDrawArray<T>* multiDrawArray)
-    {
-      EN_CORE_ASSERT(multiDrawArray, "Vertex array has not been initialized!");
-      multiDrawArray->bind();
-      MultiDrawImpl(multiDrawArray->getQueuedDrawCommands());
-    }
+    void MultiDrawIndexed(const void* drawCommands, std::size_t drawCount, int stride);
 
     void ClearDepthBuffer();
   };

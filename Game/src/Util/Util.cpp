@@ -2,15 +2,9 @@
 #include "Util.h"
 #include "Player/Player.h"
 
-bool Util::IsInRangeOfPlayer(const SurfaceMapIndex& surfaceIndex, globalIndex_t range)
+bool Util::IsInRange(const GlobalIndex& chunkIndex, const GlobalIndex& originIndex, globalIndex_t range)
 {
-  GlobalIndex originIndex = Player::OriginIndex();
-  return abs(surfaceIndex.i - originIndex.i) <= range && abs(surfaceIndex.j - originIndex.j) <= range;
-}
-
-bool Util::IsInRangeOfPlayer(const GlobalIndex& chunkIndex, globalIndex_t range)
-{
-  GlobalIndex diff = chunkIndex - Player::OriginIndex();
+  GlobalIndex diff = chunkIndex - originIndex;
   return abs(diff.i) <= range && abs(diff.j) <= range && abs(diff.k) <= range;
 }
 

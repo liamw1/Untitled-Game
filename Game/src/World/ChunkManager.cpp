@@ -50,21 +50,23 @@ void ChunkManager::clean()
 {
   EN_PROFILE_FUNCTION();
 
-  if (m_PrevPlayerOriginIndex == Player::OriginIndex())
+  GlobalIndex originIndex = Player::OriginIndex();
+  if (m_PrevPlayerOriginIndex == originIndex)
     return;
-  m_PrevPlayerOriginIndex = Player::OriginIndex();
 
-  std::vector<GlobalIndex> chunksMarkedForDeletion = m_ChunkContainer.findAll(ChunkType::Boundary, [](const Chunk& chunk)
+  std::vector<GlobalIndex> chunksMarkedForDeletion = m_ChunkContainer.findAll(ChunkType::Boundary, [&originIndex](const Chunk& chunk)
     {
-      return !Util::IsInRangeOfPlayer(chunk.getGlobalIndex(), c_UnloadDistance);
+      return !Util::IsInRange(chunk.getGlobalIndex(), originIndex, c_UnloadDistance);
     });
 
   if (!chunksMarkedForDeletion.empty())
   {
     for (const GlobalIndex& chunkIndex : chunksMarkedForDeletion)
-      if (!Util::IsInRangeOfPlayer(chunkIndex, c_UnloadDistance))
+      if (!Util::IsInRange(chunkIndex, originIndex, c_UnloadDistance))
         m_ChunkContainer.erase(chunkIndex);
   }
+
+  m_PrevPlayerOriginIndex = originIndex;
 }
 
 std::pair<const Chunk*, std::unique_lock<std::mutex>> ChunkManager::acquireChunk(const LocalIndex& chunkIndex) const
