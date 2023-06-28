@@ -4,7 +4,7 @@
 #include <shared_mutex>
 
 // Will be removed eventually and replaced with settings system
-constexpr int c_RenderDistance = 16;
+constexpr int c_RenderDistance = 8;
 constexpr int c_LoadDistance = c_RenderDistance + 1;
 constexpr int c_UnloadDistance = c_LoadDistance;
 
@@ -63,7 +63,7 @@ public:
     std::shared_lock lock(m_ContainerMutex);
 
     for (const auto& [key, chunk] : m_Chunks[static_cast<int>(chunkType)])
-      if (condition(*chunk, args...))
+      if (condition(*chunk, std::forward<Args>(args)...))
         indexList.push_back(chunk->getGlobalIndex());
     return indexList;
   }
@@ -73,6 +73,8 @@ public:
     as an unordered set.
   */
   std::unordered_set<GlobalIndex> findAllLoadableIndices() const;
+
+  void uploadMeshes(Threads::UnorderedMapQueue<GlobalIndex, std::vector<uint32_t>>& meshQueue, std::unique_ptr<Engine::MultiDrawArray<GlobalIndex>>& multiDrawArray) const;
 
   /*
     \returns The chunk along with a lock on its mutex. Will return nullptr is no chunk is found.
@@ -111,19 +113,8 @@ private:
 
   mutable std::shared_mutex m_ContainerMutex;
 
-  class IndexSet
-  {
-  public:
-    bool add(const GlobalIndex& index);
-    std::optional<GlobalIndex> tryRemove();
-
-  private:
-    std::unordered_set<GlobalIndex> m_Data;
-    std::mutex m_Mutex;
-  };
-
-  IndexSet m_LazyUpdateQueue;
-  IndexSet m_ForceUpdateQueue;
+  Threads::UnorderedSetQueue<GlobalIndex> m_LazyUpdateQueue;
+  Threads::UnorderedSetQueue<GlobalIndex> m_ForceUpdateQueue;
 
 // Helper functions for chunk container access. These assume the map mutex has already been locked by one of the public functions
 private:

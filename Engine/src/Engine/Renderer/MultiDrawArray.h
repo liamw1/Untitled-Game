@@ -164,17 +164,18 @@ namespace Engine
       int leftIndex = 0;
       int rightIndex = static_cast<int>(m_DrawCommands.size() - 1);
 
-      while (leftIndex <= rightIndex)
+      while (leftIndex < rightIndex)
       {
         while (condition(m_DrawCommands[leftIndex].ID, std::forward<Args>(args)...) && leftIndex < rightIndex)
           leftIndex++;
         while (!condition(m_DrawCommands[rightIndex].ID, std::forward<Args>(args)...) && leftIndex < rightIndex)
           rightIndex--;
 
-        std::swap(m_DrawCommands[leftIndex], m_DrawCommands[rightIndex]);
-        std::swap(*m_DrawCommands[leftIndex].commandIndex, *m_DrawCommands[rightIndex].commandIndex);
-        leftIndex++;
-        rightIndex--;
+        if (leftIndex != rightIndex)
+        {
+          std::swap(m_DrawCommands[leftIndex], m_DrawCommands[rightIndex]);
+          std::swap(*m_DrawCommands[leftIndex].commandIndex, *m_DrawCommands[rightIndex].commandIndex);
+        }
       }
       return leftIndex;
     }

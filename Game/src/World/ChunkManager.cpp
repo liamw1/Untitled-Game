@@ -77,7 +77,7 @@ void ChunkManager::render()
     {
       Vec3 anchorPosition = Chunk::AnchorPosition(chunkIndex, originIndex);
       Vec3 chunkCenter = Chunk::Center(anchorPosition);
-      return Util::IsInFrustum(chunkCenter, frustumPlanes) && Util::IsInRange(chunkIndex, originIndex, c_RenderDistance);
+      return Util::IsInRange(chunkIndex, originIndex, c_RenderDistance) && Util::IsInFrustum(chunkCenter, frustumPlanes);
     });
 
   std::vector<Float4> storageBufferData;
@@ -120,7 +120,7 @@ void ChunkManager::update()
   }
 
   if (!m_MeshUpdateQueue.empty())
-    uploadMeshes();
+    m_ChunkContainer.uploadMeshes(m_MeshUpdateQueue, m_MultiDrawArray);
 }
 
 void ChunkManager::clean()
@@ -213,33 +213,6 @@ void ChunkManager::loadChunk(const GlobalIndex& chunkIndex, Block::Type blockTyp
 
 
 
-void ChunkManager::MeshQueue::add(const GlobalIndex& index, std::vector<uint32_t>&& mesh)
-{
-  std::lock_guard lock(m_Mutex);
-  m_Data[index] = std::move(mesh);
-}
-
-std::optional<std::pair<GlobalIndex, std::vector<uint32_t>>> ChunkManager::MeshQueue::tryRemove()
-{
-  std::lock_guard lock(m_Mutex);
-
-  if (!m_Data.empty())
-  {
-    std::pair<GlobalIndex, std::vector<uint32_t>> keyVal = std::move(*m_Data.begin());
-    m_Data.erase(m_Data.begin());
-    return keyVal;
-  }
-  return std::nullopt;
-}
-
-std::size_t ChunkManager::MeshQueue::empty()
-{
-  std::lock_guard lock(m_Mutex);
-  return m_Data.empty();
-}
-
-
-
 void ChunkManager::loadWorker()
 {
   using namespace std::chrono_literals;
@@ -326,7 +299,8 @@ bool ChunkManager::meshChunk(const GlobalIndex& chunkIndex)
     auto [chunk, lock] = m_ChunkContainer.acquireChunk(chunkIndex);
     if (!chunk || chunk->empty())
     {
-      m_MeshUpdateQueue.add(chunkIndex, {});
+      std::vector<uint32_t> emptyMesh;
+      m_MeshUpdateQueue.add(chunkIndex, emptyMesh);
       return false;
     }
 
@@ -473,24 +447,4 @@ bool ChunkManager::meshChunk(const GlobalIndex& chunkIndex)
   std::size_t meshSize = mesh.size();
   m_MeshUpdateQueue.add(chunkIndex, std::move(mesh));
   return meshSize > 0;
-}
-
-void ChunkManager::uploadMeshes()
-{
-  EN_PROFILE_FUNCTION();
-
-  std::optional<std::pair<GlobalIndex, std::vector<uint32_t>>> meshUpdate = m_MeshUpdateQueue.tryRemove();
-  while (meshUpdate)
-  {
-    const auto& [updateIndex, mesh] = *meshUpdate;
-
-    m_MultiDrawArray->remove(updateIndex);
-    if (m_ChunkContainer.contains(updateIndex))
-    {
-      uint32_t indexCount = static_cast<uint32_t>(3 * mesh.size() / 2);
-      m_MultiDrawArray->add(updateIndex, mesh.data(), static_cast<int>(mesh.size()), indexCount);
-    }
-
-    meshUpdate = m_MeshUpdateQueue.tryRemove();
-  }
 }

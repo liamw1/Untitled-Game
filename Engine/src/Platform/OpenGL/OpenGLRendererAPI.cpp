@@ -73,7 +73,7 @@ namespace Engine
     glDrawElements(GL_LINES, count, GL_UNSIGNED_INT, nullptr);
   }
 
-  void OpenGLRendererAPI::multiDrawIndexed(const void* drawCommands, std::size_t drawCount, int stride)
+  void OpenGLRendererAPI::multiDrawIndexed(const void* drawCommands, int drawCount, int stride)
   {
     EN_CORE_ASSERT(std::this_thread::get_id() == Threads::MainThreadID(), "OpenGL calls must be made on the main thread!");
     glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, drawCommands, static_cast<GLsizei>(drawCount), stride);

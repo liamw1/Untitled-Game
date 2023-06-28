@@ -49,18 +49,6 @@ private:
     Terrain
   };
 
-  class MeshQueue
-  {
-  public:
-    void add(const GlobalIndex& index, std::vector<uint32_t>&& mesh);
-    std::optional<std::pair<GlobalIndex, std::vector<uint32_t>>> tryRemove();
-    std::size_t empty();
-
-  private:
-    std::unordered_map<GlobalIndex, std::vector<uint32_t>> m_Data;
-    std::mutex m_Mutex;
-  };
-
   // Rendering
   static inline std::unique_ptr<Engine::Shader> s_Shader;
   static inline std::unique_ptr<Engine::StorageBuffer> s_SSBO;
@@ -71,7 +59,7 @@ private:
   static constexpr int c_StorageBufferBinding = 0;
   static constexpr uint32_t c_StorageBufferSize = static_cast<uint32_t>(pow2(20));
 
-  MeshQueue m_MeshUpdateQueue;
+  Threads::UnorderedMapQueue<GlobalIndex, std::vector<uint32_t>> m_MeshUpdateQueue;
   std::unique_ptr<Engine::MultiDrawArray<GlobalIndex>> m_MultiDrawArray;
 
   // Multi-threading
@@ -99,9 +87,4 @@ private:
      Uses AO algorithm outlined in https://0fps.net/2013/07/03/ambient-occlusion-for-minecraft-like-worlds/
   */
   bool meshChunk(const GlobalIndex& chunkIndex);
-
-  /*
-    Uploads queued mesh data to the GPU.
-  */
-  void uploadMeshes();
 };

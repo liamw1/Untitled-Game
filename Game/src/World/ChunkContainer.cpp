@@ -112,6 +112,28 @@ std::unordered_set<GlobalIndex> ChunkContainer::findAllLoadableIndices() const
   return newChunkIndices;
 }
 
+void ChunkContainer::uploadMeshes(Threads::UnorderedMapQueue<GlobalIndex, std::vector<uint32_t>>& meshQueue, std::unique_ptr<Engine::MultiDrawArray<GlobalIndex>>& multiDrawArray) const
+{
+  EN_PROFILE_FUNCTION();
+
+  std::shared_lock lock(m_ContainerMutex);
+
+  std::optional<std::pair<GlobalIndex, std::vector<uint32_t>>> meshUpdate = meshQueue.tryRemove();
+  while (meshUpdate)
+  {
+    const auto& [updateIndex, mesh] = *meshUpdate;
+
+    multiDrawArray->remove(updateIndex);
+    if (isLoaded(updateIndex))
+    {
+      uint32_t indexCount = static_cast<uint32_t>(3 * mesh.size() / 2);
+      multiDrawArray->add(updateIndex, mesh.data(), static_cast<int>(mesh.size()), indexCount);
+    }
+
+    meshUpdate = meshQueue.tryRemove();
+  }
+}
+
 std::pair<Chunk*, std::unique_lock<std::mutex>> ChunkContainer::acquireChunk(const GlobalIndex& chunkIndex)
 {
   std::shared_lock lock(m_ContainerMutex);
@@ -188,29 +210,6 @@ bool ChunkContainer::contains(const GlobalIndex& chunkIndex) const
 {
   std::shared_lock lock(m_ContainerMutex);
   return isLoaded(chunkIndex);
-}
-
-
-
-bool ChunkContainer::IndexSet::add(const GlobalIndex& index)
-{
-  std::lock_guard lock(m_Mutex);
-
-  auto [insertionPosition, insertionSuccess] = m_Data.insert(index);
-  return insertionSuccess;
-}
-
-std::optional<GlobalIndex> ChunkContainer::IndexSet::tryRemove()
-{
-  std::lock_guard lock(m_Mutex);
-
-  if (!m_Data.empty())
-  {
-    GlobalIndex value = *m_Data.begin();
-    m_Data.erase(m_Data.begin());
-    return value;
-  }
-  return std::nullopt;
 }
 
 

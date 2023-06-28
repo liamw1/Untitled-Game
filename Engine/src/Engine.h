@@ -32,4 +32,6 @@
 #include "Engine/Renderer/VertexArray.h"
 #include "Engine/Renderer/Camera.h"
 
+#include "Engine/Threading/ThreadSafeContainers.h"
+
 #include "Engine/Debug/Instrumentor.h"

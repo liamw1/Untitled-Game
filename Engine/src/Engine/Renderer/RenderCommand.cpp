@@ -53,7 +53,7 @@ namespace Engine
     s_RendererAPI->drawIndexedLines(vertexArray, indexCount);
   }
 
-  void RenderCommand::MultiDrawIndexed(const void* drawCommands, std::size_t drawCount, int stride)
+  void RenderCommand::MultiDrawIndexed(const void* drawCommands, int drawCount, int stride)
   {
     s_RendererAPI->multiDrawIndexed(drawCommands, drawCount, stride);
   }
