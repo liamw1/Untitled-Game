@@ -76,6 +76,8 @@ private:
 
   void generateNewChunk(const GlobalIndex& chunkIndex);
 
+  const Array3D<Block::Type, Chunk::Size() + 2>& getBlockData(const GlobalIndex& chunkIndex) const;
+
   /*
     Generates simplistic mesh in a compressed format based on chunk compostion.
     Block faces covered by opaque blocks will not be added to mesh.

@@ -79,12 +79,7 @@ public:
 
 // All private functions require a lock on the chunk mutex.
 private:
-  struct Uniforms
-  {
-    Float3 anchorPosition;
-  };
-
-  static constexpr int c_ChunkSize = 32;
+  static constexpr blockIndex_t c_ChunkSize = 32;
 
   mutable std::mutex m_Mutex;
   Array3D<Block::Type, c_ChunkSize> m_Composition;

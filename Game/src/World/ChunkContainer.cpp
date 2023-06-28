@@ -114,8 +114,6 @@ std::unordered_set<GlobalIndex> ChunkContainer::findAllLoadableIndices() const
 
 void ChunkContainer::uploadMeshes(Threads::UnorderedMapQueue<GlobalIndex, std::vector<uint32_t>>& meshQueue, std::unique_ptr<Engine::MultiDrawArray<GlobalIndex>>& multiDrawArray) const
 {
-  EN_PROFILE_FUNCTION();
-
   std::shared_lock lock(m_ContainerMutex);
 
   std::optional<std::pair<GlobalIndex, std::vector<uint32_t>>> meshUpdate = meshQueue.tryRemove();
