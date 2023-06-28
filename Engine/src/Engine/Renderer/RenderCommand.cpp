@@ -28,14 +28,39 @@ namespace Engine
     s_RendererAPI->clear(color);
   }
 
-  void RenderCommand::WireFrameToggle(bool enableWireFrame)
+  void RenderCommand::SetWireFrame(bool enableWireFrame)
   {
-    s_RendererAPI->wireFrameToggle(enableWireFrame);
+    s_RendererAPI->setWireFrame(enableWireFrame);
   }
 
-  void RenderCommand::FaceCullToggle(bool enableFaceCulling)
+  void RenderCommand::SetFaceCulling(bool enableFaceCulling)
   {
-    s_RendererAPI->faceCullToggle(enableFaceCulling);
+    s_RendererAPI->setFaceCulling(enableFaceCulling);
+  }
+
+  void RenderCommand::SetBlending(bool enableBlending)
+  {
+    s_RendererAPI->setBlending(enableBlending);
+  }
+
+  void RenderCommand::SetDepthTesting(bool enableDepthTesting)
+  {
+    s_RendererAPI->setDepthTesting(enableDepthTesting);
+  }
+
+  void RenderCommand::SetDepthWriting(bool enableDepthWriting)
+  {
+    s_RendererAPI->setDepthWriting(enableDepthWriting);
+  }
+
+  void RenderCommand::SetUseDepthOffset(bool enableDepthOffset)
+  {
+    s_RendererAPI->setUseDepthOffset(enableDepthOffset);
+  }
+
+  void RenderCommand::SetDepthOffset(float factor, float units)
+  {
+    s_RendererAPI->setDepthOffset(factor, units);
   }
 
   void RenderCommand::DrawVertices(const VertexArray* vertexArray, uint32_t vertexCount)

@@ -52,8 +52,11 @@ void ChunkManager::initialize()
     s_SSBO->set(nullptr, c_StorageBufferSize);
   }
 
-  m_MultiDrawArray = std::make_unique<Engine::MultiDrawArray<GlobalIndex>>(s_VertexBufferLayout);
-  m_MultiDrawArray->setIndexBuffer(s_IndexBuffer);
+  m_OpaqueMultiDrawArray = std::make_unique<Engine::MultiDrawArray<GlobalIndex>>(s_VertexBufferLayout);
+  m_OpaqueMultiDrawArray->setIndexBuffer(s_IndexBuffer);
+
+  m_TransparentMultiDrawArray = std::make_unique<Engine::MultiDrawArray<GlobalIndex>>(s_VertexBufferLayout);
+  m_TransparentMultiDrawArray->setIndexBuffer(s_IndexBuffer);
 }
 
 void ChunkManager::render()
@@ -73,34 +76,87 @@ void ChunkManager::render()
 
   Vec3 playerPosition = Player::Position();
   GlobalIndex originIndex = Player::OriginIndex();
-  int commandCount = m_MultiDrawArray->mask([&originIndex, &frustumPlanes](const GlobalIndex& chunkIndex)
-    {
-      Vec3 anchorPosition = Chunk::AnchorPosition(chunkIndex, originIndex);
-      Vec3 chunkCenter = Chunk::Center(anchorPosition);
-      return Util::IsInRange(chunkIndex, originIndex, c_RenderDistance) && Util::IsInFrustum(chunkCenter, frustumPlanes);
-    });
-
-  std::vector<Float4> storageBufferData;
-  storageBufferData.reserve(commandCount);
-  const std::vector<Engine::MultiDrawArray<GlobalIndex>::DrawCommand>& drawCommands = m_MultiDrawArray->getDrawCommandBuffer();
-  for (int i = 0; i < commandCount; ++i)
-  {
-    const GlobalIndex& chunkIndex = drawCommands[i].ID;
-    Vec3 chunkAnchor = Chunk::AnchorPosition(chunkIndex, originIndex);
-    storageBufferData.emplace_back(chunkAnchor, 0);
-  }
-
-  uint32_t bufferDataSize = static_cast<uint32_t>(storageBufferData.size() * sizeof(Float4));
-  if (bufferDataSize > c_StorageBufferSize)
-    EN_ERROR("Chunk anchor data exceeds SSBO size!");
 
   s_Shader->bind();
   s_SSBO->bind();
   s_TextureArray->bind(c_TextureSlot);
-  m_MultiDrawArray->bind();
 
-  s_SSBO->update(storageBufferData.data(), 0, bufferDataSize);
-  Engine::RenderCommand::MultiDrawIndexed(drawCommands.data(), commandCount, sizeof(Engine::MultiDrawArray<GlobalIndex>::DrawCommand));
+  {
+    Engine::RenderCommand::SetBlending(false);
+    Engine::RenderCommand::SetFaceCulling(true);
+    Engine::RenderCommand::SetDepthWriting(true);
+    Engine::RenderCommand::SetUseDepthOffset(false);
+
+    int commandCount = m_OpaqueMultiDrawArray->mask([&originIndex, &frustumPlanes](const GlobalIndex& chunkIndex)
+      {
+        Vec3 anchorPosition = Chunk::AnchorPosition(chunkIndex, originIndex);
+        Vec3 chunkCenter = Chunk::Center(anchorPosition);
+        return Util::IsInRange(chunkIndex, originIndex, c_RenderDistance) && Util::IsInFrustum(chunkCenter, frustumPlanes);
+      });
+
+    std::vector<Float4> storageBufferData;
+    storageBufferData.reserve(commandCount);
+    const std::vector<Engine::MultiDrawArray<GlobalIndex>::DrawCommand>& drawCommands = m_OpaqueMultiDrawArray->getDrawCommandBuffer();
+    for (int i = 0; i < commandCount; ++i)
+    {
+      const GlobalIndex& chunkIndex = drawCommands[i].ID;
+      Vec3 chunkAnchor = Chunk::AnchorPosition(chunkIndex, originIndex);
+      storageBufferData.emplace_back(chunkAnchor, 0);
+    }
+
+    uint32_t bufferDataSize = static_cast<uint32_t>(storageBufferData.size() * sizeof(Float4));
+    if (bufferDataSize > c_StorageBufferSize)
+      EN_ERROR("Chunk anchor data exceeds SSBO size!");
+
+    m_OpaqueMultiDrawArray->bind();
+    s_SSBO->update(storageBufferData.data(), 0, bufferDataSize);
+    Engine::RenderCommand::MultiDrawIndexed(drawCommands.data(), commandCount, sizeof(Engine::MultiDrawArray<GlobalIndex>::DrawCommand));
+  }
+
+  {
+    Engine::RenderCommand::SetBlending(true);
+    Engine::RenderCommand::SetFaceCulling(false);
+    Engine::RenderCommand::SetDepthWriting(false);
+    Engine::RenderCommand::SetUseDepthOffset(true);
+    Engine::RenderCommand::SetDepthOffset(-1.0f, -1.0f);
+
+    int commandCount = m_TransparentMultiDrawArray->mask([&originIndex, &frustumPlanes](const GlobalIndex& chunkIndex)
+      {
+        Vec3 anchorPosition = Chunk::AnchorPosition(chunkIndex, originIndex);
+        Vec3 chunkCenter = Chunk::Center(anchorPosition);
+        return Util::IsInRange(chunkIndex, originIndex, c_RenderDistance) && Util::IsInFrustum(chunkCenter, frustumPlanes);
+      });
+    m_TransparentMultiDrawArray->sort(commandCount, [&originIndex, &playerPosition](const GlobalIndex& chunkA, const GlobalIndex& chunkB)
+      {
+        Vec3 anchorA = Chunk::AnchorPosition(chunkA, originIndex);
+        Vec3 centerA = Chunk::Center(anchorA);
+        length_t distA = glm::length2(centerA - playerPosition);
+
+        Vec3 anchorB = Chunk::AnchorPosition(chunkB, originIndex);
+        Vec3 centerB = Chunk::Center(anchorB);
+        length_t distB = glm::length2(centerB - playerPosition);
+
+        return distA > distB;
+      });
+
+    std::vector<Float4> storageBufferData;
+    storageBufferData.reserve(commandCount);
+    const std::vector<Engine::MultiDrawArray<GlobalIndex>::DrawCommand>& drawCommands = m_TransparentMultiDrawArray->getDrawCommandBuffer();
+    for (int i = 0; i < commandCount; ++i)
+    {
+      const GlobalIndex& chunkIndex = drawCommands[i].ID;
+      Vec3 chunkAnchor = Chunk::AnchorPosition(chunkIndex, originIndex);
+      storageBufferData.emplace_back(chunkAnchor, 0);
+    }
+
+    uint32_t bufferDataSize = static_cast<uint32_t>(storageBufferData.size() * sizeof(Float4));
+    if (bufferDataSize > c_StorageBufferSize)
+      EN_ERROR("Chunk anchor data exceeds SSBO size!");
+
+    m_TransparentMultiDrawArray->bind();
+    s_SSBO->update(storageBufferData.data(), 0, bufferDataSize);
+    Engine::RenderCommand::MultiDrawIndexed(drawCommands.data(), commandCount, sizeof(Engine::MultiDrawArray<GlobalIndex>::DrawCommand));
+  }
 }
 
 void ChunkManager::update()
@@ -119,8 +175,10 @@ void ChunkManager::update()
     updateIndex = m_ChunkContainer.getForceUpdateIndex();
   }
 
-  if (!m_MeshUpdateQueue.empty())
-    m_ChunkContainer.uploadMeshes(m_MeshUpdateQueue, m_MultiDrawArray);
+  if (!m_OpaqueMeshQueue.empty())
+    m_ChunkContainer.uploadMeshes(m_OpaqueMeshQueue, m_OpaqueMultiDrawArray);
+  if (!m_TransparentMeshQueue.empty())
+    m_ChunkContainer.uploadMeshes(m_TransparentMeshQueue, m_TransparentMultiDrawArray);
 }
 
 void ChunkManager::clean()
@@ -142,7 +200,8 @@ void ChunkManager::clean()
       if (!Util::IsInRange(chunkIndex, originIndex, c_UnloadDistance))
       {
         m_ChunkContainer.erase(chunkIndex);
-        m_MultiDrawArray->remove(chunkIndex);
+        m_OpaqueMultiDrawArray->remove(chunkIndex);
+        m_TransparentMultiDrawArray->remove(chunkIndex);
       }
   }
 
@@ -160,9 +219,9 @@ void ChunkManager::placeBlock(GlobalIndex chunkIndex, BlockIndex blockIndex, Dir
   {
     auto [chunk, lock] = m_ChunkContainer.acquireChunk(chunkIndex);
 
-    if (!chunk || chunk->getBlockType(blockIndex) == Block::Type::Air)
+    if (!chunk || !Block::HasCollision(chunk->getBlockType(blockIndex)))
     {
-      EN_WARN("Cannot call placeBlock on an air block!");
+      EN_WARN("Cannot call placeBlock block with no collision!");
       return;
     }
 
@@ -182,8 +241,8 @@ void ChunkManager::placeBlock(GlobalIndex chunkIndex, BlockIndex blockIndex, Dir
     else
       blockIndex += BlockIndex::Dir(face);
 
-    // If trying to place an air block or trying to place a block in a space occupied by another block, do nothing
-    if (blockType == Block::Type::Air || (!chunk->empty() && chunk->getBlockType(blockIndex) != Block::Type::Air))
+    // If trying to place an air block or trying to place a block in a space occupied by another block with collision, do nothing
+    if (blockType == Block::Type::Air || (!chunk->empty() && Block::HasCollision(chunk->getBlockType(blockIndex))))
     {
       EN_WARN("Invalid block placement!");
       return;
@@ -407,7 +466,8 @@ bool ChunkManager::meshChunk(const GlobalIndex& chunkIndex)
   if (getBlockType(blockData, 0, 0, 0) == Block::Type::Null)
   {
     std::vector<uint32_t> emptyMesh;
-    m_MeshUpdateQueue.add(chunkIndex, emptyMesh);
+    m_OpaqueMeshQueue.add(chunkIndex, emptyMesh);
+    m_TransparentMeshQueue.add(chunkIndex, emptyMesh);
     return false;
   }
 
@@ -422,7 +482,8 @@ bool ChunkManager::meshChunk(const GlobalIndex& chunkIndex)
         { {0, 0, 1}, {1, 0, 1}, {1, 1, 1}, {0, 1, 1} } };  /*  Top Face    */
 
   // Mesh chunk using block data
-  std::vector<uint32_t> mesh;
+  std::vector<uint32_t> opaqueMesh;
+  std::vector<uint32_t> transparentMesh;
   for (blockIndex_t i = 0; i < Chunk::Size(); ++i)
     for (blockIndex_t j = 0; j < Chunk::Size(); ++j)
       for (blockIndex_t k = 0; k < Chunk::Size(); ++k)
@@ -432,9 +493,13 @@ bool ChunkManager::meshChunk(const GlobalIndex& chunkIndex)
 
         if (blockType != Block::Type::Air)
           for (Direction direction : Directions())
-            if (Block::HasTransparency(getBlockType(blockData, blockIndex + BlockIndex::Dir(direction))))
+          {
+            Block::Type blockNeighbor = getBlockType(blockData, blockIndex + BlockIndex::Dir(direction));
+
+            if (blockNeighbor != blockType && (Block::HasTransparency(blockType) || Block::HasTransparency(blockNeighbor)))
             {
-              int textureID = static_cast<int>(Block::GetTexture(blockType, direction));
+              Block::Texture blockTexture = Block::GetTexture(blockType, direction);
+              int textureID = static_cast<int>(blockTexture);
               int directionID = static_cast<int>(direction);
               int u = directionID / 2;
               int v = (u + 1) % 3;
@@ -449,10 +514,14 @@ bool ChunkManager::meshChunk(const GlobalIndex& chunkIndex)
                 BlockIndex sideB = blockIndex + BlockIndex::Dir(direction) + BlockIndex::Dir(sideBDir);
                 BlockIndex corner = blockIndex + BlockIndex::Dir(direction) + BlockIndex::Dir(sideADir) + BlockIndex::Dir(sideBDir);
 
-                bool sideAIsOpaque = !Block::HasTransparency(getBlockType(blockData, sideA));
-                bool sideBIsOpaque = !Block::HasTransparency(getBlockType(blockData, sideB));
-                bool cornerIsOpaque = !Block::HasTransparency(getBlockType(blockData, corner));
-                int AO = sideAIsOpaque && sideBIsOpaque ? 0 : 3 - (sideAIsOpaque + sideBIsOpaque + cornerIsOpaque);
+                int AO = 3;
+                if (!Block::HasTransparency(blockType))
+                {
+                  bool sideAIsOpaque = !Block::HasTransparency(getBlockType(blockData, sideA));
+                  bool sideBIsOpaque = !Block::HasTransparency(getBlockType(blockData, sideB));
+                  bool cornerIsOpaque = !Block::HasTransparency(getBlockType(blockData, corner));
+                  AO = sideAIsOpaque && sideBIsOpaque ? 0 : 3 - (sideAIsOpaque + sideBIsOpaque + cornerIsOpaque);
+                }
 
                 BlockIndex vertexIndex = blockIndex + offsets[directionID][vert];
 
@@ -461,12 +530,15 @@ bool ChunkManager::meshChunk(const GlobalIndex& chunkIndex)
                 vertexData |= AO << 20;                                                               // Ambient occlusion value
                 vertexData |= textureID << 22;                                                        // TextureID
 
+                std::vector<uint32_t>& mesh = Block::HasTransparency(blockTexture) ? transparentMesh : opaqueMesh;
                 mesh.push_back(vertexData);
               }
             }
+          }
       }
 
-  std::size_t meshSize = mesh.size();
-  m_MeshUpdateQueue.add(chunkIndex, std::move(mesh));
-  return meshSize > 0;
+  bool meshGenrated = !opaqueMesh.empty() || !transparentMesh.empty();
+  m_OpaqueMeshQueue.add(chunkIndex, std::move(opaqueMesh));
+  m_TransparentMeshQueue.add(chunkIndex, std::move(transparentMesh));
+  return meshGenrated;
 }

@@ -60,6 +60,4 @@ layout(location = 0) out vec4 o_Color;
 void main()
 {
   o_Color = v_BasicLight * texture(u_TextureArray, vec3(v_TexCoord, v_TextureIndex));
-  if (o_Color.a == 0)
-	  discard;
 }

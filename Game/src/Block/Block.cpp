@@ -2,6 +2,7 @@
 #include "Block.h"
 #include "Util/MultiDimArrays.h"
 #include <Engine.h>
+#include <filesystem>
 
 struct BlockUniformData
 {
@@ -16,7 +17,7 @@ static int s_BlocksInitialized = 0;
 static bool s_Initialized = false;
 
 static Array2D<Block::Texture, c_MaxBlockTypes, 6> s_TexIDs = AllocateArray2D<Block::Texture, c_MaxBlockTypes, 6>(Block::Texture::ErrorTexture);
-static std::array<std::string, c_MaxBlockTextures> s_TexturePaths{};
+static std::array<std::filesystem::path, c_MaxBlockTextures> s_TexturePaths{};
 static std::shared_ptr<Engine::TextureArray> s_TextureArray;
 static std::shared_ptr<Engine::Uniform> s_Uniform;
 static const BlockUniformData s_BlockUniformData{};
@@ -52,19 +53,24 @@ void Block::Initialize()
   s_Uniform = Engine::Uniform::Create(c_UniformBinding, sizeof(BlockUniformData));
   s_Uniform->set(&s_BlockUniformData, sizeof(BlockUniformData));
 
-  s_TexturePaths[static_cast<blockTexID>(Block::Texture::GrassTop)] = "assets/textures/voxel-pack/PNG/Tiles/grass_top.png";
-  s_TexturePaths[static_cast<blockTexID>(Block::Texture::GrassSide)] = "assets/textures/voxel-pack/PNG/Tiles/grass_top.png";
-  s_TexturePaths[static_cast<blockTexID>(Block::Texture::Dirt)] = "assets/textures/voxel-pack/PNG/Tiles/dirt.png";
-  s_TexturePaths[static_cast<blockTexID>(Block::Texture::Clay)] = "assets/textures/voxel-pack/PNG/Tiles/greysand.png";
-  s_TexturePaths[static_cast<blockTexID>(Block::Texture::Gravel)] = "assets/textures/voxel-pack/PNG/Tiles/gravel_stone.png";
-  s_TexturePaths[static_cast<blockTexID>(Block::Texture::Sand)] = "assets/textures/voxel-pack/PNG/Tiles/sand.png";
-  s_TexturePaths[static_cast<blockTexID>(Block::Texture::Snow)] = "assets/textures/voxel-pack/PNG/Tiles/snow.png";
-  s_TexturePaths[static_cast<blockTexID>(Block::Texture::Stone)] = "assets/textures/voxel-pack/PNG/Tiles/Stone.png";
-  s_TexturePaths[static_cast<blockTexID>(Block::Texture::OakLogTop)] = "assets/textures/voxel-pack/PNG/Tiles/trunk_top.png";
-  s_TexturePaths[static_cast<blockTexID>(Block::Texture::OakLogSide)] = "assets/textures/voxel-pack/PNG/Tiles/trunk_side.png";
-  s_TexturePaths[static_cast<blockTexID>(Block::Texture::OakLeaves)] = "assets/textures/voxel-pack/PNG/Tiles/leaves_transparent.png";
-  s_TexturePaths[static_cast<blockTexID>(Block::Texture::Invisible)] = "assets/textures/Invisible.png";
-  s_TexturePaths[static_cast<blockTexID>(Block::Texture::ErrorTexture)] = "assets/textures/Checkerboard.png";
+  std::filesystem::path textureFolder = "assets/textures";
+  std::filesystem::path tileFolder = textureFolder / "voxel-pack/PNG/Tiles";
+
+  s_TexturePaths[static_cast<blockTexID>(Block::Texture::GrassTop)] = tileFolder / "grass_top.png";
+  s_TexturePaths[static_cast<blockTexID>(Block::Texture::GrassSide)] = tileFolder / "dirt_grass.png";
+  s_TexturePaths[static_cast<blockTexID>(Block::Texture::Dirt)] = tileFolder / "dirt.png";
+  s_TexturePaths[static_cast<blockTexID>(Block::Texture::Clay)] = tileFolder / "greysand.png";
+  s_TexturePaths[static_cast<blockTexID>(Block::Texture::Gravel)] = tileFolder / "gravel_stone.png";
+  s_TexturePaths[static_cast<blockTexID>(Block::Texture::Sand)] = tileFolder / "sand.png";
+  s_TexturePaths[static_cast<blockTexID>(Block::Texture::Snow)] = tileFolder / "snow.png";
+  s_TexturePaths[static_cast<blockTexID>(Block::Texture::Stone)] = tileFolder / "stone.png";
+  s_TexturePaths[static_cast<blockTexID>(Block::Texture::OakLogTop)] = tileFolder / "trunk_top.png";
+  s_TexturePaths[static_cast<blockTexID>(Block::Texture::OakLogSide)] = tileFolder / "trunk_side.png";
+  s_TexturePaths[static_cast<blockTexID>(Block::Texture::OakLeaves)] = tileFolder / "leaves_transparent.png";
+  s_TexturePaths[static_cast<blockTexID>(Block::Texture::FallLeaves)] = tileFolder / "leaves_orange_transparent.png";
+  s_TexturePaths[static_cast<blockTexID>(Block::Texture::Water)] = tileFolder / "water_transparent.png";
+  s_TexturePaths[static_cast<blockTexID>(Block::Texture::Invisible)] = textureFolder / "Invisible.png";
+  s_TexturePaths[static_cast<blockTexID>(Block::Texture::ErrorTexture)] = textureFolder / "Checkerboard.png";
 
   assignTextures(Block::Type::Air, Block::Texture::Invisible);
   assignTextures(Block::Type::Grass, Block::Texture::GrassTop, Block::Texture::GrassSide, Block::Texture::Dirt);
@@ -76,6 +82,8 @@ void Block::Initialize()
   assignTextures(Block::Type::Stone, Block::Texture::Stone);
   assignTextures(Block::Type::OakLog, Block::Texture::OakLogTop, Block::Texture::OakLogSide);
   assignTextures(Block::Type::OakLeaves, Block::Texture::OakLeaves);
+  assignTextures(Block::Type::FallLeaves, Block::Texture::FallLeaves);
+  assignTextures(Block::Type::Water, Block::Texture::Water);
   assignTextures(Block::Type::Null, Block::Texture::ErrorTexture);
 
   s_TextureArray = Engine::TextureArray::Create(16, 128);
@@ -87,7 +95,7 @@ void Block::Initialize()
       EN_ERROR("Block texture {0} has not been assign a path!", textureID);
       textureID = static_cast<blockTexID>(Block::Texture::ErrorTexture);
     }
-    s_TextureArray->addTexture(s_TexturePaths[textureID]);
+    s_TextureArray->addTexture(s_TexturePaths[textureID].string());
   }
 
   if (s_BlocksInitialized != c_BlockTypes)
@@ -113,9 +121,11 @@ bool Block::HasTransparency(Texture texture)
   EN_ASSERT(s_Initialized, "Blocks have not been initialized!");
   switch (texture)
   {
-    case Block::Texture::Invisible: return true;
-    case Block::Texture::OakLeaves: return true;
-    default:                        return false;
+    case Block::Texture::Invisible:   return true;
+    case Block::Texture::OakLeaves:   return true;
+    case Block::Texture::FallLeaves:  return true;
+    case Block::Texture::Water:       return true;
+    default:                          return false;
   }
 }
 
@@ -126,6 +136,8 @@ bool Block::HasTransparency(Type block)
   {
     case Block::Type::Air:        return true;
     case Block::Type::OakLeaves:  return true;
+    case Block::Type::FallLeaves: return true;
+    case Block::Type::Water:      return true;
     default:                      return false;
   }
 }
@@ -135,7 +147,8 @@ bool Block::HasCollision(Type block)
   EN_ASSERT(s_Initialized, "Blocks have not been initialized!");
   switch (block)
   {
-    case Block::Type::Air:  return false;
-    default:                return true;
+    case Block::Type::Air:    return false;
+    case Block::Type::Water:  return false;
+    default:                  return true;
   }
 }

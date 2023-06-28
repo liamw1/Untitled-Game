@@ -33,6 +33,8 @@ void GameSandbox::onUpdate(Timestep timestep)
 
   // EN_TRACE("fps: {0}", static_cast<int>(1.0f / timestep.sec()));
 
+  Engine::RenderCommand::SetDepthWriting(true);
+  Engine::RenderCommand::SetUseDepthOffset(false);
   Engine::RenderCommand::Clear(Float4(0.788f, 0.949f, 0.949f, 1.0f));
 
   Engine::Scene::OnUpdate(timestep);
@@ -66,12 +68,7 @@ bool GameSandbox::onKeyPressEvent(Engine::KeyPressEvent& event)
   if (event.getKeyCode() == Key::F1)
   {
     wireFrameEnabled = !wireFrameEnabled;
-    Engine::RenderCommand::WireFrameToggle(wireFrameEnabled);
-  }
-  if (event.getKeyCode() == Key::F2)
-  {
-    faceCullingEnabled = !faceCullingEnabled;
-    Engine::RenderCommand::FaceCullToggle(faceCullingEnabled);
+    Engine::RenderCommand::SetWireFrame(wireFrameEnabled);
   }
 
   return false;

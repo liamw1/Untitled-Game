@@ -18,6 +18,8 @@ namespace Block
     Stone,
     OakLog,
     OakLeaves,
+    FallLeaves,
+    Water,
 
     Null,
     Begin = 0, End = Null
@@ -36,6 +38,8 @@ namespace Block
     OakLogTop,
     OakLogSide,
     OakLeaves,
+    FallLeaves,
+    Water,
 
     Invisible,
     ErrorTexture,

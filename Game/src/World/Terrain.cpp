@@ -208,7 +208,7 @@ static void soilStage(Array3D<Block::Type, Chunk::Size()>& composition, const Ar
 
 static void foliageStage(Array3D<Block::Type, Chunk::Size()>& composition, const Array2D<length_t, Chunk::Size()>& heightMap, const GlobalIndex& chunkIndex)
 {
-  const auto createTree = [](Array3D<Block::Type, Chunk::Size()>& composition, const BlockIndex& treeIndex)
+  const auto createTree = [](Array3D<Block::Type, Chunk::Size()>& composition, const BlockIndex& treeIndex, Block::Type leafType)
   {
     int i = treeIndex.i;
     int j = treeIndex.j;
@@ -221,21 +221,34 @@ static void foliageStage(Array3D<Block::Type, Chunk::Size()>& composition, const
       for (int J = -3; J < 3; ++J)
         for (int K = 0; K < 3; ++K)
           if (I * I + J * J + K * K < 9)
-            composition[i + I][j + J][k + K + 5] = Block::Type::OakLeaves;
+            composition[i + I][j + J][k + K + 5] = leafType;
   };
 
+  const auto& [noiseSamples, biomeMap] = getSurfaceData(chunkIndex);
+
   length_t chunkFloor = Chunk::Length() * chunkIndex.k;
+  if (chunkFloor < 0.0)
+    return;
+
   for (blockIndex_t i = 0; i < Chunk::Size(); ++i)
     for (blockIndex_t j = 0; j < Chunk::Size(); ++j)
     {
-      const length_t& elevation = heightMap[i][j];
-      length_t heightInChunk = elevation - chunkFloor;
-      if (0 < heightInChunk && heightInChunk < Chunk::Length() - 8 * Block::Length() && 3 < i && i < Chunk::Size() - 4 && 3 < j && j < Chunk::Size() - 4)
-        if (rand() % 100 == 0)
+      Biome::Type primaryBiome = biomeMap[i][j].getPrimary();
+      if (primaryBiome == Biome::Type::SuperFlat || primaryBiome == Biome::Type::GrassField)
+      {
+        const length_t& elevation = heightMap[i][j];
+        length_t heightInChunk = elevation - chunkFloor;
+        if (0 < heightInChunk && heightInChunk < Chunk::Length() - 8 * Block::Length() && 3 < i && i < Chunk::Size() - 4 && 3 < j && j < Chunk::Size() - 4)
         {
-          blockIndex_t k = static_cast<blockIndex_t>(std::ceil(heightInChunk / Block::Length()));
-          createTree(composition, { i, j, k });
+          int random = rand();
+          if (random % 101 == 0)
+          {
+            Block::Type leafType = random % 2 == 0 ? Block::Type::OakLeaves : Block::Type::FallLeaves;
+            blockIndex_t k = static_cast<blockIndex_t>(std::ceil(heightInChunk / Block::Length()));
+            createTree(composition, { i, j, k }, leafType);
+          }
         }
+      }
     }
 }
 
