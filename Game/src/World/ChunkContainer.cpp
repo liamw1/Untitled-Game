@@ -112,11 +112,11 @@ std::unordered_set<GlobalIndex> ChunkContainer::findAllLoadableIndices() const
   return newChunkIndices;
 }
 
-void ChunkContainer::uploadMeshes(Threads::UnorderedMapQueue<GlobalIndex, std::vector<uint32_t>>& meshQueue, std::unique_ptr<Engine::MultiDrawArray<GlobalIndex>>& multiDrawArray) const
+void ChunkContainer::uploadMeshes(Threads::UnorderedMapQueue<GlobalIndex, std::vector<Chunk::Quad>>& meshQueue, std::unique_ptr<Engine::MultiDrawArray<GlobalIndex>>& multiDrawArray) const
 {
   std::shared_lock lock(m_ContainerMutex);
 
-  std::optional<std::pair<GlobalIndex, std::vector<uint32_t>>> meshUpdate = meshQueue.tryRemove();
+  std::optional<std::pair<GlobalIndex, std::vector<Chunk::Quad>>> meshUpdate = meshQueue.tryRemove();
   while (meshUpdate)
   {
     const auto& [updateIndex, mesh] = *meshUpdate;
@@ -124,8 +124,8 @@ void ChunkContainer::uploadMeshes(Threads::UnorderedMapQueue<GlobalIndex, std::v
     multiDrawArray->remove(updateIndex);
     if (isLoaded(updateIndex))
     {
-      uint32_t indexCount = static_cast<uint32_t>(3 * mesh.size() / 2);
-      multiDrawArray->add(updateIndex, mesh.data(), static_cast<int>(mesh.size()), indexCount);
+      uint32_t indexCount = static_cast<uint32_t>(6 * mesh.size());
+      multiDrawArray->add(updateIndex, mesh.data(), static_cast<int>(4 * mesh.size()), indexCount);
     }
 
     meshUpdate = meshQueue.tryRemove();

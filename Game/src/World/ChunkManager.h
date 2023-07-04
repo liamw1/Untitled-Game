@@ -59,10 +59,10 @@ private:
   static constexpr int c_StorageBufferBinding = 0;
   static constexpr uint32_t c_StorageBufferSize = static_cast<uint32_t>(pow2(20));
 
-  Threads::UnorderedMapQueue<GlobalIndex, std::vector<uint32_t>> m_OpaqueMeshQueue;
+  Threads::UnorderedMapQueue<GlobalIndex, std::vector<Chunk::Quad>> m_OpaqueMeshQueue;
   std::unique_ptr<Engine::MultiDrawArray<GlobalIndex>> m_OpaqueMultiDrawArray;
 
-  Threads::UnorderedMapQueue<GlobalIndex, std::vector<uint32_t>> m_TransparentMeshQueue;
+  Threads::UnorderedMapQueue<GlobalIndex, std::vector<Chunk::Quad>> m_TransparentMeshQueue;
   std::unique_ptr<Engine::MultiDrawArray<GlobalIndex>> m_TransparentMultiDrawArray;
 
   // Multi-threading

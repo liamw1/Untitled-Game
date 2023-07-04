@@ -74,7 +74,7 @@ public:
   */
   std::unordered_set<GlobalIndex> findAllLoadableIndices() const;
 
-  void uploadMeshes(Threads::UnorderedMapQueue<GlobalIndex, std::vector<uint32_t>>& meshQueue, std::unique_ptr<Engine::MultiDrawArray<GlobalIndex>>& multiDrawArray) const;
+  void uploadMeshes(Threads::UnorderedMapQueue<GlobalIndex, std::vector<Chunk::Quad>>& meshQueue, std::unique_ptr<Engine::MultiDrawArray<GlobalIndex>>& multiDrawArray) const;
 
   /*
     \returns The chunk along with a lock on its mutex. Will return nullptr is no chunk is found.

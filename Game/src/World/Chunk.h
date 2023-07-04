@@ -97,6 +97,21 @@ private:
 
   _Acquires_lock_(return) std::lock_guard<std::mutex> acquireLock() const { return std::lock_guard(m_Mutex); };
 
+  class Vertex
+  {
+  public:
+    Vertex() = default;
+    Vertex(const BlockIndex& vertexPosition, int vertexIndex, int ambientOcclusion, int textureID);
+
+  private:
+    uint32_t m_Data;
+  };
+
+  struct Quad
+  {
+    std::array<Vertex, 4> vertices;
+  };
+
   friend class ChunkManager;
   friend class ChunkContainer;
 };

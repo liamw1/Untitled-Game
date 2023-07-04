@@ -141,3 +141,13 @@ void Chunk::reset()
   m_GlobalIndex = {};
   m_NonOpaqueFaces.store(0);
 }
+
+
+
+Chunk::Vertex::Vertex(const BlockIndex& vertexPosition, int vertexIndex, int ambientOcclusion, int textureID)
+{
+  m_Data = vertexPosition.i + (vertexPosition.j << 6) + (vertexPosition.k << 12);
+  m_Data |= vertexIndex << 18;
+  m_Data |= ambientOcclusion << 20;
+  m_Data |= textureID << 22;
+}

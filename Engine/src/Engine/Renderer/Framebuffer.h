@@ -20,26 +20,26 @@ namespace Engine
 
   struct FramebufferTextureSpecification
   {
+    FramebufferTextureFormat textureFormat = FramebufferTextureFormat::None;
+    // TODO: Filtering/wrap
+
     FramebufferTextureSpecification() = default;
     FramebufferTextureSpecification(FramebufferTextureFormat format)
       : textureFormat(format) {}
-
-    FramebufferTextureFormat textureFormat = FramebufferTextureFormat::None;
-    // TODO: Filtering/wrap
   };
 
   struct FramebufferSpecification
   {
-    FramebufferSpecification() = default;
-    FramebufferSpecification(const std::initializer_list<FramebufferTextureSpecification>&attachmentList)
-      : attachments(attachmentList) {}
-
     uint32_t width = 0;
     uint32_t height = 0;
     uint32_t samples = 1;
     bool swapChainTarget = false;
 
     std::vector<FramebufferTextureSpecification> attachments;
+
+    FramebufferSpecification() = default;
+    FramebufferSpecification(const std::initializer_list<FramebufferTextureSpecification>&attachmentList)
+      : attachments(attachmentList) {}
   };
 
   class Framebuffer

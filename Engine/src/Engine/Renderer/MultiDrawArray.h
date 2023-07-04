@@ -9,7 +9,7 @@ namespace Engine
   public:
     struct DrawCommand
     {
-      uint32_t count;
+      uint32_t indexCount;
       uint32_t instanceCount;
       uint32_t firstIndex;
       int baseVertex;
@@ -18,8 +18,8 @@ namespace Engine
       T ID;
       std::shared_ptr<std::size_t> commandIndex;
 
-      DrawCommand(uint32_t indexCount, int vertexOffset, const T& identifier, std::size_t initialCommandIndex)
-        : count(indexCount),
+      DrawCommand(uint32_t elementCount, int vertexOffset, const T& identifier, std::size_t initialCommandIndex)
+        : indexCount(elementCount),
           instanceCount(1),
           firstIndex(0),
           baseVertex(vertexOffset),

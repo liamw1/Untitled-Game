@@ -128,6 +128,8 @@ void ChunkManager::render()
       });
     m_TransparentMultiDrawArray->sort(commandCount, [&originIndex, &playerPosition](const GlobalIndex& chunkA, const GlobalIndex& chunkB)
       {
+        // NOTE: Maybe measure min distance to chunk faces instead
+
         Vec3 anchorA = Chunk::AnchorPosition(chunkA, originIndex);
         Vec3 centerA = Chunk::Center(anchorA);
         length_t distA = glm::length2(centerA - playerPosition);
@@ -465,7 +467,7 @@ bool ChunkManager::meshChunk(const GlobalIndex& chunkIndex)
   const Array3D<Block::Type, Chunk::Size() + 2>& blockData = getBlockData(chunkIndex);
   if (getBlockType(blockData, 0, 0, 0) == Block::Type::Null)
   {
-    std::vector<uint32_t> emptyMesh;
+    std::vector<Chunk::Quad> emptyMesh;
     m_OpaqueMeshQueue.add(chunkIndex, emptyMesh);
     m_TransparentMeshQueue.add(chunkIndex, emptyMesh);
     return false;
@@ -482,8 +484,8 @@ bool ChunkManager::meshChunk(const GlobalIndex& chunkIndex)
         { {0, 0, 1}, {1, 0, 1}, {1, 1, 1}, {0, 1, 1} } };  /*  Top Face    */
 
   // Mesh chunk using block data
-  std::vector<uint32_t> opaqueMesh;
-  std::vector<uint32_t> transparentMesh;
+  std::vector<Chunk::Quad> opaqueMesh;
+  std::vector<Chunk::Quad> transparentMesh;
   for (blockIndex_t i = 0; i < Chunk::Size(); ++i)
     for (blockIndex_t j = 0; j < Chunk::Size(); ++j)
       for (blockIndex_t k = 0; k < Chunk::Size(); ++k)
@@ -505,17 +507,18 @@ bool ChunkManager::meshChunk(const GlobalIndex& chunkIndex)
               int v = (u + 1) % 3;
               int w = (u + 2) % 3;
 
-              for (int vert = 0; vert < 4; ++vert)
+              Chunk::Quad quad{};
+              for (int vertexIndex = 0; vertexIndex < 4; ++vertexIndex)
               {
-                Direction sideADir = static_cast<Direction>(2 * v + offsets[directionID][vert][v]);
-                Direction sideBDir = static_cast<Direction>(2 * w + offsets[directionID][vert][w]);
+                Direction sideADir = static_cast<Direction>(2 * v + offsets[directionID][vertexIndex][v]);
+                Direction sideBDir = static_cast<Direction>(2 * w + offsets[directionID][vertexIndex][w]);
 
                 BlockIndex sideA = blockIndex + BlockIndex::Dir(direction) + BlockIndex::Dir(sideADir);
                 BlockIndex sideB = blockIndex + BlockIndex::Dir(direction) + BlockIndex::Dir(sideBDir);
                 BlockIndex corner = blockIndex + BlockIndex::Dir(direction) + BlockIndex::Dir(sideADir) + BlockIndex::Dir(sideBDir);
 
                 int AO = 3;
-                if (!Block::HasTransparency(blockType))
+                if (!Block::HasTransparency(blockTexture))
                 {
                   bool sideAIsOpaque = !Block::HasTransparency(getBlockType(blockData, sideA));
                   bool sideBIsOpaque = !Block::HasTransparency(getBlockType(blockData, sideB));
@@ -523,16 +526,12 @@ bool ChunkManager::meshChunk(const GlobalIndex& chunkIndex)
                   AO = sideAIsOpaque && sideBIsOpaque ? 0 : 3 - (sideAIsOpaque + sideBIsOpaque + cornerIsOpaque);
                 }
 
-                BlockIndex vertexIndex = blockIndex + offsets[directionID][vert];
-
-                uint32_t vertexData = vertexIndex.i + (vertexIndex.j << 6) + (vertexIndex.k << 12);   // Local vertex coordinates
-                vertexData |= vert << 18;                                                             // Quad vertex index
-                vertexData |= AO << 20;                                                               // Ambient occlusion value
-                vertexData |= textureID << 22;                                                        // TextureID
-
-                std::vector<uint32_t>& mesh = Block::HasTransparency(blockTexture) ? transparentMesh : opaqueMesh;
-                mesh.push_back(vertexData);
+                BlockIndex vertexPosition = blockIndex + offsets[directionID][vertexIndex];
+                quad.vertices[vertexIndex] = Chunk::Vertex(vertexPosition, vertexIndex, AO, textureID);
               }
+
+              std::vector<Chunk::Quad>& mesh = Block::HasTransparency(blockTexture) ? transparentMesh : opaqueMesh;
+              mesh.push_back(quad);
             }
           }
       }

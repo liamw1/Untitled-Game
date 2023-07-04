@@ -20,15 +20,15 @@ namespace LOD
 
   struct Vertex
   {
-    Vertex() = delete;
-    Vertex(const Float3& position, const Float3& isoNormal, const std::array<int, 2>& textureIndices, const Float2& textureWeights, int quadIndex)
-      : position(position), isoNormal(isoNormal), textureIndices(textureIndices), textureWeights(textureWeights), quadIndex(quadIndex) {}
-
     Float3 position;
     Float3 isoNormal;
     std::array<int, 2> textureIndices;
     Float2 textureWeights;
     int quadIndex;
+
+    Vertex() = delete;
+    Vertex(const Float3& position, const Float3& isoNormal, const std::array<int, 2>& textureIndices, const Float2& textureWeights, int quadIndex)
+      : position(position), isoNormal(isoNormal), textureIndices(textureIndices), textureWeights(textureWeights), quadIndex(quadIndex) {}
   };
 
   struct UniformData
@@ -41,16 +41,16 @@ namespace LOD
 
   struct MeshData
   {
+    std::vector<Vertex> vertices;
+    std::vector<uint32_t> indices;
+    std::unique_ptr<Engine::VertexArray> vertexArray;
+
     MeshData()
       : vertices(), indices()
     {
       vertexArray = Engine::VertexArray::Create();
       vertexArray->setLayout(s_VertexBufferLayout);
     }
-
-    std::vector<Vertex> vertices;
-    std::vector<uint32_t> indices;
-    std::unique_ptr<Engine::VertexArray> vertexArray;
 
     static void Initialize();
     static void BindBuffers();
