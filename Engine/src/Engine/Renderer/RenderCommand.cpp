@@ -28,19 +28,19 @@ namespace Engine
     s_RendererAPI->clear(color);
   }
 
-  void RenderCommand::SetWireFrame(bool enableWireFrame)
-  {
-    s_RendererAPI->setWireFrame(enableWireFrame);
-  }
-
-  void RenderCommand::SetFaceCulling(bool enableFaceCulling)
-  {
-    s_RendererAPI->setFaceCulling(enableFaceCulling);
-  }
-
   void RenderCommand::SetBlending(bool enableBlending)
   {
     s_RendererAPI->setBlending(enableBlending);
+  }
+
+  void RenderCommand::SetUseDepthOffset(bool enableDepthOffset)
+  {
+    s_RendererAPI->setUseDepthOffset(enableDepthOffset);
+  }
+
+  void RenderCommand::SetDepthOffset(float factor, float units)
+  {
+    s_RendererAPI->setDepthOffset(factor, units);
   }
 
   void RenderCommand::SetDepthTesting(bool enableDepthTesting)
@@ -53,14 +53,14 @@ namespace Engine
     s_RendererAPI->setDepthWriting(enableDepthWriting);
   }
 
-  void RenderCommand::SetUseDepthOffset(bool enableDepthOffset)
+  void RenderCommand::SetFaceCulling(bool enableFaceCulling)
   {
-    s_RendererAPI->setUseDepthOffset(enableDepthOffset);
+    s_RendererAPI->setFaceCulling(enableFaceCulling);
   }
 
-  void RenderCommand::SetDepthOffset(float factor, float units)
+  void RenderCommand::SetWireFrame(bool enableWireFrame)
   {
-    s_RendererAPI->setDepthOffset(factor, units);
+    s_RendererAPI->setWireFrame(enableWireFrame);
   }
 
   void RenderCommand::DrawVertices(const VertexArray* vertexArray, uint32_t vertexCount)

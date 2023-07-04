@@ -6,12 +6,24 @@
 
 namespace Engine
 {
-  static void set(GLenum target, bool value)
+  static void set(GLenum target, bool& currentValue, bool newValue)
   {
-    value ? glEnable(target) : glDisable(target);
+    if (newValue == currentValue)
+      return;
+
+    newValue ? glEnable(target) : glDisable(target);
+    currentValue = newValue;
   }
 
   OpenGLRendererAPI::OpenGLRendererAPI()
+    : m_BlendingEnabled(false),
+      m_DepthOffsetEnabled(false),
+      m_DepthTestingEnabled(false),
+      m_DepthWritingEnabled(true),
+      m_FaceCullingEnabled(false),
+      m_WireFrameEnabled(false),
+      m_DepthOffsetFactor(0.0f),
+      m_DepthOffsetUnits(0.0f)
   {
     EN_PROFILE_FUNCTION();
     EN_CORE_ASSERT(std::this_thread::get_id() == Threads::MainThreadID(), "OpenGL calls must be made on the main thread!");
@@ -37,46 +49,62 @@ namespace Engine
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   }
 
-  void OpenGLRendererAPI::setWireFrame(bool enableWireFrame)
-  {
-    EN_CORE_ASSERT(std::this_thread::get_id() == Threads::MainThreadID(), "OpenGL calls must be made on the main thread!");
-    enableWireFrame ? glPolygonMode(GL_FRONT_AND_BACK, GL_LINE) : glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-  }
-
-  void OpenGLRendererAPI::setFaceCulling(bool enableFaceCulling)
-  {
-    EN_CORE_ASSERT(std::this_thread::get_id() == Threads::MainThreadID(), "OpenGL calls must be made on the main thread!");
-    set(GL_CULL_FACE, enableFaceCulling);
-  }
-
   void OpenGLRendererAPI::setBlending(bool enableBlending)
   {
     EN_CORE_ASSERT(std::this_thread::get_id() == Threads::MainThreadID(), "OpenGL calls must be made on the main thread!");
-    set(GL_BLEND, enableBlending);
-  }
-
-  void OpenGLRendererAPI::setDepthTesting(bool enableDepthTesting)
-  {
-    EN_CORE_ASSERT(std::this_thread::get_id() == Threads::MainThreadID(), "OpenGL calls must be made on the main thread!");
-    set(GL_DEPTH_TEST, enableDepthTesting);
-  }
-
-  void OpenGLRendererAPI::setDepthWriting(bool enableDepthWriting)
-  {
-    EN_CORE_ASSERT(std::this_thread::get_id() == Threads::MainThreadID(), "OpenGL calls must be made on the main thread!");
-    enableDepthWriting ? glDepthMask(GL_TRUE) : glDepthMask(GL_FALSE);
+    set(GL_BLEND, m_BlendingEnabled, enableBlending);
   }
 
   void OpenGLRendererAPI::setUseDepthOffset(bool enableDepthOffset)
   {
     EN_CORE_ASSERT(std::this_thread::get_id() == Threads::MainThreadID(), "OpenGL calls must be made on the main thread!");
-    set(GL_POLYGON_OFFSET_FILL, enableDepthOffset);
+    set(GL_POLYGON_OFFSET_FILL, m_DepthOffsetEnabled, enableDepthOffset);
   }
 
   void OpenGLRendererAPI::setDepthOffset(float factor, float units)
   {
     EN_CORE_ASSERT(std::this_thread::get_id() == Threads::MainThreadID(), "OpenGL calls must be made on the main thread!");
+
+    if (factor == m_DepthOffsetFactor && units == m_DepthOffsetUnits)
+      return;
+
     glPolygonOffset(factor, units);
+    m_DepthOffsetFactor = factor;
+    m_DepthOffsetUnits = units;
+  }
+
+  void OpenGLRendererAPI::setDepthTesting(bool enableDepthTesting)
+  {
+    EN_CORE_ASSERT(std::this_thread::get_id() == Threads::MainThreadID(), "OpenGL calls must be made on the main thread!");
+    set(GL_DEPTH_TEST, m_DepthTestingEnabled, enableDepthTesting);
+  }
+
+  void OpenGLRendererAPI::setDepthWriting(bool enableDepthWriting)
+  {
+    EN_CORE_ASSERT(std::this_thread::get_id() == Threads::MainThreadID(), "OpenGL calls must be made on the main thread!");
+
+    if (enableDepthWriting == m_DepthWritingEnabled)
+      return;
+
+    enableDepthWriting ? glDepthMask(GL_TRUE) : glDepthMask(GL_FALSE);
+    m_DepthWritingEnabled = enableDepthWriting;
+  }
+
+  void OpenGLRendererAPI::setFaceCulling(bool enableFaceCulling)
+  {
+    EN_CORE_ASSERT(std::this_thread::get_id() == Threads::MainThreadID(), "OpenGL calls must be made on the main thread!");
+    set(GL_CULL_FACE, m_FaceCullingEnabled, enableFaceCulling);
+  }
+
+  void OpenGLRendererAPI::setWireFrame(bool enableWireFrame)
+  {
+    EN_CORE_ASSERT(std::this_thread::get_id() == Threads::MainThreadID(), "OpenGL calls must be made on the main thread!");
+
+    if (enableWireFrame == m_WireFrameEnabled)
+      return;
+
+    enableWireFrame ? glPolygonMode(GL_FRONT_AND_BACK, GL_LINE) : glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    m_WireFrameEnabled = enableWireFrame;
   }
 
   void OpenGLRendererAPI::drawVertices(const VertexArray* vertexArray, uint32_t vertexCount)
