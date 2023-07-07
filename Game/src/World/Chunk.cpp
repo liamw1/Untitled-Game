@@ -151,3 +151,60 @@ Chunk::Vertex::Vertex(const BlockIndex& vertexPosition, int vertexIndex, int amb
   m_Data |= ambientOcclusion << 20;
   m_Data |= textureID << 22;
 }
+
+blockIndex_t Chunk::Vertex::x() const
+{
+  return (m_Data & 0x0000003Fu) >> 0u;
+}
+
+blockIndex_t Chunk::Vertex::y() const
+{
+  return (m_Data & 0x00000FC0u) >> 6u;
+}
+
+blockIndex_t Chunk::Vertex::z() const
+{
+  return (m_Data & 0x0003F000u) >> 12u;
+}
+
+Vec3 Chunk::Vertex::position() const
+{
+  return { x(), y(), z() };
+}
+
+Vec3 Chunk::Quad::center() const
+{
+  Vec3 sum(0);
+  for (const Vertex& vertex : vertices)
+    sum += vertex.position();
+  return Block::Length() * sum / 4;
+}
+
+Vec3 Chunk::Quad::normal() const
+{
+  Vec3 vert0 = vertices[0].position();
+  Vec3 vert1 = vertices[1].position();
+  Vec3 vert2 = vertices[2].position();
+
+  Vec3 sideA = vert1 - vert0;
+  Vec3 sideB = vert2 - vert0;
+  return glm::cross(sideA, sideB);
+}
+
+void Chunk::DrawCommand::sortQuads(const GlobalIndex& originIndex, const Vec3& playerPosition)
+{
+  std::sort(m_Mesh.begin(), m_Mesh.end(), [this, &originIndex, &playerPosition](const Quad& quadA, const Quad& quadB)
+    {
+      static constexpr length_t shiftSize = 0.001_m * Block::Length();
+
+      Vec3 chunkAnchor = Chunk::AnchorPosition(m_ID, originIndex);
+
+      Vec3 positionA = chunkAnchor + quadA.center() - shiftSize * quadA.normal();
+      length_t distA = glm::length2(positionA - playerPosition);
+
+      Vec3 positionB = chunkAnchor + quadB.center() - shiftSize * quadB.normal();
+      length_t distB = glm::length2(positionB - playerPosition);
+
+      return distA > distB;
+    });
+}

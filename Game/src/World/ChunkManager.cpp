@@ -52,10 +52,10 @@ void ChunkManager::initialize()
     s_SSBO->set(nullptr, c_StorageBufferSize);
   }
 
-  m_OpaqueMultiDrawArray = std::make_unique<Engine::MultiDrawArray<GlobalIndex>>(s_VertexBufferLayout);
+  m_OpaqueMultiDrawArray = std::make_unique<Engine::MultiDrawArray<Chunk::DrawCommand>>(s_VertexBufferLayout);
   m_OpaqueMultiDrawArray->setIndexBuffer(s_IndexBuffer);
 
-  m_TransparentMultiDrawArray = std::make_unique<Engine::MultiDrawArray<GlobalIndex>>(s_VertexBufferLayout);
+  m_TransparentMultiDrawArray = std::make_unique<Engine::MultiDrawArray<Chunk::DrawCommand>>(s_VertexBufferLayout);
   m_TransparentMultiDrawArray->setIndexBuffer(s_IndexBuffer);
 }
 
@@ -96,10 +96,10 @@ void ChunkManager::render()
 
     std::vector<Float4> storageBufferData;
     storageBufferData.reserve(commandCount);
-    const std::vector<Engine::MultiDrawArray<GlobalIndex>::DrawCommand>& drawCommands = m_OpaqueMultiDrawArray->getDrawCommandBuffer();
+    const std::vector<Chunk::DrawCommand>& drawCommands = m_OpaqueMultiDrawArray->getDrawCommandBuffer();
     for (int i = 0; i < commandCount; ++i)
     {
-      const GlobalIndex& chunkIndex = drawCommands[i].ID;
+      const GlobalIndex& chunkIndex = drawCommands[i].id();
       Vec3 chunkAnchor = Chunk::AnchorPosition(chunkIndex, originIndex);
       storageBufferData.emplace_back(chunkAnchor, 0);
     }
@@ -110,7 +110,7 @@ void ChunkManager::render()
 
     m_OpaqueMultiDrawArray->bind();
     s_SSBO->update(storageBufferData.data(), 0, bufferDataSize);
-    Engine::RenderCommand::MultiDrawIndexed(drawCommands.data(), commandCount, sizeof(Engine::MultiDrawArray<GlobalIndex>::DrawCommand));
+    Engine::RenderCommand::MultiDrawIndexed(drawCommands.data(), commandCount, sizeof(Chunk::DrawCommand));
   }
 
   {
@@ -140,13 +140,18 @@ void ChunkManager::render()
 
         return distA > distB;
       });
+    m_TransparentMultiDrawArray->amend(commandCount, [&originIndex, &playerPosition](Chunk::DrawCommand& drawCommand)
+      {
+        drawCommand.sortQuads(originIndex, playerPosition);
+        return true;
+      });
 
     std::vector<Float4> storageBufferData;
     storageBufferData.reserve(commandCount);
-    const std::vector<Engine::MultiDrawArray<GlobalIndex>::DrawCommand>& drawCommands = m_TransparentMultiDrawArray->getDrawCommandBuffer();
+    const std::vector<Chunk::DrawCommand>& drawCommands = m_TransparentMultiDrawArray->getDrawCommandBuffer();
     for (int i = 0; i < commandCount; ++i)
     {
-      const GlobalIndex& chunkIndex = drawCommands[i].ID;
+      const GlobalIndex& chunkIndex = drawCommands[i].id();
       Vec3 chunkAnchor = Chunk::AnchorPosition(chunkIndex, originIndex);
       storageBufferData.emplace_back(chunkAnchor, 0);
     }
@@ -157,7 +162,7 @@ void ChunkManager::render()
 
     m_TransparentMultiDrawArray->bind();
     s_SSBO->update(storageBufferData.data(), 0, bufferDataSize);
-    Engine::RenderCommand::MultiDrawIndexed(drawCommands.data(), commandCount, sizeof(Engine::MultiDrawArray<GlobalIndex>::DrawCommand));
+    Engine::RenderCommand::MultiDrawIndexed(drawCommands.data(), commandCount, sizeof(Chunk::DrawCommand));
   }
 }
 
@@ -177,10 +182,10 @@ void ChunkManager::update()
     updateIndex = m_ChunkContainer.getForceUpdateIndex();
   }
 
-  if (!m_OpaqueMeshQueue.empty())
-    m_ChunkContainer.uploadMeshes(m_OpaqueMeshQueue, m_OpaqueMultiDrawArray);
-  if (!m_TransparentMeshQueue.empty())
-    m_ChunkContainer.uploadMeshes(m_TransparentMeshQueue, m_TransparentMultiDrawArray);
+  if (!m_OpaqueCommandQueue.empty())
+    m_ChunkContainer.uploadMeshes(m_OpaqueCommandQueue, m_OpaqueMultiDrawArray);
+  if (!m_TransparentCommandQueue.empty())
+    m_ChunkContainer.uploadMeshes(m_TransparentCommandQueue, m_TransparentMultiDrawArray);
 }
 
 void ChunkManager::clean()
@@ -468,8 +473,8 @@ bool ChunkManager::meshChunk(const GlobalIndex& chunkIndex)
   if (getBlockType(blockData, 0, 0, 0) == Block::Type::Null)
   {
     std::vector<Chunk::Quad> emptyMesh;
-    m_OpaqueMeshQueue.add(chunkIndex, emptyMesh);
-    m_TransparentMeshQueue.add(chunkIndex, emptyMesh);
+    m_OpaqueCommandQueue.emplace(chunkIndex, std::move(emptyMesh));
+    m_TransparentCommandQueue.emplace(chunkIndex, std::move(emptyMesh));
     return false;
   }
 
@@ -537,7 +542,7 @@ bool ChunkManager::meshChunk(const GlobalIndex& chunkIndex)
       }
 
   bool meshGenrated = !opaqueMesh.empty() || !transparentMesh.empty();
-  m_OpaqueMeshQueue.add(chunkIndex, std::move(opaqueMesh));
-  m_TransparentMeshQueue.add(chunkIndex, std::move(transparentMesh));
+  m_OpaqueCommandQueue.emplace(chunkIndex, std::move(opaqueMesh));
+  m_TransparentCommandQueue.emplace(chunkIndex, std::move(transparentMesh));
   return meshGenrated;
 }

@@ -103,6 +103,11 @@ private:
     Vertex() = default;
     Vertex(const BlockIndex& vertexPosition, int vertexIndex, int ambientOcclusion, int textureID);
 
+    blockIndex_t x() const;
+    blockIndex_t y() const;
+    blockIndex_t z() const;
+    Vec3 position() const;
+
   private:
     uint32_t m_Data;
   };
@@ -110,8 +115,51 @@ private:
   struct Quad
   {
     std::array<Vertex, 4> vertices;
+
+    Vec3 center() const;
+    Vec3 normal() const;
   };
+
+  class DrawCommand : public Engine::MultiDrawCommand<GlobalIndex, DrawCommand>
+  {
+  public:
+    DrawCommand(const GlobalIndex& chunkIndex, std::vector<Quad>&& mesh)
+      : Engine::MultiDrawCommand<GlobalIndex, DrawCommand>(chunkIndex, static_cast<uint32_t>(6 * mesh.size())),
+        m_Mesh(std::move(mesh)) {}
+
+    DrawCommand(const DrawCommand& other) = delete;
+    DrawCommand& operator=(const DrawCommand& other) = delete;
+
+    DrawCommand(DrawCommand&& other) noexcept = default;
+    DrawCommand& operator=(DrawCommand&& other) noexcept = default;
+
+    bool operator==(const DrawCommand& other) const { return m_ID == other.m_ID; }
+
+    int vertexCount() const { return static_cast<int>(4 * m_Mesh.size()); }
+
+    const void* vertexData() const { return m_Mesh.data(); }
+
+    void sortQuads(const GlobalIndex& originIndex, const Vec3& playerPosition);
+
+  private:
+    std::vector<Quad> m_Mesh;
+  };
+
+  Engine::MultiDrawArray<DrawCommand>::Identifier test;
 
   friend class ChunkManager;
   friend class ChunkContainer;
+  friend struct std::hash<DrawCommand>;
 };
+
+namespace std
+{
+  template<>
+  struct hash<Chunk::DrawCommand>
+  {
+    int operator()(const Chunk::DrawCommand& drawCommand) const
+    {
+      return std::hash<GlobalIndex>()(drawCommand.id());
+    }
+  };
+}

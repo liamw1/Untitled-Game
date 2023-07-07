@@ -31,7 +31,7 @@ void GameSandbox::onUpdate(Timestep timestep)
 {
   EN_PROFILE_FUNCTION();
 
-  // EN_TRACE("fps: {0}", static_cast<int>(1.0f / timestep.sec()));
+  EN_TRACE("fps: {0}", static_cast<int>(1.0f / timestep.sec()));
 
   Engine::RenderCommand::SetDepthWriting(true);
   Engine::RenderCommand::SetUseDepthOffset(false);

@@ -3,32 +3,52 @@
 
 namespace Engine
 {
-  template<typename T>
+  template<typename Identifier, typename Derived>
+  class MultiDrawCommand
+  {
+  public:
+    MultiDrawCommand(const Identifier& id, uint32_t indexCount)
+      : m_IndexCount(indexCount),
+        m_InstanceCount(1),
+        m_FirstIndex(0),
+        m_BaseVertex(0),
+        m_BaseInstance(0),
+        m_ID(id),
+        m_CommandIndex(nullptr) {}
+
+    int vertexOffset() const { return m_BaseVertex; }
+
+    const Identifier& id() const { return m_ID; }
+
+    const std::shared_ptr<std::size_t>& commandIndex() const { return m_CommandIndex; }
+
+    void setPlacement(int vertexOffset, const std::shared_ptr<std::size_t>& commandIndex)
+    {
+      m_BaseVertex = vertexOffset;
+      m_CommandIndex = commandIndex;
+    }
+
+    int vertexCount() const { return static_cast<Derived*>(this)->vertexCount(); }
+
+    const void* vertexData() const { return static_cast<Derived*>(this)->vertexData(); }
+
+  protected:
+    uint32_t m_IndexCount;
+    uint32_t m_InstanceCount;
+    uint32_t m_FirstIndex;
+    int m_BaseVertex;
+    uint32_t m_BaseInstance;
+
+    Identifier m_ID;
+    std::shared_ptr<std::size_t> m_CommandIndex;
+  };
+
+  template<typename DrawCommand>
   class MultiDrawArray
   {
   public:
-    struct DrawCommand
-    {
-      uint32_t indexCount;
-      uint32_t instanceCount;
-      uint32_t firstIndex;
-      int baseVertex;
-      uint32_t baseInstance;
+    using Identifier = std::decay_t<decltype(std::declval<DrawCommand>().id())>;
 
-      T ID;
-      std::shared_ptr<std::size_t> commandIndex;
-
-      DrawCommand(uint32_t elementCount, int vertexOffset, const T& identifier, std::size_t initialCommandIndex)
-        : indexCount(elementCount),
-          instanceCount(1),
-          firstIndex(0),
-          baseVertex(vertexOffset),
-          baseInstance(0),
-          ID(identifier),
-          commandIndex(std::make_shared<std::size_t>(initialCommandIndex)) {}
-    };
-
-  public:
     MultiDrawArray(const BufferLayout& layout)
       : m_Capacity(c_InitialCapacity), m_Stride(layout.stride())
     {
@@ -52,12 +72,13 @@ namespace Engine
     void bind() const { m_VertexArray->bind(); }
     void unBind() const { m_VertexArray->unBind(); }
 
-    void add(const T& ID, const void* data, int vertexCount, uint32_t indexCount)
+    void add(DrawCommand&& drawCommand)
     {
+      int vertexCount = drawCommand.vertexCount();
       if (vertexCount == 0)
         return;
 
-      EN_CORE_ASSERT(m_Allocations.find(ID) == m_Allocations.end(), "Memory has already been allocated for region with given ID!");
+      EN_CORE_ASSERT(m_Allocations.find(drawCommand.id()) == m_Allocations.end(), "Memory has already been allocated for region with given ID!");
 
       FreeRegionsIterator bestFreeRegionPosition = m_FreeRegions.lower_bound(vertexCount);
       MemoryRegionsIterator bestMemoryRegion = m_MemoryRegions.end();
@@ -96,26 +117,28 @@ namespace Engine
 
       auto& [allocationOffset, allocationRegion] = *bestMemoryRegion;
 
-      m_VertexArray->updateVertexBuffer(data, allocationOffset * m_Stride, vertexCount * m_Stride);
-
-      m_DrawCommands.emplace_back(indexCount, allocationOffset, ID, m_DrawCommands.size());
-      m_Allocations.emplace(ID, m_DrawCommands.back().commandIndex);
+      m_VertexArray->updateVertexBuffer(drawCommand.vertexData(), allocationOffset * m_Stride, vertexCount * m_Stride);
 
       int memoryLeftover = allocationRegion.size - vertexCount;
-      allocationRegion.ID = ID;
+      allocationRegion.id = drawCommand.id();
       allocationRegion.size = vertexCount;
       if (memoryLeftover)
         addFreeRegion(allocationOffset + allocationRegion.size, memoryLeftover);
+
+      std::shared_ptr<std::size_t> commandIndex = std::make_shared<std::size_t>(m_DrawCommands.size());
+      m_Allocations.emplace(drawCommand.id(), commandIndex);
+      drawCommand.setPlacement(allocationOffset, commandIndex);
+      m_DrawCommands.push_back(std::move(drawCommand));
     }
 
-    void remove(const T& ID)
+    void remove(const Identifier& id)
     {
-      AllocationsIterator allocationToRemove = m_Allocations.find(ID);
+      AllocationsIterator allocationToRemove = m_Allocations.find(id);
       if (allocationToRemove == m_Allocations.end())
         return;
 
       std::size_t drawCommandIndex = *allocationToRemove->second;
-      int freedRegionOffset = m_DrawCommands[drawCommandIndex].baseVertex;
+      int freedRegionOffset = m_DrawCommands[drawCommandIndex].vertexOffset();
       MemoryRegionsIterator freedRegionPosition = m_MemoryRegions.find(freedRegionOffset);
       EN_CORE_ASSERT(freedRegionPosition != m_MemoryRegions.end(), "No memory region was found at offset {0}!", freedRegionOffset);
       EN_CORE_ASSERT(!freedRegionPosition->second.isFree(), "Region is already free!");
@@ -152,7 +175,7 @@ namespace Engine
       addFreeRegion(freedRegionOffset, freedRegionSize);
 
       std::swap(m_DrawCommands[drawCommandIndex], m_DrawCommands.back());
-      *m_DrawCommands[drawCommandIndex].commandIndex = drawCommandIndex;
+      *m_DrawCommands[drawCommandIndex].commandIndex() = drawCommandIndex;
       m_DrawCommands.pop_back();
 
       m_Allocations.erase(allocationToRemove);
@@ -166,15 +189,15 @@ namespace Engine
 
       while (leftIndex < rightIndex)
       {
-        while (condition(m_DrawCommands[leftIndex].ID, std::forward<Args>(args)...) && leftIndex < rightIndex)
+        while (condition(m_DrawCommands[leftIndex].id(), std::forward<Args>(args)...) && leftIndex < rightIndex)
           leftIndex++;
-        while (!condition(m_DrawCommands[rightIndex].ID, std::forward<Args>(args)...) && leftIndex < rightIndex)
+        while (!condition(m_DrawCommands[rightIndex].id(), std::forward<Args>(args)...) && leftIndex < rightIndex)
           rightIndex--;
 
         if (leftIndex != rightIndex)
         {
           std::swap(m_DrawCommands[leftIndex], m_DrawCommands[rightIndex]);
-          std::swap(*m_DrawCommands[leftIndex].commandIndex, *m_DrawCommands[rightIndex].commandIndex);
+          std::swap(*m_DrawCommands[leftIndex].commandIndex(), *m_DrawCommands[rightIndex].commandIndex());
         }
       }
       return leftIndex;
@@ -185,11 +208,29 @@ namespace Engine
     {
       std::sort(m_DrawCommands.begin(), m_DrawCommands.begin() + drawCount, [&](const DrawCommand& drawA, const DrawCommand& drawB)
         {
-          return comparision(drawA.ID, drawB.ID, std::forward<Args>(args)...);
+          return comparision(drawA.id(), drawB.id(), std::forward<Args>(args)...);
         });
 
       for (int i = 0; i < drawCount; ++i)
-        *m_DrawCommands[i].commandIndex = i;
+        *m_DrawCommands[i].commandIndex() = i;
+    }
+
+    template<typename F, typename... Args>
+    void amend(int drawCount, F function, Args&&... args)
+    {
+      for (auto it = m_DrawCommands.begin(); it != m_DrawCommands.begin() + drawCount; ++it)
+      {
+        int oldVertexCount = it->vertexCount();
+        if (function(*it, std::forward<Args>(args)...))
+        {
+          if (it->vertexCount() > oldVertexCount)
+          {
+            EN_CORE_ERROR("Ammended draw command added additional vertices! Discarding changes...");
+            continue;
+          }
+          uploadVertexData(*it);
+        }
+      }
     }
 
     const std::vector<DrawCommand>& getDrawCommandBuffer() const { return m_DrawCommands; }
@@ -206,19 +247,19 @@ namespace Engine
   private:
     struct MemoryRegion
     {
-      std::optional<T> ID;
+      std::optional<Identifier> id;
       int size;
 
-      bool isFree() const { return !ID; }
+      bool isFree() const { return !id; }
 
       MemoryRegion(int regionSize)
-        : ID(std::nullopt), size(regionSize) {}
+        : id(std::nullopt), size(regionSize) {}
     };
 
     using MemoryRegionsConstIterator = std::map<int, MemoryRegion>::const_iterator;
     using MemoryRegionsIterator = std::map<int, MemoryRegion>::iterator;
     using FreeRegionsIterator = std::multimap<int, int>::iterator;
-    using AllocationsIterator = std::unordered_map<T, std::shared_ptr<std::size_t>>::iterator;
+    using AllocationsIterator = std::unordered_map<Identifier, std::shared_ptr<std::size_t>>::iterator;
 
     static constexpr int c_InitialCapacity = 64;
     static constexpr float c_CapacityIncreaseOnResize = 1.25f;
@@ -226,7 +267,7 @@ namespace Engine
     std::unique_ptr<VertexArray> m_VertexArray;
     std::map<int, MemoryRegion> m_MemoryRegions;
     std::multimap<int, int> m_FreeRegions;
-    std::unordered_map<T, std::shared_ptr<std::size_t>> m_Allocations;
+    std::unordered_map<Identifier, std::shared_ptr<std::size_t>> m_Allocations;
     std::vector<DrawCommand> m_DrawCommands;
     uint32_t m_Capacity;
     uint32_t m_Stride;
@@ -252,6 +293,11 @@ namespace Engine
           return;
         }
       EN_CORE_ERROR("No region at offset {0} of size {1} found!", offset, size);
+    }
+
+    void uploadVertexData(const DrawCommand& drawCommand)
+    {
+      m_VertexArray->updateVertexBuffer(drawCommand.vertexData(), drawCommand.vertexOffset() * m_Stride, drawCommand.vertexCount() * m_Stride);
     }
   };
 }

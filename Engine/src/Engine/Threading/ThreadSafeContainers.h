@@ -56,14 +56,23 @@ namespace Threads
       return insertionSuccess;
     }
 
+    template<typename... Args>
+    bool emplace(Args&&... args)
+    {
+      std::lock_guard lock(m_Mutex);
+
+      auto [insertionPosition, insertionSuccess] = m_Data.emplace(std::forward<Args>(args)...);
+      return insertionSuccess;
+    }
+
     std::optional<V> tryRemove()
     {
       std::lock_guard lock(m_Mutex);
 
       if (!m_Data.empty())
       {
-        V value = std::move(*m_Data.begin());
-        m_Data.erase(m_Data.begin());
+        auto nodeHandle = m_Data.extract(m_Data.begin());
+        V value = std::move(nodeHandle.value());
         return value;
       }
       return std::nullopt;
