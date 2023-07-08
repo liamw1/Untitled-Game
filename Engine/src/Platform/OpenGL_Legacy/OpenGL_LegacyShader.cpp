@@ -113,7 +113,7 @@ namespace Engine
     EN_CORE_ASSERT(shaderSources.size() <= c_MaxShaders, "A maximum of {0} shaders is supported", c_MaxShaders);
 
     GLuint program = glCreateProgram();
-    std::array<GLenum, c_MaxShaders> glShaderIDs = { 0, 0 };
+    std::vector<GLenum> glShaderIDs(shaderSources.size());
     int glShaderIDIndex = 0;
     for (auto& kv : shaderSources)
     {

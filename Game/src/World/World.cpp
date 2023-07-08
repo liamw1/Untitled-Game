@@ -38,7 +38,7 @@ void World::onUpdate(Timestep timestep)
   Player::Update();
 
   /* Rendering stage */
-  Engine::Renderer::BeginScene(Engine::Scene::ActiveCameraViewProjection());
+  Engine::Renderer::BeginScene(Engine::Scene::ActiveCamera());
 
   m_ChunkManager.render();
 

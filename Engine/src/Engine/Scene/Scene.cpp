@@ -52,7 +52,7 @@ namespace Engine
     return ECS::GetEntity(entityID);
   }
 
-  static void render2D(const Mat4& viewProjection)
+  static void render2D(Entity viewer)
   {
     auto spriteView = ECS::Registry().view<Component::SpriteRenderer>();
     auto circleView = ECS::Registry().view<Component::CircleRenderer>();
@@ -60,7 +60,7 @@ namespace Engine
     if (spriteView.size() == 0 && circleView.size() == 0)
       return;
 
-    Renderer2D::BeginScene(viewProjection);
+    Renderer2D::BeginScene(viewer);
 
     for (entt::entity entityID : spriteView)
     {
@@ -93,12 +93,7 @@ namespace Engine
         nsc.instance->onUpdate(timestep);
       });
 
-    render2D(ActiveCameraViewProjection());
-  }
-
-  void Scene::OnUpdateDev(Timestep timestep)
-  {
-    render2D(DevCamera::ViewProjection());
+    render2D(ActiveCamera());
   }
 
   void Scene::OnEvent(Event& event)
@@ -113,7 +108,7 @@ namespace Engine
       });
   }
 
-  Mat4 Scene::ActiveCameraViewProjection()
+  Entity Scene::ActiveCamera()
   {
     auto view = ECS::Registry().view<Component::Camera>();
     for (entt::entity entityID : view)
@@ -121,28 +116,31 @@ namespace Engine
       const Component::Camera& cameraComponent = view.get<Component::Camera>(entityID);
 
       if (cameraComponent.isActive)
-      {
-        const Mat4& projection = view.get<Component::Camera>(entityID).camera.getProjection();
-        
-        Mat4 viewMatrix{};
-        Entity entity = ECS::GetEntity(entityID);
-        if (cameraComponent.camera.getProjectionType() == Camera::ProjectionType::Perspective)
-        {
-          Vec3 viewDirection = entity.get<Component::Transform>().orientationDirection();
-          const Vec3& position = entity.get<Component::Transform>().position;
-          viewMatrix = glm::lookAt(position, position + viewDirection, c_UpDirection);
-        }
-        else if (cameraComponent.camera.getProjectionType() == Camera::ProjectionType::Orthographic)
-          viewMatrix = glm::inverse(entity.get<Component::Transform>().calculateTransform());
-        else
-          EN_CORE_ERROR("Unknown camera projection type!");
-
-        return projection * viewMatrix;
-      }
+        return ECS::GetEntity(entityID);
     }
 
-    EN_ERROR("No active camera found!");
+    EN_CORE_ERROR("No active camera found!");
     return {};
+  }
+
+  Mat4 Scene::CalculateViewProjection(Entity viewer)
+  {
+    const Camera& camera = viewer.get<Component::Camera>().camera;
+    const Mat4& projection = camera.getProjection();
+
+    Mat4 viewMatrix{};
+    if (camera.getProjectionType() == Camera::ProjectionType::Perspective)
+    {
+      Vec3 viewDirection = viewer.get<Component::Transform>().orientationDirection();
+      const Vec3& position = viewer.get<Component::Transform>().position;
+      viewMatrix = glm::lookAt(position, position + viewDirection, c_UpDirection);
+    }
+    else if (camera.getProjectionType() == Camera::ProjectionType::Orthographic)
+      viewMatrix = glm::inverse(viewer.get<Component::Transform>().calculateTransform());
+    else
+      EN_CORE_ERROR("Unknown camera projection type!");
+
+    return projection * viewMatrix;
   }
 
   void Scene::OnViewportResize(uint32_t width, uint32_t height)

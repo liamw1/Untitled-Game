@@ -13,13 +13,15 @@ static constexpr int c_BlockTypes = static_cast<int>(Block::Type::End) - static_
 static constexpr int c_MaxBlockTypes = std::numeric_limits<blockID>::max() + 1;
 static constexpr int c_MaxBlockTextures = 6 * c_MaxBlockTypes;
 static constexpr int c_UniformBinding = 1;
+static constexpr int c_StorageBufferBinding = 1;
 static int s_BlocksInitialized = 0;
 static bool s_Initialized = false;
 
 static Array2D<Block::Texture, c_MaxBlockTypes, 6> s_TexIDs = AllocateArray2D<Block::Texture, c_MaxBlockTypes, 6>(Block::Texture::ErrorTexture);
 static std::array<std::filesystem::path, c_MaxBlockTextures> s_TexturePaths{};
 static std::shared_ptr<Engine::TextureArray> s_TextureArray;
-static std::shared_ptr<Engine::Uniform> s_Uniform;
+static std::unique_ptr<Engine::Uniform> s_Uniform;
+static std::unique_ptr<Engine::StorageBuffer> s_SSBO;
 static const BlockUniformData s_BlockUniformData{};
 
 static void assignTextures(Block::Type block, std::array<Block::Texture, 6> faceTextures)
@@ -100,8 +102,12 @@ void Block::Initialize()
 
   if (s_BlocksInitialized != c_BlockTypes)
     EN_ERROR("{0} of {1} blocks haven't been assigned textures!", c_BlockTypes - s_BlocksInitialized, c_BlockTypes);
-  else
-    s_Initialized = true;
+
+  s_SSBO = Engine::StorageBuffer::Create(Engine::StorageBuffer::Type::SSBO, c_StorageBufferBinding);
+  s_SSBO->set(s_TexIDs.get(), s_TexIDs.size() * sizeof(Block::Texture));
+  s_SSBO->bind();
+
+  s_Initialized = true;
 }
 
 std::shared_ptr<Engine::TextureArray> Block::GetTextureArray()

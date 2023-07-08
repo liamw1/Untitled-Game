@@ -50,12 +50,19 @@ private:
   };
 
   // Rendering
+  struct UniformData
+  {
+    bool transparencyPass;
+  };
+
   static inline std::unique_ptr<Engine::Shader> s_Shader;
+  static inline std::unique_ptr<Engine::Uniform> s_Uniform;
   static inline std::unique_ptr<Engine::StorageBuffer> s_SSBO;
   static inline std::shared_ptr<Engine::TextureArray> s_TextureArray;
-  static inline std::shared_ptr<const Engine::IndexBuffer> s_IndexBuffer;
-  static inline const Engine::BufferLayout s_VertexBufferLayout = { { ShaderDataType::Uint32, "a_VertexData" } };
+  static inline const Engine::BufferLayout s_VertexBufferLayout = { { ShaderDataType::Uint32, "a_VertexData" },
+                                                                    { ShaderDataType::Uint32, "a_FaceData"   } };
   static constexpr int c_TextureSlot = 0;
+  static constexpr int c_UniformBinding = 2;
   static constexpr int c_StorageBufferBinding = 0;
   static constexpr uint32_t c_StorageBufferSize = static_cast<uint32_t>(pow2(20));
 

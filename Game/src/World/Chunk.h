@@ -97,6 +97,18 @@ private:
 
   _Acquires_lock_(return) std::lock_guard<std::mutex> acquireLock() const { return std::lock_guard(m_Mutex); };
 
+  class Voxel
+  {
+  public:
+    Voxel() = default;
+    Voxel(uint32_t voxelData, uint32_t adjacencyData)
+      : m_VoxelData(voxelData), m_AdjacencyData(adjacencyData) {}
+
+  private:
+    uint32_t m_VoxelData;
+    uint32_t m_AdjacencyData;
+  };
+
   class Vertex
   {
   public:
@@ -123,8 +135,12 @@ private:
   class DrawCommand : public Engine::MultiDrawCommand<GlobalIndex, DrawCommand>
   {
   public:
-    DrawCommand(const GlobalIndex& chunkIndex, std::vector<Quad>&& mesh)
-      : Engine::MultiDrawCommand<GlobalIndex, DrawCommand>(chunkIndex, static_cast<uint32_t>(6 * mesh.size())),
+    DrawCommand(const GlobalIndex& chunkIndex)
+      : Engine::MultiDrawCommand<GlobalIndex, DrawCommand>(chunkIndex, 0),
+        m_Mesh() {}
+
+    DrawCommand(const GlobalIndex& chunkIndex, std::vector<Voxel>&& mesh)
+      : Engine::MultiDrawCommand<GlobalIndex, DrawCommand>(chunkIndex, static_cast<int>(mesh.size())),
         m_Mesh(std::move(mesh)) {}
 
     DrawCommand(const DrawCommand& other) = delete;
@@ -135,14 +151,12 @@ private:
 
     bool operator==(const DrawCommand& other) const { return m_ID == other.m_ID; }
 
-    int vertexCount() const { return static_cast<int>(4 * m_Mesh.size()); }
-
     const void* vertexData() const { return m_Mesh.data(); }
 
-    void sortQuads(const GlobalIndex& originIndex, const Vec3& playerPosition);
+    // void sortQuads(const GlobalIndex& originIndex, const Vec3& playerPosition);
 
   private:
-    std::vector<Quad> m_Mesh;
+    std::vector<Voxel> m_Mesh;
   };
 
   Engine::MultiDrawArray<DrawCommand>::Identifier test;

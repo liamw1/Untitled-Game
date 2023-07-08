@@ -191,20 +191,20 @@ Vec3 Chunk::Quad::normal() const
   return glm::cross(sideA, sideB);
 }
 
-void Chunk::DrawCommand::sortQuads(const GlobalIndex& originIndex, const Vec3& playerPosition)
-{
-  std::sort(m_Mesh.begin(), m_Mesh.end(), [this, &originIndex, &playerPosition](const Quad& quadA, const Quad& quadB)
-    {
-      static constexpr length_t shiftSize = 0.001_m * Block::Length();
-
-      Vec3 chunkAnchor = Chunk::AnchorPosition(m_ID, originIndex);
-
-      Vec3 positionA = chunkAnchor + quadA.center() - shiftSize * quadA.normal();
-      length_t distA = glm::length2(positionA - playerPosition);
-
-      Vec3 positionB = chunkAnchor + quadB.center() - shiftSize * quadB.normal();
-      length_t distB = glm::length2(positionB - playerPosition);
-
-      return distA > distB;
-    });
-}
+// void Chunk::DrawCommand::sortQuads(const GlobalIndex& originIndex, const Vec3& playerPosition)
+// {
+//   std::sort(m_Mesh.begin(), m_Mesh.end(), [this, &originIndex, &playerPosition](const Quad& quadA, const Quad& quadB)
+//     {
+//       static constexpr length_t shiftSize = 0.001_m * Block::Length();
+// 
+//       Vec3 chunkAnchor = Chunk::AnchorPosition(m_ID, originIndex);
+// 
+//       Vec3 positionA = chunkAnchor + quadA.center() - shiftSize * quadA.normal();
+//       length_t distA = glm::length2(positionA - playerPosition);
+// 
+//       Vec3 positionB = chunkAnchor + quadB.center() - shiftSize * quadB.normal();
+//       length_t distB = glm::length2(positionB - playerPosition);
+// 
+//       return distA > distB;
+//     });
+// }

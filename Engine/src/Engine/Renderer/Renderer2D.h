@@ -12,7 +12,7 @@ namespace Engine
     void Initialize();
     void Shutdown();
 
-    void BeginScene(const Mat4& viewProjection);
+    void BeginScene(Entity viewer);
     void EndScene();
     void Flush();
 

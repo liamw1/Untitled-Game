@@ -4,6 +4,7 @@
 #include "Shader.h"
 #include "Uniform.h"
 #include "Engine/Scene/Scene.h"
+#include "Engine/Scene/Components.h"
 #include "Engine/Debug/Instrumentor.h"
 
 #include <glm/gtc/matrix_transform.hpp>
@@ -13,6 +14,7 @@ namespace Engine
   struct CameraUniformData
   {
     FMat4 viewProjection;
+    Float3 cameraPosition;
   };
 
   struct WireVertex
@@ -44,6 +46,8 @@ namespace Engine
   static std::unique_ptr<Texture2D> s_WhiteTexture;
 
   static CameraUniformData s_CameraUniformData;
+
+  static constexpr Vec3 c_UpDirection(0, 0, 1);
   
   static constexpr Float4 c_CubeFrameVertexPositions[8] = { { -0.5f, -0.5f, -0.5f, 1.0f },
                                                             {  0.5f, -0.5f, -0.5f, 1.0f },
@@ -165,9 +169,10 @@ namespace Engine
   {
   }
 
-  void Renderer::BeginScene(const Mat4& viewProjection)
+  void Renderer::BeginScene(Entity viewer)
   {
-    s_CameraUniformData.viewProjection = viewProjection;
+    s_CameraUniformData.viewProjection = Scene::CalculateViewProjection(viewer);
+    s_CameraUniformData.cameraPosition = viewer.get<Component::Transform>().position;
     s_CameraUniform->set(&s_CameraUniformData, sizeof(CameraUniformData));
   }
 

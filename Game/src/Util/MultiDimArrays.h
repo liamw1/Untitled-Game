@@ -95,6 +95,8 @@ public:
 
   constexpr int size() { return Rows * Columns; }
 
+  const T* get() const { return m_Data; }
+
   void fill(const T& val)
   {
     EN_ASSERT(m_Data, "Data has not yet been allocated!");
@@ -182,6 +184,8 @@ public:
   operator bool() const { return m_Data; }
 
   constexpr int size() const { return Rows * Columns * Depth; }
+
+  const T* get() const { return m_Data; }
 
   void fill(const T& val)
   {

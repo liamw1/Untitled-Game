@@ -22,48 +22,26 @@ ChunkManager::~ChunkManager()
 
 void ChunkManager::initialize()
 {
-  if (!s_IndexBuffer)
+  if (!s_Shader)
   {
-    constexpr uint32_t maxIndices = 6 * 6 * Chunk::TotalBlocks();
-
-    uint32_t offset = 0;
-    uint32_t* indices = new uint32_t[maxIndices];
-    for (uint32_t i = 0; i < maxIndices; i += 6)
-    {
-      // Triangle 1
-      indices[i + 0] = offset + 0;
-      indices[i + 1] = offset + 1;
-      indices[i + 2] = offset + 2;
-
-      // Triangle 2
-      indices[i + 3] = offset + 2;
-      indices[i + 4] = offset + 3;
-      indices[i + 5] = offset + 0;
-
-      offset += 4;
-    }
-    s_IndexBuffer = Engine::IndexBuffer::Create(indices, maxIndices);
-    delete[] indices;
-
-    s_Shader = Engine::Shader::Create("assets/shaders/Chunk.glsl");
+    s_Shader = Engine::Shader::Create("assets/shaders/Voxel.glsl");
+    s_Uniform = Engine::Uniform::Create(c_UniformBinding, sizeof(UniformData));
     s_TextureArray = Block::GetTextureArray();
 
     s_SSBO = Engine::StorageBuffer::Create(Engine::StorageBuffer::Type::SSBO, c_StorageBufferBinding);
     s_SSBO->set(nullptr, c_StorageBufferSize);
+    s_SSBO->bind();
   }
 
   m_OpaqueMultiDrawArray = std::make_unique<Engine::MultiDrawArray<Chunk::DrawCommand>>(s_VertexBufferLayout);
-  m_OpaqueMultiDrawArray->setIndexBuffer(s_IndexBuffer);
-
   m_TransparentMultiDrawArray = std::make_unique<Engine::MultiDrawArray<Chunk::DrawCommand>>(s_VertexBufferLayout);
-  m_TransparentMultiDrawArray->setIndexBuffer(s_IndexBuffer);
 }
 
 void ChunkManager::render()
 {
   EN_PROFILE_FUNCTION();
 
-  const Mat4& viewProjection = Engine::Scene::ActiveCameraViewProjection();
+  const Mat4& viewProjection = Engine::Scene::CalculateViewProjection(Engine::Scene::ActiveCamera());
   std::array<Vec4, 6> frustumPlanes = Util::CalculateViewFrustumPlanes(viewProjection);
 
   // Shift each plane by distance equal to radius of sphere that circumscribes chunk
@@ -78,7 +56,7 @@ void ChunkManager::render()
   GlobalIndex originIndex = Player::OriginIndex();
 
   s_Shader->bind();
-  s_SSBO->bind();
+  s_Uniform->bind();
   s_TextureArray->bind(c_TextureSlot);
 
   {
@@ -86,6 +64,8 @@ void ChunkManager::render()
     Engine::RenderCommand::SetFaceCulling(true);
     Engine::RenderCommand::SetDepthWriting(true);
     Engine::RenderCommand::SetUseDepthOffset(false);
+    UniformData uniformData = { .transparencyPass = false };
+    s_Uniform->set(&uniformData, sizeof(UniformData));
 
     int commandCount = m_OpaqueMultiDrawArray->mask([&originIndex, &frustumPlanes](const GlobalIndex& chunkIndex)
       {
@@ -110,7 +90,7 @@ void ChunkManager::render()
 
     m_OpaqueMultiDrawArray->bind();
     s_SSBO->update(storageBufferData.data(), 0, bufferDataSize);
-    Engine::RenderCommand::MultiDrawIndexed(drawCommands.data(), commandCount, sizeof(Chunk::DrawCommand));
+    Engine::RenderCommand::MultiDrawVertices(drawCommands.data(), commandCount, sizeof(Chunk::DrawCommand));
   }
 
   {
@@ -119,6 +99,8 @@ void ChunkManager::render()
     Engine::RenderCommand::SetDepthWriting(false);
     Engine::RenderCommand::SetUseDepthOffset(true);
     Engine::RenderCommand::SetDepthOffset(-1.0f, -1.0f);
+    UniformData uniformData = { .transparencyPass = true };
+    s_Uniform->set(&uniformData, sizeof(UniformData));
 
     int commandCount = m_TransparentMultiDrawArray->mask([&originIndex, &frustumPlanes](const GlobalIndex& chunkIndex)
       {
@@ -162,7 +144,7 @@ void ChunkManager::render()
 
     m_TransparentMultiDrawArray->bind();
     s_SSBO->update(storageBufferData.data(), 0, bufferDataSize);
-    Engine::RenderCommand::MultiDrawIndexed(drawCommands.data(), commandCount, sizeof(Chunk::DrawCommand));
+    Engine::RenderCommand::MultiDrawVertices(drawCommands.data(), commandCount, sizeof(Chunk::DrawCommand));
   }
 }
 
@@ -472,25 +454,15 @@ bool ChunkManager::meshChunk(const GlobalIndex& chunkIndex)
   const Array3D<Block::Type, Chunk::Size() + 2>& blockData = getBlockData(chunkIndex);
   if (getBlockType(blockData, 0, 0, 0) == Block::Type::Null)
   {
-    std::vector<Chunk::Quad> emptyMesh;
-    m_OpaqueCommandQueue.emplace(chunkIndex, std::move(emptyMesh));
-    m_TransparentCommandQueue.emplace(chunkIndex, std::move(emptyMesh));
+    m_OpaqueCommandQueue.emplace(chunkIndex);
+    m_TransparentCommandQueue.emplace(chunkIndex);
     return false;
   }
 
   EN_PROFILE_FUNCTION();
 
-  static constexpr BlockIndex offsets[6][4]
-    = { { {0, 1, 0}, {0, 0, 0}, {0, 0, 1}, {0, 1, 1} },    /*  West Face   */
-        { {1, 0, 0}, {1, 1, 0}, {1, 1, 1}, {1, 0, 1} },    /*  East Face   */
-        { {0, 0, 0}, {1, 0, 0}, {1, 0, 1}, {0, 0, 1} },    /*  South Face  */
-        { {1, 1, 0}, {0, 1, 0}, {0, 1, 1}, {1, 1, 1} },    /*  North Face  */
-        { {0, 1, 0}, {1, 1, 0}, {1, 0, 0}, {0, 0, 0} },    /*  Bottom Face */
-        { {0, 0, 1}, {1, 0, 1}, {1, 1, 1}, {0, 1, 1} } };  /*  Top Face    */
-
-  // Mesh chunk using block data
-  std::vector<Chunk::Quad> opaqueMesh;
-  std::vector<Chunk::Quad> transparentMesh;
+  std::vector<Chunk::Voxel> opaqueMesh;
+  std::vector<Chunk::Voxel> transparentMesh;
   for (blockIndex_t i = 0; i < Chunk::Size(); ++i)
     for (blockIndex_t j = 0; j < Chunk::Size(); ++j)
       for (blockIndex_t k = 0; k < Chunk::Size(); ++k)
@@ -498,47 +470,67 @@ bool ChunkManager::meshChunk(const GlobalIndex& chunkIndex)
         BlockIndex blockIndex = BlockIndex(i, j, k);
         Block::Type blockType = getBlockType(blockData, blockIndex);
 
-        if (blockType != Block::Type::Air)
-          for (Direction direction : Directions())
+        if (blockType == Block::Type::Air)
+          continue;
+
+        uint32_t adjacencyData = 0;
+        for (Direction direction : Directions())
+        {
+          BlockIndex offset = BlockIndex::Dir(direction);
+          Block::Type blockNeighbor = getBlockType(blockData, blockIndex + offset);
+          if (blockNeighbor != blockType && (Block::HasTransparency(blockType) || Block::HasTransparency(blockNeighbor)))
+            adjacencyData |= 1 << static_cast<int>(direction);
+        }
+
+        if (!adjacencyData)
+          continue;
+
+        uint32_t voxelData = static_cast<blockID>(blockType);
+        voxelData |= blockIndex.i << 16;
+        voxelData |= blockIndex.j << 21;
+        voxelData |= blockIndex.k << 26;
+        if (Block::HasTransparency(blockType))
+          voxelData |= 1 << 31;
+
+        for (auto itA = Directions().begin(); itA != Directions().end(); ++itA)
+          for (auto itB = itA.next(); itB != Directions().end(); ++itB)
           {
-            Block::Type blockNeighbor = getBlockType(blockData, blockIndex + BlockIndex::Dir(direction));
+            Direction faceA = *itA;
+            Direction faceB = *itB;
 
-            if (blockNeighbor != blockType && (Block::HasTransparency(blockType) || Block::HasTransparency(blockNeighbor)))
+            // Opposite faces cannot form edge
+            if (faceB == !faceA)
+              continue;
+
+            BlockIndex blockOffset = BlockIndex::Dir(faceA) + BlockIndex::Dir(faceB);
+            Block::Type edgeNeighbor = getBlockType(blockData, blockIndex + blockOffset);
+
+            if (!Block::HasTransparency(edgeNeighbor))
             {
-              Block::Texture blockTexture = Block::GetTexture(blockType, direction);
-              int textureID = static_cast<int>(blockTexture);
-              int directionID = static_cast<int>(direction);
-              int u = directionID / 2;
-              int v = (u + 1) % 3;
-              int w = (u + 2) % 3;
-
-              Chunk::Quad quad{};
-              for (int vertexIndex = 0; vertexIndex < 4; ++vertexIndex)
-              {
-                Direction sideADir = static_cast<Direction>(2 * v + offsets[directionID][vertexIndex][v]);
-                Direction sideBDir = static_cast<Direction>(2 * w + offsets[directionID][vertexIndex][w]);
-
-                BlockIndex sideA = blockIndex + BlockIndex::Dir(direction) + BlockIndex::Dir(sideADir);
-                BlockIndex sideB = blockIndex + BlockIndex::Dir(direction) + BlockIndex::Dir(sideBDir);
-                BlockIndex corner = blockIndex + BlockIndex::Dir(direction) + BlockIndex::Dir(sideADir) + BlockIndex::Dir(sideBDir);
-
-                int AO = 3;
-                if (!Block::HasTransparency(blockTexture))
-                {
-                  bool sideAIsOpaque = !Block::HasTransparency(getBlockType(blockData, sideA));
-                  bool sideBIsOpaque = !Block::HasTransparency(getBlockType(blockData, sideB));
-                  bool cornerIsOpaque = !Block::HasTransparency(getBlockType(blockData, corner));
-                  AO = sideAIsOpaque && sideBIsOpaque ? 0 : 3 - (sideAIsOpaque + sideBIsOpaque + cornerIsOpaque);
-                }
-
-                BlockIndex vertexPosition = blockIndex + offsets[directionID][vertexIndex];
-                quad.vertices[vertexIndex] = Chunk::Vertex(vertexPosition, vertexIndex, AO, textureID);
-              }
-
-              std::vector<Chunk::Quad>& mesh = Block::HasTransparency(blockTexture) ? transparentMesh : opaqueMesh;
-              mesh.push_back(quad);
+              int adjacencyIndex = 9 * (blockOffset.i + 1) + 3 * (blockOffset.j + 1) + (blockOffset.k + 1);
+              int edgeIndex = (adjacencyIndex - 1) / 2;
+              if (edgeIndex > 5)
+                edgeIndex--;
+              adjacencyData |= 1 << (edgeIndex + 6);
             }
           }
+
+        for (int I = 0; I < 2; ++I)
+          for (int J = 0; J < 2; ++J)
+            for (int K = 0; K < 2; ++K)
+            {
+              BlockIndex blockOffset(2 * I - 1, 2 * J - 1, 2 * K - 1);
+              Block::Type cornerNeighbor = getBlockType(blockData, blockIndex + blockOffset);
+
+              if (!Block::HasTransparency(cornerNeighbor))
+              {
+                int cornerIndex = 4 * I + 2 * J + K;
+                adjacencyData |= 1 << (cornerIndex + 18);
+              }
+            }
+
+        std::vector<Chunk::Voxel>& mesh = Block::HasTransparency(blockType) ? transparentMesh : opaqueMesh;
+        mesh.push_back(Chunk::Voxel(voxelData, adjacencyData));
       }
 
   bool meshGenrated = !opaqueMesh.empty() || !transparentMesh.empty();

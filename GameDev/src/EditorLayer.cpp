@@ -9,7 +9,6 @@ namespace Engine
     : Layer("EditorLayer"),
     m_ViewportSize({ 0, 0 })
   {
-    Engine::UniformBuffer::Initialize();
     RenderCommand::Initialize();
     Renderer2D::Initialize();
   }
@@ -107,7 +106,7 @@ namespace Engine
       case SceneState::Edit:
       {
         DevCamera::OnUpdate(timestep);
-        Scene::OnUpdateDev(timestep);
+        // Scene::OnUpdateDev(timestep);
         break;
       }
       case SceneState::Play:

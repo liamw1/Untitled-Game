@@ -35,7 +35,8 @@ namespace Engine
     virtual void drawVertices(const VertexArray* vertexArray, uint32_t vertexCount) = 0;
     virtual void drawIndexed(const VertexArray* vertexArray, uint32_t indexCount) = 0;
     virtual void drawIndexedLines(const VertexArray* vertexArray, uint32_t indexCount) = 0;
-    virtual void multiDrawIndexed(const void* drawCommands, int drawCount, int stride) = 0;
+
+    virtual void multiDrawVertices(const void* drawCommands, int drawCount, int stride) = 0;
 
     virtual void clearDepthBuffer() = 0;
 

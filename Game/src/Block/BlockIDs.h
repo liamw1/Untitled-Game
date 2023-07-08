@@ -2,7 +2,7 @@
 #include <cstdint>
 
 using blockID = uint8_t;
-using blockTexID = uint16_t;
+using blockTexID = uint32_t;
 
 namespace Block
 {

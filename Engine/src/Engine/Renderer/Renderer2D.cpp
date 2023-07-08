@@ -13,6 +13,7 @@ namespace Engine
   struct CameraUniformData
   {
     FMat4 viewProjection;
+    Float3 cameraPosition;
   };
 
   struct QuadVertex
@@ -188,9 +189,10 @@ namespace Engine
     delete[] s_QuadVertexBufferBase;
   }
 
-  void Renderer2D::BeginScene(const Mat4& viewProjection)
+  void Renderer2D::BeginScene(Entity viewer)
   {
-    s_CameraUniformData.viewProjection = viewProjection;
+    s_CameraUniformData.viewProjection = Scene::CalculateViewProjection(viewer);
+    s_CameraUniformData.cameraPosition = viewer.get<Component::Transform>().position;
     s_CameraUniform->set(&s_CameraUniformData, sizeof(CameraUniformData));
 
     startBatch();

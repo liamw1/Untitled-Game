@@ -7,36 +7,34 @@ namespace Engine
   class MultiDrawCommand
   {
   public:
-    MultiDrawCommand(const Identifier& id, uint32_t indexCount)
-      : m_IndexCount(indexCount),
+    MultiDrawCommand(const Identifier& id, uint32_t vertexCount)
+      : m_VertexCount(vertexCount),
         m_InstanceCount(1),
-        m_FirstIndex(0),
-        m_BaseVertex(0),
+        m_FirstVertex(0),
         m_BaseInstance(0),
         m_ID(id),
         m_CommandIndex(nullptr) {}
 
-    int vertexOffset() const { return m_BaseVertex; }
+    uint32_t vertexCount() const { return m_VertexCount; }
+
+    uint32_t firstVertex() const { return m_FirstVertex; }
 
     const Identifier& id() const { return m_ID; }
 
     const std::shared_ptr<std::size_t>& commandIndex() const { return m_CommandIndex; }
 
-    void setPlacement(int vertexOffset, const std::shared_ptr<std::size_t>& commandIndex)
+    void setPlacement(uint32_t firstVertex, const std::shared_ptr<std::size_t>& commandIndex)
     {
-      m_BaseVertex = vertexOffset;
+      m_FirstVertex = firstVertex;
       m_CommandIndex = commandIndex;
     }
-
-    int vertexCount() const { return static_cast<Derived*>(this)->vertexCount(); }
 
     const void* vertexData() const { return static_cast<Derived*>(this)->vertexData(); }
 
   protected:
-    uint32_t m_IndexCount;
+    uint32_t m_VertexCount;
     uint32_t m_InstanceCount;
-    uint32_t m_FirstIndex;
-    int m_BaseVertex;
+    uint32_t m_FirstVertex;
     uint32_t m_BaseInstance;
 
     Identifier m_ID;
@@ -57,16 +55,6 @@ namespace Engine
       m_VertexArray->setLayout(layout);
 
       addFreeRegion(0, m_Capacity);
-    }
-
-    /*
-        Sets an array of indices that represent the order in which vertices will be drawn.
-        The count of this array should be a multiple of 3 (for drawing triangles).
-        OpenGL expects vertices to be in counter-clockwise orientation.
-    */
-    void setIndexBuffer(const std::shared_ptr<const IndexBuffer>& indexBuffer)
-    {
-      m_VertexArray->setIndexBuffer(indexBuffer);
     }
 
     void bind() const { m_VertexArray->bind(); }
@@ -138,7 +126,7 @@ namespace Engine
         return;
 
       std::size_t drawCommandIndex = *allocationToRemove->second;
-      int freedRegionOffset = m_DrawCommands[drawCommandIndex].vertexOffset();
+      int freedRegionOffset = m_DrawCommands[drawCommandIndex].firstVertex();
       MemoryRegionsIterator freedRegionPosition = m_MemoryRegions.find(freedRegionOffset);
       EN_CORE_ASSERT(freedRegionPosition != m_MemoryRegions.end(), "No memory region was found at offset {0}!", freedRegionOffset);
       EN_CORE_ASSERT(!freedRegionPosition->second.isFree(), "Region is already free!");
@@ -297,7 +285,7 @@ namespace Engine
 
     void uploadVertexData(const DrawCommand& drawCommand)
     {
-      m_VertexArray->updateVertexBuffer(drawCommand.vertexData(), drawCommand.vertexOffset() * m_Stride, drawCommand.vertexCount() * m_Stride);
+      m_VertexArray->updateVertexBuffer(drawCommand.vertexData(), drawCommand.firstVertex() * m_Stride, drawCommand.vertexCount() * m_Stride);
     }
   };
 }

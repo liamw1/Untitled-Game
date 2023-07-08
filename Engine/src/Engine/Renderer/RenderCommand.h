@@ -23,7 +23,7 @@ namespace Engine
     void DrawIndexed(const VertexArray* vertexArray, uint32_t indexCount = 0);
     void DrawIndexedLines(const VertexArray* vertexArray, uint32_t indexCount = 0);
 
-    void MultiDrawIndexed(const void* drawCommands, int drawCount, int stride);
+    void MultiDrawVertices(const void* drawCommands, int drawCount, int stride);
 
     void ClearDepthBuffer();
   };
