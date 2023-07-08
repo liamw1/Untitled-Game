@@ -144,67 +144,49 @@ void Chunk::reset()
 
 
 
-Chunk::Vertex::Vertex(const BlockIndex& vertexPosition, int vertexIndex, int ambientOcclusion, int textureID)
+blockIndex_t Chunk::Voxel::x() const
 {
-  m_Data = vertexPosition.i + (vertexPosition.j << 6) + (vertexPosition.k << 12);
-  m_Data |= vertexIndex << 18;
-  m_Data |= ambientOcclusion << 20;
-  m_Data |= textureID << 22;
+  return (m_VoxelData & 0x001F0000u) >> 16u;
 }
 
-blockIndex_t Chunk::Vertex::x() const
+blockIndex_t Chunk::Voxel::y() const
 {
-  return (m_Data & 0x0000003Fu) >> 0u;
+  return (m_VoxelData & 0x03E00000u) >> 21u;
 }
 
-blockIndex_t Chunk::Vertex::y() const
+blockIndex_t Chunk::Voxel::z() const
 {
-  return (m_Data & 0x00000FC0u) >> 6u;
+  return (m_VoxelData & 0x7C000000u) >> 26u;
 }
 
-blockIndex_t Chunk::Vertex::z() const
-{
-  return (m_Data & 0x0003F000u) >> 12u;
-}
-
-Vec3 Chunk::Vertex::position() const
+BlockIndex Chunk::Voxel::index() const
 {
   return { x(), y(), z() };
 }
 
-Vec3 Chunk::Quad::center() const
+void Chunk::DrawCommand::sortVoxels(const GlobalIndex& originIndex, const Vec3& playerPosition)
 {
-  Vec3 sum(0);
-  for (const Vertex& vertex : vertices)
-    sum += vertex.position();
-  return Block::Length() * sum / 4;
+  BlockIndex playerBlock = BlockIndex::ToIndex(playerPosition / Block::Length());
+  BlockIndex originBlock = playerBlock;
+  for (int i = 0; i < 3; ++i)
+  {
+    if (originIndex[i] > id()[i])
+      originBlock[i] = Chunk::Size() - 1;
+    else if (originIndex[i] < id()[i])
+      originBlock[i] = 0;
+  }
+  if (originBlock == m_SortState)
+    return;
+
+  std::sort(m_Mesh.begin(), m_Mesh.end(), [&originBlock](const Voxel& voxelA, const Voxel& voxelB)
+    {
+      BlockIndex diffA = voxelA.index() - originBlock;
+      int distA = std::abs(diffA.i) + std::abs(diffA.j) + std::abs(diffA.k);
+
+      BlockIndex diffB = voxelB.index() - originBlock;
+      int distB = std::abs(diffB.i) + std::abs(diffB.j) + std::abs(diffB.k);
+
+      return distA > distB;
+    });
+  m_SortState = originBlock;
 }
-
-Vec3 Chunk::Quad::normal() const
-{
-  Vec3 vert0 = vertices[0].position();
-  Vec3 vert1 = vertices[1].position();
-  Vec3 vert2 = vertices[2].position();
-
-  Vec3 sideA = vert1 - vert0;
-  Vec3 sideB = vert2 - vert0;
-  return glm::cross(sideA, sideB);
-}
-
-// void Chunk::DrawCommand::sortQuads(const GlobalIndex& originIndex, const Vec3& playerPosition)
-// {
-//   std::sort(m_Mesh.begin(), m_Mesh.end(), [this, &originIndex, &playerPosition](const Quad& quadA, const Quad& quadB)
-//     {
-//       static constexpr length_t shiftSize = 0.001_m * Block::Length();
-// 
-//       Vec3 chunkAnchor = Chunk::AnchorPosition(m_ID, originIndex);
-// 
-//       Vec3 positionA = chunkAnchor + quadA.center() - shiftSize * quadA.normal();
-//       length_t distA = glm::length2(positionA - playerPosition);
-// 
-//       Vec3 positionB = chunkAnchor + quadB.center() - shiftSize * quadB.normal();
-//       length_t distB = glm::length2(positionB - playerPosition);
-// 
-//       return distA > distB;
-//     });
-// }

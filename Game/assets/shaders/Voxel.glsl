@@ -169,9 +169,20 @@ void main()
   vec3 blockCenter = u_AnchorPosition[v_DrawID[0]].xyz + u_BlockLength * vec3(blockIndex) + vec3(u_BlockLength) / 2;
   vec3 toBlock = blockCenter - u_CameraPosition.xyz;
 
-  for (int faceID = 0; faceID < 6; ++faceID)
-    if (faceEnabled(faceID) && (u_TransparencyPass || !isCulled(faceID, toBlock)))
+  for (uint coordID = 0; coordID < 3; ++coordID)
+  {
+    uint faceID = 2 * coordID + (toBlock[coordID] < 0 ? 1 : 0);
+    if (faceEnabled(faceID))
       addQuad(blockIndex, faceID, u_TextureIDs[blockID][faceID]);
+  }
+
+  if (u_TransparencyPass)
+    for (uint coordID = 0; coordID < 3; ++coordID)
+    {
+      uint faceID = 2 * coordID + (toBlock[coordID] < 0 ? 0 : 1);
+      if (faceEnabled(faceID))
+        addQuad(blockIndex, faceID, u_TextureIDs[blockID][faceID]);
+    }
 }
 
 

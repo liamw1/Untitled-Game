@@ -104,32 +104,15 @@ private:
     Voxel(uint32_t voxelData, uint32_t adjacencyData)
       : m_VoxelData(voxelData), m_AdjacencyData(adjacencyData) {}
 
-  private:
-    uint32_t m_VoxelData;
-    uint32_t m_AdjacencyData;
-  };
-
-  class Vertex
-  {
-  public:
-    Vertex() = default;
-    Vertex(const BlockIndex& vertexPosition, int vertexIndex, int ambientOcclusion, int textureID);
 
     blockIndex_t x() const;
     blockIndex_t y() const;
     blockIndex_t z() const;
-    Vec3 position() const;
+    BlockIndex index() const;
 
   private:
-    uint32_t m_Data;
-  };
-
-  struct Quad
-  {
-    std::array<Vertex, 4> vertices;
-
-    Vec3 center() const;
-    Vec3 normal() const;
+    uint32_t m_VoxelData;
+    uint32_t m_AdjacencyData;
   };
 
   class DrawCommand : public Engine::MultiDrawCommand<GlobalIndex, DrawCommand>
@@ -153,10 +136,11 @@ private:
 
     const void* vertexData() const { return m_Mesh.data(); }
 
-    // void sortQuads(const GlobalIndex& originIndex, const Vec3& playerPosition);
+    void sortVoxels(const GlobalIndex& originIndex, const Vec3& playerPosition);
 
   private:
     std::vector<Voxel> m_Mesh;
+    BlockIndex m_SortState;
   };
 
   Engine::MultiDrawArray<DrawCommand>::Identifier test;

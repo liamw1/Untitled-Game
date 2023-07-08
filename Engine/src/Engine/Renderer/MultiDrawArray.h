@@ -208,7 +208,7 @@ namespace Engine
     {
       for (auto it = m_DrawCommands.begin(); it != m_DrawCommands.begin() + drawCount; ++it)
       {
-        int oldVertexCount = it->vertexCount();
+        uint32_t oldVertexCount = it->vertexCount();
         if (function(*it, std::forward<Args>(args)...))
         {
           if (it->vertexCount() > oldVertexCount)
