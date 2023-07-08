@@ -6,7 +6,8 @@
 #include "World/LOD.h"
 
 GameSandbox::GameSandbox()
-  : Layer("GameSandbox")
+  : Layer("GameSandbox"),
+    m_PrintFrameRate(false)
 {
   Player::Initialize(GlobalIndex(0, 0, 2), Block::Length() * Vec3(16.0));
   Engine::RenderCommand::Initialize();
@@ -31,7 +32,8 @@ void GameSandbox::onUpdate(Timestep timestep)
 {
   EN_PROFILE_FUNCTION();
 
-  EN_TRACE("fps: {0}", static_cast<int>(1.0f / timestep.sec()));
+  if (m_PrintFrameRate)
+    EN_TRACE("fps: {0}", static_cast<int>(1.0f / timestep.sec()));
 
   Engine::RenderCommand::SetDepthWriting(true);
   Engine::RenderCommand::SetUseDepthOffset(false);
@@ -69,6 +71,10 @@ bool GameSandbox::onKeyPressEvent(Engine::KeyPressEvent& event)
   {
     wireFrameEnabled = !wireFrameEnabled;
     Engine::RenderCommand::SetWireFrame(wireFrameEnabled);
+  }
+  if (event.getKeyCode() == Key::F2)
+  {
+    m_PrintFrameRate = !m_PrintFrameRate;
   }
 
   return false;

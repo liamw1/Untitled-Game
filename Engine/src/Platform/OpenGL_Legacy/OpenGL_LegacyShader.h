@@ -11,7 +11,6 @@ namespace Engine
   {
   public:
     OpenGL_LegacyShader(const std::string& filepath);
-    OpenGL_LegacyShader(const std::string& name, const std::string& vertexSource, const std::string& fragmentSource);
     ~OpenGL_LegacyShader();
 
     const std::string& getName() const override { return m_Name; }

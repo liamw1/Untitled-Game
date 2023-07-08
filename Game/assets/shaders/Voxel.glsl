@@ -46,6 +46,38 @@ void main()
 
 
 
+#type geometry
+#version 460 core
+
+layout (triangles) in;
+layout (triangle_strip, max_vertices = 3) out;
+
+layout(location = 0) in flat uint v_TextureIndex[];
+layout(location = 1) in vec2 v_TexCoord[];
+layout(location = 2) in vec4 v_BasicLight[];
+
+layout(location = 0) out flat uint g_TextureIndex;
+layout(location = 1) out vec2 g_TexCoord;
+layout(location = 2) out vec4 g_BasicLight;
+
+void addVertex(int vertexIndex)
+{
+  g_TextureIndex = v_TextureIndex[vertexIndex];
+  g_TexCoord = v_TexCoord[vertexIndex];
+  g_BasicLight = v_BasicLight[vertexIndex];
+  
+  gl_Position = gl_in[vertexIndex].gl_Position; 
+  EmitVertex();
+}
+
+void main() {
+    for (int v = 0; v < 3; ++v)
+      addVertex(v);
+    EndPrimitive();
+}  
+
+
+
 #type fragment
 #version 460 core
 

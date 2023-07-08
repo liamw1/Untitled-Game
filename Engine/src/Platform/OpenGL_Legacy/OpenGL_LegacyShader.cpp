@@ -7,12 +7,14 @@
 
 namespace Engine
 {
-  static constexpr int c_MaxShaders = 2;
+  static constexpr int c_MaxShaders = 3;
 
   static GLenum shaderTypeFromString(const std::string& type)
   {
     if (type == "vertex")
       return GL_VERTEX_SHADER;
+    if (type == "geometry")
+      return GL_GEOMETRY_SHADER;
     if (type == "fragment" || type == "pixel")
       return GL_FRAGMENT_SHADER;
 
@@ -81,17 +83,6 @@ namespace Engine
 
     std::filesystem::path path = filepath;
     m_Name = path.stem().string(); // Returns the file's name stripped of the extension.
-  }
-
-  OpenGL_LegacyShader::OpenGL_LegacyShader(const std::string& name, const std::string& vertexSource, const std::string& fragmentSource)
-    : m_Name(name)
-  {
-    EN_PROFILE_FUNCTION();
-
-    std::unordered_map<GLenum, std::string> sources;
-    sources[GL_VERTEX_SHADER] = vertexSource;
-    sources[GL_FRAGMENT_SHADER] = fragmentSource;
-    compile(sources);
   }
 
   OpenGL_LegacyShader::~OpenGL_LegacyShader()

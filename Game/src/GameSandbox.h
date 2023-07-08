@@ -17,6 +17,7 @@ public:
 
 private:
   World m_World;
+  bool m_PrintFrameRate;
 
   bool onKeyPressEvent(Engine::KeyPressEvent& event);
 };

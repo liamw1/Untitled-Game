@@ -103,20 +103,6 @@ namespace Engine
     m_Name = filepath.substr(lastSlash, count);
   }
 
-  OpenGLShader::OpenGLShader(const std::string& name, const std::string& vertexSource, const std::string& fragmentSource)
-    : m_Name(name)
-  {
-    EN_PROFILE_FUNCTION();
-
-    std::unordered_map<GLenum, std::string> sources;
-    sources[GL_VERTEX_SHADER] = vertexSource;
-    sources[GL_FRAGMENT_SHADER] = fragmentSource;
-
-    compileOrGetVulkanBinaries(sources);
-    compileOrGetOpenGLBinaries();
-    createProgram();
-  }
-
   OpenGLShader::~OpenGLShader()
   {
     EN_PROFILE_FUNCTION();

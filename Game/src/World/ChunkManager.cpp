@@ -140,11 +140,11 @@ void ChunkManager::render()
 
         return distA > distB;
       });
-    m_TransparentMultiDrawArray->amend(commandCount, [&originIndex, &playerPosition](Chunk::DrawCommand& drawCommand)
-      {
-        drawCommand.sortQuads(originIndex, playerPosition);
-        return true;
-      });
+    // m_TransparentMultiDrawArray->amend(commandCount, [&originIndex, &playerPosition](Chunk::DrawCommand& drawCommand)
+    //   {
+    //     drawCommand.sortQuads(originIndex, playerPosition);
+    //     return true;
+    //   });
 
     std::vector<Float4> storageBufferData;
     storageBufferData.reserve(commandCount);
