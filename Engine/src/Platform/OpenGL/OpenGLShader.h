@@ -29,8 +29,8 @@ namespace Engine
     std::unordered_map<uint32_t, std::vector<uint32_t>> m_OpenGLSPIRV;
     std::unordered_map<uint32_t, std::string> m_OpenGLSourceCode;
 
-    void compileOrGetVulkanBinaries(const std::unordered_map<std::string, std::string>& shaderSources);
-    void compileOrGetOpenGLBinaries();
+    void compileVulkanBinaries(const std::unordered_map<std::string, std::string>& shaderSources);
+    void compileOpenGLBinaries();
     void createProgram();
     void reflect(uint32_t stage, const std::vector<uint32_t>& shaderData);
   };

@@ -87,10 +87,14 @@ private:
     Generates simplistic mesh in a compressed format based on chunk compostion.
     Block faces covered by opaque blocks will not be added to mesh.
     Compresed format is follows,
-     bits 0-17:  Relative position of vertex within chunk (3-comps, 6 bits each)
-     bits 18-19: Texture coordinate index (see Chunk.glsl for details)
-     bits 20-21: Ambient Occlusion level (see link below)
-     bits 22-31: Texure ID
+      1st 4 bytes
+        bits 0-15:  Block ID
+        bits 16-30: Block index       (3 components, 5 bits each)
+      2nd 4 bytes
+        bits 0-32:  Ambient occlusion (16 of 24 components)
+      3rd 4 byes
+        bits 0-15:  Ambient occlusion (8 of 24 components)
+        bits 16-21: Enabled faces     (6 flags, one for each face)
      Uses AO algorithm outlined in https://0fps.net/2013/07/03/ambient-occlusion-for-minecraft-like-worlds/
   */
   bool meshChunk(const GlobalIndex& chunkIndex);

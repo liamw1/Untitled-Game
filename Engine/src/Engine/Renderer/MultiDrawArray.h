@@ -3,11 +3,16 @@
 
 namespace Engine
 {
+  /*
+    A CRTP class that represents a single multi-draw command.
+    Derived classes can store arbitrary amounts of extra data
+    as long as the layout of the first 16 bytes is preserved.
+  */
   template<typename Identifier, typename Derived>
   class MultiDrawCommand
   {
   public:
-    MultiDrawCommand(const Identifier& id, uint32_t vertexCount)
+    MultiDrawCommand(const Identifier& id, int vertexCount)
       : m_VertexCount(vertexCount),
         m_InstanceCount(1),
         m_FirstVertex(0),
@@ -15,18 +20,18 @@ namespace Engine
         m_ID(id),
         m_CommandIndex(nullptr) {}
 
-    uint32_t vertexCount() const { return m_VertexCount; }
+    int vertexCount() const { return m_VertexCount; }
 
-    uint32_t firstVertex() const { return m_FirstVertex; }
+    int firstVertex() const { return m_FirstVertex; }
 
     const Identifier& id() const { return m_ID; }
 
     const std::shared_ptr<std::size_t>& commandIndex() const { return m_CommandIndex; }
 
-    void setPlacement(uint32_t firstVertex, const std::shared_ptr<std::size_t>& commandIndex)
+    void setPlacement(int firstVertex, std::size_t commandIndex)
     {
       m_FirstVertex = firstVertex;
-      m_CommandIndex = commandIndex;
+      m_CommandIndex = std::make_shared<std::size_t>(commandIndex);
     }
 
     const void* vertexData() const { return static_cast<Derived*>(this)->vertexData(); }
@@ -41,6 +46,12 @@ namespace Engine
     std::shared_ptr<std::size_t> m_CommandIndex;
   };
 
+  /*
+    Stores and manages a set of multi-draw commands. Commands are queried using their unique ID,
+    the type of which is user-specified. Provides O(log(n)) insertion and removal, while keeping
+    draw commands tightly packed. Vertex data is stored in a single dynamically-resizing buffer
+    on the gpu. Additionally, the class provides operations on draw commands, such as sorting.
+  */
   template<typename DrawCommand>
   class MultiDrawArray
   {
@@ -105,17 +116,21 @@ namespace Engine
 
       auto& [allocationOffset, allocationRegion] = *bestMemoryRegion;
 
-      m_VertexArray->updateVertexBuffer(drawCommand.vertexData(), allocationOffset * m_Stride, vertexCount * m_Stride);
-
+      // Update memory region container
       int memoryLeftover = allocationRegion.size - vertexCount;
       allocationRegion.id = drawCommand.id();
       allocationRegion.size = vertexCount;
+
+      // Update free region container if necessary
       if (memoryLeftover)
         addFreeRegion(allocationOffset + allocationRegion.size, memoryLeftover);
 
-      std::shared_ptr<std::size_t> commandIndex = std::make_shared<std::size_t>(m_DrawCommands.size());
-      m_Allocations.emplace(drawCommand.id(), commandIndex);
-      drawCommand.setPlacement(allocationOffset, commandIndex);
+      // Update allocations container
+      drawCommand.setPlacement(allocationOffset, m_DrawCommands.size());
+      m_Allocations.emplace(drawCommand.id(), drawCommand.commandIndex());
+
+      // Upload vertex data and update draw commands container
+      uploadVertexData(drawCommand);
       m_DrawCommands.push_back(std::move(drawCommand));
     }
 
@@ -133,6 +148,7 @@ namespace Engine
 
       int freedRegionSize = freedRegionPosition->second.size;
 
+      // If previous region is free, merge with newly freed region
       if (freedRegionPosition != m_MemoryRegions.begin())
       {
         MemoryRegionsIterator prevRegionPosition = std::prev(freedRegionPosition);
@@ -147,6 +163,7 @@ namespace Engine
         }
       }
 
+      // If next region if free, merge with newly freed region
       MemoryRegionsIterator nextRegionPosition = m_MemoryRegions.erase(freedRegionPosition);
       if (nextRegionPosition != m_MemoryRegions.end())
       {
@@ -160,13 +177,16 @@ namespace Engine
         }
       }
 
+      // Update free regions container
       addFreeRegion(freedRegionOffset, freedRegionSize);
 
+      // Update allocations container
+      m_Allocations.erase(allocationToRemove);
+
+      // Update draw command container
       std::swap(m_DrawCommands[drawCommandIndex], m_DrawCommands.back());
       *m_DrawCommands[drawCommandIndex].commandIndex() = drawCommandIndex;
       m_DrawCommands.pop_back();
-
-      m_Allocations.erase(allocationToRemove);
     }
 
     template<typename F, typename... Args>
@@ -208,7 +228,7 @@ namespace Engine
     {
       for (auto it = m_DrawCommands.begin(); it != m_DrawCommands.begin() + drawCount; ++it)
       {
-        uint32_t oldVertexCount = it->vertexCount();
+        int oldVertexCount = it->vertexCount();
         if (function(*it, std::forward<Args>(args)...))
         {
           if (it->vertexCount() > oldVertexCount)
@@ -252,10 +272,10 @@ namespace Engine
     static constexpr float c_CapacityIncreaseOnResize = 1.25f;
 
     std::unique_ptr<VertexArray> m_VertexArray;
-    std::map<int, MemoryRegion> m_MemoryRegions;
-    std::multimap<int, int> m_FreeRegions;
-    std::unordered_map<Identifier, std::shared_ptr<std::size_t>> m_Allocations;
-    std::vector<DrawCommand> m_DrawCommands;
+    std::map<int, MemoryRegion> m_MemoryRegions;                                  // For fast access based on vertex offset
+    std::multimap<int, int> m_FreeRegions;                                        // For fast access based on free region size
+    std::unordered_map<Identifier, std::shared_ptr<std::size_t>> m_Allocations;   // For fast access based on ID
+    std::vector<DrawCommand> m_DrawCommands;                                      // For fast iteration over draw commands
     uint32_t m_Capacity;
     uint32_t m_Stride;
 

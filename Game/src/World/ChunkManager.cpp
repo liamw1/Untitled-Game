@@ -472,6 +472,7 @@ bool ChunkManager::meshChunk(const GlobalIndex& chunkIndex)
         BlockIndex blockIndex = BlockIndex(i, j, k);
         Block::Type blockType = getBlockType(blockData, blockIndex);
 
+        // Air blocks do not get meshed
         if (blockType == Block::Type::Air)
           continue;
 
@@ -479,35 +480,33 @@ bool ChunkManager::meshChunk(const GlobalIndex& chunkIndex)
         uint32_t quadData2 = 0;
         for (Direction direction : Directions())
         {
-          Block::Type blockNeighbor = getBlockType(blockData, blockIndex + BlockIndex::Dir(direction));
-
-          if (blockNeighbor == blockType || (!Block::HasTransparency(blockType) && !Block::HasTransparency(blockNeighbor)))
+          // Only enable face if block and neighbor are different types, or if either are transparent
+          Block::Type cardinalNeighbor = getBlockType(blockData, blockIndex + BlockIndex::Dir(direction));
+          if (cardinalNeighbor == blockType || (!Block::HasTransparency(blockType) && !Block::HasTransparency(cardinalNeighbor)))
             continue;
 
-          // Enable face
           int directionID = static_cast<int>(direction);
           quadData2 |= 1 << (16 + directionID);
 
-          Block::Texture blockTexture = Block::GetTexture(blockType, direction);
-          if (Block::HasTransparency(blockTexture))
+          // If quad texture is transparent, no need to set ambient occlusion
+          if (Block::HasTransparency(Block::GetTexture(blockType, direction)))
             continue;
 
-          // Set AO if quad is opaque
           for (int quadIndex = 0; quadIndex < 4; ++quadIndex)
           {
             int u = directionID / 2;
             int v = (u + 1) % 3;
             int w = (u + 2) % 3;
 
-            Direction sideADir = static_cast<Direction>(2 * v + offsets[directionID][quadIndex][v]);
-            Direction sideBDir = static_cast<Direction>(2 * w + offsets[directionID][quadIndex][w]);
+            Direction edgeADir = static_cast<Direction>(2 * v + offsets[directionID][quadIndex][v]);
+            Direction edgeBDir = static_cast<Direction>(2 * w + offsets[directionID][quadIndex][w]);
 
-            BlockIndex sideA = blockIndex + BlockIndex::Dir(direction) + BlockIndex::Dir(sideADir);
-            BlockIndex sideB = blockIndex + BlockIndex::Dir(direction) + BlockIndex::Dir(sideBDir);
-            BlockIndex corner = blockIndex + BlockIndex::Dir(direction) + BlockIndex::Dir(sideADir) + BlockIndex::Dir(sideBDir);
+            BlockIndex edgeA = blockIndex + BlockIndex::Dir(direction) + BlockIndex::Dir(edgeADir);
+            BlockIndex edgeB = blockIndex + BlockIndex::Dir(direction) + BlockIndex::Dir(edgeBDir);
+            BlockIndex corner = blockIndex + BlockIndex::Dir(direction) + BlockIndex::Dir(edgeADir) + BlockIndex::Dir(edgeBDir);
 
-            bool sideAIsOpaque = !Block::HasTransparency(getBlockType(blockData, sideA));
-            bool sideBIsOpaque = !Block::HasTransparency(getBlockType(blockData, sideB));
+            bool sideAIsOpaque = !Block::HasTransparency(getBlockType(blockData, edgeA));
+            bool sideBIsOpaque = !Block::HasTransparency(getBlockType(blockData, edgeB));
             bool cornerIsOpaque = !Block::HasTransparency(getBlockType(blockData, corner));
             int ambientOcclusionLevel = sideAIsOpaque && sideBIsOpaque ? 3 : sideAIsOpaque + sideBIsOpaque + cornerIsOpaque;
 
@@ -519,7 +518,7 @@ bool ChunkManager::meshChunk(const GlobalIndex& chunkIndex)
           }
         }
 
-        // Skip voxel if no faces are enabled
+        // Skip block if no faces are enabled
         if (!quadData2)
           continue;
 

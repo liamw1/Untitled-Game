@@ -4,6 +4,7 @@
 #include "World/World.h"
 #include "World/Biome.h"
 #include "World/LOD.h"
+#include <numeric>
 
 GameSandbox::GameSandbox()
   : Layer("GameSandbox"),
@@ -33,7 +34,17 @@ void GameSandbox::onUpdate(Timestep timestep)
   EN_PROFILE_FUNCTION();
 
   if (m_PrintFrameRate)
-    EN_TRACE("fps: {0}", static_cast<int>(1.0f / timestep.sec()));
+  {
+    static constexpr int framerateWindowSize = 100;
+
+    float frameTime = timestep.sec();
+    m_FrameTimeWindow.push_front(frameTime);
+    if (m_FrameTimeWindow.size() > framerateWindowSize)
+      m_FrameTimeWindow.pop_back();
+
+    float maxFrameTime = *std::max_element(m_FrameTimeWindow.begin(), m_FrameTimeWindow.end());
+    EN_TRACE("Min FPS: {0}", static_cast<int>(1.0f / maxFrameTime));
+  }
 
   Engine::RenderCommand::SetDepthWriting(true);
   Engine::RenderCommand::SetUseDepthOffset(false);

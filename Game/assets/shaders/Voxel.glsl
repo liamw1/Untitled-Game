@@ -122,30 +122,16 @@ void addQuad(uvec3 blockIndex, uint faceID, uint textureID)
   uint lightDifferenceAlongStandardSeam = min(AO[0] - AO[3], AO[3] - AO[0]);
   uint lightDifferenceAlongReversedSeam = min(AO[1] - AO[2], AO[2] - AO[1]);
 
-  /*
-    Choose vertex ordering that minimizes difference in light across seam
-    NOTE: This if/else block is faster than defining two preset vectors of indices
-
-            uvec4 standardOrder = uvec4(0, 1, 2, 3);
-            uvec4 reversedOrder = uvec4(1, 3, 0, 2);,
-
-          choosing one based on the condition, and doing a single loop over those.
-          I have no idea why. If anything I think this would be slower ¯\_(ツ)_/¯.
-  */
-  if (lightDifferenceAlongStandardSeam >= lightDifferenceAlongReversedSeam)
+  // Choose vertex ordering that minimizes difference in light across seam
+  uvec4 quadOrder = uvec4(0, 1, 2, 3);
+  if (lightDifferenceAlongStandardSeam < lightDifferenceAlongReversedSeam)
   {
-    addVertex(blockIndex, faceID, 0, AO[0], textureID);
-    addVertex(blockIndex, faceID, 1, AO[1], textureID);
-    addVertex(blockIndex, faceID, 2, AO[2], textureID);
-    addVertex(blockIndex, faceID, 3, AO[3], textureID);
+    quadOrder = uvec4(1, 3, 0, 2);
+    AO = uvec4(AO[1], AO[3], AO[0], AO[2]);
   }
-  else
-  {
-    addVertex(blockIndex, faceID, 1, AO[1], textureID);
-    addVertex(blockIndex, faceID, 3, AO[3], textureID);
-    addVertex(blockIndex, faceID, 0, AO[0], textureID);
-    addVertex(blockIndex, faceID, 2, AO[2], textureID);
-  }
+
+  for (int i = 0; i < 4; ++i)
+    addVertex(blockIndex, faceID, quadOrder[i], AO[i], textureID);
 
   EndPrimitive();
 }

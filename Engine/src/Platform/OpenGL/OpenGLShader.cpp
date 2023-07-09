@@ -47,41 +47,6 @@ namespace Engine
     }
   }
 
-  static const char* getCacheDirectory()
-  {
-    // TODO: Make sure the assets directory is valid
-    return "assets/cache/shader/opengl";
-  }
-
-  static void createCacheDirectoryIfNeeded()
-  {
-    std::string cacheDirectory = getCacheDirectory();
-    if (!std::filesystem::exists(cacheDirectory))
-      std::filesystem::create_directories(cacheDirectory);
-  }
-
-  static const char* openGLShaderStageCachedOpenGLFileExtension(uint32_t stage)
-  {
-    switch (stage)
-    {
-      case GL_VERTEX_SHADER:    return ".cached_opengl.vert";
-      case GL_GEOMETRY_SHADER:  return ".cached_opengl.geom";
-      case GL_FRAGMENT_SHADER:  return ".cached_opengl.frag";
-      default: EN_CORE_ERROR("Invalid openGL shader stage!");  return "";
-    }
-  }
-
-  static const char* openGLShaderStageCachedVulkanFileExtension(uint32_t stage)
-  {
-    switch (stage)
-    {
-      case GL_VERTEX_SHADER:    return ".cached_vulkan.vert";
-      case GL_GEOMETRY_SHADER:  return ".cached_vulkan.geom";
-      case GL_FRAGMENT_SHADER:  return ".cached_vulkan.frag";
-      default: EN_CORE_ERROR("Invalid openGL shader stage!");  return "";
-    }
-  }
-
 
 
   OpenGLShader::OpenGLShader(const std::string& filepath, const std::unordered_map<std::string, std::string>& preprocessorDefinitions)
@@ -89,15 +54,13 @@ namespace Engine
   {
     EN_PROFILE_FUNCTION();
 
-    createCacheDirectoryIfNeeded();
-
     std::string source = ReadFile(filepath);
     std::unordered_map<std::string, std::string> shaderSources = PreProcess(source, preprocessorDefinitions);
 
     Timer timer("Shader creation");
     timer.timeStart();
-    compileOrGetVulkanBinaries(shaderSources);
-    compileOrGetOpenGLBinaries();
+    compileVulkanBinaries(shaderSources);
+    compileOpenGLBinaries();
     createProgram();
     timer.timeStop();
 
@@ -129,7 +92,7 @@ namespace Engine
     glUseProgram(0);
   }
 
-  void OpenGLShader::compileOrGetVulkanBinaries(const std::unordered_map<std::string, std::string>& shaderSources)
+  void OpenGLShader::compileVulkanBinaries(const std::unordered_map<std::string, std::string>& shaderSources)
   {
     EN_CORE_ASSERT(std::this_thread::get_id() == Threads::MainThreadID(), "OpenGL calls must be made on the main thread!");
 
@@ -143,52 +106,24 @@ namespace Engine
     if (optimize)
       options.SetOptimizationLevel(shaderc_optimization_level_performance);
 
-    std::filesystem::path cacheDirectory = getCacheDirectory();
-
     std::unordered_map<GLenum, std::vector<uint32_t>>& shaderData = m_VulkanSPIRV;
     shaderData.clear();
     for (const auto& [type, source] : shaderSources)
     {
       GLenum stage = shaderTypeFromString(type);
 
-      std::filesystem::path shaderFilePath = m_FilePath;
-      std::filesystem::path cachedPath = cacheDirectory / (shaderFilePath.filename().string() + openGLShaderStageCachedVulkanFileExtension(stage));
+      shaderc::SpvCompilationResult module = compiler.CompileGlslToSpv(source, openGLShaderStageToShaderC(stage), m_FilePath.c_str(), options);
+      if (module.GetCompilationStatus() != shaderc_compilation_status_success)
+        EN_CORE_ERROR(module.GetErrorMessage());
 
-      std::ifstream in(cachedPath, std::ios::in | std::ios::binary);
-      if (in.is_open())
-      {
-        in.seekg(0, std::ios::end);
-        std::streampos size = in.tellg();
-        in.seekg(0, std::ios::beg);
-
-        std::vector<uint32_t>& data = shaderData[stage];
-        data.resize(size / sizeof(uint32_t));
-        in.read(reinterpret_cast<char*>(data.data()), size);
-      }
-      else
-      {
-        shaderc::SpvCompilationResult module = compiler.CompileGlslToSpv(source, openGLShaderStageToShaderC(stage), m_FilePath.c_str(), options);
-        if (module.GetCompilationStatus() != shaderc_compilation_status_success)
-          EN_CORE_ERROR(module.GetErrorMessage());
-
-        shaderData[stage] = std::vector<uint32_t>(module.cbegin(), module.cend());
-
-        std::ofstream out(cachedPath, std::ios::out | std::ios::binary);
-        if (out.is_open())
-        {
-          std::vector<uint32_t>& data = shaderData[stage];
-          out.write(reinterpret_cast<char*>(data.data()), sizeof(uint32_t) * data.size());
-          out.flush();
-          out.close();
-        }
-      }
+      shaderData[stage] = std::vector<uint32_t>(module.cbegin(), module.cend());
     }
 
     for (const auto& [stage, data] : shaderData)
       reflect(stage, data);
   }
 
-  void OpenGLShader::compileOrGetOpenGLBinaries()
+  void OpenGLShader::compileOpenGLBinaries()
   {
     static constexpr bool optimize = false;
 
@@ -200,47 +135,19 @@ namespace Engine
     if (optimize)
       options.SetOptimizationLevel(shaderc_optimization_level_performance);
 
-    std::filesystem::path cacheDirectory = getCacheDirectory();
-
     shaderData.clear();
     m_OpenGLSourceCode.clear();
     for (auto&& [stage, spirv] : m_VulkanSPIRV)
     {
-      std::filesystem::path shaderFilePath = m_FilePath;
-      std::filesystem::path cachedPath = cacheDirectory / (shaderFilePath.filename().string() + openGLShaderStageCachedOpenGLFileExtension(stage));
+      spirv_cross::CompilerGLSL glslCompiler(spirv);
+      m_OpenGLSourceCode[stage] = glslCompiler.compile();
+      std::string& source = m_OpenGLSourceCode[stage];
 
-      std::ifstream in(cachedPath, std::ios::in | std::ios::binary);
-      if (in.is_open())
-      {
-        in.seekg(0, std::ios::end);
-        std::streampos size = in.tellg();
-        in.seekg(0, std::ios::beg);
+      shaderc::SpvCompilationResult module = compiler.CompileGlslToSpv(source, openGLShaderStageToShaderC(stage), m_FilePath.c_str());
+      if (module.GetCompilationStatus() != shaderc_compilation_status_success)
+        EN_CORE_ERROR(module.GetErrorMessage());
 
-        std::vector<uint32_t>& data = shaderData[stage];
-        data.resize(size / sizeof(uint32_t));
-        in.read(reinterpret_cast<char*>(data.data()), size);
-      }
-      else
-      {
-        spirv_cross::CompilerGLSL glslCompiler(spirv);
-        m_OpenGLSourceCode[stage] = glslCompiler.compile();
-        std::string& source = m_OpenGLSourceCode[stage];
-
-        shaderc::SpvCompilationResult module = compiler.CompileGlslToSpv(source, openGLShaderStageToShaderC(stage), m_FilePath.c_str());
-        if (module.GetCompilationStatus() != shaderc_compilation_status_success)
-          EN_CORE_ERROR(module.GetErrorMessage());
-
-        shaderData[stage] = std::vector<uint32_t>(module.cbegin(), module.cend());
-
-        std::ofstream out(cachedPath, std::ios::out | std::ios::binary);
-        if (out.is_open())
-        {
-          std::vector<uint32_t>& data = shaderData[stage];
-          out.write(reinterpret_cast<char*>(data.data()), sizeof(uint32_t) * data.size());
-          out.flush();
-          out.close();
-        }
-      }
+      shaderData[stage] = std::vector<uint32_t>(module.cbegin(), module.cend());
     }
   }
 

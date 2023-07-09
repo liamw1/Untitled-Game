@@ -97,6 +97,7 @@ private:
 
   _Acquires_lock_(return) std::lock_guard<std::mutex> acquireLock() const { return std::lock_guard(m_Mutex); };
 
+private:
   class Voxel
   {
   public:
@@ -137,14 +138,16 @@ private:
 
     const void* vertexData() const { return m_Mesh.data(); }
 
-    void sortVoxels(const GlobalIndex& originIndex, const Vec3& playerPosition);
+    /*
+      Ensures voxels are sorted based on their distance to the given position, back to front.
+      This operation is surprisely cheap, and can usually be done many times per frame.
+    */
+    void sortVoxels(const GlobalIndex& originIndex, const Vec3& position);
 
   private:
     std::vector<Voxel> m_Mesh;
     BlockIndex m_SortState;
   };
-
-  Engine::MultiDrawArray<DrawCommand>::Identifier test;
 
   friend class ChunkManager;
   friend class ChunkContainer;
