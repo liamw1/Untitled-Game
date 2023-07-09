@@ -461,6 +461,14 @@ bool ChunkManager::meshChunk(const GlobalIndex& chunkIndex)
 
   EN_PROFILE_FUNCTION();
 
+  static constexpr BlockIndex offsets[6][4]
+    = { { {0, 1, 0}, {0, 0, 0}, {0, 1, 1}, {0, 0, 1} },    /*  West Face   */
+        { {1, 0, 0}, {1, 1, 0}, {1, 0, 1}, {1, 1, 1} },    /*  East Face   */
+        { {0, 0, 0}, {1, 0, 0}, {0, 0, 1}, {1, 0, 1} },    /*  South Face  */
+        { {1, 1, 0}, {0, 1, 0}, {1, 1, 1}, {0, 1, 1} },    /*  North Face  */
+        { {0, 1, 0}, {1, 1, 0}, {0, 0, 0}, {1, 0, 0} },    /*  Bottom Face */
+        { {0, 0, 1}, {1, 0, 1}, {0, 1, 1}, {1, 1, 1} } };  /*  Top Face    */
+
   std::vector<Chunk::Voxel> opaqueMesh;
   std::vector<Chunk::Voxel> transparentMesh;
   for (blockIndex_t i = 0; i < Chunk::Size(); ++i)
@@ -473,64 +481,61 @@ bool ChunkManager::meshChunk(const GlobalIndex& chunkIndex)
         if (blockType == Block::Type::Air)
           continue;
 
-        uint32_t adjacencyData = 0;
+        uint32_t quadData1 = 0;
+        uint32_t quadData2 = 0;
         for (Direction direction : Directions())
         {
-          BlockIndex offset = BlockIndex::Dir(direction);
-          Block::Type blockNeighbor = getBlockType(blockData, blockIndex + offset);
-          if (blockNeighbor != blockType && (Block::HasTransparency(blockType) || Block::HasTransparency(blockNeighbor)))
-            adjacencyData |= 1 << static_cast<int>(direction);
+          Block::Type blockNeighbor = getBlockType(blockData, blockIndex + BlockIndex::Dir(direction));
+
+          if (blockNeighbor == blockType || (!Block::HasTransparency(blockType) && !Block::HasTransparency(blockNeighbor)))
+            continue;
+
+          // Enable face
+          int directionID = static_cast<int>(direction);
+          quadData2 |= 1 << (16 + directionID);
+
+          Block::Texture blockTexture = Block::GetTexture(blockType, direction);
+          if (Block::HasTransparency(blockTexture))
+            continue;
+
+          // Set AO if quad is opaque
+          for (int quadIndex = 0; quadIndex < 4; ++quadIndex)
+          {
+            int u = directionID / 2;
+            int v = (u + 1) % 3;
+            int w = (u + 2) % 3;
+
+            Direction sideADir = static_cast<Direction>(2 * v + offsets[directionID][quadIndex][v]);
+            Direction sideBDir = static_cast<Direction>(2 * w + offsets[directionID][quadIndex][w]);
+
+            BlockIndex sideA = blockIndex + BlockIndex::Dir(direction) + BlockIndex::Dir(sideADir);
+            BlockIndex sideB = blockIndex + BlockIndex::Dir(direction) + BlockIndex::Dir(sideBDir);
+            BlockIndex corner = blockIndex + BlockIndex::Dir(direction) + BlockIndex::Dir(sideADir) + BlockIndex::Dir(sideBDir);
+
+            bool sideAIsOpaque = !Block::HasTransparency(getBlockType(blockData, sideA));
+            bool sideBIsOpaque = !Block::HasTransparency(getBlockType(blockData, sideB));
+            bool cornerIsOpaque = !Block::HasTransparency(getBlockType(blockData, corner));
+            int ambientOcclusionLevel = sideAIsOpaque && sideBIsOpaque ? 3 : sideAIsOpaque + sideBIsOpaque + cornerIsOpaque;
+
+            int shift = 2 * (4 * directionID + quadIndex);
+            if (shift < 32)
+              quadData1 |= ambientOcclusionLevel << shift;
+            else
+              quadData2 |= ambientOcclusionLevel << (shift - 32);
+          }
         }
 
-        if (!adjacencyData)
+        // Skip voxel if no faces are enabled
+        if (!quadData2)
           continue;
 
         uint32_t voxelData = static_cast<blockID>(blockType);
         voxelData |= blockIndex.i << 16;
         voxelData |= blockIndex.j << 21;
         voxelData |= blockIndex.k << 26;
-        if (Block::HasTransparency(blockType))
-          voxelData |= 1 << 31;
-
-        for (auto itA = Directions().begin(); itA != Directions().end(); ++itA)
-          for (auto itB = itA.next(); itB != Directions().end(); ++itB)
-          {
-            Direction faceA = *itA;
-            Direction faceB = *itB;
-
-            // Opposite faces cannot form edge
-            if (faceB == !faceA)
-              continue;
-
-            BlockIndex blockOffset = BlockIndex::Dir(faceA) + BlockIndex::Dir(faceB);
-            Block::Type edgeNeighbor = getBlockType(blockData, blockIndex + blockOffset);
-
-            if (!Block::HasTransparency(edgeNeighbor))
-            {
-              int adjacencyIndex = 9 * (blockOffset.i + 1) + 3 * (blockOffset.j + 1) + (blockOffset.k + 1);
-              int edgeIndex = (adjacencyIndex - 1) / 2;
-              if (edgeIndex > 5)
-                edgeIndex--;
-              adjacencyData |= 1 << (edgeIndex + 6);
-            }
-          }
-
-        for (int I = 0; I < 2; ++I)
-          for (int J = 0; J < 2; ++J)
-            for (int K = 0; K < 2; ++K)
-            {
-              BlockIndex blockOffset(2 * I - 1, 2 * J - 1, 2 * K - 1);
-              Block::Type cornerNeighbor = getBlockType(blockData, blockIndex + blockOffset);
-
-              if (!Block::HasTransparency(cornerNeighbor))
-              {
-                int cornerIndex = 4 * I + 2 * J + K;
-                adjacencyData |= 1 << (cornerIndex + 18);
-              }
-            }
 
         std::vector<Chunk::Voxel>& mesh = Block::HasTransparency(blockType) ? transparentMesh : opaqueMesh;
-        mesh.push_back(Chunk::Voxel(voxelData, adjacencyData));
+        mesh.push_back(Chunk::Voxel(voxelData, quadData1, quadData2));
       }
 
   bool meshGenrated = !opaqueMesh.empty() || !transparentMesh.empty();

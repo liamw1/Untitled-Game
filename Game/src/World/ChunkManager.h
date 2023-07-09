@@ -59,8 +59,9 @@ private:
   static inline std::unique_ptr<Engine::Uniform> s_Uniform;
   static inline std::unique_ptr<Engine::StorageBuffer> s_SSBO;
   static inline std::shared_ptr<Engine::TextureArray> s_TextureArray;
-  static inline const Engine::BufferLayout s_VertexBufferLayout = { { ShaderDataType::Uint32, "a_VertexData" },
-                                                                    { ShaderDataType::Uint32, "a_FaceData"   } };
+  static inline const Engine::BufferLayout s_VertexBufferLayout = { { ShaderDataType::Uint32, "a_VoxelData" },
+                                                                    { ShaderDataType::Uint32, "a_QuadData1" },
+                                                                    { ShaderDataType::Uint32, "a_QuadData2" } };
   static constexpr int c_TextureSlot = 0;
   static constexpr int c_UniformBinding = 2;
   static constexpr int c_StorageBufferBinding = 0;

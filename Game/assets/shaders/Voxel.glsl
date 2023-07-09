@@ -2,16 +2,19 @@
 #version 460 core
 
 layout(location = 0) in uint a_VoxelData;
-layout(location = 1) in uint a_AdjacencyData;
+layout(location = 1) in uint a_QuadData1;
+layout(location = 2) in uint a_QuadData2;
 
 layout(location = 0) out uint v_VoxelData;
-layout(location = 1) out uint v_AdjacencyData;
-layout(location = 2) out uint v_DrawID;
+layout(location = 1) out uint v_QuadData1;
+layout(location = 2) out uint v_QuadData2;
+layout(location = 3) out uint v_DrawID;
 
 void main()
 {
   v_VoxelData = a_VoxelData;
-  v_AdjacencyData = a_AdjacencyData;
+  v_QuadData1 = a_QuadData1;
+  v_QuadData2 = a_QuadData2;
   v_DrawID = gl_DrawID;
 }
 
@@ -65,8 +68,9 @@ layout (points) in;
 layout (triangle_strip, max_vertices = 24) out;   // max_vertices could be reduced to 12 for opaque voxels
 
 layout(location = 0) in uint v_VoxelData[];
-layout(location = 1) in uint v_AdjacencyData[];
-layout(location = 2) in uint v_DrawID[];
+layout(location = 1) in uint v_QuadData1[];
+layout(location = 2) in uint v_QuadData2[];
+layout(location = 3) in uint v_DrawID[];
 
 layout(location = 0) out float g_BasicLight;
 layout(location = 1) out flat uint g_TextureIndex;
@@ -84,45 +88,47 @@ bool isCulled(uint faceID, vec3 toBlock)
 
 bool faceEnabled(uint faceID)
 {
-  uint bit = 1 << faceID;
-  return (v_AdjacencyData[0] & bit) > 0;
-}
-
-bool cornerNeighborIsOpaque(uvec3 vertexOffset)
-{
-  uint cornerIndex = 4 * vertexOffset.x + 2 * vertexOffset.y + vertexOffset.z;
-  uint bit = 1 << (cornerIndex + 18);
-  return (v_AdjacencyData[0] & bit) > 0;
-}
-
-bool edgeNeighborIsOpaque(ivec3 blockOffset)
-{
-  int adjacencyIndex = 9 * (blockOffset.x + 1) + 3 * (blockOffset.y + 1) + (blockOffset.z + 1);
-  int edgeIndex = (adjacencyIndex - 1) / 2;
-  if (edgeIndex > 5)
-    edgeIndex--;
-  uint bit = 1 << (edgeIndex + 6);
-  return (v_AdjacencyData[0] & bit) > 0;
+  uint bit = 1 << (16 + faceID);
+  return (v_QuadData2[0] & bit) > 0;
 }
 
 uint vertexAmbientOcclusionLevel(uint faceID, uint quadIndex)
 {
-  uint u = faceID / 2;
-  uint v = (u + 1) % 3;
-  uint w = (u + 2) % 3;
+  uint shift = 2 * (4 * faceID + quadIndex);
+  if (shift < 32)
+  {
+    uint bits = 0x00000003u << shift;
+    return (v_QuadData1[0] & bits) >> shift;
+  }
+  else
+  {
+    shift -= 32;
+    uint bits = 0x00000003u << shift;
+    return (v_QuadData2[0] & bits) >> shift;
+  }
+}
 
-  uvec3 vertexOffset = c_Offsets[faceID][quadIndex];
+uvec4 ambientOcclusionLevels(uint faceID)
+{
+  uint shift = 8 * faceID;
 
-  ivec3 sideADirection = ivec3(0);
-  sideADirection[v] = vertexOffset[v] > 0 ? 1 : -1;
+  uint quadAO;
+  if (shift < 32)
+  {
+    uint bits = 0x000000FFu << shift;
+    quadAO = (v_QuadData1[0] & bits) >> shift;
+  }
+  else
+  {
+    shift -= 32;
+    uint bits = 0x000000FFu << shift;
+    quadAO = (v_QuadData2[0] & bits) >> shift;
+  }
 
-  ivec3 sideBDirection = ivec3(0);
-  sideBDirection[w] = vertexOffset[w] > 0 ? 1 : -1;
-
-  bool sideAIsOpaque = edgeNeighborIsOpaque(c_Directions[faceID] + sideADirection);
-  bool sideBIsOpaque = edgeNeighborIsOpaque(c_Directions[faceID] + sideBDirection);
-  bool cornerIsOpaque = cornerNeighborIsOpaque(vertexOffset);
-  return sideAIsOpaque && sideBIsOpaque ? 3 : uint(sideAIsOpaque) + uint(sideBIsOpaque) + uint(cornerIsOpaque);
+  return uvec4((quadAO & 0x00000003) >> 0,
+               (quadAO & 0x0000000C) >> 2,
+               (quadAO & 0x00000030) >> 4,
+               (quadAO & 0x000000C0) >> 6);
 }
 
 void addVertex(uvec3 blockIndex, uint faceID, uint quadIndex, uint ambientOcclusionLevel, uint textureID)
@@ -140,11 +146,7 @@ void addVertex(uvec3 blockIndex, uint faceID, uint quadIndex, uint ambientOcclus
 
 void addQuad(uvec3 blockIndex, uint faceID, uint textureID)
 {
-  uvec4 AO = uvec4(0);
-
-  if (!u_TransparencyPass)
-    for (uint quadIndex = 0; quadIndex < 4; ++quadIndex)
-      AO[quadIndex] = vertexAmbientOcclusionLevel(faceID, quadIndex);
+  uvec4 AO = ambientOcclusionLevels(faceID);
 
   uint lightDifferenceAlongStandardSeam = min(AO[0] - AO[3], AO[3] - AO[0]);
   uint lightDifferenceAlongReversedSeam = min(AO[1] - AO[2], AO[2] - AO[1]);

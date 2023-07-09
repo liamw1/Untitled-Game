@@ -101,8 +101,8 @@ private:
   {
   public:
     Voxel() = default;
-    Voxel(uint32_t voxelData, uint32_t adjacencyData)
-      : m_VoxelData(voxelData), m_AdjacencyData(adjacencyData) {}
+    Voxel(uint32_t voxelData, uint32_t quadData1, uint32_t quadData2)
+      : m_VoxelData(voxelData), m_QuadData1(quadData1), m_QuadData2(quadData2) {}
 
 
     blockIndex_t x() const;
@@ -112,7 +112,8 @@ private:
 
   private:
     uint32_t m_VoxelData;
-    uint32_t m_AdjacencyData;
+    uint32_t m_QuadData1;
+    uint32_t m_QuadData2;
   };
 
   class DrawCommand : public Engine::MultiDrawCommand<GlobalIndex, DrawCommand>
