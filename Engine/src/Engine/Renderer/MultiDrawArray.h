@@ -244,7 +244,6 @@ namespace Engine
         : id(std::nullopt), size(regionSize) {}
     };
 
-    using MemoryRegionsConstIterator = std::map<int, MemoryRegion>::const_iterator;
     using MemoryRegionsIterator = std::map<int, MemoryRegion>::iterator;
     using FreeRegionsIterator = std::multimap<int, int>::iterator;
     using AllocationsIterator = std::unordered_map<Identifier, std::shared_ptr<std::size_t>>::iterator;

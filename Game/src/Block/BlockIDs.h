@@ -8,7 +8,7 @@ namespace Block
 {
   enum class Type : blockID
   {
-    Air = 0,
+    Air,
     Grass,
     Dirt,
     Clay,
@@ -28,7 +28,7 @@ namespace Block
 
   enum class Texture : blockTexID
   {
-    GrassTop = 0,
+    GrassTop,
     GrassSide,
     Dirt,
     Clay,

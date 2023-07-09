@@ -15,7 +15,7 @@ public:
 
   enum class Type
   {
-    Default = 0,
+    Default,
     GrassField,
     Desert,
     SuperFlat,

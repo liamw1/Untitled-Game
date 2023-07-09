@@ -144,24 +144,24 @@ void Chunk::reset()
 
 
 
-blockIndex_t Chunk::Voxel::x() const
+blockIndex_t Chunk::Voxel::i() const
 {
   return (m_VoxelData & 0x001F0000u) >> 16u;
 }
 
-blockIndex_t Chunk::Voxel::y() const
+blockIndex_t Chunk::Voxel::j() const
 {
   return (m_VoxelData & 0x03E00000u) >> 21u;
 }
 
-blockIndex_t Chunk::Voxel::z() const
+blockIndex_t Chunk::Voxel::k() const
 {
   return (m_VoxelData & 0x7C000000u) >> 26u;
 }
 
 BlockIndex Chunk::Voxel::index() const
 {
-  return { x(), y(), z() };
+  return { i(), j(), k() };
 }
 
 void Chunk::DrawCommand::sortVoxels(const GlobalIndex& originIndex, const Vec3& playerPosition)

@@ -5,7 +5,7 @@ namespace Engine
 {
   enum class FramebufferTextureFormat
   {
-    None = 0,
+    None,
 
     // Color
     RED_INTEGER,

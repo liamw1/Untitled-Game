@@ -40,7 +40,7 @@ struct Index2D
 
   constexpr IntType& operator[](int index)
   {
-    return const_cast<IntType&>(static_cast<const Index2D&>(*this).operator[](index));
+    return const_cast<IntType&>(static_cast<const Index2D*>(this)->operator[](index));
   }
 
   constexpr const IntType& operator[](int index) const
@@ -132,7 +132,7 @@ struct Index3D
 
   constexpr IntType& operator[](int index)
   {
-    return const_cast<IntType&>(static_cast<const Index3D&>(*this).operator[](index));
+    return const_cast<IntType&>(static_cast<const Index3D*>(this)->operator[](index));
   }
 
   constexpr const IntType& operator[](int index) const

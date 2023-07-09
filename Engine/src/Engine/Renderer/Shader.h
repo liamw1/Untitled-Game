@@ -17,5 +17,9 @@ namespace Engine
     virtual const std::string& getName() const = 0;
 
     static std::unique_ptr<Shader> Create(const std::string& filepath, const std::unordered_map<std::string, std::string>& preprocessorDefinitions = {});
+
+  protected:
+    static std::string ReadFile(const std::string& filepath);
+    static std::unordered_map<std::string, std::string> PreProcess(std::string source, const std::unordered_map<std::string, std::string>& preprocessorDefinitions);
   };
 }

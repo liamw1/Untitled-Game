@@ -10,9 +10,8 @@ constexpr int c_UnloadDistance = c_LoadDistance;
 
 enum class ChunkType
 {
-  Boundary = 0,
-  Empty,
-  Renderable,
+  Boundary,
+  Interior,
 
   Error
 };
@@ -96,16 +95,13 @@ public:
   bool contains(const GlobalIndex& chunkIndex) const;
 
 private:
-  static constexpr int c_ChunkTypes = 3;
-
   template<typename Key, typename Val>
   using mapType = std::unordered_map<Key, Val>;
 
   // Chunk pointers
-  std::array<mapType<GlobalIndex, Chunk*>, c_ChunkTypes> m_Chunks;
-  mapType<GlobalIndex, Chunk*>& m_EmptyChunks = m_Chunks[static_cast<int>(ChunkType::Empty)];
+  std::array<mapType<GlobalIndex, Chunk*>, 2> m_Chunks;
   mapType<GlobalIndex, Chunk*>& m_BoundaryChunks = m_Chunks[static_cast<int>(ChunkType::Boundary)];
-  mapType<GlobalIndex, Chunk*>& m_RenderableChunks = m_Chunks[static_cast<int>(ChunkType::Renderable)];
+  mapType<GlobalIndex, Chunk*>& m_InteriorChunks = m_Chunks[static_cast<int>(ChunkType::Interior)];
 
   // Chunk data
   std::unique_ptr<Chunk[]> m_ChunkArray;

@@ -19,7 +19,7 @@ namespace Engine
   private:
     enum class SceneState
     {
-      Edit = 0,
+      Edit,
       Play
     };
 

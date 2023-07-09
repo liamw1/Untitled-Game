@@ -1,10 +1,6 @@
 #pragma once
 #include "Engine/Renderer/Shader.h"
 
-// TODO: Remove
-typedef unsigned int GLenum;
-typedef int GLint;
-
 namespace Engine
 {
   /*
@@ -28,25 +24,14 @@ namespace Engine
     uint32_t m_RendererID = 0;
     std::string m_Name;
     std::string m_FilePath;
-    mutable std::unordered_map<std::string, GLint> m_UniformLocationCache;
 
-    std::unordered_map<GLenum, std::vector<uint32_t>> m_VulkanSPIRV;
-    std::unordered_map<GLenum, std::vector<uint32_t>> m_OpenGLSPIRV;
-    std::unordered_map<GLenum, std::string> m_OpenGLSourceCode;
+    std::unordered_map<uint32_t, std::vector<uint32_t>> m_VulkanSPIRV;
+    std::unordered_map<uint32_t, std::vector<uint32_t>> m_OpenGLSPIRV;
+    std::unordered_map<uint32_t, std::string> m_OpenGLSourceCode;
 
-    std::string readFile(const std::string& filepath);
-    std::unordered_map<GLenum, std::string> preProcess(const std::string& source);
-
-    void compileOrGetVulkanBinaries(const std::unordered_map<GLenum, std::string>& shaderSources);
+    void compileOrGetVulkanBinaries(const std::unordered_map<std::string, std::string>& shaderSources);
     void compileOrGetOpenGLBinaries();
     void createProgram();
-    void reflect(GLenum stage, const std::vector<uint32_t>& shaderData);
-
-    /*
-      NOTE: Temporary function for retrieving uniform locations more
-      quickly than querying openGL.  The proper fix would be to parse
-      shaders to find and store all uniform locations at compilation.
-    */
-    GLint getUniformLocation(const std::string& name) const;
+    void reflect(uint32_t stage, const std::vector<uint32_t>& shaderData);
   };
 }

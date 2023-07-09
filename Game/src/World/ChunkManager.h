@@ -42,9 +42,9 @@ public:
   void loadChunk(const GlobalIndex& chunkIndex, Block::Type blockType);
 
 private:
-  enum LoadMode
+  enum class LoadMode
   {
-    NotSet = 0,
+    NotSet,
     Void,
     Terrain
   };
@@ -58,7 +58,6 @@ private:
                                                                     { ShaderDataType::Uint32, "a_QuadData1" },
                                                                     { ShaderDataType::Uint32, "a_QuadData2" } };
   static constexpr int c_TextureSlot = 0;
-  static constexpr int c_UniformBinding = 2;
   static constexpr int c_StorageBufferBinding = 0;
   static constexpr uint32_t c_StorageBufferSize = static_cast<uint32_t>(pow2(20));
 

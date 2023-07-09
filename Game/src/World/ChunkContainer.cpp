@@ -76,21 +76,10 @@ bool ChunkContainer::update(const GlobalIndex& chunkIndex, bool meshGenerated)
   if (source == ChunkType::Boundary)
     return false;
 
-  ChunkType destination;
-  {
-    std::lock_guard chunkLock = chunk->acquireLock();
-    sharedLock.unlock();
+  std::lock_guard chunkLock = chunk->acquireLock();
+  sharedLock.unlock();
 
-    chunk->update(meshGenerated);
-
-    destination = chunk->empty() ? ChunkType::Empty : ChunkType::Renderable;
-  }
-
-  if (source != destination)
-  {
-    std::lock_guard lock(m_ContainerMutex);
-    recategorizeChunk(*chunk, source, destination);
-  }
+  chunk->update(meshGenerated);
 
   return true;
 }
@@ -225,7 +214,7 @@ bool ChunkContainer::isOnBoundary(const Chunk& chunk) const
 
 ChunkType ChunkContainer::getChunkType(const Chunk& chunk) const
 {
-  for (int chunkType = 0; chunkType < c_ChunkTypes; ++chunkType)
+  for (int chunkType = 0; chunkType < m_Chunks.size(); ++chunkType)
     if (m_Chunks[chunkType].find(chunk.getGlobalIndex()) != m_Chunks[chunkType].end())
       return static_cast<ChunkType>(chunkType);
 
@@ -235,14 +224,7 @@ ChunkType ChunkContainer::getChunkType(const Chunk& chunk) const
 
 Chunk* ChunkContainer::find(const GlobalIndex& chunkIndex)
 {
-  for (mapType<GlobalIndex, Chunk*>& chunkGroup : m_Chunks)
-  {
-    mapType<GlobalIndex, Chunk*>::iterator it = chunkGroup.find(chunkIndex);
-
-    if (it != chunkGroup.end())
-      return it->second;
-  }
-  return nullptr;
+  return const_cast<Chunk*>(static_cast<const ChunkContainer*>(this)->find(chunkIndex));
 }
 
 const Chunk* ChunkContainer::find(const GlobalIndex& chunkIndex) const
@@ -292,11 +274,7 @@ void ChunkContainer::boundaryChunkUpdate(Chunk& chunk)
 
   if (!isOnBoundary(chunk))
   {
-    ChunkType destination;
-    {
-      std::lock_guard lock = chunk.acquireLock();
-      destination = chunk.empty() ? ChunkType::Empty : ChunkType::Renderable;
-    }
+    ChunkType destination = ChunkType::Interior;
     recategorizeChunk(chunk, ChunkType::Boundary, destination);
   }
 }

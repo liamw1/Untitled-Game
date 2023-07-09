@@ -9,7 +9,7 @@ public:
 
   T& operator[](int index)
   {
-    return const_cast<T&>(static_cast<const ArraySection&>(*this).operator[](index));
+    return const_cast<T&>(static_cast<const ArraySection*>(this)->operator[](index));
   }
   const T& operator[](int index) const
   {

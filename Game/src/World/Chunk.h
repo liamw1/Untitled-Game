@@ -105,9 +105,9 @@ private:
       : m_VoxelData(voxelData), m_QuadData1(quadData1), m_QuadData2(quadData2) {}
 
 
-    blockIndex_t x() const;
-    blockIndex_t y() const;
-    blockIndex_t z() const;
+    blockIndex_t i() const;
+    blockIndex_t j() const;
+    blockIndex_t k() const;
     BlockIndex index() const;
 
   private:

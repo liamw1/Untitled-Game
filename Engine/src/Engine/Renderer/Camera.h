@@ -5,7 +5,7 @@ namespace Engine
   class Camera
   {
   public:
-    enum class ProjectionType { Perspective = 0, Orthographic = 1 };
+    enum class ProjectionType { Perspective, Orthographic };
 
   public:
     Camera() = default;

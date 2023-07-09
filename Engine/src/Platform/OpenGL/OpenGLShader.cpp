@@ -16,6 +16,8 @@ namespace Engine
   {
     if (type == "vertex")
       return GL_VERTEX_SHADER;
+    if (type == "geometry")
+      return GL_GEOMETRY_SHADER;
     if (type == "fragment" || type == "pixel")
       return GL_FRAGMENT_SHADER;
 
@@ -28,6 +30,7 @@ namespace Engine
     switch (stage)
     {
       case GL_VERTEX_SHADER:    return shaderc_glsl_vertex_shader;
+      case GL_GEOMETRY_SHADER:  return shaderc_glsl_geometry_shader;
       case GL_FRAGMENT_SHADER:  return shaderc_glsl_fragment_shader;
       default: EN_CORE_ERROR("Invalid openGL shader stage!");  return static_cast<shaderc_shader_kind>(0);
     }
@@ -38,6 +41,7 @@ namespace Engine
     switch (stage)
     {
       case GL_VERTEX_SHADER:    return "GL_VERTEX_SHADER";
+      case GL_GEOMETRY_SHADER:  return "GL_GEOMETRY_SHADER";
       case GL_FRAGMENT_SHADER:  return "GL_FRAGMENT_SHADER";
       default: EN_CORE_ERROR("Invalid openGL shader stage!");  return nullptr;
     }
@@ -61,6 +65,7 @@ namespace Engine
     switch (stage)
     {
       case GL_VERTEX_SHADER:    return ".cached_opengl.vert";
+      case GL_GEOMETRY_SHADER:  return ".cached_opengl.geom";
       case GL_FRAGMENT_SHADER:  return ".cached_opengl.frag";
       default: EN_CORE_ERROR("Invalid openGL shader stage!");  return "";
     }
@@ -71,6 +76,7 @@ namespace Engine
     switch (stage)
     {
       case GL_VERTEX_SHADER:    return ".cached_vulkan.vert";
+      case GL_GEOMETRY_SHADER:  return ".cached_vulkan.geom";
       case GL_FRAGMENT_SHADER:  return ".cached_vulkan.frag";
       default: EN_CORE_ERROR("Invalid openGL shader stage!");  return "";
     }
@@ -83,13 +89,10 @@ namespace Engine
   {
     EN_PROFILE_FUNCTION();
 
-    if (!preprocessorDefinitions.empty())
-      EN_CORE_ERROR("OpenGL shader does not currently support preprocessor definitions!");
-
     createCacheDirectoryIfNeeded();
 
-    std::string source = readFile(filepath);
-    std::unordered_map<uint32_t, std::string> shaderSources = preProcess(source);
+    std::string source = ReadFile(filepath);
+    std::unordered_map<std::string, std::string> shaderSources = PreProcess(source, preprocessorDefinitions);
 
     Timer timer("Shader creation");
     timer.timeStart();
@@ -126,57 +129,7 @@ namespace Engine
     glUseProgram(0);
   }
 
-  std::string OpenGLShader::readFile(const std::string& filepath)
-  {
-    EN_PROFILE_FUNCTION();
-
-    std::string result;
-    std::ifstream in(filepath, std::ios::in | std::ios::binary);  // ifstream closes itself due to RAII
-    if (in)
-    {
-      in.seekg(0, std::ios::end);
-      size_t size = in.tellg();
-      if (size != -1)
-      {
-        result.resize(size);
-        in.seekg(0, std::ios::beg);
-        in.read(&result[0], size);
-      }
-      else
-        EN_CORE_ERROR("Could not read from file '{0}'", filepath);
-    }
-    else
-      EN_CORE_ERROR("Could not open file {0}", filepath);
-
-    return result;
-  }
-
-  std::unordered_map<GLenum, std::string> OpenGLShader::preProcess(const std::string& source)
-  {
-    EN_PROFILE_FUNCTION();
-
-    std::unordered_map<GLenum, std::string> shaderSources;
-
-    const char* typeToken = "#type";
-    size_t typeTokenLength = strlen(typeToken);
-    size_t pos = source.find(typeToken, 0);             // Start of shader type declaration line
-    while (pos != std::string::npos)
-    {
-      size_t eol = source.find_first_of("\r\n", pos);   // End of shader type declaration line
-      EN_CORE_ASSERT(eol != std::string::npos, "Syntax error");
-      size_t begin = pos + typeTokenLength + 1;         // Start of shader type name (after "#type" keyword)
-      std::string type = source.substr(begin, eol - begin);
-      
-      size_t nextLinePos = source.find_first_not_of("\r\n", eol);
-      EN_CORE_ASSERT(nextLinePos != std::string::npos, "Syntax error");
-      pos = source.find(typeToken, nextLinePos);        // Start of next shader type declaration line
-      shaderSources[shaderTypeFromString(type)] = (pos == std::string::npos) ? source.substr(nextLinePos) : source.substr(nextLinePos, pos - nextLinePos);
-    }
-
-    return shaderSources;
-  }
-
-  void OpenGLShader::compileOrGetVulkanBinaries(const std::unordered_map<GLenum, std::string>& shaderSources)
+  void OpenGLShader::compileOrGetVulkanBinaries(const std::unordered_map<std::string, std::string>& shaderSources)
   {
     EN_CORE_ASSERT(std::this_thread::get_id() == Threads::MainThreadID(), "OpenGL calls must be made on the main thread!");
 
@@ -194,8 +147,10 @@ namespace Engine
 
     std::unordered_map<GLenum, std::vector<uint32_t>>& shaderData = m_VulkanSPIRV;
     shaderData.clear();
-    for (auto&& [stage, source] : shaderSources)
+    for (const auto& [type, source] : shaderSources)
     {
+      GLenum stage = shaderTypeFromString(type);
+
       std::filesystem::path shaderFilePath = m_FilePath;
       std::filesystem::path cachedPath = cacheDirectory / (shaderFilePath.filename().string() + openGLShaderStageCachedVulkanFileExtension(stage));
 
@@ -229,7 +184,7 @@ namespace Engine
       }
     }
 
-    for (auto&& [stage, data] : shaderData)
+    for (const auto& [stage, data] : shaderData)
       reflect(stage, data);
   }
 
@@ -332,7 +287,7 @@ namespace Engine
     m_RendererID = program;
   }
 
-  void OpenGLShader::reflect(GLenum stage, const std::vector<uint32_t>& shaderData)
+  void OpenGLShader::reflect(uint32_t stage, const std::vector<uint32_t>& shaderData)
   {
     spirv_cross::Compiler compiler(shaderData);
     spirv_cross::ShaderResources resources = compiler.get_shader_resources();
@@ -354,17 +309,5 @@ namespace Engine
       EN_CORE_TRACE("    Binding = {0}", binding);
       EN_CORE_TRACE("    Members = {0}", memberCount);
     }
-  }
-
-  GLint OpenGLShader::getUniformLocation(const std::string& name) const
-  {
-    EN_CORE_ASSERT(std::this_thread::get_id() == Threads::MainThreadID(), "OpenGL calls must be made on the main thread!");
-
-    if (m_UniformLocationCache.find(name) != m_UniformLocationCache.end())
-      return m_UniformLocationCache[name];
-
-    GLint location = glGetUniformLocation(m_RendererID, name.c_str());
-    m_UniformLocationCache[name] = location;
-    return location;
   }
 }

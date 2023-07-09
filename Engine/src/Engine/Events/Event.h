@@ -14,7 +14,7 @@ namespace Engine
 
   enum class EventType : uint8_t
   {
-    None = 0,
+    None,
     WindowClose, WindowResize, WindowFocus, WindowLostFocus, WindowMove,
     AppTick, AppUpdate, AppRender,
     KeyPress, KeyRelease, KeyType,
@@ -23,7 +23,7 @@ namespace Engine
 
   enum class EventCategory : uint8_t
   {
-    None = 0,
+    None,
     Application  = bit(0),
     Input        = bit(1),
     Keyboard     = bit(2),

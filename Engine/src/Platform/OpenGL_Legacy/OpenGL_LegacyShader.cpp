@@ -22,85 +22,13 @@ namespace Engine
     return 0;
   }
 
-  static std::string readFile(const std::string& filepath)
-  {
-    EN_PROFILE_FUNCTION();
-
-    std::string result;
-    std::ifstream in(filepath, std::ios::in | std::ios::binary);  // ifstream closes itself due to RAII
-    if (in)
-    {
-      const size_t& size = in.tellg();
-      if (size != -1)
-      {
-        in.seekg(0, std::ios::end);
-        result.resize(in.tellg());
-        in.seekg(0, std::ios::beg);
-        in.read(&result[0], result.size());
-      }
-      else
-        EN_CORE_ERROR("Could not read from file {0}", filepath);
-    }
-    else
-      EN_CORE_ERROR("Could not open file {0}", filepath);
-
-    return result;
-  }
-
-  static std::unordered_map<GLenum, std::string> preProcess(std::string source, const std::unordered_map<std::string, std::string>& preprocessorDefinitions)
-  {
-    EN_PROFILE_FUNCTION();
-
-    std::size_t pos = 0;
-    while ((pos = source.find("#define ", pos)) != std::string::npos)
-    {
-      pos += 8;
-
-      std::size_t endToken = source.find('\n', pos) - 1;
-      std::string token = source.substr(pos, endToken - pos);
-      pos = endToken;
-
-      try
-      {
-        std::string definition = preprocessorDefinitions.at(token);
-        source.insert(pos, " " + definition);
-        pos += definition.size();
-      }
-      catch (const std::out_of_range& /* e */)
-      {
-        // Do nothing
-      }
-    }
-
-    std::unordered_map<GLenum, std::string> shaderSources;
-
-    const char* typeToken = "#type";
-    std::size_t typeTokenLength = strlen(typeToken);
-    pos = source.find(typeToken, 0);                          // Start of shader type declaration line
-    while (pos != std::string::npos)
-    {
-      std::size_t eol = source.find_first_of("\r\n", pos);    // End of shader type declaration line
-      EN_CORE_ASSERT(eol != std::string::npos, "Syntax error");
-      std::size_t begin = pos + typeTokenLength + 1;          // Start of shader type name (after "#type" keyword)
-      std::string type = source.substr(begin, eol - begin);
-
-      std::size_t nextLinePos = source.find_first_not_of("\r\n", eol);
-      EN_CORE_ASSERT(nextLinePos != std::string::npos, "Syntax error");
-      pos = source.find(typeToken, nextLinePos);              // Start of next shader type declaration line
-      shaderSources[shaderTypeFromString(type)] = (pos == std::string::npos) ? source.substr(nextLinePos) : source.substr(nextLinePos, pos - nextLinePos);
-    }
-
-    return shaderSources;
-  }
-
 
 
   OpenGL_LegacyShader::OpenGL_LegacyShader(const std::string& filepath, const std::unordered_map<std::string, std::string>& preprocessorDefinitions)
-    : m_UniformLocationCache({})
   {
     EN_PROFILE_FUNCTION();
 
-    compile(preProcess(readFile(filepath), preprocessorDefinitions));
+    compile(PreProcess(ReadFile(filepath), preprocessorDefinitions));
 
     std::filesystem::path path = filepath;
     m_Name = path.stem().string(); // Returns the file's name stripped of the extension.
@@ -126,22 +54,18 @@ namespace Engine
     glUseProgram(0);
   }
 
-  void OpenGL_LegacyShader::compile(const std::unordered_map<GLenum, std::string>& shaderSources)
+  void OpenGL_LegacyShader::compile(const std::unordered_map<std::string, std::string>& shaderSources)
   {
     EN_PROFILE_FUNCTION();
     EN_CORE_ASSERT(std::this_thread::get_id() == Threads::MainThreadID(), "OpenGL calls must be made on the main thread!");
-
     EN_CORE_ASSERT(shaderSources.size() <= c_MaxShaders, "A maximum of {0} shaders is supported", c_MaxShaders);
 
     GLuint program = glCreateProgram();
     std::vector<GLenum> glShaderIDs(shaderSources.size());
     int glShaderIDIndex = 0;
-    for (auto& kv : shaderSources)
+    for (const auto& [type, source] : shaderSources)
     {
-      GLenum type = kv.first;
-      const std::string& source = kv.second;
-
-      GLuint shader = glCreateShader(type);
+      GLuint shader = glCreateShader(shaderTypeFromString(type));
 
       const GLchar* sourceCStr = source.c_str();
       glShaderSource(shader, 1, &sourceCStr, 0);
@@ -198,17 +122,5 @@ namespace Engine
     // Always detach shaders after a successful link
     for (GLenum id : glShaderIDs)
       glDetachShader(m_RendererID, id);
-  }
-
-  GLint OpenGL_LegacyShader::getUniformLocation(const std::string& name) const
-  {
-    EN_CORE_ASSERT(std::this_thread::get_id() == Threads::MainThreadID(), "OpenGL calls must be made on the main thread!");
-
-    if (m_UniformLocationCache.find(name) != m_UniformLocationCache.end())
-      return m_UniformLocationCache[name];
-
-    GLint location = glGetUniformLocation(m_RendererID, name.c_str());
-    m_UniformLocationCache[name] = location;
-    return location;
   }
 }
