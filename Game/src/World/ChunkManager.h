@@ -50,13 +50,8 @@ private:
   };
 
   // Rendering
-  struct UniformData
-  {
-    bool transparencyPass;
-  };
-
-  static inline std::unique_ptr<Engine::Shader> s_Shader;
-  static inline std::unique_ptr<Engine::Uniform> s_Uniform;
+  static inline std::unique_ptr<Engine::Shader> s_OpaqueVoxelShader;
+  static inline std::unique_ptr<Engine::Shader> s_TransparentVoxelShader;
   static inline std::unique_ptr<Engine::StorageBuffer> s_SSBO;
   static inline std::shared_ptr<Engine::TextureArray> s_TextureArray;
   static inline const Engine::BufferLayout s_VertexBufferLayout = { { ShaderDataType::Uint32, "a_VoxelData" },

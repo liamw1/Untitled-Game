@@ -225,7 +225,7 @@ void World::playerWorldInteraction()
     if (Engine::Input::IsMouseButtonPressed(Mouse::ButtonLeft))
       m_ChunkManager.removeBlock(chunkIndex, blockIndex);
     else if (Engine::Input::IsMouseButtonPressed(Mouse::ButtonRight) && m_PlayerRayCast.distance > 2.5 * Block::Length())
-      m_ChunkManager.placeBlock(chunkIndex, blockIndex, rayCastFace, Block::Type::Water);
+      m_ChunkManager.placeBlock(chunkIndex, blockIndex, rayCastFace, Block::Type::Glass);
   }
 }
 

@@ -1,4 +1,4 @@
-#type vertex
+﻿#type vertex
 #version 460 core
 
 layout(location = 0) in uint a_VoxelData;
@@ -23,17 +23,18 @@ void main()
 #type geometry
 #version 460 core
 
+#define TRANSPARENT
+
+#if TRANSPARENT
+  #define MAX_VERTICES 24
+#else
+  #define MAX_VERTICES 12
+#endif
+
 const vec2 c_TexCoords[4] = vec2[4]( vec2(0, 0),
                                      vec2(1, 0),
                                      vec2(0, 1),
                                      vec2(1, 1) );
-
-const ivec3 c_Directions[6] = ivec3[6]( ivec3( -1,  0,  0 ),
-                                        ivec3(  1,  0,  0 ),
-                                        ivec3(  0, -1,  0 ),
-                                        ivec3(  0,  1,  0 ),
-                                        ivec3(  0,  0, -1 ),
-                                        ivec3(  0,  0,  1 ) );
 
 const uvec3 c_Offsets[6][4] = uvec3[6][4]( uvec3[4]( uvec3(0, 1, 0), uvec3(0, 0, 0), uvec3(0, 1, 1), uvec3(0, 0, 1) ),    /*  West Face   */
                                            uvec3[4]( uvec3(1, 0, 0), uvec3(1, 1, 0), uvec3(1, 0, 1), uvec3(1, 1, 1) ),    /*  East Face   */
@@ -51,10 +52,6 @@ layout(std140, binding = 1) uniform Block
 {
   float u_BlockLength;
 };
-layout(std140, binding = 2) uniform RenderPass
-{
-  bool u_TransparencyPass;
-};
 layout(std430, binding = 0) buffer ChunkAnchors
 {
   vec4 u_AnchorPosition[];
@@ -65,7 +62,7 @@ layout(std430, binding = 1) buffer TextureIDs
 };
 
 layout (points) in;
-layout (triangle_strip, max_vertices = 24) out;   // max_vertices could be reduced to 12 for opaque voxels
+layout (triangle_strip, max_vertices = MAX_VERTICES) out;
 
 layout(location = 0) in uint v_VoxelData[];
 layout(location = 1) in uint v_QuadData1[];
@@ -76,36 +73,10 @@ layout(location = 0) out float g_BasicLight;
 layout(location = 1) out flat uint g_TextureIndex;
 layout(location = 2) out vec2 g_TexCoord;
 
-bool isUpstream(uint faceID)
-{
-  return faceID % 2 > 0;
-}
-
-bool isCulled(uint faceID, vec3 toBlock)
-{
-  return dot(toBlock, c_Directions[faceID]) > 0;
-}
-
 bool faceEnabled(uint faceID)
 {
   uint bit = 1 << (16 + faceID);
   return (v_QuadData2[0] & bit) > 0;
-}
-
-uint vertexAmbientOcclusionLevel(uint faceID, uint quadIndex)
-{
-  uint shift = 2 * (4 * faceID + quadIndex);
-  if (shift < 32)
-  {
-    uint bits = 0x00000003u << shift;
-    return (v_QuadData1[0] & bits) >> shift;
-  }
-  else
-  {
-    shift -= 32;
-    uint bits = 0x00000003u << shift;
-    return (v_QuadData2[0] & bits) >> shift;
-  }
 }
 
 uvec4 ambientOcclusionLevels(uint faceID)
@@ -151,13 +122,31 @@ void addQuad(uvec3 blockIndex, uint faceID, uint textureID)
   uint lightDifferenceAlongStandardSeam = min(AO[0] - AO[3], AO[3] - AO[0]);
   uint lightDifferenceAlongReversedSeam = min(AO[1] - AO[2], AO[2] - AO[1]);
 
-  // Choose vertex ordering that minimizes difference in light across seam
-  uvec4 quadOrder = lightDifferenceAlongStandardSeam >= lightDifferenceAlongReversedSeam ? uvec4(0, 1, 2, 3) : uvec4(1, 3, 0, 2);
-  for (int i = 0; i < 4; ++i)
+  /*
+    Choose vertex ordering that minimizes difference in light across seam
+    NOTE: This if/else block is faster than defining two preset vectors of indices
+
+            uvec4 standardOrder = uvec4(0, 1, 2, 3);
+            uvec4 reversedOrder = uvec4(1, 3, 0, 2);,
+
+          choosing one based on the condition, and doing a single loop over those.
+          I have no idea why. If anything I think this would be slower ¯\_(ツ)_/¯.
+  */
+  if (lightDifferenceAlongStandardSeam >= lightDifferenceAlongReversedSeam)
   {
-    uint quadIndex = quadOrder[i];
-    addVertex(blockIndex, faceID, quadIndex, AO[quadIndex], textureID);
+    addVertex(blockIndex, faceID, 0, AO[0], textureID);
+    addVertex(blockIndex, faceID, 1, AO[1], textureID);
+    addVertex(blockIndex, faceID, 2, AO[2], textureID);
+    addVertex(blockIndex, faceID, 3, AO[3], textureID);
   }
+  else
+  {
+    addVertex(blockIndex, faceID, 1, AO[1], textureID);
+    addVertex(blockIndex, faceID, 3, AO[3], textureID);
+    addVertex(blockIndex, faceID, 0, AO[0], textureID);
+    addVertex(blockIndex, faceID, 2, AO[2], textureID);
+  }
+
   EndPrimitive();
 }
 
@@ -178,13 +167,14 @@ void main()
       addQuad(blockIndex, faceID, u_TextureIDs[blockID][faceID]);
   }
 
-  if (u_TransparencyPass)
-    for (uint coordID = 0; coordID < 3; ++coordID)
-    {
-      uint faceID = 2 * coordID + (toBlock[coordID] < 0 ? 0 : 1);
-      if (faceEnabled(faceID))
-        addQuad(blockIndex, faceID, u_TextureIDs[blockID][faceID]);
-    }
+#if TRANSPARENT
+  for (uint coordID = 0; coordID < 3; ++coordID)
+  {
+    uint faceID = 2 * coordID + (toBlock[coordID] < 0 ? 0 : 1);
+    if (faceEnabled(faceID))
+      addQuad(blockIndex, faceID, u_TextureIDs[blockID][faceID]);
+  }
+#endif
 }
 
 

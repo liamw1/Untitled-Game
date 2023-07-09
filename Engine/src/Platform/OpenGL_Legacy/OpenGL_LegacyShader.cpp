@@ -47,25 +47,46 @@ namespace Engine
     return result;
   }
 
-  static std::unordered_map<GLenum, std::string> preProcess(const std::string& source)
+  static std::unordered_map<GLenum, std::string> preProcess(std::string source, const std::unordered_map<std::string, std::string>& preprocessorDefinitions)
   {
     EN_PROFILE_FUNCTION();
+
+    std::size_t pos = 0;
+    while ((pos = source.find("#define ", pos)) != std::string::npos)
+    {
+      pos += 8;
+
+      std::size_t endToken = source.find('\n', pos) - 1;
+      std::string token = source.substr(pos, endToken - pos);
+      pos = endToken;
+
+      try
+      {
+        std::string definition = preprocessorDefinitions.at(token);
+        source.insert(pos, " " + definition);
+        pos += definition.size();
+      }
+      catch (const std::out_of_range& /* e */)
+      {
+        // Do nothing
+      }
+    }
 
     std::unordered_map<GLenum, std::string> shaderSources;
 
     const char* typeToken = "#type";
-    size_t typeTokenLength = strlen(typeToken);
-    size_t pos = source.find(typeToken, 0);             // Start of shader type declaration line
+    std::size_t typeTokenLength = strlen(typeToken);
+    pos = source.find(typeToken, 0);                          // Start of shader type declaration line
     while (pos != std::string::npos)
     {
-      size_t eol = source.find_first_of("\r\n", pos);   // End of shader type declaration line
+      std::size_t eol = source.find_first_of("\r\n", pos);    // End of shader type declaration line
       EN_CORE_ASSERT(eol != std::string::npos, "Syntax error");
-      size_t begin = pos + typeTokenLength + 1;         // Start of shader type name (after "#type" keyword)
+      std::size_t begin = pos + typeTokenLength + 1;          // Start of shader type name (after "#type" keyword)
       std::string type = source.substr(begin, eol - begin);
 
-      size_t nextLinePos = source.find_first_not_of("\r\n", eol);
+      std::size_t nextLinePos = source.find_first_not_of("\r\n", eol);
       EN_CORE_ASSERT(nextLinePos != std::string::npos, "Syntax error");
-      pos = source.find(typeToken, nextLinePos);        // Start of next shader type declaration line
+      pos = source.find(typeToken, nextLinePos);              // Start of next shader type declaration line
       shaderSources[shaderTypeFromString(type)] = (pos == std::string::npos) ? source.substr(nextLinePos) : source.substr(nextLinePos, pos - nextLinePos);
     }
 
@@ -74,12 +95,12 @@ namespace Engine
 
 
 
-  OpenGL_LegacyShader::OpenGL_LegacyShader(const std::string& filepath)
+  OpenGL_LegacyShader::OpenGL_LegacyShader(const std::string& filepath, const std::unordered_map<std::string, std::string>& preprocessorDefinitions)
     : m_UniformLocationCache({})
   {
     EN_PROFILE_FUNCTION();
 
-    compile(preProcess(readFile(filepath)));
+    compile(preProcess(readFile(filepath), preprocessorDefinitions));
 
     std::filesystem::path path = filepath;
     m_Name = path.stem().string(); // Returns the file's name stripped of the extension.

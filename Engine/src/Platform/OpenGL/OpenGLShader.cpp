@@ -78,10 +78,13 @@ namespace Engine
 
 
 
-  OpenGLShader::OpenGLShader(const std::string& filepath)
+  OpenGLShader::OpenGLShader(const std::string& filepath, const std::unordered_map<std::string, std::string>& preprocessorDefinitions)
     : m_FilePath(filepath)
   {
     EN_PROFILE_FUNCTION();
+
+    if (!preprocessorDefinitions.empty())
+      EN_CORE_ERROR("OpenGL shader does not currently support preprocessor definitions!");
 
     createCacheDirectoryIfNeeded();
 

@@ -19,6 +19,7 @@ namespace Block
     OakLog,
     OakLeaves,
     FallLeaves,
+    Glass,
     Water,
 
     Null,
@@ -39,6 +40,7 @@ namespace Block
     OakLogSide,
     OakLeaves,
     FallLeaves,
+    Glass,
     Water,
 
     Invisible,

@@ -22,10 +22,10 @@ ChunkManager::~ChunkManager()
 
 void ChunkManager::initialize()
 {
-  if (!s_Shader)
+  if (!s_OpaqueVoxelShader)
   {
-    s_Shader = Engine::Shader::Create("assets/shaders/Voxel.glsl");
-    s_Uniform = Engine::Uniform::Create(c_UniformBinding, sizeof(UniformData));
+    s_OpaqueVoxelShader = Engine::Shader::Create("assets/shaders/Voxel.glsl", { { "TRANSPARENT", "0"} });
+    s_TransparentVoxelShader = Engine::Shader::Create("assets/shaders/Voxel.glsl", { { "TRANSPARENT", "1"} });
     s_TextureArray = Block::GetTextureArray();
 
     s_SSBO = Engine::StorageBuffer::Create(Engine::StorageBuffer::Type::SSBO, c_StorageBufferBinding);
@@ -55,17 +55,11 @@ void ChunkManager::render()
   Vec3 playerPosition = Player::Position();
   GlobalIndex originIndex = Player::OriginIndex();
 
-  s_Shader->bind();
-  s_Uniform->bind();
   s_TextureArray->bind(c_TextureSlot);
 
   {
-    Engine::RenderCommand::SetBlending(false);
-    Engine::RenderCommand::SetFaceCulling(true);
     Engine::RenderCommand::SetDepthWriting(true);
     Engine::RenderCommand::SetUseDepthOffset(false);
-    UniformData uniformData = { .transparencyPass = false };
-    s_Uniform->set(&uniformData, sizeof(UniformData));
 
     int commandCount = m_OpaqueMultiDrawArray->mask([&originIndex, &frustumPlanes](const GlobalIndex& chunkIndex)
       {
@@ -88,6 +82,7 @@ void ChunkManager::render()
     if (bufferDataSize > c_StorageBufferSize)
       EN_ERROR("Chunk anchor data exceeds SSBO size!");
 
+    s_OpaqueVoxelShader->bind();
     m_OpaqueMultiDrawArray->bind();
     s_SSBO->update(storageBufferData.data(), 0, bufferDataSize);
     Engine::RenderCommand::MultiDrawVertices(drawCommands.data(), commandCount, sizeof(Chunk::DrawCommand));
@@ -99,8 +94,6 @@ void ChunkManager::render()
     Engine::RenderCommand::SetDepthWriting(false);
     Engine::RenderCommand::SetUseDepthOffset(true);
     Engine::RenderCommand::SetDepthOffset(-1.0f, -1.0f);
-    UniformData uniformData = { .transparencyPass = true };
-    s_Uniform->set(&uniformData, sizeof(UniformData));
 
     int commandCount = m_TransparentMultiDrawArray->mask([&originIndex, &frustumPlanes](const GlobalIndex& chunkIndex)
       {
@@ -142,6 +135,7 @@ void ChunkManager::render()
     if (bufferDataSize > c_StorageBufferSize)
       EN_ERROR("Chunk anchor data exceeds SSBO size!");
 
+    s_TransparentVoxelShader->bind();
     m_TransparentMultiDrawArray->bind();
     s_SSBO->update(storageBufferData.data(), 0, bufferDataSize);
     Engine::RenderCommand::MultiDrawVertices(drawCommands.data(), commandCount, sizeof(Chunk::DrawCommand));

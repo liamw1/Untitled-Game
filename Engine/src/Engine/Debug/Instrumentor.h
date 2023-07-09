@@ -5,7 +5,7 @@
 #include <sstream>
 #include <mutex>
 
-#define EN_PROFILE 1
+#define EN_PROFILE 0
 #if EN_PROFILE
 #define EN_PROFILE_BEGIN_SESSION(name, filepath)  ::Engine::Instrumentor::Get().beginSession(name, filepath)
 #define EN_PROFILE_END_SESSION()                  ::Engine::Instrumentor::Get().endSession()

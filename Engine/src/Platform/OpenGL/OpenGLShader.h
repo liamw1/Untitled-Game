@@ -16,7 +16,7 @@ namespace Engine
   class OpenGLShader : public Shader
   {
   public:
-    OpenGLShader(const std::string& filepath);
+    OpenGLShader(const std::string& filepath, const std::unordered_map<std::string, std::string>& preprocessorDefinitions);
     ~OpenGLShader();
 
     const std::string& getName() const override { return m_Name; }

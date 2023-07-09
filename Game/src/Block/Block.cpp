@@ -70,6 +70,7 @@ void Block::Initialize()
   s_TexturePaths[static_cast<blockTexID>(Block::Texture::OakLogSide)] = tileFolder / "trunk_side.png";
   s_TexturePaths[static_cast<blockTexID>(Block::Texture::OakLeaves)] = tileFolder / "leaves_transparent.png";
   s_TexturePaths[static_cast<blockTexID>(Block::Texture::FallLeaves)] = tileFolder / "leaves_orange_transparent.png";
+  s_TexturePaths[static_cast<blockTexID>(Block::Texture::Glass)] = tileFolder / "glass.png";
   s_TexturePaths[static_cast<blockTexID>(Block::Texture::Water)] = tileFolder / "water_transparent.png";
   s_TexturePaths[static_cast<blockTexID>(Block::Texture::Invisible)] = textureFolder / "Invisible.png";
   s_TexturePaths[static_cast<blockTexID>(Block::Texture::ErrorTexture)] = textureFolder / "Checkerboard.png";
@@ -85,6 +86,7 @@ void Block::Initialize()
   assignTextures(Block::Type::OakLog, Block::Texture::OakLogTop, Block::Texture::OakLogSide);
   assignTextures(Block::Type::OakLeaves, Block::Texture::OakLeaves);
   assignTextures(Block::Type::FallLeaves, Block::Texture::FallLeaves);
+  assignTextures(Block::Type::Glass, Block::Texture::Glass);
   assignTextures(Block::Type::Water, Block::Texture::Water);
   assignTextures(Block::Type::Null, Block::Texture::ErrorTexture);
 
@@ -130,6 +132,7 @@ bool Block::HasTransparency(Texture texture)
     case Block::Texture::Invisible:   return true;
     case Block::Texture::OakLeaves:   return true;
     case Block::Texture::FallLeaves:  return true;
+    case Block::Texture::Glass:       return true;
     case Block::Texture::Water:       return true;
     default:                          return false;
   }
@@ -143,6 +146,7 @@ bool Block::HasTransparency(Type block)
     case Block::Type::Air:        return true;
     case Block::Type::OakLeaves:  return true;
     case Block::Type::FallLeaves: return true;
+    case Block::Type::Glass:      return true;
     case Block::Type::Water:      return true;
     default:                      return false;
   }

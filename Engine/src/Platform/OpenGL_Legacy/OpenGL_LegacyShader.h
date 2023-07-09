@@ -10,7 +10,7 @@ namespace Engine
   class OpenGL_LegacyShader : public Shader
   {
   public:
-    OpenGL_LegacyShader(const std::string& filepath);
+    OpenGL_LegacyShader(const std::string& filepath, const std::unordered_map<std::string, std::string>& preprocessorDefinitions);
     ~OpenGL_LegacyShader();
 
     const std::string& getName() const override { return m_Name; }
