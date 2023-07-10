@@ -146,13 +146,6 @@ void main()
   vec3 blockCenter = u_AnchorPosition[v_DrawID[0]].xyz + u_BlockLength * vec3(blockIndex) + vec3(u_BlockLength) / 2;
   vec3 toBlock = blockCenter - u_CameraPosition.xyz;
 
-  for (uint coordID = 0; coordID < 3; ++coordID)
-  {
-    uint faceID = 2 * coordID + (toBlock[coordID] < 0 ? 1 : 0);
-    if (faceEnabled(faceID))
-      addQuad(blockIndex, faceID, u_TextureIDs[blockID][faceID]);
-  }
-
 #if TRANSPARENT
   for (uint coordID = 0; coordID < 3; ++coordID)
   {
@@ -161,6 +154,13 @@ void main()
       addQuad(blockIndex, faceID, u_TextureIDs[blockID][faceID]);
   }
 #endif
+
+  for (uint coordID = 0; coordID < 3; ++coordID)
+  {
+    uint faceID = 2 * coordID + (toBlock[coordID] < 0 ? 1 : 0);
+    if (faceEnabled(faceID))
+      addQuad(blockIndex, faceID, u_TextureIDs[blockID][faceID]);
+  }
 }
 
 

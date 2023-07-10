@@ -34,8 +34,9 @@ void World::onUpdate(Timestep timestep)
   EN_PROFILE_FUNCTION();
 
   /* Player update stage */
+  Player::HandleDirectionalInput();
   playerCollisionHandling(timestep);
-  Player::Update();
+  Player::UpdatePosition(timestep);
 
   /* Rendering stage */
   Engine::Renderer::BeginScene(Engine::Scene::ActiveCamera());
@@ -153,49 +154,57 @@ RayIntersection World::castRay(const Vec3& rayOrigin, const Vec3& rayDirection, 
 
 void World::playerCollisionHandling(Timestep timestep) const
 {
+  static constexpr int maxIterations = 100;
+
   // Player width and height in blocks
   static const int playerWidth = static_cast<int>(ceil(Player::Width() / Block::Length()));
   static const int playerHeight = static_cast<int>(ceil(Player::Height() / Block::Length()));
+  static const length_t widthInterval = Player::Width() / playerWidth;
+  static const length_t heightInterval = Player::Height() / playerHeight;
   seconds dt = timestep.sec();  // Time between frames in seconds
 
-beginCollisionDetection:;
-  length_t distanceMoved = dt * glm::length(Player::Velocity());
-  Vec3 anchorPoint = Player::Position() - 0.5 * Vec3(Player::Width(), Player::Width(), Player::Height());
+  Vec3 playerPosition = Player::Position();
+  Vec3 playerVelocity = Player::Velocity();
 
-  if (distanceMoved == 0.0)
-    return;
-
-  glm::vec3 correctCorner{};
-  RayIntersection firstCollision{};
-  for (int i = 0; i <= playerWidth; ++i)
-    for (int j = 0; j <= playerWidth; ++j)
-      for (int k = 0; k <= playerHeight; ++k)
-      {
-        Vec3 cornerPos = anchorPoint + Block::Length() * Vec3(i == playerWidth ? i - 0.2 : i, j == playerWidth ? j - 0.2 : j, k == playerHeight ? k - 0.2 : k);
-        RayIntersection collision = castRaySegment(cornerPos - dt * Player::Velocity(), cornerPos);
-
-        if (collision.distance < firstCollision.distance)
-        {
-          firstCollision = collision;
-          correctCorner = cornerPos;
-        }
-      }
-
-  if (firstCollision.distance <= distanceMoved)
+  int iterations = 0;
+  while (iterations++ < maxIterations)
   {
-    length_t t = firstCollision.distance / distanceMoved;
+    length_t distanceMoved = dt * glm::length(playerVelocity);
+    Vec3 anchorPoint = playerPosition - 0.5 * Vec3(Player::Width(), Player::Width(), Player::Height());
 
-    // Calculate distance player should be pushed out from solid block
+    if (distanceMoved == 0.0)
+      break;
+
+    RayIntersection firstCollision{};
+    for (int i = 0; i <= playerWidth; ++i)
+      for (int j = 0; j <= playerWidth; ++j)
+        for (int k = 0; k <= playerHeight; ++k)
+        {
+          Vec3 samplePosition = anchorPoint + Vec3(i * widthInterval, j * widthInterval, k * heightInterval);
+          RayIntersection collision = castRaySegment(samplePosition, samplePosition + playerVelocity * dt);
+
+          if (collision.distance < firstCollision.distance)
+            firstCollision = collision;
+        }
+
+    if (distanceMoved < firstCollision.distance)
+      break;
+
     Vec3 blockFaceNormal = static_cast<Vec3>(BlockIndex::Dir(firstCollision.face));
-    Vec3 collisionDisplacement = ((1.0 - t) * dt *  glm::dot(blockFaceNormal, -Player::Velocity()) + c_MinDistanceToWall) * blockFaceNormal;
+    length_t velocityComponentAlongBlockNormal = glm::dot(playerVelocity, -blockFaceNormal);
 
-    Player::SetPosition(Player::Position() + collisionDisplacement);
+    length_t distanceToMinDistanceToWall = firstCollision.distance - c_MinDistanceToWall * distanceMoved / velocityComponentAlongBlockNormal;
+    length_t velocityScaling = distanceToMinDistanceToWall / distanceMoved;
 
-    // Velocity becomes (prevPlayerPosition - positionAfterCollision) / dt
-    Player::SetVelocity((Player::Velocity() + collisionDisplacement / dt));
-
-    goto beginCollisionDetection;
+    playerPosition += velocityScaling * playerVelocity * dt;
+    playerVelocity += velocityComponentAlongBlockNormal * blockFaceNormal;
   }
+
+  if (iterations >= maxIterations)
+    EN_ERROR("Player collision handling exceeded maximum number of iterations!");
+
+  Player::SetPosition(playerPosition);
+  Player::SetVelocity(playerVelocity);
 }
 
 void World::playerWorldInteraction()
@@ -203,7 +212,7 @@ void World::playerWorldInteraction()
   static constexpr blockIndex_t chunkLimits[2] = { 0, Chunk::Size() - 1 };
   static constexpr length_t maxInteractionDistance = 1000 * Block::Length();
 
-  m_PlayerRayCast = castRay(Player::Position(), Player::ViewDirection(), maxInteractionDistance);
+  m_PlayerRayCast = castRay(Player::CameraPosition(), Player::ViewDirection(), maxInteractionDistance);
   if (m_PlayerRayCast.distance <= maxInteractionDistance)
   {
     const BlockIndex& blockIndex = m_PlayerRayCast.blockIndex;

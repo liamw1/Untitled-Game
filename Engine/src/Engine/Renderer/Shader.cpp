@@ -56,15 +56,13 @@ namespace Engine
       std::string token = source.substr(pos, endToken - pos);
       pos = endToken;
 
-      try
+      std::unordered_map<std::string, std::string>::const_iterator iteratorPosition = preprocessorDefinitions.find(token);
+      if (iteratorPosition != preprocessorDefinitions.end())
       {
-        std::string definition = preprocessorDefinitions.at(token);
+        const auto& [key, definition] = *iteratorPosition;
+
         source.insert(pos, " " + definition);
         pos += definition.size();
-      }
-      catch (const std::out_of_range& /* e */)
-      {
-        // Do nothing
       }
     }
 

@@ -3,12 +3,11 @@
 #include "PlayerCamera.h"
 
 // Hitbox dimensions
-static constexpr length_t c_Width = 1 * Block::Length();
-static constexpr length_t c_Height = 2 * Block::Length();
+static constexpr length_t c_Width = 0.8_m * Block::Length();
+static constexpr length_t c_Height = 1.8_m * Block::Length();
 
-// Controller for player camera, which is placed at the eyes
-// static Engine::CameraController s_CameraController;
 static bool s_FreeCamEnabled = false;
+static constexpr length_t c_TranslationSpeed = 25 * Block::Length();
 
 // Designates origin of coordinate system
 static GlobalIndex s_OriginIndex;
@@ -17,49 +16,72 @@ static GlobalIndex s_OriginIndex;
 static Vec3 s_Velocity;
 
 static Engine::Entity s_PlayerEntity;
+static Engine::Entity s_CameraEntity;
 static std::mutex s_Mutex;
 
 
 
-void Player::Initialize(const GlobalIndex& initialChunkIndex, const Vec3& initialLocalPosition)
+void Player::Initialize(const GlobalIndex& chunkIndex, const Vec3& positionWithinChunk)
 {
-  EN_ASSERT(initialLocalPosition.x >= 0.0 && initialLocalPosition.x <= Chunk::Length() &&
-            initialLocalPosition.y >= 0.0 && initialLocalPosition.y <= Chunk::Length() &&
-            initialLocalPosition.z >= 0.0 && initialLocalPosition.z <= Chunk::Length(), "Local position is out of bounds!");
+  EN_ASSERT(positionWithinChunk.x >= 0.0 && positionWithinChunk.x <= Chunk::Length() &&
+            positionWithinChunk.y >= 0.0 && positionWithinChunk.y <= Chunk::Length() &&
+            positionWithinChunk.z >= 0.0 && positionWithinChunk.z <= Chunk::Length(), "Local position is out of bounds!");
 
-  s_OriginIndex = initialChunkIndex;
+  s_OriginIndex = chunkIndex;
   s_Velocity = Vec3(0.0);
 
-  s_PlayerEntity = Engine::Scene::CreateEntity(initialLocalPosition);
-  s_PlayerEntity.add<Component::NativeScript>().bind<CameraController>();
-  s_PlayerEntity.add<Component::Camera>();
+  s_PlayerEntity = Engine::Scene::CreateEntity(positionWithinChunk, "Player");
+
+  s_CameraEntity = Engine::Scene::CreateEntity(positionWithinChunk + Height() / 2, "PlayerCamera");
+  s_CameraEntity.add<Component::NativeScript>().bind<CameraController>();
+  s_CameraEntity.add<Component::Camera>();
 }
 
-void Player::Update()
+void Player::HandleDirectionalInput()
 {
   std::lock_guard lock(s_Mutex);
 
-  const Vec3 lastLocalPosition = s_PlayerEntity.get<Component::Transform>().position;
+  Vec3 viewDirection = s_CameraEntity.get<Component::Transform>().orientationDirection();
+  Vec2 planarViewDirection = glm::normalize(Vec2(viewDirection));
 
-  // If player enters new chunk, set that chunk as the new origin and recalculate local position
-  Vec3 newLocalPosition = lastLocalPosition;
-  for (int i = 0; i < 3; ++i)
-  {
-    globalIndex_t chunkIndexOffset = static_cast<globalIndex_t>(floor(lastLocalPosition[i] / Chunk::Length()));
-    s_OriginIndex[i] += chunkIndexOffset;
-    newLocalPosition[i] -= chunkIndexOffset * Chunk::Length();
-  }
-  s_PlayerEntity.get<Component::Transform>().position = newLocalPosition;
+  // Update player velocity
+  Vec3 velocity{};
+  if (Engine::Input::IsKeyPressed(Key::A))
+    velocity += Vec3(c_TranslationSpeed * Vec2(-planarViewDirection.y, planarViewDirection.x), 0.0);
+  if (Engine::Input::IsKeyPressed(Key::D))
+    velocity -= Vec3(c_TranslationSpeed * Vec2(-planarViewDirection.y, planarViewDirection.x), 0.0);
+  if (Engine::Input::IsKeyPressed(Key::W))
+    velocity += Vec3(c_TranslationSpeed * planarViewDirection, 0.0);
+  if (Engine::Input::IsKeyPressed(Key::S))
+    velocity -= Vec3(c_TranslationSpeed * planarViewDirection, 0.0);
+  if (Engine::Input::IsKeyPressed(Key::Space))
+    velocity.z += c_TranslationSpeed;
+  if (Engine::Input::IsKeyPressed(Key::LeftShift))
+    velocity.z -= c_TranslationSpeed;
+  s_Velocity = velocity;
+}
 
-  // const Vec3& viewDirection = s_CameraController.getViewDirection();
-  // Vec2 planarViewDirection = glm::normalize(Vec2(viewDirection));
-  // 
-  // // Update camera position
-  // Vec3 eyesPosition = Vec3(0.025 * s_Width * planarViewDirection + Vec2(s_LocalPosition), s_LocalPosition.z + 0.25 * s_Height);
-  // s_CameraController.setPosition(eyesPosition);
-  // 
-  // s_CameraController.onUpdate(s_Timestep);
-  // s_PlayerEntity.get<Component::Camera>().camera.setProjection(s_CameraController.getViewProjectionMatrix());
+void Player::UpdatePosition(Timestep timestep)
+{
+  const seconds dt = timestep.sec();
+  Vec3 lastPosition = s_PlayerEntity.get<Component::Transform>().position;
+
+  // Calculate new player position based on velocity
+  Vec3 newPosition = lastPosition + s_Velocity * dt;
+
+  // If player enters new chunk, set that chunk as the new origin and recalculate position relative to new origin
+  GlobalIndex chunkIndexOffset = GlobalIndex::ToIndex(lastPosition / Chunk::Length());
+  s_OriginIndex += chunkIndexOffset;
+  newPosition -= Chunk::Length() * static_cast<Vec3>(chunkIndexOffset);
+
+  // Update player position
+  s_PlayerEntity.get<Component::Transform>().position = newPosition;
+
+  // Update camera position
+  const Vec3& viewDirection = s_CameraEntity.get<Component::Transform>().orientationDirection();
+  Vec2 planarViewDirection = glm::normalize(Vec2(viewDirection));
+  Vec3 eyesPosition = Vec3(0.025 * c_Width * planarViewDirection + Vec2(newPosition), newPosition.z + 0.25 * c_Height);
+  s_CameraEntity.get<Component::Transform>().position = eyesPosition;
 }
 
 Vec3 Player::Position()
@@ -86,10 +108,16 @@ void Player::SetVelocity(const Vec3& velocity)
   s_Velocity = velocity;
 }
 
+Vec3 Player::CameraPosition()
+{
+  std::lock_guard lock(s_Mutex);
+  return s_CameraEntity.get<Component::Transform>().position;
+}
+
 Vec3 Player::ViewDirection()
 {
   std::lock_guard lock(s_Mutex);
-  return s_PlayerEntity.get<Component::Transform>().orientationDirection();
+  return s_CameraEntity.get<Component::Transform>().orientationDirection();
 }
 
 GlobalIndex Player::OriginIndex()

@@ -10,34 +10,6 @@ CameraController::CameraController(Engine::Entity entity)
   cameraComponent.camera.setPerspective(c_AspectRatio, c_FOV, c_NearClip, c_FarClip);
 }
 
-void CameraController::onUpdate(Timestep timestep)
-{
-  const seconds dt = timestep.sec();  // Time between frames in seconds
-  Vec3 viewDirection = m_Entity.get<Component::Transform>().orientationDirection();
-  Vec2 planarViewDirection = glm::normalize(Vec2(viewDirection));
-
-  // Update player velocity
-  Vec3 velocity{};
-  if (Engine::Input::IsKeyPressed(Key::A))
-    velocity += Vec3(c_TranslationSpeed * Vec2(-planarViewDirection.y, planarViewDirection.x), 0.0);
-  if (Engine::Input::IsKeyPressed(Key::D))
-    velocity -= Vec3(c_TranslationSpeed * Vec2(-planarViewDirection.y, planarViewDirection.x), 0.0);
-  if (Engine::Input::IsKeyPressed(Key::W))
-    velocity += Vec3(c_TranslationSpeed * planarViewDirection, 0.0);
-  if (Engine::Input::IsKeyPressed(Key::S))
-    velocity -= Vec3(c_TranslationSpeed * planarViewDirection, 0.0);
-  if (Engine::Input::IsKeyPressed(Key::Space))
-    velocity.z += c_TranslationSpeed;
-  if (Engine::Input::IsKeyPressed(Key::LeftShift))
-    velocity.z -= c_TranslationSpeed;
-
-  // Update player position
-  m_Entity.get<Component::Transform>().position += velocity * dt;
-
-  // TODO: Remove
-  Player::SetVelocity(velocity);
-}
-
 void CameraController::onEvent(Engine::Event& event)
 {
   Engine::EventDispatcher dispatcher(event);

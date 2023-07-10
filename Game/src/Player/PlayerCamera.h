@@ -7,14 +7,12 @@ class CameraController : public Engine::EntityScript
 public:
   CameraController(Engine::Entity entity);
 
-  void onUpdate(Timestep timestep) override;
   void onEvent(Engine::Event& event) override;
 
 private:
   // Camera properties
   static constexpr float c_CameraSensitivity = 0.1f;
   static constexpr float c_CameraZoomSensitivity = 0.2f;
-  static constexpr length_t c_TranslationSpeed = 250 * Block::Length();
 
   static constexpr Angle c_MinPitch = -89.99_deg;
   static constexpr Angle c_MaxPitch = 89.99_deg;

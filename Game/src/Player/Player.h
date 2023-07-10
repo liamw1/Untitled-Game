@@ -8,9 +8,11 @@
 */
 namespace Player
 {
-  void Initialize(const GlobalIndex& initialChunkIndex, const Vec3& initialLocalPosition);
+  void Initialize(const GlobalIndex& chunkIndex, const Vec3& positionWithinChunk);
 
-  void Update();
+  void HandleDirectionalInput();
+
+  void UpdatePosition(Timestep timestep);
 
   Vec3 Position();
   void SetPosition(const Vec3& position);
@@ -18,6 +20,7 @@ namespace Player
   Vec3 Velocity();
   void SetVelocity(const Vec3& velocity);
 
+  Vec3 CameraPosition();
   Vec3 ViewDirection();
 
   GlobalIndex OriginIndex();

@@ -52,7 +52,7 @@ void ChunkManager::render()
     plane.w += chunkSphereRadius * planeNormalMag;
   }
 
-  Vec3 playerPosition = Player::Position();
+  Vec3 playerCameraPosition = Player::CameraPosition();
   GlobalIndex originIndex = Player::OriginIndex();
 
   s_TextureArray->bind(c_TextureSlot);
@@ -101,23 +101,23 @@ void ChunkManager::render()
         Vec3 chunkCenter = Chunk::Center(anchorPosition);
         return Util::IsInRange(chunkIndex, originIndex, c_RenderDistance) && Util::IsInFrustum(chunkCenter, frustumPlanes);
       });
-    m_TransparentMultiDrawArray->sort(commandCount, [&originIndex, &playerPosition](const GlobalIndex& chunkA, const GlobalIndex& chunkB)
+    m_TransparentMultiDrawArray->sort(commandCount, [&originIndex, &playerCameraPosition](const GlobalIndex& chunkA, const GlobalIndex& chunkB)
       {
         // NOTE: Maybe measure min distance to chunk faces instead
 
         Vec3 anchorA = Chunk::AnchorPosition(chunkA, originIndex);
         Vec3 centerA = Chunk::Center(anchorA);
-        length_t distA = glm::length2(centerA - playerPosition);
+        length_t distA = glm::length2(centerA - playerCameraPosition);
 
         Vec3 anchorB = Chunk::AnchorPosition(chunkB, originIndex);
         Vec3 centerB = Chunk::Center(anchorB);
-        length_t distB = glm::length2(centerB - playerPosition);
+        length_t distB = glm::length2(centerB - playerCameraPosition);
 
         return distA > distB;
       });
-    m_TransparentMultiDrawArray->amend(commandCount, [&originIndex, &playerPosition](Chunk::DrawCommand& drawCommand)
+    m_TransparentMultiDrawArray->amend(commandCount, [&originIndex, &playerCameraPosition](Chunk::DrawCommand& drawCommand)
       {
-        drawCommand.sortVoxels(originIndex, playerPosition);
+        drawCommand.sortVoxels(originIndex, playerCameraPosition);
         return true;
       });
 
