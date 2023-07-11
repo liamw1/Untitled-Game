@@ -31,7 +31,7 @@ bool ChunkContainer::insert(const GlobalIndex& chunkIndex, Array3D<Block::Type, 
   Chunk& chunk = m_ChunkArray[chunkSlot];
   chunk = Chunk(chunkIndex);
   chunk.setData(std::move(chunkComposition));
-  auto [insertionPosition, insertionSuccess] = m_BoundaryChunks.insert({ chunk.getGlobalIndex(), &chunk });
+  auto [insertionPosition, insertionSuccess] = m_BoundaryChunks.insert({ chunk.globalIndex(), &chunk });
 
   if (insertionSuccess)
     sendChunkLoadUpdate(chunk);
@@ -93,7 +93,7 @@ std::unordered_set<GlobalIndex> ChunkContainer::findAllLoadableIndices() const
   for (const auto& [key, chunk] : m_BoundaryChunks)
     for (Direction direction : Directions())
     {
-      GlobalIndex neighborIndex = chunk->getGlobalIndex() + GlobalIndex::Dir(direction);
+      GlobalIndex neighborIndex = chunk->globalIndex() + GlobalIndex::Dir(direction);
       if (Util::IsInRange(neighborIndex, originIndex, c_LoadDistance) && newChunkIndices.find(neighborIndex) == newChunkIndices.end())
         if (!chunk->isFaceOpaque(direction) && !isLoaded(neighborIndex))
           newChunkIndices.insert(neighborIndex);
@@ -101,7 +101,7 @@ std::unordered_set<GlobalIndex> ChunkContainer::findAllLoadableIndices() const
   return newChunkIndices;
 }
 
-void ChunkContainer::uploadMeshes(Threads::UnorderedSetQueue<Chunk::DrawCommand>& commandQueue, std::unique_ptr<Engine::MultiDrawArray<Chunk::DrawCommand>>& multiDrawArray) const
+void ChunkContainer::uploadMeshes(Engine::Threads::UnorderedSetQueue<Chunk::DrawCommand>& commandQueue, std::unique_ptr<Engine::MultiDrawArray<Chunk::DrawCommand>>& multiDrawArray) const
 {
   std::shared_lock lock(m_ContainerMutex);
 
@@ -182,6 +182,16 @@ void ChunkContainer::sendBlockUpdate(const GlobalIndex& chunkIndex, const BlockI
   }
 }
 
+std::optional<GlobalIndex> ChunkContainer::getLazyUpdateIndex()
+{
+  return m_LazyUpdateQueue.tryRemove();
+}
+
+std::optional<GlobalIndex> ChunkContainer::getForceUpdateIndex()
+{
+  return m_ForceUpdateQueue.tryRemove();
+}
+
 bool ChunkContainer::empty() const
 {
   std::shared_lock lock(m_ContainerMutex);
@@ -207,7 +217,7 @@ bool ChunkContainer::isLoaded(const GlobalIndex& chunkIndex) const
 bool ChunkContainer::isOnBoundary(const Chunk& chunk) const
 {
   for (Direction direction : Directions())
-    if (!isLoaded(chunk.getGlobalIndex() + GlobalIndex::Dir(direction)) && !chunk.isFaceOpaque(direction))
+    if (!isLoaded(chunk.globalIndex() + GlobalIndex::Dir(direction)) && !chunk.isFaceOpaque(direction))
       return true;
   return false;
 }
@@ -215,7 +225,7 @@ bool ChunkContainer::isOnBoundary(const Chunk& chunk) const
 ChunkType ChunkContainer::getChunkType(const Chunk& chunk) const
 {
   for (int chunkType = 0; chunkType < m_Chunks.size(); ++chunkType)
-    if (m_Chunks[chunkType].find(chunk.getGlobalIndex()) != m_Chunks[chunkType].end())
+    if (m_Chunks[chunkType].find(chunk.globalIndex()) != m_Chunks[chunkType].end())
       return static_cast<ChunkType>(chunkType);
 
   EN_ERROR("Could not find chunk!");
@@ -246,7 +256,7 @@ void ChunkContainer::sendChunkLoadUpdate(Chunk& newChunk)
   // Move cardinal neighbors out of m_BoundaryChunks if they are no longer on boundary
   for (Direction direction : Directions())
   {
-    Chunk* neighbor = find(newChunk.getGlobalIndex() + GlobalIndex::Dir(direction));
+    Chunk* neighbor = find(newChunk.globalIndex() + GlobalIndex::Dir(direction));
     if (neighbor && getChunkType(*neighbor) == ChunkType::Boundary)
       boundaryChunkUpdate(*neighbor);
   }
@@ -290,7 +300,7 @@ void ChunkContainer::recategorizeChunk(Chunk& chunk, ChunkType source, ChunkType
       for (int j = -1; j <= 1; ++j)
         for (int k = -1; k <= 1; ++k)
         {
-          GlobalIndex neighborIndex = chunk.getGlobalIndex() + GlobalIndex(i, j, k);
+          GlobalIndex neighborIndex = chunk.globalIndex() + GlobalIndex(i, j, k);
           if (isLoaded(neighborIndex))
             m_LazyUpdateQueue.add(neighborIndex);
         }
@@ -298,6 +308,6 @@ void ChunkContainer::recategorizeChunk(Chunk& chunk, ChunkType source, ChunkType
   int sourceTypeID = static_cast<int>(source);
   int destinationTypeID = static_cast<int>(destination);
 
-  m_Chunks[destinationTypeID].insert({ chunk.getGlobalIndex(), &chunk});
-  m_Chunks[sourceTypeID].erase(m_Chunks[sourceTypeID].find(chunk.getGlobalIndex()));
+  m_Chunks[destinationTypeID].insert({ chunk.globalIndex(), &chunk});
+  m_Chunks[sourceTypeID].erase(m_Chunks[sourceTypeID].find(chunk.globalIndex()));
 }

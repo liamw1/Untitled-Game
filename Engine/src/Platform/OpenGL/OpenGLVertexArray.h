@@ -13,7 +13,7 @@ namespace Engine
     void bind() const override;
     void unBind() const override;
 
-    uint32_t getCount() const override { return m_Count; }
+    uint32_t getCount() const override;
 
   private:
     uint32_t m_RendererID;
@@ -39,7 +39,7 @@ namespace Engine
 
     void setIndexBuffer(const std::shared_ptr<const IndexBuffer>& indexBuffer) override;
 
-    const std::shared_ptr<const IndexBuffer>& getIndexBuffer() const override { return m_IndexBuffer; }
+    const std::shared_ptr<const IndexBuffer>& getIndexBuffer() const override;
 
   private:
     uint32_t m_RendererID;

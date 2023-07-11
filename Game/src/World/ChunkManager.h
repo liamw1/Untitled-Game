@@ -33,10 +33,10 @@ public:
   void placeBlock(GlobalIndex chunkIndex, BlockIndex blockIndex, Direction face, Block::Type blockType);
   void removeBlock(const GlobalIndex& chunkIndex, const BlockIndex& blockIndex);
 
-  void setLoadModeTerrain() { m_LoadMode = LoadMode::Terrain; }
-  void setLoadModeVoid() { m_LoadMode = LoadMode::Void; }
-  void launchLoadThread() { m_LoadThread = std::thread(&ChunkManager::loadWorker, this); }
-  void launchUpdateThread() { m_UpdateThread = std::thread(&ChunkManager::updateWorker, this); }
+  void setLoadModeTerrain();
+  void setLoadModeVoid();
+  void launchLoadThread();
+  void launchUpdateThread();
 
   // Debug
   void loadChunk(const GlobalIndex& chunkIndex, Block::Type blockType);
@@ -61,10 +61,10 @@ private:
   static constexpr int c_StorageBufferBinding = 0;
   static constexpr uint32_t c_StorageBufferSize = static_cast<uint32_t>(pow2(20));
 
-  Threads::UnorderedSetQueue<Chunk::DrawCommand> m_OpaqueCommandQueue;
+  Engine::Threads::UnorderedSetQueue<Chunk::DrawCommand> m_OpaqueCommandQueue;
   std::unique_ptr<Engine::MultiDrawArray<Chunk::DrawCommand>> m_OpaqueMultiDrawArray;
 
-  Threads::UnorderedSetQueue<Chunk::DrawCommand> m_TransparentCommandQueue;
+  Engine::Threads::UnorderedSetQueue<Chunk::DrawCommand> m_TransparentCommandQueue;
   std::unique_ptr<Engine::MultiDrawArray<Chunk::DrawCommand>> m_TransparentMultiDrawArray;
 
   // Multi-threading

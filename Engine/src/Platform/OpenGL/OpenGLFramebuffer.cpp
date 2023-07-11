@@ -61,7 +61,7 @@ namespace Engine
   {
     switch (format)
     {
-      case Engine::FramebufferTextureFormat::DEPTH24STENCIL8: return true;
+      case FramebufferTextureFormat::DEPTH24STENCIL8: return true;
       default: return false;
     }
   }
@@ -70,8 +70,8 @@ namespace Engine
   {
     switch (format)
     {
-      case Engine::FramebufferTextureFormat::RED_INTEGER: return GL_RED_INTEGER;
-      case Engine::FramebufferTextureFormat::RGBA8:       return GL_RGBA8;
+      case FramebufferTextureFormat::RED_INTEGER: return GL_RED_INTEGER;
+      case FramebufferTextureFormat::RGBA8:       return GL_RGBA8;
       default: EN_CORE_ERROR("Invalid texture format!");  return 0;
     }
   }
@@ -79,7 +79,10 @@ namespace Engine
 
 
   OpenGLFramebuffer::OpenGLFramebuffer(const FramebufferSpecification& specification)
-    : m_Specification(specification)
+    : m_RendererID(0),
+      m_Specification(specification),
+      m_DepthAttachmentSpecification(FramebufferTextureFormat::None),
+      m_DepthAttachment(0)
   {
     for (const auto& spec : m_Specification.attachments)
     {
@@ -113,6 +116,11 @@ namespace Engine
   {
     EN_CORE_ASSERT(std::this_thread::get_id() == Threads::MainThreadID(), "OpenGL calls must be made on the main thread!");
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+  }
+
+  const FramebufferSpecification& OpenGLFramebuffer::specification() const
+  {
+    return m_Specification;
   }
 
   uint32_t OpenGLFramebuffer::getColorAttachmentRendererID(uint32_t index) const

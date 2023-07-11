@@ -4,76 +4,57 @@
 
 namespace Engine
 {
-  class KeyEvent : public Event
+  class KeyPressEvent : public Event
   {
   public:
-    EventCategory getCategoryFlags() const override { return EventCategory::Keyboard | EventCategory::Input; }
+    KeyPressEvent(Key key, bool isRepeat = false);
 
-    Key getKeyCode() const { return m_Key; }
+    EventType type() const override;
+    static EventType Type();
+    EventCategory categoryFlags() const override;
+    const char* name() const override;
+    std::string toString() const override;
 
-  protected:
-    KeyEvent(Key keycode)
-      : m_Key(keycode) {}
+    Key keyCode() const;
+    bool isRepeat() const;
 
-    Key m_Key;
-  };
-
-  class KeyPressEvent : public KeyEvent
-  {
-  public:
-    KeyPressEvent(Key keycode, bool isRepeat = false)
-      : KeyEvent(keycode), m_IsRepeat(isRepeat) {}
-
-    static EventType GetStaticType() { return EventType::KeyPress; }
-    EventType getEventType() const override { return GetStaticType(); }
-    const char* getName() const override { return "KeyPress"; }
-
-    bool isRepeat() const { return m_IsRepeat; }
-
-    std::string toString() const override
-    {
-      std::stringstream ss;
-      ss << "KeyPressEvent: " << static_cast<keyCode>(m_Key) << " (repeat = " << m_IsRepeat << ")";
-      return ss.str();
-    }
 
   private:
+    Key m_Key;
     bool m_IsRepeat;
   };
 
-  class KeyReleaseEvent : public KeyEvent
+  class KeyReleaseEvent : public Event
   {
   public:
-    KeyReleaseEvent(Key keyCode)
-      : KeyEvent(keyCode) {}
+    KeyReleaseEvent(Key key);
 
-    static EventType GetStaticType() { return EventType::KeyRelease; }
-    EventType getEventType() const override { return GetStaticType(); }
-    const char* getName() const override { return "KeyRelease"; }
+    EventType type() const override;
+    static EventType Type();
+    EventCategory categoryFlags() const override;
+    const char* name() const override;
+    std::string toString() const override;
 
-    std::string toString() const override
-    {
-      std::stringstream ss;
-      ss << "KeyReleaseEvent: " << static_cast<keyCode>(m_Key);
-      return ss.str();
-    }
+    Key keyCode() const;
+
+  private:
+    Key m_Key;
   };
 
-  class KeyTypeEvent : public KeyEvent
+  class KeyTypeEvent : public Event
   {
   public:
-    KeyTypeEvent(Key keycode)
-      : KeyEvent(keycode) {}
+    KeyTypeEvent(Key key);
 
-    static EventType GetStaticType() { return EventType::KeyType; }
-    EventType getEventType() const override { return GetStaticType(); }
-    const char* getName() const override { return "KeyType"; }
+    EventType type() const override;
+    static EventType Type();
+    EventCategory categoryFlags() const override;
+    const char* name() const override;
+    std::string toString() const override;
 
-    std::string toString() const override
-    {
-      std::stringstream ss;
-      ss << "KeyTypeEvent: " << static_cast<keyCode>(m_Key);
-      return ss.str();
-    }
+    Key keyCode() const;
+
+  private:
+    Key m_Key;
   };
 }

@@ -39,12 +39,12 @@ namespace Engine
 
     bool handled = false;
 
-    virtual EventType getEventType() const = 0;
-    virtual const char* getName() const = 0;
-    virtual EventCategory getCategoryFlags() const = 0;
-    virtual std::string toString() const { return getName(); }
+    virtual EventType type() const = 0;
+    virtual EventCategory categoryFlags() const = 0;
+    virtual const char* name() const = 0;
+    virtual std::string toString() const { return name(); }
 
-    bool isInCategory(EventCategory category) { return (bool)(getCategoryFlags() & category); }
+    bool isInCategory(EventCategory category) { return static_cast<bool>(categoryFlags() & category); }
   };
 
   class EventDispatcher
@@ -57,7 +57,7 @@ namespace Engine
     template<typename T, typename F>
     bool dispatch(const F& func)
     {
-      if (m_Event.getEventType() == T::GetStaticType())
+      if (m_Event.type() == T::Type())
       {
         if (!m_Event.handled)
           m_Event.handled = func(static_cast<T&>(m_Event));

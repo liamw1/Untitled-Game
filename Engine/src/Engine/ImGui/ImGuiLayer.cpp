@@ -111,6 +111,11 @@ namespace Engine
     }
   }
 
+  void ImGuiLayer::blockEvents(bool isBlocking)
+  {
+    m_BlockEvents = isBlocking;
+  }
+
   void ImGuiLayer::setDarkThemeColors()
   {
     ImVec4* colors = ImGui::GetStyle().Colors;

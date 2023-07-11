@@ -26,17 +26,15 @@ namespace LOD
     Float2 textureWeights;
     int quadIndex;
 
-    Vertex() = delete;
-    Vertex(const Float3& position, const Float3& isoNormal, const std::array<int, 2>& textureIndices, const Float2& textureWeights, int quadIndex)
-      : position(position), isoNormal(isoNormal), textureIndices(textureIndices), textureWeights(textureWeights), quadIndex(quadIndex) {}
+    Vertex(const Float3& position, const Float3& isoNormal, const std::array<int, 2>& textureIndices, const Float2& textureWeights, int quadIndex);
   };
 
   struct UniformData
   {
     Float3 anchor;
     float textureScaling;
-    const float nearPlaneDistance = static_cast<float>(10 * Block::Length());
-    const float farPlaneDistance = static_cast<float>(1e10 * Block::Length());
+    const float nearPlaneDistance = 10 * Block::LengthF();
+    const float farPlaneDistance = 1e10f * Block::LengthF();
   };
 
   struct MeshData
@@ -45,12 +43,7 @@ namespace LOD
     std::vector<uint32_t> indices;
     std::unique_ptr<Engine::VertexArray> vertexArray;
 
-    MeshData()
-      : vertices(), indices()
-    {
-      vertexArray = Engine::VertexArray::Create();
-      vertexArray->setLayout(s_VertexBufferLayout);
-    }
+    MeshData();
 
     static void Initialize();
     static void BindBuffers();
@@ -90,40 +83,28 @@ namespace LOD
     struct Node
     {
       Node* const parent;
-      std::array<Node*, 8> children{};
+      std::array<Node*, 8> children;
       const int depth;
 
       const GlobalIndex anchor;
       Data* data = nullptr;
 
-      Node(Node* parentNode, int nodeDepth, const GlobalIndex& anchorIndex)
-        : parent(parentNode), depth(nodeDepth), anchor(anchorIndex) {}
+      Node(Node* parentNode, int nodeDepth, const GlobalIndex& anchorIndex);
+      ~Node();
 
-      ~Node()
-      {
-        delete data;
-        data = nullptr;
-        for (int i = 0; i < 8; ++i)
-        {
-          delete children[i];
-          children[i] = nullptr;
-        }
-      }
-
-      bool isRoot() const { return parent == nullptr; }
-      bool isLeaf() const { return data != nullptr; }
-
-      int LODLevel() const { return c_MaxNodeDepth - depth; }
+      bool isRoot() const;
+      bool isLeaf() const;
+      int LODLevel() const;
 
       /*
         \returns Size of LOD in each direction, given in units of chunks.
       */
-      globalIndex_t size() const { return static_cast<globalIndex_t>(pow2(LODLevel())); }
+      globalIndex_t size() const;
 
       /*
         \returns The length of LOD in each direction, given in physical units.
       */
-      length_t length() const { return size() * Chunk::Length(); }
+      length_t length() const;
 
       /*
         An LOD's anchor point is its bottom southeast vertex.
@@ -138,13 +119,13 @@ namespace LOD
       /*
         \returns The LOD's geometric center relative to origin chunk.
       */
-      Vec3 center() const { return anchorPosition() + length() / 2; }
+      Vec3 center() const;
 
       /*
         \returns The LOD's axis-aligned bounding box (AABB), 
         given in units of chunks.
       */
-      AABB boundingBox() const { return { anchor, anchor + size() }; }
+      AABB boundingBox() const;
     };
 
   public:
@@ -204,7 +185,7 @@ namespace LOD
     using terrain noise.  LOD needs to be updated before these
     meshes are uploaded to the GPU.
   */
-  void GenerateMesh(LOD::Octree::Node* node);
+  void GenerateMesh(Octree::Node* node);
 
   /*
     Adjusts meshes based on surrounding LODs and uploads
@@ -212,7 +193,7 @@ namespace LOD
 
     NOTE: Needs to be made faster.
   */
-  void UpdateMesh(LOD::Octree& tree, LOD::Octree::Node* node);
+  void UpdateMesh(Octree& tree, Octree::Node* node);
 
-  void MessageNeighbors(LOD::Octree& tree, LOD::Octree::Node* node);
+  void MessageNeighbors(Octree& tree, Octree::Node* node);
 }

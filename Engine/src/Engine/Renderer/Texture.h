@@ -9,7 +9,7 @@ namespace Engine
   class Texture
   {
   public:
-    virtual ~Texture() = default;
+    virtual ~Texture();
 
     virtual uint32_t getWidth() const = 0;
     virtual uint32_t getHeight() const = 0;
@@ -43,7 +43,7 @@ namespace Engine
   class TextureArray
   {
   public:
-    virtual ~TextureArray() = default;
+    virtual ~TextureArray();
 
     virtual void bind(uint32_t slot = 0) const = 0;
 

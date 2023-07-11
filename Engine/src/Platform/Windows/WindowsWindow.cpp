@@ -36,6 +36,14 @@ namespace Engine
     m_Context->swapBuffers();
   }
 
+  uint32_t WindowsWindow::getWidth() const { return m_Data.width; }
+  uint32_t WindowsWindow::getHeight() const { return m_Data.height; }
+
+  void WindowsWindow::setEventCallback(const EventCallbackFn& callback)
+  {
+    m_Data.eventCallback = callback;
+  }
+
   void WindowsWindow::setVSync(bool enabled)
   {
     if (enabled)
@@ -61,6 +69,11 @@ namespace Engine
     glfwSetInputMode(m_Window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     if (glfwRawMouseMotionSupported())
       glfwSetInputMode(m_Window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
+  }
+
+  void* WindowsWindow::getNativeWindow() const
+  {
+    return m_Window;
   }
 
   void WindowsWindow::initialize(const WindowProps& properties)

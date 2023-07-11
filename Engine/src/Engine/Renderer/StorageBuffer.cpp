@@ -5,6 +5,8 @@
 
 namespace Engine
 {
+  StorageBuffer::~StorageBuffer() = default;
+
   std::unique_ptr<StorageBuffer> StorageBuffer::Create(Type type, std::optional<uint32_t> binding)
   {
     switch (RendererAPI::GetAPI())

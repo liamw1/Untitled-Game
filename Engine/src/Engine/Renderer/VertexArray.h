@@ -11,7 +11,7 @@ namespace Engine
   class IndexBuffer
   {
   public:
-    virtual ~IndexBuffer() = default;
+    virtual ~IndexBuffer();
 
     virtual void bind() const = 0;
     virtual void unBind() const = 0;
@@ -35,7 +35,7 @@ namespace Engine
   class VertexArray
   {
   public:
-    virtual ~VertexArray() = default;
+    virtual ~VertexArray();
 
     virtual void bind() const = 0;
     virtual void unBind() const = 0;

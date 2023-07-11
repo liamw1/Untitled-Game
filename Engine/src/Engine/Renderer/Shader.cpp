@@ -7,6 +7,8 @@
 
 namespace Engine
 {
+  Shader::~Shader() = default;
+
   std::unique_ptr<Shader> Shader::Create(const std::string& filepath, const std::unordered_map<std::string, std::string>& preprocessorDefinitions)
   {
     switch (RendererAPI::GetAPI())

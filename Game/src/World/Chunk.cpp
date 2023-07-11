@@ -3,52 +3,37 @@
 #include "Player/Player.h"
 #include <iostream>
 
-Chunk::Chunk()
-  : m_Composition(),
-    m_GlobalIndex(),
-    m_NonOpaqueFaces(0)
-{
-}
+Chunk::Chunk() = default;
 
 Chunk::Chunk(const GlobalIndex& chunkIndex)
   : m_Composition(),
     m_GlobalIndex(chunkIndex),
-    m_NonOpaqueFaces(0)
-{
-}
+    m_NonOpaqueFaces(0) {}
 
 Chunk::Chunk(Chunk&& other) noexcept
   : m_Composition(std::move(other.m_Composition)),
-    m_GlobalIndex(other.m_GlobalIndex),
-    m_NonOpaqueFaces(other.m_NonOpaqueFaces.load())
-{
-}
+    m_GlobalIndex(std::move(other.m_GlobalIndex)),
+    m_NonOpaqueFaces(other.m_NonOpaqueFaces.load()) {}
 
 Chunk& Chunk::operator=(Chunk&& other) noexcept
 {
   if (this != &other)
   {
     m_Composition = std::move(other.m_Composition);
-    m_GlobalIndex = other.m_GlobalIndex;
+    m_GlobalIndex = std::move(other.m_GlobalIndex);
     m_NonOpaqueFaces.store(other.m_NonOpaqueFaces.load());
   }
   return *this;
 }
 
-LocalIndex Chunk::getLocalIndex() const
+const GlobalIndex& Chunk::globalIndex() const
 {
-  EN_ASSERT(abs(m_GlobalIndex.i - Player::OriginIndex().i) < std::numeric_limits<localIndex_t>::max() &&
-            abs(m_GlobalIndex.j - Player::OriginIndex().j) < std::numeric_limits<localIndex_t>::max() &&
-            abs(m_GlobalIndex.k - Player::OriginIndex().k) < std::numeric_limits<localIndex_t>::max(), "Difference between global indices is too large, will cause overflow!");
-
-  return { static_cast<localIndex_t>(m_GlobalIndex.i - Player::OriginIndex().i),
-           static_cast<localIndex_t>(m_GlobalIndex.j - Player::OriginIndex().j),
-           static_cast<localIndex_t>(m_GlobalIndex.k - Player::OriginIndex().k) };
+  return m_GlobalIndex;
 }
 
-Vec3 Chunk::anchorPosition() const
+bool Chunk::empty() const
 {
-  return Chunk::AnchorPosition(m_GlobalIndex, Player::OriginIndex());
+  return !m_Composition;
 }
 
 Block::Type Chunk::getBlockType(blockIndex_t i, blockIndex_t j, blockIndex_t k) const
@@ -65,6 +50,11 @@ bool Chunk::isFaceOpaque(Direction face) const
 {
   uint16_t nonOpaqueFaces = m_NonOpaqueFaces.load();
   return !(nonOpaqueFaces & bit(static_cast<int>(face)));
+}
+
+Vec3 Chunk::Center(const Vec3& anchorPosition)
+{
+  return anchorPosition + Chunk::Length() / 2;
 }
 
 Vec3 Chunk::AnchorPosition(const GlobalIndex& chunkIndex, const GlobalIndex& originIndex)
@@ -142,26 +132,42 @@ void Chunk::reset()
   m_NonOpaqueFaces.store(0);
 }
 
-
-
-blockIndex_t Chunk::Voxel::i() const
+_Acquires_lock_(return) std::lock_guard<std::mutex> Chunk::acquireLock() const
 {
-  return (m_VoxelData & 0x001F0000u) >> 16u;
+  return std::lock_guard(m_Mutex);
+};
+
+
+
+Chunk::Voxel::Voxel() = default;
+Chunk::Voxel::Voxel(uint32_t voxelData, uint32_t quadData1, uint32_t quadData2)
+  : m_VoxelData(voxelData), m_QuadData1(quadData1), m_QuadData2(quadData2) {}
+
+blockIndex_t Chunk::Voxel::i() const { return (m_VoxelData & 0x001F0000u) >> 16u; }
+blockIndex_t Chunk::Voxel::j() const { return (m_VoxelData & 0x03E00000u) >> 21u; }
+blockIndex_t Chunk::Voxel::k() const { return (m_VoxelData & 0x7C000000u) >> 26u; }
+BlockIndex Chunk::Voxel::index() const { return { i(), j(), k() }; }
+
+
+
+Chunk::DrawCommand::DrawCommand(const GlobalIndex& chunkIndex)
+  : Engine::MultiDrawCommand<GlobalIndex, DrawCommand>(chunkIndex, 0),
+    m_Mesh() {}
+Chunk::DrawCommand::DrawCommand(const GlobalIndex& chunkIndex, std::vector<Voxel>&& mesh)
+  : Engine::MultiDrawCommand<GlobalIndex, DrawCommand>(chunkIndex, static_cast<int>(mesh.size())),
+    m_Mesh(std::move(mesh)) {}
+
+Chunk::DrawCommand::DrawCommand(DrawCommand&& other) noexcept = default;
+Chunk::DrawCommand& Chunk::DrawCommand::operator=(DrawCommand&& other) noexcept = default;
+
+bool Chunk::DrawCommand::operator==(const DrawCommand& other) const
+{
+  return m_ID == other.m_ID;
 }
 
-blockIndex_t Chunk::Voxel::j() const
+const void* Chunk::DrawCommand::vertexData() const
 {
-  return (m_VoxelData & 0x03E00000u) >> 21u;
-}
-
-blockIndex_t Chunk::Voxel::k() const
-{
-  return (m_VoxelData & 0x7C000000u) >> 26u;
-}
-
-BlockIndex Chunk::Voxel::index() const
-{
-  return { i(), j(), k() };
+  return m_Mesh.data();
 }
 
 void Chunk::DrawCommand::sortVoxels(const GlobalIndex& originIndex, const Vec3& position)
@@ -180,6 +186,8 @@ void Chunk::DrawCommand::sortVoxels(const GlobalIndex& originIndex, const Vec3& 
   // If this block index is the same as the previous sort, no need to sort
   if (originBlock == m_SortState)
     return;
+
+  EN_PROFILE_FUNCTION();
 
   // Sort based on L1 distance to originBlock
   std::sort(m_Mesh.begin(), m_Mesh.end(), [&originBlock](const Voxel& voxelA, const Voxel& voxelB)

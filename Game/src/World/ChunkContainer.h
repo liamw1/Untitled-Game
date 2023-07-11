@@ -63,7 +63,7 @@ public:
 
     for (const auto& [key, chunk] : m_Chunks[static_cast<int>(chunkType)])
       if (condition(*chunk, std::forward<Args>(args)...))
-        indexList.push_back(chunk->getGlobalIndex());
+        indexList.push_back(chunk->globalIndex());
     return indexList;
   }
 
@@ -73,7 +73,7 @@ public:
   */
   std::unordered_set<GlobalIndex> findAllLoadableIndices() const;
 
-  void uploadMeshes(Threads::UnorderedSetQueue<Chunk::DrawCommand>& commandQueue, std::unique_ptr<Engine::MultiDrawArray<Chunk::DrawCommand>>& multiDrawArray) const;
+  void uploadMeshes(Engine::Threads::UnorderedSetQueue<Chunk::DrawCommand>& commandQueue, std::unique_ptr<Engine::MultiDrawArray<Chunk::DrawCommand>>& multiDrawArray) const;
 
   /*
     \returns The chunk along with a lock on its mutex. Will return nullptr is no chunk is found.
@@ -88,8 +88,8 @@ public:
   */
   void sendBlockUpdate(const GlobalIndex& chunkIndex, const BlockIndex& blockIndex);
 
-  std::optional<GlobalIndex> getLazyUpdateIndex() { return m_LazyUpdateQueue.tryRemove(); }
-  std::optional<GlobalIndex> getForceUpdateIndex() { return m_ForceUpdateQueue.tryRemove(); }
+  std::optional<GlobalIndex> getLazyUpdateIndex();
+  std::optional<GlobalIndex> getForceUpdateIndex();
 
   bool empty() const;
   bool contains(const GlobalIndex& chunkIndex) const;
@@ -109,8 +109,8 @@ private:
 
   mutable std::shared_mutex m_ContainerMutex;
 
-  Threads::UnorderedSetQueue<GlobalIndex> m_LazyUpdateQueue;
-  Threads::UnorderedSetQueue<GlobalIndex> m_ForceUpdateQueue;
+  Engine::Threads::UnorderedSetQueue<GlobalIndex> m_LazyUpdateQueue;
+  Engine::Threads::UnorderedSetQueue<GlobalIndex> m_ForceUpdateQueue;
 
 // Helper functions for chunk container access. These assume the map mutex has already been locked by one of the public functions
 private:

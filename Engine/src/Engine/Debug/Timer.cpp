@@ -1,24 +1,24 @@
 #include "ENpch.h"
 #include "Timer.h"
 
-Timer::~Timer()
-{
-  std::cout << timerName << " took " << duration.count() * 1000.0f << "ms" << std::endl;
-}
+Timer::Timer()
+  : Timer("Unnamed Timer") {}
 
 Timer::Timer(const char* name)
-  : timerName(name)
+  : m_Name(name), m_Duration(std::chrono::high_resolution_clock::duration::zero()) {}
+
+Timer::~Timer()
 {
-  duration = std::chrono::high_resolution_clock::duration::zero();
+  std::cout << m_Name << " took " << m_Duration.count() * 1000.0f << "ms" << std::endl;
 }
 
 void Timer::timeStart()
 {
-  start = std::chrono::high_resolution_clock::now();
+  m_Start = std::chrono::high_resolution_clock::now();
 }
 
 void Timer::timeStop()
 {
-  end = std::chrono::high_resolution_clock::now();
-  duration += end - start;
+  m_End = std::chrono::high_resolution_clock::now();
+  m_Duration += m_End - m_Start;
 }

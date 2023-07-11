@@ -5,6 +5,8 @@
 
 namespace Engine
 {
+  IndexBuffer::~IndexBuffer() = default;
+
   std::unique_ptr<IndexBuffer> IndexBuffer::Create(const uint32_t* indices, uint32_t count)
   {
     switch (RendererAPI::GetAPI())
@@ -22,6 +24,8 @@ namespace Engine
   }
 
 
+
+  VertexArray::~VertexArray() = default;
 
   std::unique_ptr<VertexArray> VertexArray::Create()
   {

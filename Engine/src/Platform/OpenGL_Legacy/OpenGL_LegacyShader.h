@@ -9,13 +9,13 @@ namespace Engine
     OpenGL_LegacyShader(const std::string& filepath, const std::unordered_map<std::string, std::string>& preprocessorDefinitions);
     ~OpenGL_LegacyShader();
 
-    const std::string& getName() const override { return m_Name; }
+    const std::string& name() const override;
 
     void bind() const override;
     void unBind() const override;
 
   private:
-    uint32_t m_RendererID = 0;
+    uint32_t m_RendererID;
     std::string m_Name;
 
     void compile(const std::unordered_map<std::string, std::string>& shaderSources);

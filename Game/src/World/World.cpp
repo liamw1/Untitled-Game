@@ -246,7 +246,7 @@ void World::onEvent(Engine::Event& event)
 
 bool World::onKeyPressEvent(Engine::KeyPressEvent& event)
 {
-  if (event.getKeyCode() == Key::F3)
+  if (event.keyCode() == Key::F3)
     m_RenderingPaused = !m_RenderingPaused;
 
   return false;

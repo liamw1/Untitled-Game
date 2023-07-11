@@ -4,32 +4,48 @@
 
 namespace Engine
 {
-  Angle Camera::getFOV() const
+  Camera::Camera()
+    : m_Projection(Mat4(1)),
+      m_ProjectionType(ProjectionType::Perspective),
+      m_AspectRatio(1280.0f / 720),
+      m_NearClip(-1.0f),
+      m_FarClip(1.0f),
+      m_FOV(80_deg),
+      m_OrthographicSize(1.0f) {}
+
+  const Mat4& Camera::projectionMatrix() const { return m_Projection; }
+  Camera::ProjectionType Camera::projectionType() const { return m_ProjectionType; }
+
+  float Camera::nearClip() const { return m_NearClip; }
+  float Camera::farClip() const { return m_FarClip; }
+
+  float Camera::aspectRatio() const { return m_AspectRatio; }
+  void Camera::setAspectRatio(float aspectRatio)
+  {
+    m_AspectRatio = aspectRatio;
+    recalculatePerspectiveProjection();
+  }
+
+  Angle Camera::fov() const
   {
     EN_ASSERT(m_ProjectionType == ProjectionType::Perspective, "An orthographic camera does not have a FOV!");
     return m_FOV;
   }
 
-  void Camera::changeFOV(Angle fov)
+  void Camera::setFov(Angle fov)
   {
     EN_ASSERT(m_ProjectionType == ProjectionType::Perspective, "An orthographic camera does not have a FOV!");
     m_FOV = fov;
     recalculatePerspectiveProjection();
   }
 
-  void Camera::changeAspectRatio(float aspectRatio)
-  {
-    m_AspectRatio = aspectRatio;
-    recalculatePerspectiveProjection();
-  }
-
-  float Camera::getOrthographicSize() const
+  float Camera::orthographicSize() const
   {
     EN_ASSERT(m_ProjectionType == ProjectionType::Orthographic, "A perspective camera does not have an orthographic size!");
     return m_OrthographicSize;
   }
 
-  void Camera::setOrthographic(float aspectRatio, float size, float nearClip, float farClip)
+  void Camera::setOrthographicView(float aspectRatio, float size, float nearClip, float farClip)
   {
     m_AspectRatio = aspectRatio;
     m_OrthographicSize = size;
@@ -40,7 +56,7 @@ namespace Engine
     recalculateOrthographicProjection();
   }
 
-  void Camera::setPerspective(float aspectRatio, Angle fov, float nearClip, float farClip)
+  void Camera::setPerspectiveView(float aspectRatio, Angle fov, float nearClip, float farClip)
   {
     m_AspectRatio = aspectRatio;
     m_FOV = fov;

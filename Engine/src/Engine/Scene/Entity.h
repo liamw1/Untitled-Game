@@ -62,9 +62,7 @@ namespace Engine
     entt::entity m_EntityID = entt::null;
 
     Entity(entt::entity entityID)
-      : m_EntityID(entityID)
-    {
-    }
+      : m_EntityID(entityID) {}
 
     friend class ECS;
   };

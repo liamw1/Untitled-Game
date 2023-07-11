@@ -126,16 +126,16 @@ namespace Engine
   Mat4 Scene::CalculateViewProjection(Entity viewer)
   {
     const Camera& camera = viewer.get<Component::Camera>().camera;
-    const Mat4& projection = camera.getProjection();
+    const Mat4& projection = camera.projectionMatrix();
 
     Mat4 viewMatrix{};
-    if (camera.getProjectionType() == Camera::ProjectionType::Perspective)
+    if (camera.projectionType() == Camera::ProjectionType::Perspective)
     {
       Vec3 viewDirection = viewer.get<Component::Transform>().orientationDirection();
       const Vec3& position = viewer.get<Component::Transform>().position;
       viewMatrix = glm::lookAt(position, position + viewDirection, c_UpDirection);
     }
-    else if (camera.getProjectionType() == Camera::ProjectionType::Orthographic)
+    else if (camera.projectionType() == Camera::ProjectionType::Orthographic)
       viewMatrix = glm::inverse(viewer.get<Component::Transform>().calculateTransform());
     else
       EN_CORE_ERROR("Unknown camera projection type!");

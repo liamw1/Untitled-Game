@@ -12,11 +12,11 @@ namespace Engine
 
     std::string toString();
 
+    size_t hash() const;
+
   private:
     uint64_t m_LowerUID;
     uint64_t m_UpperUID;
-
-    friend struct std::hash<UID>;
   };
 }
 
@@ -27,7 +27,7 @@ namespace std
   {
     size_t operator()(const Engine::UID& uuid) const
     {
-      return uuid.m_LowerUID + uuid.m_UpperUID;
+      return uuid.hash();
     }
   };
 }

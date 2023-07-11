@@ -5,7 +5,7 @@ namespace Engine
   class Uniform
   {
   public:
-    virtual ~Uniform() = default;
+    virtual ~Uniform();
 
     virtual void bind() const = 0;
     virtual void unBind() const = 0;

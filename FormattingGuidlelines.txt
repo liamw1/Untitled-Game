@@ -1,13 +1,27 @@
 Engine formatting guidelines:
   Classes should be PascalCase.
-  Static members should also be PascalCase.
-  Private/protected static variables should be preceeded with an "s_", i.e. s_StaticVariable.
-    - This also applies to globally inaccessible static variables in .cpp files
-  Public non-static members should be camelCase.
-  Private/protected non-static variables should be preceeded with an "m_", i.e m_Variable.
-  All public members should appear first, followed by protected members, followed by private members.
+  Static members should be PascalCase.
+  Namespace names should be PascalCase.
   Enums should be written in PascalCase.
   Macros should be written in UPPER_CASE.
+  Free-floating public-facing functions should be PascalCase.
+
+  Compile-time constant member variables should be preceeded with "c_".
+    - This also applies to const shader variables
+  Private/protected static variables should be preceeded with "s_", i.e. s_StaticVariable.
+    - This also applies to globally inaccessible static variables in .cpp files
+  Public non-static members should be camelCase.
+  Private/protected non-static variables should be preceeded with "m_", i.e m_Variable.
+  Shader uniforms should be preceeded with "u_".
+  Vertex buffer attributes should be preceeded with "a_".
+  Variables sent by or received from vertex shaders should be preceeded with "v_".
+  Variables sent by or received from geometry shaders should be preceeded with "g_".
+  Fragment shader outputs should be preceeded with "o_".
+  
+  For classes, public sections should appear first, followed by protected sections, followed by private sections.
+  Within a section, variables should appear before function declarations.
+
+  Strongly prefer to keep function definitions out of header files, including trivial cases like Constructor() = default;.
   
   Identation should consist of two spaces.
   Curly brackets should always be on their own lines, except in the cases of empty constructors or simple inline functions.

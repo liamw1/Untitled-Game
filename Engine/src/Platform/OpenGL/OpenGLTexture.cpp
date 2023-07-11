@@ -11,13 +11,14 @@ static constexpr float c_AnistropicFilteringAmount = 16.0f;
 namespace Engine
 {
   OpenGLTexture2D::OpenGLTexture2D(uint32_t width, uint32_t height)
-    : m_Width(width), m_Height(height)
+    : m_Width(width),
+      m_Height(height),
+      m_RendererID(0),
+      m_InternalFormat(GL_RGBA8),
+      m_DataFormat(GL_RGBA)
   {
     EN_PROFILE_FUNCTION();
     EN_CORE_ASSERT(std::this_thread::get_id() == Threads::MainThreadID(), "OpenGL calls must be made on the main thread!");
-
-    m_InternalFormat = GL_RGBA8;
-    m_DataFormat = GL_RGBA;
 
     glCreateTextures(GL_TEXTURE_2D, 1, &m_RendererID);
     glTextureStorage2D(m_RendererID, 1, m_InternalFormat, m_Width, m_Height);
@@ -29,7 +30,9 @@ namespace Engine
   }
 
   OpenGLTexture2D::OpenGLTexture2D(const std::string& path)
-    : m_Width(0), m_Height(0)
+    : m_Width(0),
+      m_Height(0),
+      m_RendererID(0)
   {
     EN_PROFILE_FUNCTION();
     EN_CORE_ASSERT(std::this_thread::get_id() == Threads::MainThreadID(), "OpenGL calls must be made on the main thread!");
@@ -82,6 +85,10 @@ namespace Engine
     glDeleteTextures(1, &m_RendererID);
   }
 
+  uint32_t OpenGLTexture2D::getWidth() const { return m_Width; }
+  uint32_t OpenGLTexture2D::getHeight() const { return m_Height; }
+  uint32_t OpenGLTexture2D::getRendererID() const { return m_RendererID; }
+
   void OpenGLTexture2D::setData(void* data, uint32_t size)
   {
     EN_PROFILE_FUNCTION();
@@ -97,10 +104,20 @@ namespace Engine
     glBindTextureUnit(slot, m_RendererID);
   }
 
+  bool OpenGLTexture2D::operator==(const Texture& other) const
+  {
+    return m_RendererID == other.getRendererID();
+  }
+
 
 
   OpenGLTextureArray::OpenGLTextureArray(uint32_t textureCount, uint32_t textureSize)
-    : m_MaxTextures(textureCount), m_TextureSize(textureSize)
+    : m_MaxTextures(textureCount),
+      m_TextureSize(textureSize),
+      m_TextureCount(0),
+      m_RendererID(0),
+      m_InternalFormat(GL_RGBA8),
+      m_DataFormat(GL_RGBA)
   {
     EN_PROFILE_FUNCTION();
     EN_CORE_ASSERT(std::this_thread::get_id() == Threads::MainThreadID(), "OpenGL calls must be made on the main thread!");

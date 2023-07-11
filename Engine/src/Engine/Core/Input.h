@@ -7,15 +7,12 @@
   Abstract representation of player input.
   Platform-specific implementation is determined by derived class.
 */
-namespace Engine
+namespace Engine::Input
 {
-  namespace Input
-  {
-    bool IsKeyPressed(Key key);
-    bool IsMouseButtonPressed(Mouse button);
-
-    Float2 GetMousePosition();
-    float GetMouseX();
-    float GetMouseY();
-  };
+  bool IsKeyPressed(Key key);
+  bool IsMouseButtonPressed(Mouse button);
+  
+  Float2 GetMousePosition();
+  float GetMouseX();
+  float GetMouseY();
 }

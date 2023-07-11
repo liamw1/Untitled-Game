@@ -11,7 +11,9 @@ namespace Engine
   }
 
   OpenGLStorageBuffer::OpenGLStorageBuffer(Type type, std::optional<uint32_t> binding)
-    : m_Type(type), m_Binding(binding)
+    : m_Type(type),
+      m_Binding(binding),
+      m_RendererID(0)
   {
     EN_CORE_ASSERT(std::this_thread::get_id() == Threads::MainThreadID(), "OpenGL calls must be made on the main thread!");
     glCreateBuffers(1, &m_RendererID);

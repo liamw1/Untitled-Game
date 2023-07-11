@@ -23,9 +23,9 @@ private:
 
   bool m_RenderingPaused = false;
 
-  ChunkManager m_ChunkManager{};
+  ChunkManager m_ChunkManager;
 
-  RayIntersection m_PlayerRayCast{};
+  RayIntersection m_PlayerRayCast;
 
   /*
     \returns The first intersection between the given line segment AB and a solid Block Face.

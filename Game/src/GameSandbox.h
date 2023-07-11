@@ -6,7 +6,7 @@ class GameSandbox : public Engine::Layer
 {
 public:
   GameSandbox();
-  ~GameSandbox() = default;
+  ~GameSandbox();
 
   void onAttach() override;
   void onDetach() override;

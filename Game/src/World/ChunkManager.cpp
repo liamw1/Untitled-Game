@@ -174,7 +174,7 @@ void ChunkManager::clean()
 
   std::vector<GlobalIndex> chunksMarkedForDeletion = m_ChunkContainer.findAll(ChunkType::Boundary, [&originIndex](const Chunk& chunk)
     {
-      return !Util::IsInRange(chunk.getGlobalIndex(), originIndex, c_UnloadDistance);
+      return !Util::IsInRange(chunk.globalIndex(), originIndex, c_UnloadDistance);
     });
 
   if (!chunksMarkedForDeletion.empty())
@@ -245,6 +245,26 @@ void ChunkManager::removeBlock(const GlobalIndex& chunkIndex, const BlockIndex& 
   }
 
   m_ChunkContainer.sendBlockUpdate(chunkIndex, blockIndex);
+}
+
+void ChunkManager::setLoadModeTerrain()
+{
+  m_LoadMode = LoadMode::Terrain;
+}
+
+void ChunkManager::setLoadModeVoid()
+{
+  m_LoadMode = LoadMode::Void;
+}
+
+void ChunkManager::launchLoadThread()
+{
+  m_LoadThread = std::thread(&ChunkManager::loadWorker, this);
+}
+
+void ChunkManager::launchUpdateThread()
+{
+  m_UpdateThread = std::thread(&ChunkManager::updateWorker, this);
 }
 
 void ChunkManager::loadChunk(const GlobalIndex& chunkIndex, Block::Type blockType)

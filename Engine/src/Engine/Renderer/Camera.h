@@ -8,38 +8,39 @@ namespace Engine
     enum class ProjectionType { Perspective, Orthographic };
 
   public:
-    Camera() = default;
+    Camera();
 
-    const Mat4& getProjection() const { return m_Projection; }
-    ProjectionType getProjectionType() const { return m_ProjectionType; }
+    const Mat4& projectionMatrix() const;
+    ProjectionType projectionType() const;
 
-    float getAspectRatio() const { return m_AspectRatio; }
-    void changeAspectRatio(float aspectRatio);
-    float getNearClip() const { return m_NearClip; }
-    float getFarClip() const { return m_FarClip; }
+    float nearClip() const;
+    float farClip() const;
 
-    Angle getFOV() const;
-    void changeFOV(Angle fov);
+    float aspectRatio() const;
+    void setAspectRatio(float aspectRatio);
 
-    float getOrthographicSize() const;
+    Angle fov() const;
+    void setFov(Angle fov);
 
-    void setOrthographic(float aspectRatio, float size, float nearClip, float farClip);
-    void setPerspective(float aspectRatio, Angle fov, float nearClip, float farClip);
+    float orthographicSize() const;
+
+    void setOrthographicView(float aspectRatio, float size, float nearClip, float farClip);
+    void setPerspectiveView(float aspectRatio, Angle fov, float nearClip, float farClip);
 
     void setViewportSize(uint32_t width, uint32_t height);
 
   private:
-    Mat4 m_Projection = Mat4(1.0);
-    ProjectionType m_ProjectionType = ProjectionType::Perspective;
+    Mat4 m_Projection;
+    ProjectionType m_ProjectionType;
 
     // Shared parameters
-    float m_AspectRatio = 1280.0f / 720.0f;
-    float m_NearClip = -1.0f;
-    float m_FarClip = 1.0f;
+    float m_AspectRatio;
+    float m_NearClip;
+    float m_FarClip;
 
     // Projection-specific parameters
-    Angle m_FOV = 80_deg;
-    float m_OrthographicSize = 1.0f;
+    Angle m_FOV;
+    float m_OrthographicSize;
 
     void recalculateProjection();
     void recalculateOrthographicProjection();

@@ -5,6 +5,8 @@
 
 namespace Engine
 {
+  Uniform::~Uniform() = default;
+
   std::unique_ptr<Uniform> Uniform::Create(uint32_t binding, uint32_t size)
   {
     switch (RendererAPI::GetAPI())

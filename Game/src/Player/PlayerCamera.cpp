@@ -3,11 +3,16 @@
 #include "Player/Player.h"
 
 CameraController::CameraController(Engine::Entity entity)
-  : m_Entity(entity)
+  : m_Entity(entity),
+    m_LastMousePosition(Vec2(0))
 {
   Component::Camera& cameraComponent = m_Entity.get<Component::Camera>();
   cameraComponent.isActive = true;
-  cameraComponent.camera.setPerspective(c_AspectRatio, c_FOV, c_NearClip, c_FarClip);
+  cameraComponent.camera.setPerspectiveView(c_AspectRatio, c_FOV, c_NearClip, c_FarClip);
+}
+
+void CameraController::onUpdate(Timestep timestep)
+{
 }
 
 void CameraController::onEvent(Engine::Event& event)
@@ -27,16 +32,16 @@ bool CameraController::onMouseMove(Engine::MouseMoveEvent& event)
   Angle yaw = Angle::FromRad(rotation.z);
 
   // Adjust view angles based on mouse movement
-  yaw += Angle((event.getX() - m_LastMousePosition.x) * c_CameraSensitivity);
-  pitch += Angle((event.getY() - m_LastMousePosition.y) * c_CameraSensitivity);
+  yaw += Angle((event.x() - m_LastMousePosition.x) * c_CameraSensitivity);
+  pitch += Angle((event.y() - m_LastMousePosition.y) * c_CameraSensitivity);
 
   pitch = std::max(pitch, c_MinPitch);
   pitch = std::min(pitch, c_MaxPitch);
 
   transformComponent.rotation = Vec3(roll.rad(), pitch.rad(), yaw.rad());
 
-  m_LastMousePosition.x = event.getX();
-  m_LastMousePosition.y = event.getY();
+  m_LastMousePosition.x = event.x();
+  m_LastMousePosition.y = event.y();
 
   return true;
 }
@@ -45,11 +50,11 @@ bool CameraController::onMouseScroll(Engine::MouseScrollEvent& event)
 {
   Engine::Camera& camera = m_Entity.get<Component::Camera>().camera;
 
-  Angle cameraFOV = camera.getFOV();
-  cameraFOV -= c_CameraZoomSensitivity * event.getYOffset() * cameraFOV;
+  Angle cameraFOV = camera.fov();
+  cameraFOV -= c_CameraZoomSensitivity * event.yOffset() * cameraFOV;
   cameraFOV = std::max(cameraFOV, c_MinFOV);
   cameraFOV = std::min(cameraFOV, c_MaxFOV);
 
-  camera.changeFOV(cameraFOV);
+  camera.setFov(cameraFOV);
   return true;
 }

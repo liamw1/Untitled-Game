@@ -16,7 +16,7 @@ namespace Engine
     void begin();
     void end();
 
-    void blockEvents(bool isBlocking) { m_BlockEvents = isBlocking; }
+    void blockEvents(bool isBlocking);
 
   private:
     bool m_BlockEvents = true;

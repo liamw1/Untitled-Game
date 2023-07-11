@@ -7,6 +7,8 @@ class CameraController : public Engine::EntityScript
 public:
   CameraController(Engine::Entity entity);
 
+  void onUpdate(Timestep timestep) override;
+
   void onEvent(Engine::Event& event) override;
 
 private:
@@ -28,7 +30,7 @@ private:
   static constexpr length_t c_FarClip = 10000_m * Block::Length();
 
   Engine::Entity m_Entity;
-  Float2 m_LastMousePosition{};
+  Float2 m_LastMousePosition;
 
   bool onMouseMove(Engine::MouseMoveEvent& event);
   bool onMouseScroll(Engine::MouseScrollEvent& event);

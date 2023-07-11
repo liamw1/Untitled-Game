@@ -50,7 +50,9 @@ namespace Engine
 
 
   OpenGLShader::OpenGLShader(const std::string& filepath, const std::unordered_map<std::string, std::string>& preprocessorDefinitions)
-    : m_FilePath(filepath)
+    : m_RendererID(0),
+      m_Name("Unnamed Shader"),
+      m_FilePath(filepath)
   {
     EN_PROFILE_FUNCTION();
 
@@ -78,6 +80,11 @@ namespace Engine
     EN_CORE_ASSERT(std::this_thread::get_id() == Threads::MainThreadID(), "OpenGL calls must be made on the main thread!");
 
     glDeleteProgram(m_RendererID);
+  }
+
+  const std::string& OpenGLShader::name() const
+  {
+    return m_Name;
   }
 
   void OpenGLShader::bind() const

@@ -36,6 +36,11 @@ namespace Engine
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
   }
 
+  uint32_t OpenGLIndexBuffer::getCount() const
+  {
+    return m_Count;
+  }
+
 
 
   static GLenum convertToOpenGLBaseType(ShaderDataType type)
@@ -192,5 +197,10 @@ namespace Engine
 #if EN_DEBUG
     unBind();
 #endif
+  }
+
+  const std::shared_ptr<const IndexBuffer>& OpenGLVertexArray::getIndexBuffer() const
+  {
+    return m_IndexBuffer;
   }
 }

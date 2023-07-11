@@ -12,7 +12,7 @@ namespace Engine
     };
 
   public:
-    virtual ~StorageBuffer() = default;
+    virtual ~StorageBuffer();
 
     virtual void bind() const = 0;
     virtual void unBind() const = 0;

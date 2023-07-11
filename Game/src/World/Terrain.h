@@ -7,22 +7,20 @@ namespace Terrain
   class CompoundSurfaceData
   {
   public:
-    CompoundSurfaceData() = default;
-    CompoundSurfaceData(length_t surfaceElevation, Block::Type blockType)
-      : m_Elevation(surfaceElevation), m_Components(blockType) {}
+    CompoundSurfaceData();
+    CompoundSurfaceData(length_t surfaceElevation, Block::Type blockType);
 
     CompoundSurfaceData operator+(const CompoundSurfaceData& other) const;
     CompoundSurfaceData operator*(float x) const;
 
-    length_t getElevation() const { return m_Elevation; }
-
-    Block::Type getPrimaryBlockType() const { return m_Components.getPrimary(); }
+    length_t getElevation() const;
+    Block::Type getPrimaryBlockType() const;
 
     std::array<int, 2> getTextureIndices() const;
-    Float2 getTextureWeights() const { return { m_Components[0].weight, m_Components[1].weight }; }
+    Float2 getTextureWeights() const;
 
   private:
-    length_t m_Elevation = 0.0;
+    length_t m_Elevation;
     Block::CompoundType m_Components;
   };
 
@@ -33,7 +31,7 @@ namespace Terrain
     length_t elevation;
     Block::Type blockType;
 
-    operator CompoundSurfaceData () const { return CompoundSurfaceData(elevation, blockType); }
+    operator CompoundSurfaceData() const { return CompoundSurfaceData(elevation, blockType); }
   };
 
   Array3D<Block::Type, Chunk::Size()> GenerateNew(const GlobalIndex& chunkIndex);

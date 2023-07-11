@@ -14,7 +14,10 @@ namespace Engine
   Application* Application::s_Instance = nullptr;
 
   Application::Application(const std::string& name, ApplicationCommandLineArgs args)
-    : m_CommandLineArgs(args)
+    : m_CommandLineArgs(args),
+      m_Running(true),
+      m_Minimized(false),
+      m_LastFrameTime(std::chrono::steady_clock::now())
   {
     EN_PROFILE_FUNCTION();
 
@@ -95,6 +98,11 @@ namespace Engine
     m_Running = false;
   }
 
+  ImGuiLayer* Application::getImGuiLayer() { return m_ImGuiLayer; }
+  Window& Application::getWindow() { return *m_Window; }
+  const ApplicationCommandLineArgs& Application::GetCommandLineArgs() const { return m_CommandLineArgs; }
+  Application& Application::Get() { return *s_Instance; }
+
   bool Application::onWindowClose(WindowCloseEvent& /*event*/)
   {
     m_Running = false;
@@ -103,13 +111,13 @@ namespace Engine
 
   bool Application::onWindowResize(WindowResizeEvent& event)
   {
-    if (event.getWidth() == 0 || event.getHeight() == 0)
+    if (event.width() == 0 || event.height() == 0)
     {
       m_Minimized = true;
       return false;
     }
     m_Minimized = false;
-    Renderer::OnWindowResize(event.getWidth(), event.getHeight());
+    Renderer::OnWindowResize(event.width(), event.height());
 
     return false;
   }

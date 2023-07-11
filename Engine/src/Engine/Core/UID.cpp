@@ -24,4 +24,9 @@ namespace Engine
     ss << std::setw(numHexCharacters) << m_LowerUID;
     return ss.str();
   }
+
+  size_t UID::hash() const
+  {
+    return m_LowerUID + m_UpperUID;
+  }
 }

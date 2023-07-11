@@ -3,6 +3,11 @@
 #include "BiomeDefs.h"
 #include "Chunk.h"
 
+Biome::Biome()
+{
+  s_BiomesInitialized++;
+}
+
 void Biome::Initialize()
 {
   s_Biomes[static_cast<int>(Biome::Type::Default)] = std::make_unique<DefaultBiome>();

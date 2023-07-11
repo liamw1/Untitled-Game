@@ -2,15 +2,9 @@
 #include "Indexing.h"
 #include "Block/Block.h"
 #include "Util/MultiDimArrays.h"
-#include <Engine.h>
 
 /*
   A class representing a NxNxN cube of blocks.
-
-  IMPORTANT: Before calling uploadMesh or draw, the chunk's vertex array must be
-             initialized. This only has to be done once, and should only be done
-             for chunk objects that have a permanent location in memory, such as
-             the chunk's stored in the chunk container.
 */
 class Chunk
 {
@@ -33,28 +27,9 @@ public:
   /*
     \returns The chunk's global index, which identifies it uniquely.
   */
-  const GlobalIndex& getGlobalIndex() const { return m_GlobalIndex; }
+  const GlobalIndex& globalIndex() const;
 
-  /*
-    \returns The chunk's index relative to the origin chunk.
-  */
-  LocalIndex getLocalIndex() const;
-
-  /*
-    A chunk's anchor point is its bottom southeast vertex.
-    Position given relative to the anchor of the origin chunk.
-    Useful property:
-    If the anchor point is denoted by A, then for any point
-    X within the chunk, X_i >= A_i.
-  */
-  Vec3 anchorPosition() const;
-
-  /*
-    \returns The chunk's geometric center relative to origin chunk.
-  */
-  Vec3 center() const { return Chunk::Center(anchorPosition()); }
-
-  bool empty() const { return !m_Composition; }
+  bool empty() const;
 
   Block::Type getBlockType(blockIndex_t i, blockIndex_t j, blockIndex_t k) const;
   Block::Type getBlockType(const BlockIndex& blockIndex) const;
@@ -74,7 +49,18 @@ public:
   static constexpr length_t Length() { return Block::Length() * c_ChunkSize; }
   static constexpr int TotalBlocks() { return c_ChunkSize * c_ChunkSize * c_ChunkSize; }
 
-  static Vec3 Center(const Vec3& anchorPosition) { return anchorPosition + Chunk::Length() / 2; }
+  /*
+    \returns The chunk's geometric center relative to origin chunk.
+  */
+  static Vec3 Center(const Vec3& anchorPosition);
+
+  /*
+    A chunk's anchor point is its bottom southeast vertex.
+    Position given relative to the anchor of the origin chunk.
+    Useful property:
+    If the anchor point is denoted by A, then for any point
+    X within the chunk, X_i >= A_i.
+  */
   static Vec3 AnchorPosition(const GlobalIndex& chunkIndex, const GlobalIndex& originIndex);
 
 // All private functions require a lock on the chunk mutex.
@@ -95,16 +81,14 @@ private:
   void update(bool hasMesh);
   void reset();
 
-  _Acquires_lock_(return) std::lock_guard<std::mutex> acquireLock() const { return std::lock_guard(m_Mutex); };
+  _Acquires_lock_(return) std::lock_guard<std::mutex> acquireLock() const;
 
 private:
   class Voxel
   {
   public:
-    Voxel() = default;
-    Voxel(uint32_t voxelData, uint32_t quadData1, uint32_t quadData2)
-      : m_VoxelData(voxelData), m_QuadData1(quadData1), m_QuadData2(quadData2) {}
-
+    Voxel();
+    Voxel(uint32_t voxelData, uint32_t quadData1, uint32_t quadData2);
 
     blockIndex_t i() const;
     blockIndex_t j() const;
@@ -120,23 +104,19 @@ private:
   class DrawCommand : public Engine::MultiDrawCommand<GlobalIndex, DrawCommand>
   {
   public:
-    DrawCommand(const GlobalIndex& chunkIndex)
-      : Engine::MultiDrawCommand<GlobalIndex, DrawCommand>(chunkIndex, 0),
-        m_Mesh() {}
+    DrawCommand(const GlobalIndex& chunkIndex);
+    DrawCommand(const GlobalIndex& chunkIndex, std::vector<Voxel>&& mesh);
 
-    DrawCommand(const GlobalIndex& chunkIndex, std::vector<Voxel>&& mesh)
-      : Engine::MultiDrawCommand<GlobalIndex, DrawCommand>(chunkIndex, static_cast<int>(mesh.size())),
-        m_Mesh(std::move(mesh)) {}
+    DrawCommand(DrawCommand&& other) noexcept;
+    DrawCommand& operator=(DrawCommand&& other) noexcept;
 
+    // Copy operators deleted to prevent copying of mesh data
     DrawCommand(const DrawCommand& other) = delete;
     DrawCommand& operator=(const DrawCommand& other) = delete;
 
-    DrawCommand(DrawCommand&& other) noexcept = default;
-    DrawCommand& operator=(DrawCommand&& other) noexcept = default;
+    bool operator==(const DrawCommand& other) const;
 
-    bool operator==(const DrawCommand& other) const { return m_ID == other.m_ID; }
-
-    const void* vertexData() const { return m_Mesh.data(); }
+    const void* vertexData() const;
 
     /*
       Ensures voxels are sorted based on their distance to the given position, back to front.

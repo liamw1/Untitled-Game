@@ -6,6 +6,10 @@
 #include "Util/LRUCache.h"
 #include "Player/Player.h"
 
+Terrain::CompoundSurfaceData::CompoundSurfaceData() = default;
+Terrain::CompoundSurfaceData::CompoundSurfaceData(length_t surfaceElevation, Block::Type blockType)
+  : m_Elevation(surfaceElevation), m_Components(blockType) {}
+
 Terrain::CompoundSurfaceData Terrain::CompoundSurfaceData::operator+(const CompoundSurfaceData& other) const
 {
   CompoundSurfaceData sum = *this;
@@ -24,6 +28,16 @@ Terrain::CompoundSurfaceData Terrain::CompoundSurfaceData::operator*(float x) co
   return result;
 }
 
+length_t Terrain::CompoundSurfaceData::getElevation() const
+{
+  return m_Elevation;
+}
+
+Block::Type Terrain::CompoundSurfaceData::getPrimaryBlockType() const
+{
+  return m_Components.getPrimary();
+}
+
 std::array<int, 2> Terrain::CompoundSurfaceData::getTextureIndices() const
 {
   std::array<int, 2> textureIndices{};
@@ -32,6 +46,11 @@ std::array<int, 2> Terrain::CompoundSurfaceData::getTextureIndices() const
   textureIndices[1] = static_cast<int>(Block::GetTexture(m_Components[1].type, Direction::Top));
 
   return textureIndices;
+}
+
+Float2 Terrain::CompoundSurfaceData::getTextureWeights() const
+{
+  return { m_Components[0].weight, m_Components[1].weight };
 }
 
 

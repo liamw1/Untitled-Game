@@ -24,10 +24,7 @@ public:
     Begin = 0, End = Null
   };
 
-  Biome()
-  {
-    s_BiomesInitialized++;
-  }
+  Biome();
 
   virtual length_t localSurfaceElevation(const NoiseSamples& noiseSamples) const = 0;
   virtual void fillColumn(ArraySection<Block::Type, Chunk::Size()> column, length_t chunkFloor, length_t elevation) const = 0;

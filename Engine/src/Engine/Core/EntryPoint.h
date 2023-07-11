@@ -9,7 +9,7 @@ extern Engine::Application* Engine::CreateApplication(ApplicationCommandLineArgs
 
 int main(int argc, char** argv)
 {
-  Threads::SetMainThreadID(std::this_thread::get_id());
+  Engine::Threads::SetMainThreadID(std::this_thread::get_id());
 
   Engine::Log::Initialize();
 

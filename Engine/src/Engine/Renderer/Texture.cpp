@@ -5,6 +5,8 @@
 
 namespace Engine
 {
+  Texture::~Texture() = default;
+
   std::unique_ptr<Texture2D> Texture2D::Create(uint32_t width, uint32_t height)
   {
     switch (RendererAPI::GetAPI())
@@ -28,6 +30,8 @@ namespace Engine
   }
 
 
+
+  TextureArray::~TextureArray() = default;
 
   std::unique_ptr<TextureArray> TextureArray::Create(uint32_t textureCount, uint32_t textureSize)
   {

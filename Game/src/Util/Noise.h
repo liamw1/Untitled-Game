@@ -7,7 +7,6 @@ namespace Noise
   {
   public:
     OctaveNoiseData() = default;
-
     OctaveNoiseData(const std::array<length_t, N>& noiseData)
       : m_Octaves(noiseData) {}
 
@@ -25,7 +24,7 @@ namespace Noise
     static int Levels() { return N; }
 
   private:
-    std::array<length_t, N> m_Octaves{};
+    std::array<length_t, N> m_Octaves;
   };
 
   /*

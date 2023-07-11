@@ -21,6 +21,8 @@ GameSandbox::GameSandbox()
   m_World.initialize();
 }
 
+GameSandbox::~GameSandbox() = default;
+
 void GameSandbox::onAttach()
 {
 }
@@ -73,17 +75,17 @@ bool GameSandbox::onKeyPressEvent(Engine::KeyPressEvent& event)
   static bool wireFrameEnabled = false;
   static bool faceCullingEnabled = false;
 
-  if (event.getKeyCode() == Key::Escape)
+  if (event.keyCode() == Key::Escape)
   {
     mouseEnabled = !mouseEnabled;
     mouseEnabled ? Engine::Application::Get().getWindow().enableCursor() : Engine::Application::Get().getWindow().disableCursor();
   }
-  if (event.getKeyCode() == Key::F1)
+  if (event.keyCode() == Key::F1)
   {
     wireFrameEnabled = !wireFrameEnabled;
     Engine::RenderCommand::SetWireFrame(wireFrameEnabled);
   }
-  if (event.getKeyCode() == Key::F2)
+  if (event.keyCode() == Key::F2)
   {
     m_PrintFrameRate = !m_PrintFrameRate;
   }
