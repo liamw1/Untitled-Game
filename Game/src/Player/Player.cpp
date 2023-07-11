@@ -61,7 +61,7 @@ void Player::HandleDirectionalInput()
   s_Velocity = velocity;
 }
 
-void Player::UpdatePosition(Timestep timestep)
+void Player::UpdatePosition(Engine::Timestep timestep)
 {
   const seconds dt = timestep.sec();
   Vec3 lastPosition = s_PlayerEntity.get<Component::Transform>().position;

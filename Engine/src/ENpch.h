@@ -5,7 +5,6 @@
 #include "Engine/Core/Log.h"
 
 // =========================== Math ========================= //
-#include <glm/glm.hpp>
 #include "Engine/Core/VecTypes.h"
 
 // ======================== Platform ======================== //
@@ -24,9 +23,12 @@
 #include <string>
 #include <sstream>
 #include <functional>
+#include <set>
+#include <unordered_set>
 #include <map>
 #include <unordered_map>
 #include <variant>
+#include <stack>
 
 // I/O
 #include <iostream>
@@ -36,3 +38,4 @@
 // Concurrency
 #include <thread>
 #include <mutex>
+#include <shared_mutex>

@@ -1,6 +1,5 @@
 #pragma once
 #include "Engine/Renderer/Texture.h"
-#include <glad/glad.h>
 
 namespace Engine
 {
@@ -25,8 +24,8 @@ namespace Engine
     uint32_t m_Width;
     uint32_t m_Height;
     uint32_t m_RendererID;
-    GLenum m_InternalFormat;
-    GLenum m_DataFormat;
+    uint32_t m_InternalFormat;
+    uint32_t m_DataFormat;
   };
 
 
@@ -46,7 +45,7 @@ namespace Engine
     uint32_t m_TextureSize;
     uint32_t m_TextureCount;
     uint32_t m_RendererID;
-    GLenum m_InternalFormat;
-    GLenum m_DataFormat;
+    uint32_t m_InternalFormat;
+    uint32_t m_DataFormat;
   };
 }

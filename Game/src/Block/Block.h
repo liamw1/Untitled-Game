@@ -2,7 +2,6 @@
 #include "BlockIDs.h"
 #include "World/Indexing.h"
 #include "Util/CompoundType.h"
-#include <Engine.h>
 
 namespace Block
 {

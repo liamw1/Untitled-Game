@@ -1,10 +1,8 @@
 #include "GMpch.h"
 #include "GameSandbox.h"
 #include "Player/Player.h"
-#include "World/World.h"
 #include "World/Biome.h"
 #include "World/LOD.h"
-#include <numeric>
 
 GameSandbox::GameSandbox()
   : Layer("GameSandbox"),
@@ -31,7 +29,7 @@ void GameSandbox::onDetach()
 {
 }
 
-void GameSandbox::onUpdate(Timestep timestep)
+void GameSandbox::onUpdate(Engine::Timestep timestep)
 {
   EN_PROFILE_FUNCTION();
 

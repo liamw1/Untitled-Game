@@ -1,5 +1,5 @@
 #pragma once
-#include <cstdint>
+#include <Engine.h>
 
 using blockID = uint8_t;
 using blockTexID = uint32_t;

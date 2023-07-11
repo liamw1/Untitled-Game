@@ -1,7 +1,6 @@
 #include "GMpch.h"
 #include "Biome.h"
 #include "BiomeDefs.h"
-#include "Chunk.h"
 
 Biome::Biome()
 {

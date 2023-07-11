@@ -1,6 +1,5 @@
 #pragma once
 #include "Engine/Events/Event.h"
-#include <functional>
 
 /*
   Abstract representation of a window.

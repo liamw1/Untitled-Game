@@ -1,7 +1,6 @@
 #include "GMpch.h"
 #include "World.h"
 #include "Player/Player.h"
-#include "Engine/Renderer/Renderer.h"
 
 #define USE_LODS false
 
@@ -29,7 +28,7 @@ void World::initialize()
 #endif
 }
 
-void World::onUpdate(Timestep timestep)
+void World::onUpdate(Engine::Timestep timestep)
 {
   EN_PROFILE_FUNCTION();
 
@@ -152,7 +151,7 @@ RayIntersection World::castRay(const Vec3& rayOrigin, const Vec3& rayDirection, 
   return castRaySegment(pointA, pointB);
 }
 
-void World::playerCollisionHandling(Timestep timestep) const
+void World::playerCollisionHandling(Engine::Timestep timestep) const
 {
   static constexpr int maxIterations = 100;
 

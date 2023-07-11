@@ -1,4 +1,6 @@
 #pragma once
+#include "Engine/Utilities/BitUtilities.h"
+#include "Engine/Utilities/EnumUtilities.h"
 
 enum class Direction : int
 {

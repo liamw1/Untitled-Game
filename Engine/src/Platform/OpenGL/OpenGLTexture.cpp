@@ -4,6 +4,7 @@
 #include "Engine/Debug/Instrumentor.h"
 
 #include <stb_image.h>
+#include <glad/glad.h>
 
 static constexpr uint32_t c_MipmapLevels = 8;
 static constexpr float c_AnistropicFilteringAmount = 16.0f;

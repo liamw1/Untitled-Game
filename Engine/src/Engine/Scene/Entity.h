@@ -1,7 +1,4 @@
 #pragma once
-#include "Engine/Core/Log.h"
-#include "Engine/Events/Event.h"
-
 #include <entt/entt.hpp>
 
 namespace Engine

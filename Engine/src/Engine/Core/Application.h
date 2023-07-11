@@ -3,7 +3,6 @@
 #include "LayerStack.h"
 #include "Engine/ImGui/ImGuiLayer.h"
 #include "Engine/Events/ApplicationEvent.h"
-#include "Log.h"
 
 // Entry point
 int main(int argc, char** argv);

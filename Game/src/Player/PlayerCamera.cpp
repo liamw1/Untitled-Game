@@ -11,7 +11,7 @@ CameraController::CameraController(Engine::Entity entity)
   cameraComponent.camera.setPerspectiveView(c_AspectRatio, c_FOV, c_NearClip, c_FarClip);
 }
 
-void CameraController::onUpdate(Timestep timestep)
+void CameraController::onUpdate(Engine::Timestep timestep)
 {
 }
 

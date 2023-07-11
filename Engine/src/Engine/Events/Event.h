@@ -1,6 +1,6 @@
 #pragma once
-#include "Engine/Core/Core.h"
-#include <string>
+#include "Engine/Utilities/BitUtilities.h"
+#include "Engine/Utilities/EnumUtilities.h"
 
 namespace Engine
 {

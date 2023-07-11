@@ -1,6 +1,5 @@
 #pragma once
 #include "World/World.h"
-#include <Engine.h>
 
 class GameSandbox : public Engine::Layer
 {
@@ -11,7 +10,7 @@ public:
   void onAttach() override;
   void onDetach() override;
 
-  void onUpdate(Timestep timestep) override;
+  void onUpdate(Engine::Timestep timestep) override;
   void onImGuiRender() override;
   void onEvent(Engine::Event& event) override;
 

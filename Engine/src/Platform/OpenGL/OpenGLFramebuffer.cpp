@@ -219,7 +219,7 @@ namespace Engine
     return pixelData;
   }
 
-  void OpenGLFramebuffer::clearAttachment(uint32_t attachmentIndex, const std::variant<int, float>& value)
+  void OpenGLFramebuffer::clearAttachment(uint32_t attachmentIndex, int value)
   {
     EN_CORE_ASSERT(std::this_thread::get_id() == Threads::MainThreadID(), "OpenGL calls must be made on the main thread!");
     EN_CORE_ASSERT(attachmentIndex < m_ColorAttachments.size(), "Color attachment index is out of bounds!");
@@ -228,11 +228,18 @@ namespace Engine
     uint32_t attachment = m_ColorAttachments[attachmentIndex];
     GLenum textureFormat = openGLTextureFormat(spec.textureFormat);
 
-    switch (value.index())
-    {
-      case 0: glClearTexImage(attachment, 0, textureFormat, GL_INT, std::get_if<int>(&value));     break;
-      case 1: glClearTexImage(attachment, 0, textureFormat, GL_FLOAT, std::get_if<float>(&value)); break;
-      default: EN_CORE_ERROR("Unsupported clear value type!");
-    }
+    glClearTexImage(attachment, 0, textureFormat, GL_INT, &value);
+  }
+
+  void OpenGLFramebuffer::clearAttachment(uint32_t attachmentIndex, float value)
+  {
+    EN_CORE_ASSERT(std::this_thread::get_id() == Threads::MainThreadID(), "OpenGL calls must be made on the main thread!");
+    EN_CORE_ASSERT(attachmentIndex < m_ColorAttachments.size(), "Color attachment index is out of bounds!");
+
+    const FramebufferTextureSpecification& spec = m_ColorAttachmentSpecifications[attachmentIndex];
+    uint32_t attachment = m_ColorAttachments[attachmentIndex];
+    GLenum textureFormat = openGLTextureFormat(spec.textureFormat);
+
+    glClearTexImage(attachment, 0, textureFormat, GL_FLOAT, &value);
   }
 }

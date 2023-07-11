@@ -1,4 +1,5 @@
 #pragma once
+#include "Engine/Core/Time.h"
 #include "Engine/Events/Event.h"
 
 namespace Engine::DevCamera

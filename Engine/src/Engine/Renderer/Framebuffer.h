@@ -1,5 +1,4 @@
 #pragma once
-#include <variant>
 
 enum class FramebufferTextureFormat
 {
@@ -54,7 +53,8 @@ namespace Engine
     virtual void resize(uint32_t width, uint32_t height) = 0;
     virtual int readPixel(uint32_t attachmentIndex, int x, int y) = 0;
 
-    virtual void clearAttachment(uint32_t attachmentIndex, const std::variant<int, float>& value) = 0;
+    virtual void clearAttachment(uint32_t attachmentIndex, int value) = 0;
+    virtual void clearAttachment(uint32_t attachmentIndex, float value) = 0;
 
     static std::unique_ptr<Framebuffer> Create(const FramebufferSpecification& specification);
   };

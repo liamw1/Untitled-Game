@@ -12,7 +12,7 @@ namespace Player
 
   void HandleDirectionalInput();
 
-  void UpdatePosition(Timestep timestep);
+  void UpdatePosition(Engine::Timestep timestep);
 
   Vec3 Position();
   void SetPosition(const Vec3& position);

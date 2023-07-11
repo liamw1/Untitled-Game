@@ -1,13 +1,12 @@
 #pragma once
 #include "Block/Block.h"
-#include <Engine.h>
 
 class CameraController : public Engine::EntityScript
 {
 public:
   CameraController(Engine::Entity entity);
 
-  void onUpdate(Timestep timestep) override;
+  void onUpdate(Engine::Timestep timestep) override;
 
   void onEvent(Engine::Event& event) override;
 

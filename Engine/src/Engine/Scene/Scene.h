@@ -1,5 +1,7 @@
 #pragma once
 #include "Entity.h"
+#include "Engine/Core/Time.h"
+#include "Engine/Events/Event.h"
 
 namespace Engine::Scene
 {
