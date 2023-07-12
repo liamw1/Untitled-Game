@@ -65,16 +65,6 @@ bool Chunk::isFaceOpaque(Direction face) const
   return !(nonOpaqueFaces & bit(static_cast<int>(face)));
 }
 
-Vec3 Chunk::Center(const Vec3& anchorPosition)
-{
-  return anchorPosition + Chunk::Length() / 2;
-}
-
-Vec3 Chunk::AnchorPosition(const GlobalIndex& chunkIndex, const GlobalIndex& originIndex)
-{
-  return Chunk::Length() * static_cast<Vec3>(chunkIndex - originIndex);
-}
-
 void Chunk::setBlockType(blockIndex_t i, blockIndex_t j, blockIndex_t k, Block::Type blockType)
 {
   if (empty())
@@ -91,6 +81,24 @@ void Chunk::setBlockType(blockIndex_t i, blockIndex_t j, blockIndex_t k, Block::
 void Chunk::setBlockType(const BlockIndex& blockIndex, Block::Type blockType)
 {
   setBlockType(blockIndex.i, blockIndex.j, blockIndex.k, blockType);
+}
+
+void Chunk::setBlockLight(blockIndex_t i, blockIndex_t j, blockIndex_t k, Block::Light blockLight)
+{
+  if (empty())
+  {
+    if (blockLight.sunlight() == Block::Light::MaxValue())
+      return;
+
+    m_Composition = AllocateArray3D<Block::Type, c_ChunkSize>(Block::Type::Air);
+    m_Lighting = AllocateArray3D<Block::Light, c_ChunkSize>(15);
+  }
+  m_Lighting[i][j][k] = blockLight;
+}
+
+void Chunk::setBlockLight(const BlockIndex& blockIndex, Block::Light blockLight)
+{
+  setBlockLight(blockIndex.i, blockIndex.j, blockIndex.k, blockLight);
 }
 
 void Chunk::setComposition(Array3D<Block::Type, c_ChunkSize>&& composition)
@@ -157,14 +165,30 @@ void Chunk::reset()
   m_NonOpaqueFaces.store(0x3F);
 }
 
-_Acquires_lock_(return) std::lock_guard<std::mutex> Chunk::acquireLock() const
+Vec3 Chunk::Center(const Vec3& anchorPosition)
+{
+  return anchorPosition + Chunk::Length() / 2;
+}
+
+Vec3 Chunk::AnchorPosition(const GlobalIndex& chunkIndex, const GlobalIndex& originIndex)
+{
+  return Chunk::Length() * static_cast<Vec3>(chunkIndex - originIndex);
+}
+
+_Acquires_lock_(return) std::unique_lock<std::mutex> Chunk::acquireLock() const
+{
+  return std::unique_lock(m_Mutex);
+}
+
+_Acquires_lock_(return) std::lock_guard<std::mutex> Chunk::acquireLockGuard() const
 {
   return std::lock_guard(m_Mutex);
-};
+}
 
 
 
-Chunk::Voxel::Voxel() = default;
+Chunk::Voxel::Voxel()
+  : Voxel(0, 0, 0, 0) {}
 Chunk::Voxel::Voxel(uint32_t voxelData, uint32_t quadData1, uint32_t quadData2, uint32_t vertexSunlight)
   : m_VoxelData(voxelData),
     m_QuadData1(quadData1),

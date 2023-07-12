@@ -78,8 +78,8 @@ public:
   /*
     \returns The chunk along with a lock on its mutex. Will return nullptr is no chunk is found.
   */
-  [[nodiscard]] std::pair<Chunk*, std::unique_lock<std::mutex>> acquireChunk(const GlobalIndex& chunkIndex);
-  [[nodiscard]] std::pair<const Chunk*, std::unique_lock<std::mutex>> acquireChunk(const GlobalIndex& chunkIndex) const;
+  [[nodiscard]] ChunkWithLock acquireChunk(const GlobalIndex& chunkIndex);
+  [[nodiscard]] ConstChunkWithLock acquireChunk(const GlobalIndex& chunkIndex) const;
 
   /*
     Queues chunk where the block update occured for updating. If specified block is on chunk border,
@@ -93,6 +93,22 @@ public:
 
   bool empty() const;
   bool contains(const GlobalIndex& chunkIndex) const;
+
+  class Stencil
+  {
+  public:
+    Stencil(ChunkContainer& chunkContainer, const GlobalIndex& centerChunk);
+
+    Block::Light getBlockLight(BlockIndex blockIndex);
+    void setBlockLight(BlockIndex blockIndex, Block::Light blockLight);
+
+  private:
+    ChunkContainer* m_ChunkContainer;
+    GlobalIndex m_CenterChunk;
+    StackArray3D<std::optional<ChunkWithLock>, 3> m_Chunks;
+
+    std::optional<ChunkWithLock>& chunkQuery(const GlobalIndex& indexOffset);
+  };
 
 private:
   template<typename Key, typename Val>

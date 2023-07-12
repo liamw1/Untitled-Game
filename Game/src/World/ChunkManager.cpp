@@ -191,7 +191,7 @@ void ChunkManager::clean()
   m_PrevPlayerOriginIndex = originIndex;
 }
 
-std::pair<const Chunk*, std::unique_lock<std::mutex>> ChunkManager::acquireChunk(const LocalIndex& chunkIndex) const
+const ConstChunkWithLock ChunkManager::acquireChunk(const LocalIndex& chunkIndex) const
 {
   GlobalIndex originChunk = Player::OriginIndex();
   return m_ChunkContainer.acquireChunk(GlobalIndex(originChunk.i + chunkIndex.i, originChunk.j + chunkIndex.j, originChunk.k + chunkIndex.k));

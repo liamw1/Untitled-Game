@@ -6,20 +6,6 @@
 #include "Util/LRUCache.h"
 #include "Player/Player.h"
 
-class ChunkFiller
-{
-public:
-  static void SetComposition(Chunk& chunk, Array3D<Block::Type, Chunk::Size()>&& composition)
-  {
-    chunk.setComposition(std::move(composition));
-  }
-
-  static void SetLighting(Chunk& chunk, Array3D<Block::Light, Chunk::Size()>&& light)
-  {
-    chunk.setLighting(std::move(light));
-  }
-};
-
 Terrain::CompoundSurfaceData::CompoundSurfaceData() = default;
 Terrain::CompoundSurfaceData::CompoundSurfaceData(length_t surfaceElevation, Block::Type blockType)
   : m_Elevation(surfaceElevation), m_Components(blockType) {}
@@ -321,8 +307,8 @@ Chunk Terrain::GenerateNew(const GlobalIndex& chunkIndex)
     Array3D lighting = AllocateArray3D<Block::Light, Chunk::Size()>();
     lightingStage(lighting, composition);
 
-    ChunkFiller::SetComposition(newChunk, std::move(composition));
-    ChunkFiller::SetLighting(newChunk, std::move(lighting));
+    newChunk.setComposition(std::move(composition));
+    newChunk.setLighting(std::move(lighting));
   }
 
   return newChunk;

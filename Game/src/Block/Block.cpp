@@ -169,7 +169,7 @@ Block::Light::Light()
 Block::Light::Light(int8_t sunlight)
   : m_Sunlight(sunlight)
 {
-  EN_ASSERT(boundsCheck(0, MaxValue() + 1), "Invalid value for sunlight!");
+  EN_ASSERT(boundsCheck(sunlight, 0, MaxValue() + 1), "Invalid value for sunlight!");
 }
 
 int8_t Block::Light::sunlight()

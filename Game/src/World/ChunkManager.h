@@ -28,7 +28,7 @@ public:
   /*
     \returns The chunk along with a lock on its mutex. Chunk will be nullptr is no chunk is found.
   */
-  [[nodiscard]] std::pair<const Chunk*, std::unique_lock<std::mutex>> acquireChunk(const LocalIndex& chunkIndex) const;
+  [[nodiscard]] const ConstChunkWithLock acquireChunk(const LocalIndex& chunkIndex) const;
 
   void placeBlock(GlobalIndex chunkIndex, BlockIndex blockIndex, Direction face, Block::Type blockType);
   void removeBlock(const GlobalIndex& chunkIndex, const BlockIndex& blockIndex);
@@ -47,15 +47,6 @@ private:
     NotSet,
     Void,
     Terrain
-  };
-
-  class ChunkStencil
-  {
-  public:
-
-
-  private:
-    StackArray3D<std::pair<const Chunk*, std::unique_lock<std::mutex>>, 3> m_Chunks;
   };
 
   // Rendering

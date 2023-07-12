@@ -45,7 +45,7 @@ bool ChunkContainer::erase(const GlobalIndex& chunkIndex)
   mapType<GlobalIndex, Chunk*>::iterator erasePosition = m_BoundaryChunks.find(chunkIndex);
   if (erasePosition == m_BoundaryChunks.end())
     return false;
-  const Chunk* chunk = erasePosition->second;
+  Chunk* chunk = erasePosition->second;
 
   // Open up chunk slot
   int chunkSlot = static_cast<int>(chunk - &m_ChunkArray[0]);
@@ -53,7 +53,7 @@ bool ChunkContainer::erase(const GlobalIndex& chunkIndex)
 
   // Delete chunk data
   {
-    std::lock_guard chunkLock = chunk->acquireLock();
+    std::lock_guard chunkLock = chunk->acquireLockGuard();
     m_ChunkArray[chunkSlot].reset();
   }
   m_BoundaryChunks.erase(erasePosition);
@@ -75,7 +75,7 @@ bool ChunkContainer::update(const GlobalIndex& chunkIndex, bool meshGenerated)
   if (source == ChunkType::Boundary)
     return false;
 
-  std::lock_guard chunkLock = chunk->acquireLock();
+  std::lock_guard chunkLock = chunk->acquireLockGuard();
   sharedLock.unlock();
 
   chunk->update(meshGenerated);
@@ -115,26 +115,27 @@ void ChunkContainer::uploadMeshes(Engine::Threads::UnorderedSetQueue<Chunk::Draw
   }
 }
 
-std::pair<Chunk*, std::unique_lock<std::mutex>> ChunkContainer::acquireChunk(const GlobalIndex& chunkIndex)
+ChunkWithLock ChunkContainer::acquireChunk(const GlobalIndex& chunkIndex)
 {
   std::shared_lock lock(m_ContainerMutex);
+
   std::unique_lock<std::mutex> chunkLock;
 
   Chunk* chunk = find(chunkIndex);
   if (chunk)
-    chunkLock = std::unique_lock(chunk->m_Mutex);
+    chunkLock = chunk->acquireLock();
 
   return { chunk, std::move(chunkLock) };
 }
 
-std::pair<const Chunk*, std::unique_lock<std::mutex>> ChunkContainer::acquireChunk(const GlobalIndex& chunkIndex) const
+ConstChunkWithLock ChunkContainer::acquireChunk(const GlobalIndex& chunkIndex) const
 {
   std::shared_lock lock(m_ContainerMutex);
   std::unique_lock<std::mutex> chunkLock;
 
   const Chunk* chunk = find(chunkIndex);
   if (chunk)
-    chunkLock = std::unique_lock(chunk->m_Mutex);
+    chunkLock = chunk->acquireLock();
 
   return { chunk, std::move(chunkLock) };
 }
@@ -201,6 +202,64 @@ bool ChunkContainer::contains(const GlobalIndex& chunkIndex) const
 {
   std::shared_lock lock(m_ContainerMutex);
   return isLoaded(chunkIndex);
+}
+
+
+
+static GlobalIndex globalIndexOffset(BlockIndex& blockIndex)
+{
+  EN_ASSERT(boundsCheck(blockIndex.i, -Chunk::Size(), 2 * Chunk::Size()) &&
+    boundsCheck(blockIndex.j, -Chunk::Size(), 2 * Chunk::Size()) &&
+    boundsCheck(blockIndex.k, -Chunk::Size(), 2 * Chunk::Size()), "Requested block is more than one chunk away!");
+
+  GlobalIndex indexOffset{};
+  for (int i = 0; i < 3; ++i)
+  {
+    if (blockIndex[i] < 0)
+    {
+      indexOffset[i]--;
+      blockIndex[i] += Chunk::Size();
+    }
+    else if (blockIndex[i] >= Chunk::Size())
+    {
+      indexOffset[i]++;
+      blockIndex[i] -= Chunk::Size();
+    }
+  }
+  return indexOffset;
+}
+
+ChunkContainer::Stencil::Stencil(ChunkContainer& chunkContainer, const GlobalIndex& centerChunk)
+  : m_ChunkContainer(&chunkContainer), m_CenterChunk(centerChunk) {}
+
+Block::Light ChunkContainer::Stencil::getBlockLight(BlockIndex blockIndex)
+{
+  GlobalIndex offset = globalIndexOffset(blockIndex);
+
+  const std::optional<ChunkWithLock>& query = chunkQuery(offset);
+  if (!query)
+    return Block::Light(0);
+  if (!query->chunk)
+    return Block::Light(Block::Light::MaxValue());
+  return query->chunk->getBlockLight(blockIndex);
+}
+
+void ChunkContainer::Stencil::setBlockLight(BlockIndex blockIndex, Block::Light blockLight)
+{
+  GlobalIndex offset = globalIndexOffset(blockIndex);
+
+  std::optional<ChunkWithLock>& query = chunkQuery(offset);
+  if (!query || !query->chunk)
+    return;
+  query->chunk->setBlockLight(blockIndex, blockLight);
+}
+
+std::optional<ChunkWithLock>& ChunkContainer::Stencil::chunkQuery(const GlobalIndex& indexOffset)
+{
+  std::optional<ChunkWithLock>& query = m_Chunks[indexOffset.i + 1][indexOffset.j + 1][indexOffset.k + 1];
+  if (!query)
+    query = m_ChunkContainer->acquireChunk(m_CenterChunk + indexOffset);
+  return query;
 }
 
 

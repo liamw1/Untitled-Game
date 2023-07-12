@@ -5,24 +5,23 @@
 
 /*
   A class representing a NxNxN cube of blocks.
+
+  Most functions require a lock on the chunk mutex to be used safely.
+  There are two exceptions to this rule. The first is globalIndex(), which only needs a lock
+  on the ChunkContainer mutex, as the global index of a chunk is only modified during insertion
+  or deletion. The second is isFaceOpaque(face), which uses atomics for synchronization.
 */
 class Chunk
 {
-/*
-  Most public functions can be safely accessed as long as a lock is held on either
-  the chunk's mutex OR the container mutex. The only exceptions are empty(), and
-  the getBlockType() variants, which require a lock on the chunk mutex specifically.
-*/
+private:
+  static constexpr blockIndex_t c_ChunkSize = 32;
+
 public:
   Chunk();
   Chunk(const GlobalIndex& chunkIndex);
 
   Chunk(Chunk&& other) noexcept;
   Chunk& operator=(Chunk&& other) noexcept;
-
-  // Chunks are unique and so cannot be copied
-  Chunk(const Chunk& other) = delete;
-  Chunk& operator=(const Chunk& other) = delete;
 
   /*
     \returns The chunk's global index, which identifies it uniquely.
@@ -47,9 +46,17 @@ public:
   */
   bool isFaceOpaque(Direction face) const;
 
-  static constexpr blockIndex_t Size() { return c_ChunkSize; }
-  static constexpr length_t Length() { return Block::Length() * c_ChunkSize; }
-  static constexpr int TotalBlocks() { return c_ChunkSize * c_ChunkSize * c_ChunkSize; }
+  void setBlockType(blockIndex_t i, blockIndex_t j, blockIndex_t k, Block::Type blockType);
+  void setBlockType(const BlockIndex& blockIndex, Block::Type blockType);
+  void setBlockLight(blockIndex_t i, blockIndex_t j, blockIndex_t k, Block::Light blockLight);
+  void setBlockLight(const BlockIndex& blockIndex, Block::Light blockLight);
+
+  void setComposition(Array3D<Block::Type, c_ChunkSize>&& composition);
+  void setLighting(Array3D<Block::Light, c_ChunkSize>&& lighting);
+  void determineOpacity();
+
+  void update(bool hasMesh);
+  void reset();
 
   /*
     \returns The chunk's geometric center relative to origin chunk.
@@ -65,29 +72,10 @@ public:
   */
   static Vec3 AnchorPosition(const GlobalIndex& chunkIndex, const GlobalIndex& originIndex);
 
-// All private functions require a lock on the chunk mutex.
-private:
-  static constexpr blockIndex_t c_ChunkSize = 32;
+  static constexpr blockIndex_t Size() { return c_ChunkSize; }
+  static constexpr length_t Length() { return Block::Length() * c_ChunkSize; }
+  static constexpr int TotalBlocks() { return c_ChunkSize * c_ChunkSize * c_ChunkSize; }
 
-  mutable std::mutex m_Mutex;
-  Array3D<Block::Type, c_ChunkSize> m_Composition;
-  Array3D<Block::Light, c_ChunkSize> m_Lighting;
-  GlobalIndex m_GlobalIndex;
-  std::atomic<uint16_t> m_NonOpaqueFaces;
-
-  void setBlockType(blockIndex_t i, blockIndex_t j, blockIndex_t k, Block::Type blockType);
-  void setBlockType(const BlockIndex& blockIndex, Block::Type blockType);
-
-  void setComposition(Array3D<Block::Type, c_ChunkSize>&& composition);
-  void setLighting(Array3D<Block::Light, c_ChunkSize>&& lighting);
-  void determineOpacity();
-
-  void update(bool hasMesh);
-  void reset();
-
-  _Acquires_lock_(return) std::lock_guard<std::mutex> acquireLock() const;
-
-private:
   class Voxel
   {
   public:
@@ -134,13 +122,21 @@ private:
     BlockIndex m_SortState;
   };
 
-  friend class ChunkFiller;
-  friend class ChunkManager;
-  friend class ChunkContainer;
-  friend struct std::hash<DrawCommand>;
-};
+private:
+  mutable std::mutex m_Mutex;
+  Array3D<Block::Type, c_ChunkSize> m_Composition;
+  Array3D<Block::Light, c_ChunkSize> m_Lighting;
+  GlobalIndex m_GlobalIndex;
+  std::atomic<uint16_t> m_NonOpaqueFaces;
 
-static constexpr int s = sizeof(Chunk);
+  Chunk(const Chunk& other) = delete;
+  Chunk& operator=(const Chunk& other) = delete;
+
+  _Acquires_lock_(return) std::unique_lock<std::mutex> acquireLock() const;
+  _Acquires_lock_(return) std::lock_guard<std::mutex> acquireLockGuard() const;
+
+  friend class ChunkContainer;
+};
 
 namespace std
 {
@@ -153,3 +149,15 @@ namespace std
     }
   };
 }
+
+struct ChunkWithLock
+{
+  Chunk* chunk;
+  std::unique_lock<std::mutex> lock;
+};
+
+struct ConstChunkWithLock
+{
+  const Chunk* chunk;
+  std::unique_lock<std::mutex> lock;
+};
