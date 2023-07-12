@@ -16,7 +16,7 @@ static constexpr int c_StorageBufferBinding = 1;
 static int s_BlocksInitialized = 0;
 static bool s_Initialized = false;
 
-static Array2D<Block::Texture, c_MaxBlockTypes, 6> s_TexIDs = AllocateArray2D<Block::Texture, c_MaxBlockTypes, 6>(Block::Texture::ErrorTexture);
+static Array2D s_TexIDs = AllocateArray2D<Block::Texture, c_MaxBlockTypes, 6>(Block::Texture::ErrorTexture);
 static std::array<std::filesystem::path, c_MaxBlockTextures> s_TexturePaths{};
 static std::shared_ptr<Engine::TextureArray> s_TextureArray;
 static std::unique_ptr<Engine::Uniform> s_Uniform;
@@ -160,4 +160,19 @@ bool Block::HasCollision(Type block)
     case Block::Type::Water:  return false;
     default:                  return true;
   }
+}
+
+
+
+Block::Light::Light()
+  : Light(0) {}
+Block::Light::Light(int8_t sunlight)
+  : m_Sunlight(sunlight)
+{
+  EN_ASSERT(boundsCheck(0, MaxValue() + 1), "Invalid value for sunlight!");
+}
+
+int8_t Block::Light::sunlight()
+{
+  return m_Sunlight;
 }

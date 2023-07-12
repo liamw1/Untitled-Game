@@ -1,5 +1,13 @@
 #pragma once
 
+template<typename T, int Rows, int Columns = Rows>
+using StackArray2D = std::array<std::array<T, Columns>, Rows>;
+
+template<typename T, int Rows, int Columns = Rows, int Depth = Columns>
+using StackArray3D = std::array<std::array<std::array<T, Depth>, Columns>, Rows>;
+
+
+
 template<typename T, int Size>
 class ArraySection
 {
@@ -49,7 +57,7 @@ private:
   heap-allocated block in memory.
 
   Elements can be accessed like:
-  arr(i, j)
+  arr[i][j]
 
   Huge advantages in efficiency for "tall" arrays (rows >> cols).
 */
@@ -141,7 +149,7 @@ Array2D<T, Rows, Columns> AllocateArray2D(const T& initialValue)
   heap-allocated block in memory.
 
   Elements can be accessed with brackets:
-  arr(i, j, k)
+  arr[i][j][k]
 */
 template<typename T, int Rows, int Columns = Rows, int Depth = Columns>
 class Array3D

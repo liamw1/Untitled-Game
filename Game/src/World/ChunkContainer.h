@@ -33,7 +33,7 @@ public:
 
     \returns True if the chunk was successfully inserted into the boundary map.
   */
-  bool insert(const GlobalIndex& chunkIndex, Array3D<Block::Type, Chunk::Size()> chunkComposition);
+  bool insert(Chunk&& newChunk);
 
   /*
     Removes chunk from boundary map, unloads it, and frees the slot it was occupying.

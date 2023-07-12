@@ -49,6 +49,15 @@ private:
     Terrain
   };
 
+  class ChunkStencil
+  {
+  public:
+
+
+  private:
+    StackArray3D<std::pair<const Chunk*, std::unique_lock<std::mutex>>, 3> m_Chunks;
+  };
+
   // Rendering
   static inline std::unique_ptr<Engine::Shader> s_OpaqueVoxelShader;
   static inline std::unique_ptr<Engine::Shader> s_TransparentVoxelShader;
@@ -56,7 +65,8 @@ private:
   static inline std::shared_ptr<Engine::TextureArray> s_TextureArray;
   static inline const Engine::BufferLayout s_VertexBufferLayout = { { ShaderDataType::Uint32, "a_VoxelData" },
                                                                     { ShaderDataType::Uint32, "a_QuadData1" },
-                                                                    { ShaderDataType::Uint32, "a_QuadData2" } };
+                                                                    { ShaderDataType::Uint32, "a_QuadData2" },
+                                                                    { ShaderDataType::Uint32, "a_Sunlight"  } };
   static constexpr int c_TextureSlot = 0;
   static constexpr int c_StorageBufferBinding = 0;
   static constexpr uint32_t c_StorageBufferSize = static_cast<uint32_t>(pow2(20));
@@ -81,7 +91,29 @@ private:
 
   void generateNewChunk(const GlobalIndex& chunkIndex);
 
-  const Array3D<Block::Type, Chunk::Size() + 2>& getBlockData(const GlobalIndex& chunkIndex) const;
+  // Meshing
+private:
+  class BlockData
+  {
+  public:
+    BlockData();
+
+    Block::Type getType(const BlockIndex& blockIndex) const;
+    Block::Light getLight(const BlockIndex& blockIndex) const;
+    void set(const BlockIndex& dataIndex, Block::Type blockType, Block::Light blockLight);
+    void set(const BlockIndex& dataIndex, const Chunk* chunk, const BlockIndex& blockIndex);
+
+    void reset();
+    bool empty() const;
+
+  private:
+    static constexpr int c_Size = Chunk::Size() + 2;
+
+    Array3D<Block::Type, Chunk::Size() + 2> m_Type;
+    Array3D<Block::Light, Chunk::Size() + 2> m_Light;
+  };
+
+  const BlockData& getBlockData(const GlobalIndex& chunkIndex) const;
 
   /*
     Generates simplistic mesh in a compressed format based on chunk compostion.

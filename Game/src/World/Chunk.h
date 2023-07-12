@@ -31,8 +31,10 @@ public:
 
   bool empty() const;
 
-  Block::Type getBlockType(blockIndex_t i, blockIndex_t j, blockIndex_t k) const;
   Block::Type getBlockType(const BlockIndex& blockIndex) const;
+  Block::Type getBlockType(blockIndex_t i, blockIndex_t j, blockIndex_t k) const;
+  Block::Light getBlockLight(const BlockIndex& blockIndex) const;
+  Block::Light getBlockLight(blockIndex_t i, blockIndex_t j, blockIndex_t k) const;
 
   /*
     \return Whether or not a given chunk face has transparent blocks. Useful for deciding which chunks should be loaded
@@ -69,13 +71,15 @@ private:
 
   mutable std::mutex m_Mutex;
   Array3D<Block::Type, c_ChunkSize> m_Composition;
+  Array3D<Block::Light, c_ChunkSize> m_Lighting;
   GlobalIndex m_GlobalIndex;
   std::atomic<uint16_t> m_NonOpaqueFaces;
 
   void setBlockType(blockIndex_t i, blockIndex_t j, blockIndex_t k, Block::Type blockType);
   void setBlockType(const BlockIndex& blockIndex, Block::Type blockType);
 
-  void setData(Array3D<Block::Type, c_ChunkSize> composition);
+  void setComposition(Array3D<Block::Type, c_ChunkSize>&& composition);
+  void setLighting(Array3D<Block::Light, c_ChunkSize>&& lighting);
   void determineOpacity();
 
   void update(bool hasMesh);
@@ -88,7 +92,7 @@ private:
   {
   public:
     Voxel();
-    Voxel(uint32_t voxelData, uint32_t quadData1, uint32_t quadData2);
+    Voxel(uint32_t voxelData, uint32_t quadData1, uint32_t quadData2, uint32_t vertexSunlight);
 
     blockIndex_t i() const;
     blockIndex_t j() const;
@@ -99,6 +103,7 @@ private:
     uint32_t m_VoxelData;
     uint32_t m_QuadData1;
     uint32_t m_QuadData2;
+    uint32_t m_Sunlight;
   };
 
   class DrawCommand : public Engine::MultiDrawCommand<GlobalIndex, DrawCommand>
@@ -129,10 +134,13 @@ private:
     BlockIndex m_SortState;
   };
 
+  friend class ChunkFiller;
   friend class ChunkManager;
   friend class ChunkContainer;
   friend struct std::hash<DrawCommand>;
 };
+
+static constexpr int s = sizeof(Chunk);
 
 namespace std
 {

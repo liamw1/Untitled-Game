@@ -18,4 +18,20 @@ namespace Block
 
   constexpr length_t Length() { return 0.5_m; }
   constexpr float LengthF() { return static_cast<float>(Length()); }
+
+
+
+  class Light
+  {
+  public:
+    Light();
+    Light(int8_t sunlight);
+
+    int8_t sunlight();
+
+    static constexpr int MaxValue() { return 15; }
+
+  private:
+    int8_t m_Sunlight;
+  };
 };

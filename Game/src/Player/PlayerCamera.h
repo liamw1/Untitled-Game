@@ -26,7 +26,7 @@ private:
   static constexpr Angle c_FOV = 80_deg;
   static constexpr float c_AspectRatio = 1280.0f / 720.0f;
   static constexpr length_t c_NearClip = 0.125_m * Block::Length();
-  static constexpr length_t c_FarClip = 10000_m * Block::Length();
+  static constexpr length_t c_FarClip = 1024_m * Block::Length();
 
   Engine::Entity m_Entity;
   Float2 m_LastMousePosition;

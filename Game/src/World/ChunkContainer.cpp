@@ -16,7 +16,7 @@ ChunkContainer::ChunkContainer()
     m_OpenChunkSlots.push(i);
 }
 
-bool ChunkContainer::insert(const GlobalIndex& chunkIndex, Array3D<Block::Type, Chunk::Size()> chunkComposition)
+bool ChunkContainer::insert(Chunk&& newChunk)
 {
   std::lock_guard lock(m_ContainerMutex);
 
@@ -27,10 +27,9 @@ bool ChunkContainer::insert(const GlobalIndex& chunkIndex, Array3D<Block::Type, 
   int chunkSlot = m_OpenChunkSlots.top();
   m_OpenChunkSlots.pop();
 
-  // Insert chunk into array and load it
+  // Insert chunk into array
   Chunk& chunk = m_ChunkArray[chunkSlot];
-  chunk = Chunk(chunkIndex);
-  chunk.setData(std::move(chunkComposition));
+  chunk = std::move(newChunk);
   auto [insertionPosition, insertionSuccess] = m_BoundaryChunks.insert({ chunk.globalIndex(), &chunk });
 
   if (insertionSuccess)

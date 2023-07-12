@@ -204,7 +204,7 @@ void ChunkManager::placeBlock(GlobalIndex chunkIndex, BlockIndex blockIndex, Dir
 
     if (!chunk || !Block::HasCollision(chunk->getBlockType(blockIndex)))
     {
-      EN_WARN("Cannot call placeBlock block with no collision!");
+      EN_WARN("Cannot call placeBlock on block with no collision!");
       return;
     }
 
@@ -269,8 +269,14 @@ void ChunkManager::launchUpdateThread()
 
 void ChunkManager::loadChunk(const GlobalIndex& chunkIndex, Block::Type blockType)
 {
-  Array3D<Block::Type, Chunk::Size()> composition = AllocateArray3D<Block::Type, Chunk::Size()>(blockType);
-  m_ChunkContainer.insert(chunkIndex, std::move(composition));
+  Chunk chunk(chunkIndex);
+  if (blockType != Block::Type::Air)
+  {
+    chunk.setComposition(AllocateArray3D<Block::Type, Chunk::Size()>(blockType));
+    chunk.setLighting(AllocateArray3D<Block::Light, Chunk::Size()>());
+  }
+
+  m_ChunkContainer.insert(std::move(chunk));
 }
 
 
@@ -318,43 +324,62 @@ void ChunkManager::updateWorker()
 
 void ChunkManager::generateNewChunk(const GlobalIndex& chunkIndex)
 {
-  Array3D<Block::Type, Chunk::Size()> composition;
+  Chunk chunk;
   switch (m_LoadMode)
   {
     case LoadMode::NotSet:  EN_ERROR("Load mode not set!");                     break;
-    case LoadMode::Void:    composition = Terrain::GenerateEmpty(chunkIndex);   break;
-    case LoadMode::Terrain: composition = Terrain::GenerateNew(chunkIndex);     break;
+    case LoadMode::Void:    chunk = Terrain::GenerateEmpty(chunkIndex);   break;
+    case LoadMode::Terrain: chunk = Terrain::GenerateNew(chunkIndex);     break;
     default:                EN_ERROR("Unknown load mode!");
   }
 
-  m_ChunkContainer.insert(chunkIndex, std::move(composition));
+  m_ChunkContainer.insert(std::move(chunk));
 }
 
-static Block::Type getBlockType(const Array3D<Block::Type, Chunk::Size() + 2>& blockData, blockIndex_t i, blockIndex_t j, blockIndex_t k)
+
+
+ChunkManager::BlockData::BlockData()
+  : m_Type(AllocateArray3D<Block::Type, c_Size>(Block::Type::Null)),
+    m_Light(AllocateArray3D<Block::Light, c_Size>()) {}
+
+Block::Type ChunkManager::BlockData::getType(const BlockIndex& blockIndex) const
 {
-  return blockData[i + 1][j + 1][k + 1];
+  return m_Type[blockIndex.i + 1][blockIndex.j + 1][blockIndex.k + 1];
 }
 
-static Block::Type getBlockType(const Array3D<Block::Type, Chunk::Size() + 2>& blockData, const BlockIndex& blockIndex)
+Block::Light ChunkManager::BlockData::getLight(const BlockIndex& blockIndex) const
 {
-  return getBlockType(blockData, blockIndex.i, blockIndex.j, blockIndex.k);
+  return m_Light[blockIndex.i + 1][blockIndex.j + 1][blockIndex.k + 1];
 }
 
-static void setBlockType(Array3D<Block::Type, Chunk::Size() + 2>& blockData, blockIndex_t i, blockIndex_t j, blockIndex_t k, Block::Type blockType)
+void ChunkManager::BlockData::set(const BlockIndex& dataIndex, Block::Type blockType, Block::Light blockLight)
 {
-  blockData[i + 1][j + 1][k + 1] = blockType;
+  m_Type[dataIndex.i + 1][dataIndex.j + 1][dataIndex.k + 1] = blockType;
+  m_Light[dataIndex.i + 1][dataIndex.j + 1][dataIndex.k + 1] = blockLight;
 }
 
-static void setBlockType(Array3D<Block::Type, Chunk::Size() + 2>& blockData, const BlockIndex& blockIndex, Block::Type blockType)
+void ChunkManager::BlockData::set(const BlockIndex& dataIndex, const Chunk* chunk, const BlockIndex& blockIndex)
 {
-  setBlockType(blockData, blockIndex.i, blockIndex.j, blockIndex.k, blockType);
+  set(dataIndex, chunk->getBlockType(blockIndex), chunk->getBlockLight(blockIndex));
 }
 
-const Array3D<Block::Type, Chunk::Size() + 2>& ChunkManager::getBlockData(const GlobalIndex& chunkIndex) const
+void ChunkManager::BlockData::reset()
 {
-  thread_local Array3D<Block::Type, Chunk::Size() + 2> blockData = AllocateArray3D<Block::Type, Chunk::Size() + 2>();
+  m_Type.fill(Block::Type::Null);
+  m_Light.fill(Block::Light());
+}
 
-  blockData.fill(Block::Type::Null);
+bool ChunkManager::BlockData::empty() const
+{
+  return m_Type[1][1][1] == Block::Type::Null;
+}
+
+
+
+const ChunkManager::BlockData& ChunkManager::getBlockData(const GlobalIndex& chunkIndex) const
+{
+  thread_local BlockData blockData{};
+  blockData.reset();
 
   // Load blocks from chunk
   {
@@ -365,7 +390,10 @@ const Array3D<Block::Type, Chunk::Size() + 2>& ChunkManager::getBlockData(const 
     for (blockIndex_t i = 0; i < Chunk::Size(); ++i)
       for (blockIndex_t j = 0; j < Chunk::Size(); ++j)
         for (blockIndex_t k = 0; k < Chunk::Size(); ++k)
-          setBlockType(blockData, i, j, k, chunk->getBlockType(i, j, k));
+        {
+          BlockIndex blockIndex(i, j, k);
+          blockData.set(blockIndex, chunk, blockIndex);
+        }
   }
 
   EN_PROFILE_FUNCTION();
@@ -390,10 +418,10 @@ const Array3D<Block::Type, Chunk::Size() + 2>& ChunkManager::getBlockData(const 
           if (!neighbor->empty())
           {
             BlockIndex neighborBlockIndex = BlockIndex::CreatePermuted(neighborFaceIndex, i, j, GetCoordID(direction));
-            setBlockType(blockData, relativeBlockIndex, neighbor->getBlockType(neighborBlockIndex));
+            blockData.set(relativeBlockIndex, neighbor, neighborBlockIndex);
           }
           else
-            setBlockType(blockData, relativeBlockIndex, Block::Type::Air);
+            blockData.set(relativeBlockIndex, Block::Type::Air, Block::Light(Block::Light::MaxValue()));
         }
     }
   }
@@ -430,10 +458,10 @@ const Array3D<Block::Type, Chunk::Size() + 2>& ChunkManager::getBlockData(const 
             neighborBlockIndex[v] = neighborLimits[IsUpstream(faceB)];
             neighborBlockIndex[w] = i;
 
-            setBlockType(blockData, relativeBlockIndex, neighbor->getBlockType(neighborBlockIndex));
+            blockData.set(relativeBlockIndex, neighbor, neighborBlockIndex);
           }
           else
-            setBlockType(blockData, relativeBlockIndex, Block::Type::Air);
+            blockData.set(relativeBlockIndex, Block::Type::Air, Block::Light(Block::Light::MaxValue()));
         }
       }
     }
@@ -453,10 +481,10 @@ const Array3D<Block::Type, Chunk::Size() + 2>& ChunkManager::getBlockData(const 
           if (!neighbor->empty())
           {
             BlockIndex neighborBlockIndex = { neighborLimits[i], neighborLimits[j], neighborLimits[k] };
-            setBlockType(blockData, relativeBlockIndex, neighbor->getBlockType(neighborBlockIndex));
+            blockData.set(relativeBlockIndex, neighbor, neighborBlockIndex);
           }
           else
-            setBlockType(blockData, relativeBlockIndex, Block::Type::Air);
+            blockData.set(relativeBlockIndex, Block::Type::Air, Block::Light(Block::Light::MaxValue()));
         }
       }
 
@@ -465,8 +493,9 @@ const Array3D<Block::Type, Chunk::Size() + 2>& ChunkManager::getBlockData(const 
 
 bool ChunkManager::meshChunk(const GlobalIndex& chunkIndex)
 {
-  const Array3D<Block::Type, Chunk::Size() + 2>& blockData = getBlockData(chunkIndex);
-  if (getBlockType(blockData, 0, 0, 0) == Block::Type::Null)
+  const BlockData& blockData = getBlockData(chunkIndex);
+
+  if (blockData.empty())
   {
     m_OpaqueCommandQueue.emplace(chunkIndex);
     m_TransparentCommandQueue.emplace(chunkIndex);
@@ -490,7 +519,7 @@ bool ChunkManager::meshChunk(const GlobalIndex& chunkIndex)
       for (blockIndex_t k = 0; k < Chunk::Size(); ++k)
       {
         BlockIndex blockIndex = BlockIndex(i, j, k);
-        Block::Type blockType = getBlockType(blockData, blockIndex);
+        Block::Type blockType = blockData.getType(blockIndex);
 
         // Air blocks do not get meshed
         if (blockType == Block::Type::Air)
@@ -501,7 +530,7 @@ bool ChunkManager::meshChunk(const GlobalIndex& chunkIndex)
         for (Direction direction : Directions())
         {
           // Only enable face if block and neighbor are different types, or if either are transparent
-          Block::Type cardinalNeighbor = getBlockType(blockData, blockIndex + BlockIndex::Dir(direction));
+          Block::Type cardinalNeighbor = blockData.getType(blockIndex + BlockIndex::Dir(direction));
           if (cardinalNeighbor == blockType || (!Block::HasTransparency(blockType) && !Block::HasTransparency(cardinalNeighbor)))
             continue;
 
@@ -525,9 +554,9 @@ bool ChunkManager::meshChunk(const GlobalIndex& chunkIndex)
             BlockIndex edgeB = blockIndex + BlockIndex::Dir(direction) + BlockIndex::Dir(edgeBDir);
             BlockIndex corner = blockIndex + BlockIndex::Dir(direction) + BlockIndex::Dir(edgeADir) + BlockIndex::Dir(edgeBDir);
 
-            bool sideAIsOpaque = !Block::HasTransparency(getBlockType(blockData, edgeA));
-            bool sideBIsOpaque = !Block::HasTransparency(getBlockType(blockData, edgeB));
-            bool cornerIsOpaque = !Block::HasTransparency(getBlockType(blockData, corner));
+            bool sideAIsOpaque = !Block::HasTransparency(blockData.getType(edgeA));
+            bool sideBIsOpaque = !Block::HasTransparency(blockData.getType(edgeB));
+            bool cornerIsOpaque = !Block::HasTransparency(blockData.getType(corner));
             int ambientOcclusionLevel = sideAIsOpaque && sideBIsOpaque ? 3 : sideAIsOpaque + sideBIsOpaque + cornerIsOpaque;
 
             int shift = 2 * (4 * directionID + quadIndex);
@@ -547,8 +576,40 @@ bool ChunkManager::meshChunk(const GlobalIndex& chunkIndex)
         voxelData |= blockIndex.j << 21;
         voxelData |= blockIndex.k << 26;
 
+        Array3D lights = AllocateArray3D<std::optional<int8_t>, 3>(std::nullopt);
+        for (blockIndex_t I = 0; I < 3; ++I)
+          for (blockIndex_t J = 0; J < 3; ++J)
+            for (blockIndex_t K = 0; K < 3; ++K)
+            {
+              BlockIndex index = blockIndex + BlockIndex(I - 1, J - 1, K - 1);
+              if (Block::HasTransparency(blockData.getType(index)))
+                lights[I][J][K] = blockData.getLight(index).sunlight();
+            }
+
+        uint32_t sunlight = 0;
+        for (blockIndex_t vI = 0; vI < 2; ++vI)
+          for (blockIndex_t vJ = 0; vJ < 2; ++vJ)
+            for (blockIndex_t vK = 0; vK < 2; ++vK)
+            {
+              int count = 0;
+              int8_t lightVal = 0;
+              for (blockIndex_t I = 0; I < 2; ++I)
+                for (blockIndex_t J = 0; J < 2; ++J)
+                  for (blockIndex_t K = 0; K < 2; ++K)
+                    if (lights[I + vI][J + vJ][K + vK])
+                    {
+                      lightVal += *lights[I + vI][J + vJ][K + vK];
+                      count++;
+                    }
+              lightVal /= std::max(1, count);
+
+              int vertexIndex = 4 * vI + 2 * vJ + vK;
+              int shift = 4 * vertexIndex;
+              sunlight |= lightVal << shift;
+            }
+
         std::vector<Chunk::Voxel>& mesh = Block::HasTransparency(blockType) ? transparentMesh : opaqueMesh;
-        mesh.push_back(Chunk::Voxel(voxelData, quadData1, quadData2));
+        mesh.push_back(Chunk::Voxel(voxelData, quadData1, quadData2, sunlight));
       }
 
   bool meshGenrated = !opaqueMesh.empty() || !transparentMesh.empty();

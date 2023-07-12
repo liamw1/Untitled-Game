@@ -6,6 +6,20 @@
 #include "Util/LRUCache.h"
 #include "Player/Player.h"
 
+class ChunkFiller
+{
+public:
+  static void SetComposition(Chunk& chunk, Array3D<Block::Type, Chunk::Size()>&& composition)
+  {
+    chunk.setComposition(std::move(composition));
+  }
+
+  static void SetLighting(Chunk& chunk, Array3D<Block::Light, Chunk::Size()>&& light)
+  {
+    chunk.setLighting(std::move(light));
+  }
+};
+
 Terrain::CompoundSurfaceData::CompoundSurfaceData() = default;
 Terrain::CompoundSurfaceData::CompoundSurfaceData(length_t surfaceElevation, Block::Type blockType)
   : m_Elevation(surfaceElevation), m_Components(blockType) {}
@@ -271,10 +285,26 @@ static void foliageStage(Array3D<Block::Type, Chunk::Size()>& composition, const
     }
 }
 
-Array3D<Block::Type, Chunk::Size()> Terrain::GenerateNew(const GlobalIndex& chunkIndex)
+static void lightingStage(Array3D<Block::Light, Chunk::Size()>& lighting, const Array3D<Block::Type, Chunk::Size()>& composition)
 {
-  Array2D<length_t, Chunk::Size()> heightMap = AllocateArray2D<length_t, Chunk::Size()>();
-  Array3D<Block::Type, Chunk::Size()> composition = AllocateArray3D<Block::Type, Chunk::Size()>();
+  for (blockIndex_t i = 0; i < Chunk::Size(); ++i)
+    for (blockIndex_t j = 0; j < Chunk::Size(); ++j)
+    {
+      blockIndex_t k = 0;
+      while (k < Chunk::Size() && !Block::HasTransparency(composition[i][j][k]))
+      {
+        lighting[i][j][k] = Block::Light(0);
+        k++;
+      }
+      for (; k < Chunk::Size(); ++k)
+        lighting[i][j][k] = Block::Light(Block::Light::MaxValue());
+    }
+}
+
+Chunk Terrain::GenerateNew(const GlobalIndex& chunkIndex)
+{
+  Array2D heightMap = AllocateArray2D<length_t, Chunk::Size()>();
+  Array3D composition = AllocateArray3D<Block::Type, Chunk::Size()>();
 
   std::lock_guard lock(s_Mutex);
 
@@ -285,10 +315,20 @@ Array3D<Block::Type, Chunk::Size()> Terrain::GenerateNew(const GlobalIndex& chun
   if (isEmpty(composition))
     composition.reset();
 
-  return composition;
+  Chunk newChunk(chunkIndex);
+  if (composition)
+  {
+    Array3D lighting = AllocateArray3D<Block::Light, Chunk::Size()>();
+    lightingStage(lighting, composition);
+
+    ChunkFiller::SetComposition(newChunk, std::move(composition));
+    ChunkFiller::SetLighting(newChunk, std::move(lighting));
+  }
+
+  return newChunk;
 }
 
-Array3D<Block::Type, Chunk::Size()> Terrain::GenerateEmpty(const GlobalIndex& chunkIndex)
+Chunk Terrain::GenerateEmpty(const GlobalIndex& chunkIndex)
 {
-  return AllocateArray3D<Block::Type, Chunk::Size()>(Block::Type::Air);
+  return Chunk(chunkIndex);
 }

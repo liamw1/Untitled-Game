@@ -7,11 +7,13 @@ Chunk::Chunk() = default;
 
 Chunk::Chunk(const GlobalIndex& chunkIndex)
   : m_Composition(),
+    m_Lighting(),
     m_GlobalIndex(chunkIndex),
-    m_NonOpaqueFaces(0) {}
+    m_NonOpaqueFaces(0x3F) {}
 
 Chunk::Chunk(Chunk&& other) noexcept
   : m_Composition(std::move(other.m_Composition)),
+    m_Lighting(std::move(other.m_Lighting)),
     m_GlobalIndex(std::move(other.m_GlobalIndex)),
     m_NonOpaqueFaces(other.m_NonOpaqueFaces.load()) {}
 
@@ -20,6 +22,7 @@ Chunk& Chunk::operator=(Chunk&& other) noexcept
   if (this != &other)
   {
     m_Composition = std::move(other.m_Composition);
+    m_Lighting = std::move(other.m_Lighting);
     m_GlobalIndex = std::move(other.m_GlobalIndex);
     m_NonOpaqueFaces.store(other.m_NonOpaqueFaces.load());
   }
@@ -36,14 +39,24 @@ bool Chunk::empty() const
   return !m_Composition;
 }
 
+Block::Type Chunk::getBlockType(const BlockIndex& blockIndex) const
+{
+  return getBlockType(blockIndex.i, blockIndex.j, blockIndex.k);
+}
+
 Block::Type Chunk::getBlockType(blockIndex_t i, blockIndex_t j, blockIndex_t k) const
 {
   return m_Composition[i][j][k];
 }
 
-Block::Type Chunk::getBlockType(const BlockIndex& blockIndex) const
+Block::Light Chunk::getBlockLight(const BlockIndex& blockIndex) const
 {
-  return getBlockType(blockIndex.i, blockIndex.j, blockIndex.k);
+  return getBlockLight(blockIndex.i, blockIndex.j, blockIndex.k);
+}
+
+Block::Light Chunk::getBlockLight(blockIndex_t i, blockIndex_t j, blockIndex_t k) const
+{
+  return m_Lighting[i][j][k];
 }
 
 bool Chunk::isFaceOpaque(Direction face) const
@@ -69,8 +82,8 @@ void Chunk::setBlockType(blockIndex_t i, blockIndex_t j, blockIndex_t k, Block::
     if (blockType == Block::Type::Air)
       return;
 
-    // Elements will be default initialized to Air
     m_Composition = AllocateArray3D<Block::Type, c_ChunkSize>(Block::Type::Air);
+    m_Lighting = AllocateArray3D<Block::Light, c_ChunkSize>(15);
   }
   m_Composition[i][j][k] = blockType;
 }
@@ -80,11 +93,19 @@ void Chunk::setBlockType(const BlockIndex& blockIndex, Block::Type blockType)
   setBlockType(blockIndex.i, blockIndex.j, blockIndex.k, blockType);
 }
 
-void Chunk::setData(Array3D<Block::Type, c_ChunkSize> composition)
+void Chunk::setComposition(Array3D<Block::Type, c_ChunkSize>&& composition)
 {
   if (m_Composition)
-    EN_WARN("Calling setData on a non-empty chunk!  Deleting previous allocation...");
+    EN_WARN("Calling setComposition on a non-empty chunk!  Deleting previous allocation...");
   m_Composition = std::move(composition);
+  determineOpacity();
+}
+
+void Chunk::setLighting(Array3D<Block::Light, c_ChunkSize>&& lighting)
+{
+  if (m_Lighting)
+    EN_WARN("Calling setLighting on an already lit chunk!  Deleting previous allocation...");
+  m_Lighting = std::move(lighting);
   determineOpacity();
 }
 
@@ -119,7 +140,10 @@ void Chunk::determineOpacity()
 void Chunk::update(bool hasMesh)
 {
   if (!empty() && !hasMesh && getBlockType(0, 0, 0) == Block::Type::Air)
+  {
     m_Composition.reset();
+    m_Lighting.reset();
+  }
 
   determineOpacity();
 }
@@ -128,8 +152,9 @@ void Chunk::reset()
 {
   // Reset data to default values
   m_Composition.reset();
+  m_Lighting.reset();
   m_GlobalIndex = {};
-  m_NonOpaqueFaces.store(0);
+  m_NonOpaqueFaces.store(0x3F);
 }
 
 _Acquires_lock_(return) std::lock_guard<std::mutex> Chunk::acquireLock() const
@@ -140,8 +165,11 @@ _Acquires_lock_(return) std::lock_guard<std::mutex> Chunk::acquireLock() const
 
 
 Chunk::Voxel::Voxel() = default;
-Chunk::Voxel::Voxel(uint32_t voxelData, uint32_t quadData1, uint32_t quadData2)
-  : m_VoxelData(voxelData), m_QuadData1(quadData1), m_QuadData2(quadData2) {}
+Chunk::Voxel::Voxel(uint32_t voxelData, uint32_t quadData1, uint32_t quadData2, uint32_t vertexSunlight)
+  : m_VoxelData(voxelData),
+    m_QuadData1(quadData1),
+    m_QuadData2(quadData2),
+    m_Sunlight(vertexSunlight) {}
 
 blockIndex_t Chunk::Voxel::i() const { return (m_VoxelData & 0x001F0000u) >> 16u; }
 blockIndex_t Chunk::Voxel::j() const { return (m_VoxelData & 0x03E00000u) >> 21u; }

@@ -3,11 +3,11 @@
 #include "PlayerCamera.h"
 
 // Hitbox dimensions
-static constexpr length_t c_Width = 0.8_m * Block::Length();
+static constexpr length_t c_Width = 0.6_m * Block::Length();
 static constexpr length_t c_Height = 1.8_m * Block::Length();
 
 static bool s_FreeCamEnabled = false;
-static constexpr length_t c_TranslationSpeed = 25 * Block::Length();
+static constexpr length_t c_TranslationSpeed = 250 * Block::Length();
 
 // Designates origin of coordinate system
 static GlobalIndex s_OriginIndex;
@@ -80,7 +80,7 @@ void Player::UpdatePosition(Engine::Timestep timestep)
   // Update camera position
   const Vec3& viewDirection = s_CameraEntity.get<Component::Transform>().orientationDirection();
   Vec2 planarViewDirection = glm::normalize(Vec2(viewDirection));
-  Vec3 eyesPosition = Vec3(0.025 * c_Width * planarViewDirection + Vec2(newPosition), newPosition.z + 0.25 * c_Height);
+  Vec3 eyesPosition = Vec3(0.125 * c_Width * planarViewDirection + Vec2(newPosition), newPosition.z + 0.4 * c_Height);
   s_CameraEntity.get<Component::Transform>().position = eyesPosition;
 }
 

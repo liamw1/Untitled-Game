@@ -34,6 +34,6 @@ namespace Terrain
     operator CompoundSurfaceData() const { return CompoundSurfaceData(elevation, blockType); }
   };
 
-  Array3D<Block::Type, Chunk::Size()> GenerateNew(const GlobalIndex& chunkIndex);
-  Array3D<Block::Type, Chunk::Size()> GenerateEmpty(const GlobalIndex& chunkIndex);
+  Chunk GenerateNew(const GlobalIndex& chunkIndex);
+  Chunk GenerateEmpty(const GlobalIndex& chunkIndex);
 }
