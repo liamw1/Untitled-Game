@@ -1,5 +1,6 @@
 #pragma once
 #include "BufferLayout.h"
+#include "StorageBuffer.h"
 
 namespace Engine
 {
@@ -46,8 +47,8 @@ namespace Engine
       \param data Buffer of vertex data
       \param size Size of buffer in bytes
     */
-    void setVertexBuffer(const void* data, uint64_t size);
     virtual void setVertexBuffer(const void* data, uint32_t size) = 0;
+    virtual void setVertexBuffer(const std::shared_ptr<StorageBuffer>& vertexBuffer) = 0;
     virtual void updateVertexBuffer(const void* data, uint32_t offset, uint32_t size) const = 0;
     virtual void resizeVertexBuffer(uint32_t newSize) = 0;
 
@@ -58,7 +59,10 @@ namespace Engine
     */
     virtual void setIndexBuffer(const std::shared_ptr<const IndexBuffer>& indexBuffer) = 0;
 
+    virtual const BufferLayout& getLayout() const = 0;
     virtual const std::shared_ptr<const IndexBuffer>& getIndexBuffer() const = 0;
+
+    void setVertexBuffer(const void* data, uint64_t size);
 
     static std::unique_ptr<VertexArray> Create();
   };

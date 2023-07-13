@@ -168,6 +168,12 @@ namespace Engine
 #endif
   }
 
+  void OpenGLVertexArray::setVertexBuffer(const std::shared_ptr<StorageBuffer>& vertexBuffer)
+  {
+    m_VertexBuffer = vertexBuffer;
+    setLayout(m_VertexBufferLayout);
+  }
+
   void OpenGLVertexArray::updateVertexBuffer(const void* data, uint32_t offset, uint32_t size) const
   {
     m_VertexBuffer->update(data, offset, size);
@@ -197,6 +203,11 @@ namespace Engine
 #if EN_DEBUG
     unBind();
 #endif
+  }
+
+  const BufferLayout& OpenGLVertexArray::getLayout() const
+  {
+    return m_VertexBufferLayout;
   }
 
   const std::shared_ptr<const IndexBuffer>& OpenGLVertexArray::getIndexBuffer() const

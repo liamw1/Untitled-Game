@@ -49,12 +49,12 @@ namespace Engine
   {
     EN_PROFILE_FUNCTION();
 
-    std::size_t pos = 0;
+    size_t pos = 0;
     while ((pos = source.find("#define ", pos)) != std::string::npos)
     {
       pos += 8;
 
-      std::size_t endToken = source.find('\n', pos) - 1;
+      size_t endToken = source.find('\n', pos) - 1;
       std::string token = source.substr(pos, endToken - pos);
       pos = endToken;
 
@@ -71,16 +71,16 @@ namespace Engine
     std::unordered_map<std::string, std::string> shaderSources;
 
     const char* typeToken = "#type";
-    std::size_t typeTokenLength = strlen(typeToken);
+    size_t typeTokenLength = strlen(typeToken);
     pos = source.find(typeToken, 0);                          // Start of shader type declaration line
     while (pos != std::string::npos)
     {
-      std::size_t eol = source.find_first_of("\r\n", pos);    // End of shader type declaration line
+      size_t eol = source.find_first_of("\r\n", pos);    // End of shader type declaration line
       EN_CORE_ASSERT(eol != std::string::npos, "Syntax error");
-      std::size_t begin = pos + typeTokenLength + 1;          // Start of shader type name (after "#type" keyword)
+      size_t begin = pos + typeTokenLength + 1;          // Start of shader type name (after "#type" keyword)
       std::string type = source.substr(begin, eol - begin);
 
-      std::size_t nextLinePos = source.find_first_not_of("\r\n", eol);
+      size_t nextLinePos = source.find_first_not_of("\r\n", eol);
       EN_CORE_ASSERT(nextLinePos != std::string::npos, "Syntax error");
       pos = source.find(typeToken, nextLinePos);              // Start of next shader type declaration line
       shaderSources[type] = (pos == std::string::npos) ? source.substr(nextLinePos) : source.substr(nextLinePos, pos - nextLinePos);

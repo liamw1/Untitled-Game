@@ -28,7 +28,7 @@ namespace Engine::Threads
       return std::nullopt;
     }
 
-    std::size_t empty()
+    size_t empty()
     {
       std::lock_guard lock(m_Mutex);
       return m_Data.empty();
@@ -78,7 +78,7 @@ namespace Engine::Threads
       return std::nullopt;
     }
 
-    std::size_t empty()
+    size_t empty()
     {
       std::lock_guard lock(m_Mutex);
       return m_Data.empty();

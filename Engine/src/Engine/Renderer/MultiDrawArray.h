@@ -1,6 +1,6 @@
 #pragma once
 #include "VertexArray.h"
-#include <map>
+#include "MemoryPool.h"
 
 namespace Engine
 {
@@ -27,12 +27,12 @@ namespace Engine
 
     const Identifier& id() const { return m_ID; }
 
-    const std::shared_ptr<std::size_t>& commandIndex() const { return m_CommandIndex; }
+    const std::shared_ptr<size_t>& commandIndex() const { return m_CommandIndex; }
 
-    void setPlacement(int firstVertex, std::size_t commandIndex)
+    void setPlacement(int firstVertex, size_t commandIndex)
     {
       m_FirstVertex = firstVertex;
-      m_CommandIndex = std::make_shared<std::size_t>(commandIndex);
+      m_CommandIndex = std::make_shared<size_t>(commandIndex);
     }
 
     const void* vertexData() const { return static_cast<Derived*>(this)->vertexData(); }
@@ -44,7 +44,7 @@ namespace Engine
     uint32_t m_BaseInstance;
 
     Identifier m_ID;
-    std::shared_ptr<std::size_t> m_CommandIndex;
+    std::shared_ptr<size_t> m_CommandIndex;
   };
 
   /*
@@ -60,17 +60,23 @@ namespace Engine
     using Identifier = std::decay_t<decltype(std::declval<DrawCommand>().id())>;
 
     MultiDrawArray(const BufferLayout& layout)
-      : m_Capacity(c_InitialCapacity), m_Stride(layout.stride())
+      : m_Stride(layout.stride()),
+        m_MemoryPool(StorageBuffer::Type::VertexBuffer)
     {
       m_VertexArray = VertexArray::Create();
-      m_VertexArray->setVertexBuffer(nullptr, m_Capacity * m_Stride);
+      m_VertexArray->setVertexBuffer(m_MemoryPool.buffer());
       m_VertexArray->setLayout(layout);
-
-      addFreeRegion(0, m_Capacity);
     }
 
-    void bind() const { m_VertexArray->bind(); }
-    void unBind() const { m_VertexArray->unBind(); }
+    void bind() const
+    {
+      m_VertexArray->bind();
+    }
+
+    void unBind() const
+    {
+      m_VertexArray->unBind();
+    }
 
     void add(DrawCommand&& drawCommand)
     {
@@ -78,111 +84,32 @@ namespace Engine
       if (vertexCount == 0)
         return;
 
-      EN_CORE_ASSERT(m_Allocations.find(drawCommand.id()) == m_Allocations.end(), "Memory has already been allocated for region with given ID!");
+      EN_CORE_ASSERT(m_DrawCommandIndices.find(drawCommand.id()) == m_DrawCommandIndices.end(), "Draw command with ID {0} has already been allocated!", drawCommand.id());
 
-      FreeRegionsIterator bestFreeRegionPosition = m_FreeRegions.lower_bound(vertexCount);
-      MemoryRegionsIterator bestMemoryRegion = m_MemoryRegions.end();
-
-      if (bestFreeRegionPosition != m_FreeRegions.end())
-      {
-        int regionOffset = bestFreeRegionPosition->second;
-        m_FreeRegions.erase(bestFreeRegionPosition);
-
-        bestMemoryRegion = m_MemoryRegions.find(regionOffset);
-        EN_CORE_ASSERT(bestMemoryRegion != m_MemoryRegions.end(), "No memory region was found at offset {0}!", regionOffset);
-        EN_CORE_ASSERT(bestMemoryRegion->second.size >= vertexCount, "Memory region is not large enough to hold data!");
-      }
-      else
-      {
-        bestMemoryRegion = std::prev(m_MemoryRegions.end());
-        if (!bestMemoryRegion->second.isFree())
-        {
-          // Add to memory regions but defer adding to free regions until we know final size
-          auto [insertionPosition, insertionSuccess] = m_MemoryRegions.emplace(m_Capacity, 0);
-          bestMemoryRegion = insertionPosition;
-          EN_CORE_ASSERT(insertionSuccess, "Memory Region already exists at offset {0}!", m_Capacity);
-        }
-        else
-          removeFromFreeRegionsMap(bestMemoryRegion);
-
-        while (bestMemoryRegion->second.size < vertexCount)
-        {
-          uint32_t oldCapacity = m_Capacity;
-          m_Capacity = static_cast<uint32_t>(c_CapacityIncreaseOnResize * m_Capacity);
-          bestMemoryRegion->second.size += m_Capacity - oldCapacity;
-        }
-
-        m_VertexArray->resizeVertexBuffer(m_Capacity * m_Stride);
-      }
-
-      auto& [allocationOffset, allocationRegion] = *bestMemoryRegion;
-
-      // Update memory region container
-      int memoryLeftover = allocationRegion.size - vertexCount;
-      allocationRegion.id = drawCommand.id();
-      allocationRegion.size = vertexCount;
-
-      // Update free region container if necessary
-      if (memoryLeftover)
-        addFreeRegion(allocationOffset + allocationRegion.size, memoryLeftover);
+      auto [triggeredResize, allocationAddress] = m_MemoryPool.add(drawCommand.vertexData(), vertexCount * m_Stride);
+      if (triggeredResize)
+        m_VertexArray->setLayout(m_VertexArray->getLayout());
 
       // Update allocations container
-      drawCommand.setPlacement(allocationOffset, m_DrawCommands.size());
-      m_Allocations.emplace(drawCommand.id(), drawCommand.commandIndex());
+      int firstVertex = static_cast<int>(allocationAddress / m_Stride);
+      drawCommand.setPlacement(firstVertex, m_DrawCommands.size());
+      m_DrawCommandIndices.emplace(drawCommand.id(), drawCommand.commandIndex());
 
-      // Upload vertex data and update draw commands container
-      uploadVertexData(drawCommand);
+      // Update draw commands container
       m_DrawCommands.push_back(std::move(drawCommand));
     }
 
     void remove(const Identifier& id)
     {
-      AllocationsIterator allocationToRemove = m_Allocations.find(id);
-      if (allocationToRemove == m_Allocations.end())
+      DrawCommandIndicesIterator drawCommandToRemove = m_DrawCommandIndices.find(id);
+      if (drawCommandToRemove == m_DrawCommandIndices.end())
         return;
 
-      std::size_t drawCommandIndex = *allocationToRemove->second;
-      int freedRegionOffset = m_DrawCommands[drawCommandIndex].firstVertex();
-      MemoryRegionsIterator freedRegionPosition = m_MemoryRegions.find(freedRegionOffset);
-      EN_CORE_ASSERT(freedRegionPosition != m_MemoryRegions.end(), "No memory region was found at offset {0}!", freedRegionOffset);
-      EN_CORE_ASSERT(!freedRegionPosition->second.isFree(), "Region is already free!");
-
-      int freedRegionSize = freedRegionPosition->second.size;
-
-      // If previous region is free, merge with newly freed region
-      if (freedRegionPosition != m_MemoryRegions.begin())
-      {
-        MemoryRegionsIterator prevRegionPosition = std::prev(freedRegionPosition);
-        const auto& [prevRegionOffset, prevRegion] = *prevRegionPosition;
-        if (prevRegion.isFree())
-        {
-          freedRegionOffset = prevRegionOffset;
-          freedRegionSize += prevRegion.size;
-
-          removeFromFreeRegionsMap(prevRegionPosition);
-          freedRegionPosition = m_MemoryRegions.erase(prevRegionPosition);
-        }
-      }
-
-      // If next region if free, merge with newly freed region
-      MemoryRegionsIterator nextRegionPosition = m_MemoryRegions.erase(freedRegionPosition);
-      if (nextRegionPosition != m_MemoryRegions.end())
-      {
-        const auto& [nextRegionOffset, nextRegion] = *nextRegionPosition;
-        if (nextRegion.isFree())
-        {
-          freedRegionSize += nextRegion.size;
-
-          removeFromFreeRegionsMap(nextRegionPosition);
-          m_MemoryRegions.erase(nextRegionPosition);
-        }
-      }
-
-      // Update free regions container
-      addFreeRegion(freedRegionOffset, freedRegionSize);
+      size_t drawCommandIndex = *drawCommandToRemove->second;
+      m_MemoryPool.remove(getDrawCommandAddress(m_DrawCommands[drawCommandIndex]));
 
       // Update allocations container
-      m_Allocations.erase(allocationToRemove);
+      m_DrawCommandIndices.erase(drawCommandToRemove);
 
       // Update draw command container
       std::swap(m_DrawCommands[drawCommandIndex], m_DrawCommands.back());
@@ -237,75 +164,25 @@ namespace Engine
             EN_CORE_ERROR("Ammended draw command added additional vertices! Discarding changes...");
             continue;
           }
-          uploadVertexData(*it);
+          m_MemoryPool.amend(it->vertexData(), getDrawCommandAddress(*it));
         }
       }
     }
 
     const std::vector<DrawCommand>& getDrawCommandBuffer() const { return m_DrawCommands; }
 
-    float usage() const
-    {
-      int dataSize = 0;
-      for (const auto& [offset, region] : m_MemoryRegions)
-        if (!region.isFree())
-          dataSize += region.size;
-      return static_cast<float>(dataSize) / m_Capacity;
-    }
-
   private:
-    struct MemoryRegion
-    {
-      std::optional<Identifier> id;
-      int size;
+    using DrawCommandIndicesIterator = std::unordered_map<Identifier, std::shared_ptr<size_t>>::iterator;
 
-      bool isFree() const { return !id; }
-
-      MemoryRegion(int regionSize)
-        : id(std::nullopt), size(regionSize) {}
-    };
-
-    using MemoryRegionsIterator = std::map<int, MemoryRegion>::iterator;
-    using FreeRegionsIterator = std::multimap<int, int>::iterator;
-    using AllocationsIterator = std::unordered_map<Identifier, std::shared_ptr<std::size_t>>::iterator;
-
-    static constexpr int c_InitialCapacity = 64;
-    static constexpr float c_CapacityIncreaseOnResize = 1.25f;
-
+    int m_Stride;
+    MemoryPool m_MemoryPool;
     std::unique_ptr<VertexArray> m_VertexArray;
-    std::map<int, MemoryRegion> m_MemoryRegions;                                  // For fast access based on vertex offset
-    std::multimap<int, int> m_FreeRegions;                                        // For fast access based on free region size
-    std::unordered_map<Identifier, std::shared_ptr<std::size_t>> m_Allocations;   // For fast access based on ID
-    std::vector<DrawCommand> m_DrawCommands;                                      // For fast iteration over draw commands
-    uint32_t m_Capacity;
-    uint32_t m_Stride;
+    std::vector<DrawCommand> m_DrawCommands;
+    std::unordered_map<Identifier, std::shared_ptr<size_t>> m_DrawCommandIndices;
 
-    void addFreeRegion(int offset, int size)
+    size_t getDrawCommandAddress(const DrawCommand& drawCommand)
     {
-      m_MemoryRegions.emplace(offset, size);
-      m_FreeRegions.emplace(size, offset);
-    }
-
-    void removeFromFreeRegionsMap(MemoryRegionsIterator it)
-    {
-      removeFromFreeRegionsMap(it->first, it->second.size);
-    }
-
-    void removeFromFreeRegionsMap(int offset, int size)
-    {
-      auto [begin, end] = m_FreeRegions.equal_range(size);
-      for (FreeRegionsIterator it = begin; it != end; ++it)
-        if (it->second == offset)
-        {
-          m_FreeRegions.erase(it);
-          return;
-        }
-      EN_CORE_ERROR("No region at offset {0} of size {1} found!", offset, size);
-    }
-
-    void uploadVertexData(const DrawCommand& drawCommand)
-    {
-      m_VertexArray->updateVertexBuffer(drawCommand.vertexData(), drawCommand.firstVertex() * m_Stride, drawCommand.vertexCount() * m_Stride);
+      return drawCommand.firstVertex() * m_Stride;
     }
   };
 }
