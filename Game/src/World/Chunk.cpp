@@ -188,13 +188,15 @@ _Acquires_lock_(return) std::lock_guard<std::mutex> Chunk::acquireLockGuard() co
 
 
 Chunk::Vertex::Vertex()
-  : m_Data(0) {}
-Chunk::Vertex::Vertex(const BlockIndex& vertexPlacement, int quadIndex, int ambientOcclusion, Block::Texture texture)
+  : m_VertexData(0), m_Lighting(0) {}
+Chunk::Vertex::Vertex(const BlockIndex& vertexPlacement, int quadIndex, Block::Texture texture, int sunlight, int ambientOcclusion)
 {
-  m_Data  = vertexPlacement.i + (vertexPlacement.j << 6) + (vertexPlacement.k << 12);
-  m_Data |= quadIndex << 18;
-  m_Data |= ambientOcclusion << 20;
-  m_Data |= static_cast<blockTexID>(texture) << 22;
+  m_VertexData =  vertexPlacement.i + (vertexPlacement.j << 6) + (vertexPlacement.k << 12);
+  m_VertexData |= quadIndex << 18;
+  m_VertexData |= static_cast<blockTexID>(texture) << 20;
+
+  m_Lighting =  sunlight << 16;
+  m_Lighting |= ambientOcclusion << 20;
 }
 
 const BlockIndex& Chunk::Vertex::GetOffset(Direction face, int quadIndex)
@@ -212,7 +214,7 @@ const BlockIndex& Chunk::Vertex::GetOffset(Direction face, int quadIndex)
 
 
 
-Chunk::Quad::Quad(const BlockIndex& blockIndex, Direction face, Block::Texture texture, std::array<int, 4> ambientOcclusion)
+Chunk::Quad::Quad(const BlockIndex& blockIndex, Direction face, Block::Texture texture, const std::array<int, 4>& sunlight, const std::array<int, 4>& ambientOcclusion)
 {
   static constexpr std::array<int, 4> standardOrder = { 0, 1, 2, 3 };
   static constexpr std::array<int, 4> reversedOrder = { 1, 3, 0, 2 };
@@ -224,7 +226,7 @@ Chunk::Quad::Quad(const BlockIndex& blockIndex, Direction face, Block::Texture t
   {
     int quadIndex = quadOrder[i];
     BlockIndex vertexPlacement = blockIndex + Vertex::GetOffset(face, quadIndex);
-    m_Vertices[i] = Vertex(vertexPlacement, quadIndex, ambientOcclusion[quadIndex], texture);
+    m_Vertices[i] = Vertex(vertexPlacement, quadIndex, texture, sunlight[quadIndex], ambientOcclusion[quadIndex]);
   }
 }
 
@@ -294,9 +296,9 @@ void Chunk::DrawCommand::prune()
   }
 }
 
-void Chunk::DrawCommand::addQuad(const BlockIndex& blockIndex, Direction face, Block::Texture texture, std::array<int, 4> ambientOcclusion)
+void Chunk::DrawCommand::addQuad(const BlockIndex& blockIndex, Direction face, Block::Texture texture, const std::array<int, 4>& sunlight, const std::array<int, 4>& ambientOcclusion)
 {
-  m_Quads.emplace_back(blockIndex, face, texture, ambientOcclusion);
+  m_Quads.emplace_back(blockIndex, face, texture, sunlight, ambientOcclusion);
   m_IndexCount += 6;
 }
 

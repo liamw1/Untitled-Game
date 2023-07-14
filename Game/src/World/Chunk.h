@@ -80,18 +80,19 @@ public:
   {
   public:
     Vertex();
-    Vertex(const BlockIndex& vertexPlacement, int quadIndex, int ambientOcclusion, Block::Texture texture);
+    Vertex(const BlockIndex& vertexPlacement, int quadIndex, Block::Texture texture, int sunlight, int ambientOcclusion);
 
     static const BlockIndex& GetOffset(Direction face, int quadIndex);
 
   private:
-    uint32_t m_Data;
+    uint32_t m_VertexData;
+    uint32_t m_Lighting;
   };
 
   class Quad
   {
   public:
-    Quad(const BlockIndex& blockIndex, Direction face, Block::Texture texture, std::array<int, 4> ambientOcclusion);
+    Quad(const BlockIndex& blockIndex, Direction face, Block::Texture texture, const std::array<int, 4>& sunlight, const std::array<int, 4>& ambientOcclusion);
 
   private:
     std::array<Vertex, 4> m_Vertices;
@@ -128,7 +129,7 @@ public:
     const void* vertexData();
     void prune();
 
-    void addQuad(const BlockIndex& blockIndex, Direction face, Block::Texture texture, std::array<int, 4> ambientOcclusion);
+    void addQuad(const BlockIndex& blockIndex, Direction face, Block::Texture texture, const std::array<int, 4>& sunlight, const std::array<int, 4>& ambientOcclusion);
     void addVoxel(const BlockIndex& blockIndex, uint8_t enabledFaces);
 
     void setIndices();

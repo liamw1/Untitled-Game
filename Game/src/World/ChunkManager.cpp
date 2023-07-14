@@ -524,6 +524,31 @@ bool ChunkManager::meshChunk(const GlobalIndex& chunkIndex)
           if (cardinalNeighbor == blockType || (!blockIsTransparent && !Block::HasTransparency(cardinalNeighbor)))
             continue;
 
+          enabledFaces |= 1 << static_cast<int>(face);
+
+          // Calculate lighting
+          std::array<int, 4> sunlight{};
+          for (int quadIndex = 0; quadIndex < 4; ++quadIndex)
+          {
+            int transparentNeighbors = 0;
+            int totalSunlight = 0;
+            BlockIndex vertexPosition = blockIndex + Chunk::Vertex::GetOffset(face, quadIndex);
+            for (int I = -1; I <= 0; ++I)
+              for (int J = -1; J <= 0; ++J)
+                for (int K = -1; K <= 0; ++K)
+                {
+                  BlockIndex neighbor = vertexPosition + BlockIndex(I, J, K);
+                  if (Block::HasTransparency(blockData.getType(neighbor)))
+                  {
+                    totalSunlight += blockData.getLight(neighbor).sunlight();
+                    transparentNeighbors++;
+                  }
+                }
+
+            sunlight[quadIndex] = totalSunlight / std::max(transparentNeighbors, 1);
+          }
+
+          // Calculate ambient occlusion
           std::array<int, 4> quadAmbientOcclusion{};
           Block::Texture quadTexture = Block::GetTexture(blockType, face);
           if (!Block::HasTransparency(quadTexture))
@@ -546,8 +571,7 @@ bool ChunkManager::meshChunk(const GlobalIndex& chunkIndex)
               quadAmbientOcclusion[quadIndex] = edgeAIsOpaque && edgeBIsOpaque ? 3 : edgeAIsOpaque + edgeBIsOpaque + cornerIsOpaque;
             }
 
-          enabledFaces |= 1 << static_cast<int>(face);
-          draw.addQuad(blockIndex, face, quadTexture, quadAmbientOcclusion);
+          draw.addQuad(blockIndex, face, quadTexture, sunlight, quadAmbientOcclusion);
         }
 
         if (enabledFaces == 0)

@@ -122,12 +122,12 @@ bool Block::HasTransparency(Texture texture)
   EN_ASSERT(s_Initialized, "Blocks have not been initialized!");
   switch (texture)
   {
-    case Block::Texture::Invisible:   return true;
-    case Block::Texture::OakLeaves:   return true;
-    case Block::Texture::FallLeaves:  return true;
-    case Block::Texture::Glass:       return true;
-    case Block::Texture::Water:       return true;
-    default:                          return false;
+    case Texture::Invisible:   return true;
+    case Texture::OakLeaves:   return true;
+    case Texture::FallLeaves:  return true;
+    case Texture::Glass:       return true;
+    case Texture::Water:       return true;
+    default:                   return false;
   }
 }
 
@@ -136,12 +136,12 @@ bool Block::HasTransparency(Type block)
   EN_ASSERT(s_Initialized, "Blocks have not been initialized!");
   switch (block)
   {
-    case Block::Type::Air:        return true;
-    case Block::Type::OakLeaves:  return true;
-    case Block::Type::FallLeaves: return true;
-    case Block::Type::Glass:      return true;
-    case Block::Type::Water:      return true;
-    default:                      return false;
+    case Type::Air:        return true;
+    case Type::OakLeaves:  return true;
+    case Type::FallLeaves: return true;
+    case Type::Glass:      return true;
+    case Type::Water:      return true;
+    default:               return false;
   }
 }
 
@@ -150,9 +150,9 @@ bool Block::HasCollision(Type block)
   EN_ASSERT(s_Initialized, "Blocks have not been initialized!");
   switch (block)
   {
-    case Block::Type::Air:    return false;
-    case Block::Type::Water:  return false;
-    default:                  return true;
+    case Type::Air:    return false;
+    case Type::Water:  return false;
+    default:           return true;
   }
 }
 
