@@ -132,7 +132,7 @@ namespace Engine
     s_WireFrameVertexArray = VertexArray::Create();
     s_WireFrameVertexArray->setLayout({ { ShaderDataType::Float3, "a_Position"  },
                                         { ShaderDataType::Float4, "a_Color"     } });
-    s_WireFrameVertexArray->setIndexBuffer(IndexBuffer::Create(c_CubeFrameIndices, 24));
+    s_WireFrameVertexArray->setIndexBuffer(IndexBuffer(c_CubeFrameIndices, 24));
 
     /* Cube Initialization */
     s_CubeVertexArray = VertexArray::Create();
@@ -154,7 +154,7 @@ namespace Engine
       cubeIndices[6 * face + 4] = 3 + 4 * face;
       cubeIndices[6 * face + 5] = 0 + 4 * face;
     }
-    s_CubeVertexArray->setIndexBuffer(IndexBuffer::Create(cubeIndices, 36));
+    s_CubeVertexArray->setIndexBuffer(IndexBuffer(cubeIndices, 36));
 
     /* Texture Initialization */
     s_WhiteTexture = Texture2D::Create(1, 1);

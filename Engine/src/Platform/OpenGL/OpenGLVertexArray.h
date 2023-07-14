@@ -4,24 +4,6 @@
 
 namespace Engine
 {
-  class OpenGLIndexBuffer : public IndexBuffer
-  {
-  public:
-    OpenGLIndexBuffer(const uint32_t* indices, uint32_t count);
-    ~OpenGLIndexBuffer();
-
-    void bind() const override;
-    void unBind() const override;
-
-    uint32_t getCount() const override;
-
-  private:
-    uint32_t m_RendererID;
-    uint32_t m_Count;
-  };
-
-
-
   class OpenGLVertexArray : public VertexArray
   {
   public:
@@ -38,15 +20,16 @@ namespace Engine
     void updateVertexBuffer(const void* data, uint32_t offset, uint32_t size) const override;
     void resizeVertexBuffer(uint32_t newSize) override;
 
-    void setIndexBuffer(const std::shared_ptr<const IndexBuffer>& indexBuffer) override;
+    void setIndexBuffer(const IndexBuffer& indexBuffer) override;
+    void setIndexBuffer(const std::shared_ptr<StorageBuffer>& indexBufferStorage) override;
 
     const BufferLayout& getLayout() const override;
-    const std::shared_ptr<const IndexBuffer>& getIndexBuffer() const override;
+    const std::optional<IndexBuffer>& getIndexBuffer() const override;
 
   private:
     uint32_t m_RendererID;
     BufferLayout m_VertexBufferLayout;
+    std::optional<IndexBuffer> m_IndexBuffer;
     std::shared_ptr<StorageBuffer> m_VertexBuffer;
-    std::shared_ptr<const IndexBuffer> m_IndexBuffer;
   };
 }

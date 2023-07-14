@@ -8,6 +8,7 @@ namespace Engine
     enum class Type
     {
       VertexBuffer,
+      IndexBuffer,
       SSBO
     };
 
@@ -16,6 +17,9 @@ namespace Engine
 
     virtual void bind() const = 0;
     virtual void unBind() const = 0;
+
+    virtual uint32_t size() const = 0;
+    virtual Type type() const = 0;
 
     virtual void set(const void* data, uint32_t size) = 0;
     virtual void update(const void* data, uint32_t offset, uint32_t size) = 0;

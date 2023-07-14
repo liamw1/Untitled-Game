@@ -3,10 +3,12 @@
 #include "Player/Player.h"
 #include "World/Biome.h"
 #include "World/LOD.h"
+#include <numeric>
 
 GameSandbox::GameSandbox()
   : Layer("GameSandbox"),
-    m_PrintFrameRate(false)
+    m_PrintFrameRate(false),
+    m_PrintMinFrameRate(false)
 {
   Player::Initialize(GlobalIndex(0, 0, 2), Block::Length() * Vec3(16.0));
   Engine::RenderCommand::Initialize();
@@ -33,7 +35,7 @@ void GameSandbox::onUpdate(Engine::Timestep timestep)
 {
   EN_PROFILE_FUNCTION();
 
-  if (m_PrintFrameRate)
+  if (m_PrintFrameRate || m_PrintMinFrameRate)
   {
     static constexpr int framerateWindowSize = 100;
 
@@ -42,8 +44,16 @@ void GameSandbox::onUpdate(Engine::Timestep timestep)
     if (m_FrameTimeWindow.size() > framerateWindowSize)
       m_FrameTimeWindow.pop_back();
 
-    float maxFrameTime = *std::max_element(m_FrameTimeWindow.begin(), m_FrameTimeWindow.end());
-    EN_TRACE("Min FPS: {0}", static_cast<int>(1.0f / maxFrameTime));
+    if (m_PrintFrameRate)
+    {
+      float averageFrameTime = std::accumulate(m_FrameTimeWindow.begin(), m_FrameTimeWindow.end(), 0.0f) / m_FrameTimeWindow.size();
+      EN_TRACE("FPS: {0}", static_cast<int>(1.0f / averageFrameTime));
+    }
+    else
+    {
+      float maxFrameTime = *std::max_element(m_FrameTimeWindow.begin(), m_FrameTimeWindow.end());
+      EN_TRACE("Min FPS: {0}", static_cast<int>(1.0f / maxFrameTime));
+    }
   }
 
   Engine::RenderCommand::SetDepthWriting(true);
@@ -84,9 +94,9 @@ bool GameSandbox::onKeyPressEvent(Engine::KeyPressEvent& event)
     Engine::RenderCommand::SetWireFrame(wireFrameEnabled);
   }
   if (event.keyCode() == Key::F2)
-  {
     m_PrintFrameRate = !m_PrintFrameRate;
-  }
+  if (event.keyCode() == Key::F3)
+    m_PrintMinFrameRate = !m_PrintMinFrameRate;
 
   return false;
 }

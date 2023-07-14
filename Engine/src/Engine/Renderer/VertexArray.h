@@ -6,25 +6,22 @@ namespace Engine
 {
   /*
     Abstract representation of an index buffer.
-    Platform-specific implementation is determined by derived class.
     NOTE: Currently Engine only supports 32-bit index buffers
   */
   class IndexBuffer
   {
   public:
-    virtual ~IndexBuffer();
+    IndexBuffer(const uint32_t* indices, uint32_t count);
+    IndexBuffer(const std::vector<uint32_t>& indices);
+    IndexBuffer(const std::shared_ptr<StorageBuffer>& indexBufferStorage);
 
-    virtual void bind() const = 0;
-    virtual void unBind() const = 0;
+    void bind() const;
+    void unBind() const;
 
-    virtual uint32_t getCount() const = 0;
+    uint32_t count() const;
 
-    /*
-      \param indices Buffer of vertex indices
-      \param count   Number of indices
-    */
-    static std::unique_ptr<IndexBuffer> Create(const uint32_t* indices, uint32_t count);
-    static std::unique_ptr<IndexBuffer> Create(const std::vector<uint32_t>& indices);
+  private:
+    std::shared_ptr<StorageBuffer> m_Buffer;
   };
 
 
@@ -57,10 +54,11 @@ namespace Engine
       The count of this array should be a multiple of 3 (for drawing triangles).
       OpenGL expects vertices to be in counter-clockwise orientation.
     */
-    virtual void setIndexBuffer(const std::shared_ptr<const IndexBuffer>& indexBuffer) = 0;
+    virtual void setIndexBuffer(const IndexBuffer& indexBuffer) = 0;
+    virtual void setIndexBuffer(const std::shared_ptr<StorageBuffer>& indexBufferStorage) = 0;
 
     virtual const BufferLayout& getLayout() const = 0;
-    virtual const std::shared_ptr<const IndexBuffer>& getIndexBuffer() const = 0;
+    virtual const std::optional<IndexBuffer>& getIndexBuffer() const = 0;
 
     void setVertexBuffer(const void* data, uint64_t size);
 

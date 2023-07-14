@@ -4,6 +4,16 @@
 
 namespace Engine
 {
+  /*
+    Helper class for managing GPU memory. Provides O(log(n) + m) insertion and removal, where
+    n is the number of allocations and m is the mode of allocation sizes. Hence, this class is not
+    suited for storing many identically-sized pieces of memory. Submitted data is stored in a single
+    dynamically-resizing buffer on the GPU. The class tries to place memory into the buffer in a way
+    that minimizes gaps between allocations, without dislocating existing allocations.
+
+    Note: This class could be modified to remove the 'm' from the insertion/removal time complexity,
+          but it's more trouble than it's worth at the moment as it hasn't been a problem yet.
+  */
   class MemoryPool
   {
   public:

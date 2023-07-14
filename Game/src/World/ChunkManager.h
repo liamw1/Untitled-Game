@@ -50,23 +50,19 @@ private:
   };
 
   // Rendering
-  static inline std::unique_ptr<Engine::Shader> s_OpaqueVoxelShader;
-  static inline std::unique_ptr<Engine::Shader> s_TransparentVoxelShader;
+  static inline std::unique_ptr<Engine::Shader> s_Shader;
   static inline std::unique_ptr<Engine::StorageBuffer> s_SSBO;
   static inline std::shared_ptr<Engine::TextureArray> s_TextureArray;
-  static inline const Engine::BufferLayout s_VertexBufferLayout = { { ShaderDataType::Uint32, "a_VoxelData" },
-                                                                    { ShaderDataType::Uint32, "a_QuadData1" },
-                                                                    { ShaderDataType::Uint32, "a_QuadData2" },
-                                                                    { ShaderDataType::Uint32, "a_Sunlight"  } };
+  static inline const Engine::BufferLayout s_VertexBufferLayout = { { ShaderDataType::Uint32, "a_VertexData" } };
   static constexpr int c_TextureSlot = 0;
   static constexpr int c_StorageBufferBinding = 0;
   static constexpr uint32_t c_StorageBufferSize = static_cast<uint32_t>(pow2(20));
 
   Engine::Threads::UnorderedSetQueue<Chunk::DrawCommand> m_OpaqueCommandQueue;
-  std::unique_ptr<Engine::MultiDrawArray<Chunk::DrawCommand>> m_OpaqueMultiDrawArray;
+  std::unique_ptr<Engine::MultiDrawIndexedArray<Chunk::DrawCommand>> m_OpaqueMultiDrawArray;
 
   Engine::Threads::UnorderedSetQueue<Chunk::DrawCommand> m_TransparentCommandQueue;
-  std::unique_ptr<Engine::MultiDrawArray<Chunk::DrawCommand>> m_TransparentMultiDrawArray;
+  std::unique_ptr<Engine::MultiDrawIndexedArray<Chunk::DrawCommand>> m_TransparentMultiDrawArray;
 
   // Multi-threading
   std::atomic<bool> m_Running;

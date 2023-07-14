@@ -18,6 +18,7 @@ private:
   World m_World;
   std::list<float> m_FrameTimeWindow;
   bool m_PrintFrameRate;
+  bool m_PrintMinFrameRate;
 
   bool onKeyPressEvent(Engine::KeyPressEvent& event);
 };

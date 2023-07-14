@@ -22,11 +22,9 @@ namespace Engine
         m_CommandIndex(nullptr) {}
 
     int vertexCount() const { return m_VertexCount; }
-
     int firstVertex() const { return m_FirstVertex; }
 
     const Identifier& id() const { return m_ID; }
-
     const std::shared_ptr<size_t>& commandIndex() const { return m_CommandIndex; }
 
     void setPlacement(int firstVertex, size_t commandIndex)
@@ -36,6 +34,7 @@ namespace Engine
     }
 
     const void* vertexData() const { return static_cast<Derived*>(this)->vertexData(); }
+    void prune() { return static_cast<Derived*>(this)->prune(); }
 
   protected:
     uint32_t m_VertexCount;
@@ -49,7 +48,7 @@ namespace Engine
 
   /*
     Stores and manages a set of multi-draw commands. Commands are queried using their unique ID,
-    the type of which is user-specified. Provides O(log(n)) insertion and removal, while keeping
+    the type of which is user-specified. Provides fast insertion and removal, while keeping
     draw commands tightly packed. Vertex data is stored in a single dynamically-resizing buffer
     on the gpu. Additionally, the class provides operations on draw commands, such as sorting.
   */
@@ -68,15 +67,8 @@ namespace Engine
       m_VertexArray->setLayout(layout);
     }
 
-    void bind() const
-    {
-      m_VertexArray->bind();
-    }
-
-    void unBind() const
-    {
-      m_VertexArray->unBind();
-    }
+    void bind() const { m_VertexArray->bind(); }
+    void unBind() const { m_VertexArray->unBind(); }
 
     void add(DrawCommand&& drawCommand)
     {
@@ -89,13 +81,12 @@ namespace Engine
       auto [triggeredResize, allocationAddress] = m_MemoryPool.add(drawCommand.vertexData(), vertexCount * m_Stride);
       if (triggeredResize)
         m_VertexArray->setLayout(m_VertexArray->getLayout());
+      drawCommand.prune();
 
-      // Update allocations container
       int firstVertex = static_cast<int>(allocationAddress / m_Stride);
       drawCommand.setPlacement(firstVertex, m_DrawCommands.size());
-      m_DrawCommandIndices.emplace(drawCommand.id(), drawCommand.commandIndex());
 
-      // Update draw commands container
+      m_DrawCommandIndices.emplace(drawCommand.id(), drawCommand.commandIndex());
       m_DrawCommands.push_back(std::move(drawCommand));
     }
 
@@ -107,8 +98,6 @@ namespace Engine
 
       size_t drawCommandIndex = *drawCommandToRemove->second;
       m_MemoryPool.remove(getDrawCommandAddress(m_DrawCommands[drawCommandIndex]));
-
-      // Update allocations container
       m_DrawCommandIndices.erase(drawCommandToRemove);
 
       // Update draw command container

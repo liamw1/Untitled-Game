@@ -153,7 +153,7 @@ namespace Engine
 
       offset += 4;
     }
-    std::shared_ptr<IndexBuffer> quadIndexBuffer = IndexBuffer::Create(quadIndices, c_MaxQuadIndices);
+    IndexBuffer quadIndexBuffer(quadIndices, c_MaxQuadIndices);
     delete[] quadIndices;
 
     s_QuadVertexArray = VertexArray::Create();

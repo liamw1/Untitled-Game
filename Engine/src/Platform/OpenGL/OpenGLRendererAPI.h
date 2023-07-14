@@ -25,6 +25,7 @@ namespace Engine
     void drawIndexedLines(const VertexArray* vertexArray, uint32_t indexCount) override;
 
     void multiDrawVertices(const void* drawCommands, int drawCount, int stride) override;
+    void multiDrawIndexed(const void* drawCommands, int drawCount, int stride) override;
 
     void clearDepthBuffer() override;
 

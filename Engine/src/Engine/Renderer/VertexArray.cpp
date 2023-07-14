@@ -5,22 +5,22 @@
 
 namespace Engine
 {
-  IndexBuffer::~IndexBuffer() = default;
-
-  std::unique_ptr<IndexBuffer> IndexBuffer::Create(const uint32_t* indices, uint32_t count)
+  IndexBuffer::IndexBuffer(const uint32_t* indices, uint32_t count)
+    : m_Buffer(StorageBuffer::Create(StorageBuffer::Type::IndexBuffer))
   {
-    switch (RendererAPI::GetAPI())
-    {
-      case RendererAPI::API::None:            EN_CORE_ASSERT(false, "RendererAPI::None is currently not supported!"); return nullptr;
-      case RendererAPI::API::OpenGL:          return std::make_unique<OpenGLIndexBuffer>(indices, count);
-      case RendererAPI::API::OpenGL_Legacy:   return std::make_unique<OpenGLIndexBuffer>(indices, count);
-      default:                                EN_CORE_ASSERT(false, "Unknown RendererAPI!"); return nullptr;
-    }
+    m_Buffer->set(indices, count * sizeof(uint32_t));
   }
+  IndexBuffer::IndexBuffer(const std::vector<uint32_t>& indices)
+    : IndexBuffer(indices.data(), static_cast<uint32_t>(indices.size())) {}
+  IndexBuffer::IndexBuffer(const std::shared_ptr<StorageBuffer>& indexBufferStorage)
+    : m_Buffer(indexBufferStorage) {}
 
-  std::unique_ptr<IndexBuffer> IndexBuffer::Create(const std::vector<uint32_t>& indices)
+  void IndexBuffer::bind() const { m_Buffer->bind(); }
+  void IndexBuffer::unBind() const { m_Buffer->unBind(); }
+
+  uint32_t IndexBuffer::count() const
   {
-    return IndexBuffer::Create(indices.data(), static_cast<uint32_t>(indices.size()));
+    return m_Buffer->size() / sizeof(uint32_t);
   }
 
 

@@ -23,6 +23,7 @@ constexpr Direction operator!(const Direction& direction)
 
 constexpr bool IsUpstream(Direction direction) { return static_cast<int>(direction) % 2; }
 constexpr int GetCoordID(Direction direction) { return static_cast<int>(direction) / 2; }
+constexpr Direction FromCoordID(int coordID, bool isUpstream) { return static_cast<Direction>(2 * coordID + isUpstream); }
 
 
 

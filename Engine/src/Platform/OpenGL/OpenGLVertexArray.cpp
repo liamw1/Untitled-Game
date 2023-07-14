@@ -5,44 +5,6 @@
 
 namespace Engine
 {
-  OpenGLIndexBuffer::OpenGLIndexBuffer(const uint32_t* indices, uint32_t count)
-    : m_Count(count)
-  {
-    EN_CORE_ASSERT(std::this_thread::get_id() == Threads::MainThreadID(), "OpenGL calls must be made on the main thread!");
-
-    glCreateBuffers(1, &m_RendererID);
-    glNamedBufferData(m_RendererID, sizeof(uint32_t) * count, indices, GL_DYNAMIC_DRAW);
-
-#if EN_DEBUG
-    unBind();
-#endif
-  }
-
-  OpenGLIndexBuffer::~OpenGLIndexBuffer()
-  {
-    EN_CORE_ASSERT(std::this_thread::get_id() == Threads::MainThreadID(), "OpenGL calls must be made on the main thread!");
-    glDeleteBuffers(1, &m_RendererID);
-  }
-
-  void OpenGLIndexBuffer::bind() const
-  {
-    EN_CORE_ASSERT(std::this_thread::get_id() == Threads::MainThreadID(), "OpenGL calls must be made on the main thread!");
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_RendererID);
-  }
-
-  void OpenGLIndexBuffer::unBind() const
-  {
-    EN_CORE_ASSERT(std::this_thread::get_id() == Threads::MainThreadID(), "OpenGL calls must be made on the main thread!");
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-  }
-
-  uint32_t OpenGLIndexBuffer::getCount() const
-  {
-    return m_Count;
-  }
-
-
-
   static GLenum convertToOpenGLBaseType(ShaderDataType type)
   {
     switch (type)
@@ -193,12 +155,23 @@ namespace Engine
 #endif
   }
 
-  void OpenGLVertexArray::setIndexBuffer(const std::shared_ptr<const IndexBuffer>& indexBuffer)
+  void OpenGLVertexArray::setIndexBuffer(const IndexBuffer& indexBuffer)
   {
     EN_CORE_ASSERT(std::this_thread::get_id() == Threads::MainThreadID(), "OpenGL calls must be made on the main thread!");
 
-    glBindVertexArray(m_RendererID);
     m_IndexBuffer = indexBuffer;
+
+#if EN_DEBUG
+    unBind();
+#endif
+  }
+
+  void OpenGLVertexArray::setIndexBuffer(const std::shared_ptr<StorageBuffer>& indexBufferStorage)
+  {
+    EN_CORE_ASSERT(std::this_thread::get_id() == Threads::MainThreadID(), "OpenGL calls must be made on the main thread!");
+    EN_CORE_ASSERT(indexBufferStorage->type() == StorageBuffer::Type::IndexBuffer, "Submitted buffer is not an index buffer!");
+
+    m_IndexBuffer = IndexBuffer(indexBufferStorage);
 
 #if EN_DEBUG
     unBind();
@@ -210,7 +183,7 @@ namespace Engine
     return m_VertexBufferLayout;
   }
 
-  const std::shared_ptr<const IndexBuffer>& OpenGLVertexArray::getIndexBuffer() const
+  const std::optional<IndexBuffer>& OpenGLVertexArray::getIndexBuffer() const
   {
     return m_IndexBuffer;
   }

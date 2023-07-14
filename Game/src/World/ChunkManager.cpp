@@ -22,10 +22,9 @@ ChunkManager::~ChunkManager()
 
 void ChunkManager::initialize()
 {
-  if (!s_OpaqueVoxelShader)
+  if (!s_Shader)
   {
-    s_OpaqueVoxelShader = Engine::Shader::Create("assets/shaders/Voxel.glsl", { { "TRANSPARENT", "0"} });
-    s_TransparentVoxelShader = Engine::Shader::Create("assets/shaders/Voxel.glsl", { { "TRANSPARENT", "1"} });
+    s_Shader = Engine::Shader::Create("assets/shaders/Chunk.glsl");
     s_TextureArray = Block::GetTextureArray();
 
     s_SSBO = Engine::StorageBuffer::Create(Engine::StorageBuffer::Type::SSBO, c_StorageBufferBinding);
@@ -33,8 +32,8 @@ void ChunkManager::initialize()
     s_SSBO->bind();
   }
 
-  m_OpaqueMultiDrawArray = std::make_unique<Engine::MultiDrawArray<Chunk::DrawCommand>>(s_VertexBufferLayout);
-  m_TransparentMultiDrawArray = std::make_unique<Engine::MultiDrawArray<Chunk::DrawCommand>>(s_VertexBufferLayout);
+  m_OpaqueMultiDrawArray = std::make_unique<Engine::MultiDrawIndexedArray<Chunk::DrawCommand>>(s_VertexBufferLayout);
+  m_TransparentMultiDrawArray = std::make_unique<Engine::MultiDrawIndexedArray<Chunk::DrawCommand>>(s_VertexBufferLayout);
 }
 
 void ChunkManager::render()
@@ -55,6 +54,7 @@ void ChunkManager::render()
   Vec3 playerCameraPosition = Player::CameraPosition();
   GlobalIndex originIndex = Player::OriginIndex();
 
+  s_Shader->bind();
   s_TextureArray->bind(c_TextureSlot);
 
   {
@@ -82,10 +82,9 @@ void ChunkManager::render()
     if (bufferDataSize > c_StorageBufferSize)
       EN_ERROR("Chunk anchor data exceeds SSBO size!");
 
-    s_OpaqueVoxelShader->bind();
     m_OpaqueMultiDrawArray->bind();
     s_SSBO->update(storageBufferData.data(), 0, bufferDataSize);
-    Engine::RenderCommand::MultiDrawVertices(drawCommands.data(), commandCount, sizeof(Chunk::DrawCommand));
+    Engine::RenderCommand::MultiDrawIndexed(drawCommands.data(), commandCount, sizeof(Chunk::DrawCommand));
   }
 
   {
@@ -104,21 +103,21 @@ void ChunkManager::render()
     m_TransparentMultiDrawArray->sort(commandCount, [&originIndex, &playerCameraPosition](const GlobalIndex& chunkA, const GlobalIndex& chunkB)
       {
         // NOTE: Maybe measure min distance to chunk faces instead
-
+    
         Vec3 anchorA = Chunk::AnchorPosition(chunkA, originIndex);
         Vec3 centerA = Chunk::Center(anchorA);
         length_t distA = glm::length2(centerA - playerCameraPosition);
-
+    
         Vec3 anchorB = Chunk::AnchorPosition(chunkB, originIndex);
         Vec3 centerB = Chunk::Center(anchorB);
         length_t distB = glm::length2(centerB - playerCameraPosition);
-
+    
         return distA > distB;
       });
     m_TransparentMultiDrawArray->amend(commandCount, [&originIndex, &playerCameraPosition](Chunk::DrawCommand& drawCommand)
       {
-        drawCommand.sortVoxels(originIndex, playerCameraPosition);
-        return true;
+        bool orderModified = drawCommand.sort(originIndex, playerCameraPosition);
+        return orderModified;
       });
 
     std::vector<Float4> storageBufferData;
@@ -135,10 +134,9 @@ void ChunkManager::render()
     if (bufferDataSize > c_StorageBufferSize)
       EN_ERROR("Chunk anchor data exceeds SSBO size!");
 
-    s_TransparentVoxelShader->bind();
     m_TransparentMultiDrawArray->bind();
     s_SSBO->update(storageBufferData.data(), 0, bufferDataSize);
-    Engine::RenderCommand::MultiDrawVertices(drawCommands.data(), commandCount, sizeof(Chunk::DrawCommand));
+    Engine::RenderCommand::MultiDrawIndexed(drawCommands.data(), commandCount, sizeof(Chunk::DrawCommand));
   }
 }
 
@@ -497,123 +495,70 @@ bool ChunkManager::meshChunk(const GlobalIndex& chunkIndex)
 
   if (blockData.empty())
   {
-    m_OpaqueCommandQueue.emplace(chunkIndex);
-    m_TransparentCommandQueue.emplace(chunkIndex);
+    m_OpaqueCommandQueue.emplace(chunkIndex, false);
+    m_TransparentCommandQueue.emplace(chunkIndex, false);
     return false;
   }
 
   EN_PROFILE_FUNCTION();
 
-  static constexpr BlockIndex offsets[6][4]
-    = { { {0, 1, 0}, {0, 0, 0}, {0, 1, 1}, {0, 0, 1} },    /*  West Face   */
-        { {1, 0, 0}, {1, 1, 0}, {1, 0, 1}, {1, 1, 1} },    /*  East Face   */
-        { {0, 0, 0}, {1, 0, 0}, {0, 0, 1}, {1, 0, 1} },    /*  South Face  */
-        { {1, 1, 0}, {0, 1, 0}, {1, 1, 1}, {0, 1, 1} },    /*  North Face  */
-        { {0, 1, 0}, {1, 1, 0}, {0, 0, 0}, {1, 0, 0} },    /*  Bottom Face */
-        { {0, 0, 1}, {1, 0, 1}, {0, 1, 1}, {1, 1, 1} } };  /*  Top Face    */
-
-  std::vector<Chunk::Voxel> opaqueMesh;
-  std::vector<Chunk::Voxel> transparentMesh;
+  Chunk::DrawCommand opaqueDraw(chunkIndex, true);
+  Chunk::DrawCommand transparentDraw(chunkIndex, false);
   for (blockIndex_t i = 0; i < Chunk::Size(); ++i)
     for (blockIndex_t j = 0; j < Chunk::Size(); ++j)
       for (blockIndex_t k = 0; k < Chunk::Size(); ++k)
       {
-        BlockIndex blockIndex = BlockIndex(i, j, k);
+        BlockIndex blockIndex(i, j, k);
         Block::Type blockType = blockData.getType(blockIndex);
 
-        // Air blocks do not get meshed
         if (blockType == Block::Type::Air)
           continue;
 
-        uint32_t quadData1 = 0;
-        uint32_t quadData2 = 0;
-        for (Direction direction : Directions())
+        uint8_t enabledFaces = 0;
+        bool blockIsTransparent = Block::HasTransparency(blockType);
+        Chunk::DrawCommand& draw = blockIsTransparent ? transparentDraw : opaqueDraw;
+        for (Direction face : Directions())
         {
-          // Only enable face if block and neighbor are different types, or if either are transparent
-          Block::Type cardinalNeighbor = blockData.getType(blockIndex + BlockIndex::Dir(direction));
-          if (cardinalNeighbor == blockType || (!Block::HasTransparency(blockType) && !Block::HasTransparency(cardinalNeighbor)))
+          BlockIndex cardinalIndex = blockIndex + BlockIndex::Dir(face);
+          Block::Type cardinalNeighbor = blockData.getType(cardinalIndex);
+          if (cardinalNeighbor == blockType || (!blockIsTransparent && !Block::HasTransparency(cardinalNeighbor)))
             continue;
 
-          int directionID = static_cast<int>(direction);
-          quadData2 |= 1 << (16 + directionID);
+          std::array<int, 4> quadAmbientOcclusion{};
+          Block::Texture quadTexture = Block::GetTexture(blockType, face);
+          if (!Block::HasTransparency(quadTexture))
+            for (int quadIndex = 0; quadIndex < 4; ++quadIndex)
+            {
+              int u = GetCoordID(face);
+              int v = (u + 1) % 3;
+              int w = (u + 2) % 3;
 
-          // If quad texture is transparent, no need to set ambient occlusion
-          if (Block::HasTransparency(Block::GetTexture(blockType, direction)))
-            continue;
+              Direction edgeADir = FromCoordID(v, Chunk::Vertex::GetOffset(face, quadIndex)[v]);
+              Direction edgeBDir = FromCoordID(w, Chunk::Vertex::GetOffset(face, quadIndex)[w]);
 
-          for (int quadIndex = 0; quadIndex < 4; ++quadIndex)
-          {
-            int u = directionID / 2;
-            int v = (u + 1) % 3;
-            int w = (u + 2) % 3;
+              BlockIndex edgeA = blockIndex + BlockIndex::Dir(face) + BlockIndex::Dir(edgeADir);
+              BlockIndex edgeB = blockIndex + BlockIndex::Dir(face) + BlockIndex::Dir(edgeBDir);
+              BlockIndex corner = blockIndex + BlockIndex::Dir(face) + BlockIndex::Dir(edgeADir) + BlockIndex::Dir(edgeBDir);
 
-            Direction edgeADir = static_cast<Direction>(2 * v + offsets[directionID][quadIndex][v]);
-            Direction edgeBDir = static_cast<Direction>(2 * w + offsets[directionID][quadIndex][w]);
+              bool edgeAIsOpaque = !Block::HasTransparency(blockData.getType(edgeA));
+              bool edgeBIsOpaque = !Block::HasTransparency(blockData.getType(edgeB));
+              bool cornerIsOpaque = !Block::HasTransparency(blockData.getType(corner));
+              quadAmbientOcclusion[quadIndex] = edgeAIsOpaque && edgeBIsOpaque ? 3 : edgeAIsOpaque + edgeBIsOpaque + cornerIsOpaque;
+            }
 
-            BlockIndex edgeA = blockIndex + BlockIndex::Dir(direction) + BlockIndex::Dir(edgeADir);
-            BlockIndex edgeB = blockIndex + BlockIndex::Dir(direction) + BlockIndex::Dir(edgeBDir);
-            BlockIndex corner = blockIndex + BlockIndex::Dir(direction) + BlockIndex::Dir(edgeADir) + BlockIndex::Dir(edgeBDir);
-
-            bool sideAIsOpaque = !Block::HasTransparency(blockData.getType(edgeA));
-            bool sideBIsOpaque = !Block::HasTransparency(blockData.getType(edgeB));
-            bool cornerIsOpaque = !Block::HasTransparency(blockData.getType(corner));
-            int ambientOcclusionLevel = sideAIsOpaque && sideBIsOpaque ? 3 : sideAIsOpaque + sideBIsOpaque + cornerIsOpaque;
-
-            int shift = 2 * (4 * directionID + quadIndex);
-            if (shift < 32)
-              quadData1 |= ambientOcclusionLevel << shift;
-            else
-              quadData2 |= ambientOcclusionLevel << (shift - 32);
-          }
+          enabledFaces |= 1 << static_cast<int>(face);
+          draw.addQuad(blockIndex, face, quadTexture, quadAmbientOcclusion);
         }
 
-        // Skip block if no faces are enabled
-        if (!quadData2)
+        if (enabledFaces == 0)
           continue;
 
-        uint32_t voxelData = static_cast<blockID>(blockType);
-        voxelData |= blockIndex.i << 16;
-        voxelData |= blockIndex.j << 21;
-        voxelData |= blockIndex.k << 26;
-
-        Array3D lights = AllocateArray3D<std::optional<int8_t>, 3>(std::nullopt);
-        for (blockIndex_t I = 0; I < 3; ++I)
-          for (blockIndex_t J = 0; J < 3; ++J)
-            for (blockIndex_t K = 0; K < 3; ++K)
-            {
-              BlockIndex index = blockIndex + BlockIndex(I - 1, J - 1, K - 1);
-              if (Block::HasTransparency(blockData.getType(index)))
-                lights[I][J][K] = blockData.getLight(index).sunlight();
-            }
-
-        uint32_t sunlight = 0;
-        for (blockIndex_t vI = 0; vI < 2; ++vI)
-          for (blockIndex_t vJ = 0; vJ < 2; ++vJ)
-            for (blockIndex_t vK = 0; vK < 2; ++vK)
-            {
-              int count = 0;
-              int8_t lightVal = 0;
-              for (blockIndex_t I = 0; I < 2; ++I)
-                for (blockIndex_t J = 0; J < 2; ++J)
-                  for (blockIndex_t K = 0; K < 2; ++K)
-                    if (lights[I + vI][J + vJ][K + vK])
-                    {
-                      lightVal += *lights[I + vI][J + vJ][K + vK];
-                      count++;
-                    }
-              lightVal /= std::max(1, count);
-
-              int vertexIndex = 4 * vI + 2 * vJ + vK;
-              int shift = 4 * vertexIndex;
-              sunlight |= lightVal << shift;
-            }
-
-        std::vector<Chunk::Voxel>& mesh = Block::HasTransparency(blockType) ? transparentMesh : opaqueMesh;
-        mesh.push_back(Chunk::Voxel(voxelData, quadData1, quadData2, sunlight));
+        draw.addVoxel(blockIndex, enabledFaces);
       }
+  opaqueDraw.setIndices();
 
-  bool meshGenrated = !opaqueMesh.empty() || !transparentMesh.empty();
-  m_OpaqueCommandQueue.emplace(chunkIndex, std::move(opaqueMesh));
-  m_TransparentCommandQueue.emplace(chunkIndex, std::move(transparentMesh));
+  bool meshGenrated = opaqueDraw.indexCount() > 0 || transparentDraw.indexCount() > 0;
+  m_OpaqueCommandQueue.add(std::move(opaqueDraw));
+  m_TransparentCommandQueue.add(std::move(transparentDraw));
   return meshGenrated;
 }

@@ -29,13 +29,13 @@ layout(location = 2) out vec4 v_BasicLight;
 void main()
 {
   // Relative position of block anchor
-  vec3 relPos = u_BlockLength * vec3((a_VertexData & 0x0000003Fu) >> 0u,
-                                     (a_VertexData & 0x00000FC0u) >> 6u,
-                                     (a_VertexData & 0x0003F000u) >> 12u);
+  vec3 relPos = u_BlockLength * vec3((a_VertexData >> 0 ) & 0x3F,
+                                     (a_VertexData >> 6 ) & 0x3F,
+                                     (a_VertexData >> 12) & 0x3F);
 
-  uint quadIndex = (a_VertexData & 0x000C0000u) >> 18u;
-  uint AO        = (a_VertexData & 0x00300000u) >> 20u;
-  v_TextureIndex = (a_VertexData & 0xFFC00000u) >> 22u;
+  uint quadIndex = (a_VertexData >> 18) & 0x3;
+  uint AO        = (a_VertexData >> 20) & 0x3;
+  v_TextureIndex = (a_VertexData >> 22) & 0x3FF;
 
   v_TexCoord = c_TexCoords[quadIndex];
   float light = 1.0 - 0.2 * AO;

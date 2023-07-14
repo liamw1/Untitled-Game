@@ -83,6 +83,11 @@ namespace Engine
     s_RendererAPI->multiDrawVertices(drawCommands, drawCount, stride);
   }
 
+  void RenderCommand::MultiDrawIndexed(const void* drawCommands, int drawCount, int stride)
+  {
+    s_RendererAPI->multiDrawIndexed(drawCommands, drawCount, stride);
+  }
+
   void RenderCommand::ClearDepthBuffer()
   {
     s_RendererAPI->clearDepthBuffer();

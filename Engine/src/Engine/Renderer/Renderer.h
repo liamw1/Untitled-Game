@@ -26,6 +26,6 @@ namespace Engine::Renderer
 
     uintptr_t dataSize = vertices.size() * sizeof(Vertex);
     target->setVertexBuffer(vertices.data(), dataSize);
-    target->setIndexBuffer(IndexBuffer::Create(indices));
+    target->setIndexBuffer(IndexBuffer(indices));
   }
 }

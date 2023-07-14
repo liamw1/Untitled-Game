@@ -76,50 +76,79 @@ public:
   static constexpr length_t Length() { return Block::Length() * c_ChunkSize; }
   static constexpr int TotalBlocks() { return c_ChunkSize * c_ChunkSize * c_ChunkSize; }
 
+  class Vertex
+  {
+  public:
+    Vertex();
+    Vertex(const BlockIndex& vertexPlacement, int quadIndex, int ambientOcclusion, Block::Texture texture);
+
+    static const BlockIndex& GetOffset(Direction face, int quadIndex);
+
+  private:
+    uint32_t m_Data;
+  };
+
+  class Quad
+  {
+  public:
+    Quad(const BlockIndex& blockIndex, Direction face, Block::Texture texture, std::array<int, 4> ambientOcclusion);
+
+  private:
+    std::array<Vertex, 4> m_Vertices;
+  };
+
   class Voxel
   {
   public:
-    Voxel();
-    Voxel(uint32_t voxelData, uint32_t quadData1, uint32_t quadData2, uint32_t vertexSunlight);
+    Voxel(const BlockIndex& blockIndex, uint8_t enabledFaces, int firstVertex);
 
-    blockIndex_t i() const;
-    blockIndex_t j() const;
-    blockIndex_t k() const;
-    BlockIndex index() const;
+    const BlockIndex& index() const;
+    bool faceEnabled(Direction direction) const;
+    int baseVertex() const;
 
   private:
-    uint32_t m_VoxelData;
-    uint32_t m_QuadData1;
-    uint32_t m_QuadData2;
-    uint32_t m_Sunlight;
+    BlockIndex m_Index;
+    uint8_t m_EnabledFaces;
+    int m_BaseVertex;
   };
 
-  class DrawCommand : public Engine::MultiDrawCommand<GlobalIndex, DrawCommand>
+  class DrawCommand : public Engine::MultiDrawIndexedCommand<GlobalIndex, DrawCommand>
   {
   public:
-    DrawCommand(const GlobalIndex& chunkIndex);
-    DrawCommand(const GlobalIndex& chunkIndex, std::vector<Voxel>&& mesh);
+    DrawCommand(const GlobalIndex& chunkIndex, bool canPruneIndices);
 
     DrawCommand(DrawCommand&& other) noexcept;
     DrawCommand& operator=(DrawCommand&& other) noexcept;
+
+    bool operator==(const DrawCommand& other) const;
+
+    int vertexCount() const;
+
+    const void* indexData();
+    const void* vertexData();
+    void prune();
+
+    void addQuad(const BlockIndex& blockIndex, Direction face, Block::Texture texture, std::array<int, 4> ambientOcclusion);
+    void addVoxel(const BlockIndex& blockIndex, uint8_t enabledFaces);
+
+    void setIndices();
+    bool sort(const GlobalIndex& originIndex, const Vec3& viewPosition);
+
+  private:
+    std::vector<Quad> m_Quads;
+    std::vector<Voxel> m_Voxels;
+    std::vector<uint32_t> m_Indices;
+    BlockIndex m_SortState;
+    bool m_CanPruneIndices;
+
+    int m_VoxelBaseVertex;
 
     // Copy operators deleted to prevent copying of mesh data
     DrawCommand(const DrawCommand& other) = delete;
     DrawCommand& operator=(const DrawCommand& other) = delete;
 
-    bool operator==(const DrawCommand& other) const;
-
-    const void* vertexData() const;
-
-    /*
-      Ensures voxels are sorted based on their distance to the given position, back to front.
-      This operation is surprisely cheap, and can usually be done many times per frame.
-    */
-    void sortVoxels(const GlobalIndex& originIndex, const Vec3& position);
-
-  private:
-    std::vector<Voxel> m_Mesh;
-    BlockIndex m_SortState;
+    void addQuadIndices(int baseVertex);
+    void setIndices(const GlobalIndex& originIndex, const Vec3& viewPosition);
   };
 
 private:

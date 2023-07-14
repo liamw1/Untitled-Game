@@ -29,8 +29,8 @@ namespace Engine
     m_Window->setVSync(false);
 
     m_LayerStack = std::make_unique<LayerStack>();
-    m_ImGuiLayer = new ImGuiLayer();
-    pushOverlay(m_ImGuiLayer);
+    // m_ImGuiLayer = new ImGuiLayer();
+    // pushOverlay(m_ImGuiLayer);
   }
 
   Application::~Application()
@@ -57,10 +57,10 @@ namespace Engine
         for (Layer* layer : *m_LayerStack)
           layer->onUpdate(timestep);
 
-        m_ImGuiLayer->begin();
-        for (Layer* layer : *m_LayerStack)
-          layer->onImGuiRender();
-        m_ImGuiLayer->end();
+        // m_ImGuiLayer->begin();
+        // for (Layer* layer : *m_LayerStack)
+        //   layer->onImGuiRender();
+        // m_ImGuiLayer->end();
       }
       
       m_Window->onUpdate();
