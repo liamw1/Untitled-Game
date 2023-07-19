@@ -65,6 +65,13 @@ namespace Engine::Threads
       return insertionSuccess;
     }
 
+    template<typename T>
+    void remove(T&& value)
+    {
+      std::lock_guard lock(m_Mutex);
+      m_Data.erase(value);
+    }
+
     std::optional<V> tryRemove()
     {
       std::lock_guard lock(m_Mutex);
@@ -82,6 +89,13 @@ namespace Engine::Threads
     {
       std::lock_guard lock(m_Mutex);
       return m_Data.empty();
+    }
+
+    template<typename T>
+    bool contains(T&& value)
+    {
+      std::lock_guard lock(m_Mutex);
+      return m_Data.contains(value);
     }
 
   private:

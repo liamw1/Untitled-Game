@@ -58,6 +58,9 @@ public:
   void update(bool hasMesh);
   void reset();
 
+  _Acquires_lock_(return) std::unique_lock<std::mutex> acquireLock() const;
+  _Acquires_lock_(return) std::lock_guard<std::mutex> acquireLockGuard() const;
+
   /*
     \returns The chunk's geometric center relative to origin chunk.
   */
@@ -161,9 +164,6 @@ private:
 
   Chunk(const Chunk& other) = delete;
   Chunk& operator=(const Chunk& other) = delete;
-
-  _Acquires_lock_(return) std::unique_lock<std::mutex> acquireLock() const;
-  _Acquires_lock_(return) std::lock_guard<std::mutex> acquireLockGuard() const;
 
   friend class ChunkContainer;
 };

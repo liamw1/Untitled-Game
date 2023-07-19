@@ -13,7 +13,7 @@ enum class ChunkType
   Boundary,
   Interior,
 
-  Error
+  DNE
 };
 
 /*
@@ -91,6 +91,9 @@ public:
   std::optional<GlobalIndex> getLazyUpdateIndex();
   std::optional<GlobalIndex> getForceUpdateIndex();
 
+  void addToLazyUpdateQueue(const GlobalIndex& chunkIndex);
+  void addToForceUpdateQueue(const GlobalIndex& chunkIndex);
+
   bool empty() const;
   bool contains(const GlobalIndex& chunkIndex) const;
 
@@ -146,19 +149,13 @@ private:
   bool isOnBoundary(const Chunk& chunk) const;
 
   /*
-    \returns What type the chunk is currently classified as.
-
-    Requires at minimum a shared lock to be owned on the container mutex.
-  */
-  ChunkType getChunkType(const Chunk& chunk) const;
-
-  /*
-    \returns The Chunk at the specified chunk index. If no such chunk can be found, returns nullptr.
+    \returns The Chunk and it's type at the specified chunk index.
+             If no such chunk can be found, returns ChunkType::DNE and nullptr.
 
     Requires at minium a shared lock to be owned on the container mutex.
   */
-  Chunk* find(const GlobalIndex& chunkIndex);
-  const Chunk* find(const GlobalIndex& chunkIndex) const;
+  std::pair<ChunkType, Chunk*> find(const GlobalIndex& chunkIndex);
+  std::pair<ChunkType, const Chunk*> find(const GlobalIndex& chunkIndex) const;
 
   /*
     Re-categorizes loaded chunk and its cardinal neighbors if they are no longer on boundary.

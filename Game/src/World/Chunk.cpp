@@ -165,16 +165,6 @@ void Chunk::reset()
   m_NonOpaqueFaces.store(0x3F);
 }
 
-Vec3 Chunk::Center(const Vec3& anchorPosition)
-{
-  return anchorPosition + Chunk::Length() / 2;
-}
-
-Vec3 Chunk::AnchorPosition(const GlobalIndex& chunkIndex, const GlobalIndex& originIndex)
-{
-  return Chunk::Length() * static_cast<Vec3>(chunkIndex - originIndex);
-}
-
 _Acquires_lock_(return) std::unique_lock<std::mutex> Chunk::acquireLock() const
 {
   return std::unique_lock(m_Mutex);
@@ -183,6 +173,16 @@ _Acquires_lock_(return) std::unique_lock<std::mutex> Chunk::acquireLock() const
 _Acquires_lock_(return) std::lock_guard<std::mutex> Chunk::acquireLockGuard() const
 {
   return std::lock_guard(m_Mutex);
+}
+
+Vec3 Chunk::Center(const Vec3& anchorPosition)
+{
+  return anchorPosition + Chunk::Length() / 2;
+}
+
+Vec3 Chunk::AnchorPosition(const GlobalIndex& chunkIndex, const GlobalIndex& originIndex)
+{
+  return Chunk::Length() * static_cast<Vec3>(chunkIndex - originIndex);
 }
 
 

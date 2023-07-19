@@ -67,12 +67,8 @@ bool ChunkContainer::update(const GlobalIndex& chunkIndex, bool meshGenerated)
 {
   std::shared_lock sharedLock(m_ContainerMutex);
 
-  Chunk* chunk = find(chunkIndex);
-  if (!chunk)
-    return false;
-
-  ChunkType source = getChunkType(*chunk);
-  if (source == ChunkType::Boundary)
+  auto [chunkType, chunk] = find(chunkIndex);
+  if (chunkType != ChunkType::Interior)
     return false;
 
   std::lock_guard chunkLock = chunk->acquireLockGuard();
@@ -117,15 +113,8 @@ void ChunkContainer::uploadMeshes(Engine::Threads::UnorderedSetQueue<Chunk::Draw
 
 ChunkWithLock ChunkContainer::acquireChunk(const GlobalIndex& chunkIndex)
 {
-  std::shared_lock lock(m_ContainerMutex);
-
-  std::unique_lock<std::mutex> chunkLock;
-
-  Chunk* chunk = find(chunkIndex);
-  if (chunk)
-    chunkLock = chunk->acquireLock();
-
-  return { chunk, std::move(chunkLock) };
+  ConstChunkWithLock chunkWithLock = static_cast<const ChunkContainer*>(this)->acquireChunk(chunkIndex);
+  return { const_cast<Chunk*>(chunkWithLock.chunk), std::move(chunkWithLock.lock) };
 }
 
 ConstChunkWithLock ChunkContainer::acquireChunk(const GlobalIndex& chunkIndex) const
@@ -133,7 +122,7 @@ ConstChunkWithLock ChunkContainer::acquireChunk(const GlobalIndex& chunkIndex) c
   std::shared_lock lock(m_ContainerMutex);
   std::unique_lock<std::mutex> chunkLock;
 
-  const Chunk* chunk = find(chunkIndex);
+  auto [chunkType, chunk] = find(chunkIndex);
   if (chunk)
     chunkLock = chunk->acquireLock();
 
@@ -192,6 +181,18 @@ std::optional<GlobalIndex> ChunkContainer::getForceUpdateIndex()
   return m_ForceUpdateQueue.tryRemove();
 }
 
+void ChunkContainer::addToLazyUpdateQueue(const GlobalIndex& chunkIndex)
+{
+  if (!m_ForceUpdateQueue.contains(chunkIndex))
+    m_LazyUpdateQueue.add(chunkIndex);
+}
+
+void ChunkContainer::addToForceUpdateQueue(const GlobalIndex& chunkIndex)
+{
+  m_LazyUpdateQueue.remove(chunkIndex);
+  m_ForceUpdateQueue.add(chunkIndex);
+}
+
 bool ChunkContainer::empty() const
 {
   std::shared_lock lock(m_ContainerMutex);
@@ -209,8 +210,8 @@ bool ChunkContainer::contains(const GlobalIndex& chunkIndex) const
 static GlobalIndex globalIndexOffset(BlockIndex& blockIndex)
 {
   EN_ASSERT(boundsCheck(blockIndex.i, -Chunk::Size(), 2 * Chunk::Size()) &&
-    boundsCheck(blockIndex.j, -Chunk::Size(), 2 * Chunk::Size()) &&
-    boundsCheck(blockIndex.k, -Chunk::Size(), 2 * Chunk::Size()), "Requested block is more than one chunk away!");
+            boundsCheck(blockIndex.j, -Chunk::Size(), 2 * Chunk::Size()) &&
+            boundsCheck(blockIndex.k, -Chunk::Size(), 2 * Chunk::Size()), "Requested block is more than one chunk away!");
 
   GlobalIndex indexOffset{};
   for (int i = 0; i < 3; ++i)
@@ -280,31 +281,22 @@ bool ChunkContainer::isOnBoundary(const Chunk& chunk) const
   return false;
 }
 
-ChunkType ChunkContainer::getChunkType(const Chunk& chunk) const
+std::pair<ChunkType, Chunk*> ChunkContainer::find(const GlobalIndex& chunkIndex)
+{
+  auto [chunkType, chunk] = static_cast<const ChunkContainer*>(this)->find(chunkIndex);
+  return { chunkType, const_cast<Chunk*>(chunk) };
+}
+
+std::pair<ChunkType, const Chunk*> ChunkContainer::find(const GlobalIndex& chunkIndex) const
 {
   for (int chunkType = 0; chunkType < m_Chunks.size(); ++chunkType)
-    if (m_Chunks[chunkType].find(chunk.globalIndex()) != m_Chunks[chunkType].end())
-      return static_cast<ChunkType>(chunkType);
-
-  EN_ERROR("Could not find chunk!");
-  return ChunkType::Error;
-}
-
-Chunk* ChunkContainer::find(const GlobalIndex& chunkIndex)
-{
-  return const_cast<Chunk*>(static_cast<const ChunkContainer*>(this)->find(chunkIndex));
-}
-
-const Chunk* ChunkContainer::find(const GlobalIndex& chunkIndex) const
-{
-  for (const mapType<GlobalIndex, Chunk*>& chunkGroup : m_Chunks)
   {
-    mapType<GlobalIndex, Chunk*>::const_iterator it = chunkGroup.find(chunkIndex);
+    mapType<GlobalIndex, Chunk*>::const_iterator it = m_Chunks[chunkType].find(chunkIndex);
 
-    if (it != chunkGroup.end())
-      return it->second;
+    if (it != m_Chunks[chunkType].end())
+      return { static_cast<ChunkType>(chunkType), it->second };
   }
-  return nullptr;
+  return { ChunkType::DNE, nullptr };
 }
 
 void ChunkContainer::sendChunkLoadUpdate(Chunk& newChunk)
@@ -314,8 +306,8 @@ void ChunkContainer::sendChunkLoadUpdate(Chunk& newChunk)
   // Move cardinal neighbors out of m_BoundaryChunks if they are no longer on boundary
   for (Direction direction : Directions())
   {
-    Chunk* neighbor = find(newChunk.globalIndex() + GlobalIndex::Dir(direction));
-    if (neighbor && getChunkType(*neighbor) == ChunkType::Boundary)
+    auto [neighborType, neighbor] = find(newChunk.globalIndex() + GlobalIndex::Dir(direction));
+    if (neighborType == ChunkType::Boundary)
       boundaryChunkUpdate(*neighbor);
   }
 }
@@ -324,21 +316,15 @@ void ChunkContainer::sendChunkRemovalUpdate(const GlobalIndex& removalIndex)
 {
   for (Direction direction : Directions())
   {
-    Chunk* neighbor = find(removalIndex + GlobalIndex::Dir(direction));
-
-    if (neighbor)
-    {
-      ChunkType type = getChunkType(*neighbor);
-
-      if (type != ChunkType::Boundary)
-        recategorizeChunk(*neighbor, type, ChunkType::Boundary);
-    }
+    auto [neighborType, neighbor] = find(removalIndex + GlobalIndex::Dir(direction));
+    if (neighborType == ChunkType::Interior)
+      recategorizeChunk(*neighbor, ChunkType::Interior, ChunkType::Boundary);
   }
 }
 
 void ChunkContainer::boundaryChunkUpdate(Chunk& chunk)
 {
-  EN_ASSERT(getChunkType(chunk) == ChunkType::Boundary, "Chunk is not a boundary chunk!");
+  EN_ASSERT(find(chunk.globalIndex()).first == ChunkType::Boundary, "Chunk is not a boundary chunk!");
 
   if (!isOnBoundary(chunk))
   {
@@ -350,7 +336,7 @@ void ChunkContainer::boundaryChunkUpdate(Chunk& chunk)
 void ChunkContainer::recategorizeChunk(Chunk& chunk, ChunkType source, ChunkType destination)
 {
   EN_ASSERT(source != destination, "Source and destination are the same!");
-  EN_ASSERT(getChunkType(chunk) == source, "Chunk is not of the source type!");
+  EN_ASSERT(find(chunk.globalIndex()).first == source, "Chunk is not of the source type!");
 
   // Chunks moved from m_BoundaryChunks get queued for updating, along with all their neighbors
   if (source == ChunkType::Boundary)
