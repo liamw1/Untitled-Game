@@ -16,6 +16,20 @@ ChunkContainer::ChunkContainer()
     m_OpenChunkSlots.push(i);
 }
 
+bool ChunkContainer::canMesh(const GlobalIndex& chunkIndex)
+{
+  EN_PROFILE_FUNCTION();
+
+  std::shared_lock lock(m_ContainerMutex);
+
+  for (int i = -1; i <= 1; ++i)
+    for (int j = -1; j <= 1; ++j)
+      for (int k = -1; k <= 1; ++k)
+        if (m_BoundaryIndices.contains(chunkIndex + GlobalIndex(i, j, k)))
+          return false;
+  return true;
+}
+
 bool ChunkContainer::insert(Chunk&& newChunk)
 {
   std::lock_guard lock(m_ContainerMutex);
@@ -30,10 +44,17 @@ bool ChunkContainer::insert(Chunk&& newChunk)
   // Insert chunk into array
   Chunk& chunk = m_ChunkArray[chunkSlot];
   chunk = std::move(newChunk);
-  auto [insertionPosition, insertionSuccess] = m_BoundaryChunks.insert({ chunk.globalIndex(), &chunk });
+  auto [insertionPosition, insertionSuccess] = m_Chunks.insert({ chunk.globalIndex(), &chunk });
 
   if (insertionSuccess)
-    sendChunkLoadUpdate(chunk);
+    for (int i = -1; i <= 1; ++i)
+      for (int j = -1; j <= 1; ++j)
+        for (int k = -1; k <= 1; ++k)
+        {
+          GlobalIndex neighborIndex = chunk.globalIndex() + GlobalIndex(i, j, k);
+          boundaryUpdate(neighborIndex);
+          m_LazyUpdateQueue.add(neighborIndex);
+        }
 
   return insertionSuccess;
 }
@@ -42,8 +63,8 @@ bool ChunkContainer::erase(const GlobalIndex& chunkIndex)
 {
   std::lock_guard lock(m_ContainerMutex);
 
-  mapType<GlobalIndex, Chunk*>::iterator erasePosition = m_BoundaryChunks.find(chunkIndex);
-  if (erasePosition == m_BoundaryChunks.end())
+  mapType<GlobalIndex, Chunk*>::iterator erasePosition = m_Chunks.find(chunkIndex);
+  if (erasePosition == m_Chunks.end())
     return false;
   Chunk* chunk = erasePosition->second;
 
@@ -56,23 +77,22 @@ bool ChunkContainer::erase(const GlobalIndex& chunkIndex)
     std::lock_guard chunkLock = chunk->acquireLockGuard();
     m_ChunkArray[chunkSlot].reset();
   }
-  m_BoundaryChunks.erase(erasePosition);
+  m_Chunks.erase(erasePosition);
 
-  sendChunkRemovalUpdate(chunkIndex);
+  for (int i = -1; i <= 1; ++i)
+    for (int j = -1; j <= 1; ++j)
+      for (int k = -1; k <= 1; ++k)
+        boundaryUpdate(chunkIndex + GlobalIndex(i, j, k));
 
   return true;
 }
 
 bool ChunkContainer::update(const GlobalIndex& chunkIndex, bool meshGenerated)
 {
-  std::shared_lock sharedLock(m_ContainerMutex);
+  auto [chunk, lock] = acquireChunk(chunkIndex);
 
-  auto [chunkType, chunk] = find(chunkIndex);
-  if (chunkType != ChunkType::Interior)
+  if (!chunk)
     return false;
-
-  std::lock_guard chunkLock = chunk->acquireLockGuard();
-  sharedLock.unlock();
 
   chunk->update(meshGenerated);
 
@@ -85,14 +105,10 @@ std::unordered_set<GlobalIndex> ChunkContainer::findAllLoadableIndices() const
 
   GlobalIndex originIndex = Player::OriginIndex();
   std::unordered_set<GlobalIndex> newChunkIndices;
-  for (const auto& [key, chunk] : m_BoundaryChunks)
-    for (Direction direction : Directions())
-    {
-      GlobalIndex neighborIndex = chunk->globalIndex() + GlobalIndex::Dir(direction);
-      if (Util::IsInRange(neighborIndex, originIndex, c_LoadDistance) && newChunkIndices.find(neighborIndex) == newChunkIndices.end())
-        if (!chunk->isFaceOpaque(direction) && !isLoaded(neighborIndex))
-          newChunkIndices.insert(neighborIndex);
-    }
+  for (const GlobalIndex& boundaryIndex : m_BoundaryIndices)
+    if (Util::IsInRange(boundaryIndex, originIndex, c_LoadDistance))
+      newChunkIndices.insert(boundaryIndex);
+
   return newChunkIndices;
 }
 
@@ -104,7 +120,7 @@ void ChunkContainer::uploadMeshes(Engine::Threads::UnorderedSetQueue<Chunk::Draw
   while (drawCommand)
   {
     multiDrawArray->remove(drawCommand->id());
-    if (isLoaded(drawCommand->id()))
+    if (find(drawCommand->id()))
       multiDrawArray->add(std::move(*drawCommand));
 
     drawCommand = commandQueue.tryRemove();
@@ -122,7 +138,7 @@ ConstChunkWithLock ChunkContainer::acquireChunk(const GlobalIndex& chunkIndex) c
   std::shared_lock lock(m_ContainerMutex);
   std::unique_lock<std::mutex> chunkLock;
 
-  auto [chunkType, chunk] = find(chunkIndex);
+  const Chunk* chunk = find(chunkIndex);
   if (chunk)
     chunkLock = chunk->acquireLock();
 
@@ -202,156 +218,39 @@ bool ChunkContainer::empty() const
 bool ChunkContainer::contains(const GlobalIndex& chunkIndex) const
 {
   std::shared_lock lock(m_ContainerMutex);
-  return isLoaded(chunkIndex);
+  return find(chunkIndex);
 }
 
 
 
-static GlobalIndex globalIndexOffset(BlockIndex& blockIndex)
+bool ChunkContainer::isOnBoundary(const GlobalIndex& chunkIndex) const
 {
-  EN_ASSERT(boundsCheck(blockIndex.i, -Chunk::Size(), 2 * Chunk::Size()) &&
-            boundsCheck(blockIndex.j, -Chunk::Size(), 2 * Chunk::Size()) &&
-            boundsCheck(blockIndex.k, -Chunk::Size(), 2 * Chunk::Size()), "Requested block is more than one chunk away!");
+  EN_ASSERT(!m_Chunks.contains(chunkIndex), "Given index is already loaded!");
 
-  GlobalIndex indexOffset{};
-  for (int i = 0; i < 3; ++i)
+  for (Direction direction : Directions())
   {
-    if (blockIndex[i] < 0)
-    {
-      indexOffset[i]--;
-      blockIndex[i] += Chunk::Size();
-    }
-    else if (blockIndex[i] >= Chunk::Size())
-    {
-      indexOffset[i]++;
-      blockIndex[i] -= Chunk::Size();
-    }
-  }
-  return indexOffset;
-}
-
-ChunkContainer::Stencil::Stencil(ChunkContainer& chunkContainer, const GlobalIndex& centerChunk)
-  : m_ChunkContainer(&chunkContainer), m_CenterChunk(centerChunk) {}
-
-Block::Light ChunkContainer::Stencil::getBlockLight(BlockIndex blockIndex)
-{
-  GlobalIndex offset = globalIndexOffset(blockIndex);
-
-  const std::optional<ChunkWithLock>& query = chunkQuery(offset);
-  if (!query)
-    return Block::Light(0);
-  if (!query->chunk)
-    return Block::Light(Block::Light::MaxValue());
-  return query->chunk->getBlockLight(blockIndex);
-}
-
-void ChunkContainer::Stencil::setBlockLight(BlockIndex blockIndex, Block::Light blockLight)
-{
-  GlobalIndex offset = globalIndexOffset(blockIndex);
-
-  std::optional<ChunkWithLock>& query = chunkQuery(offset);
-  if (!query || !query->chunk)
-    return;
-  query->chunk->setBlockLight(blockIndex, blockLight);
-}
-
-std::optional<ChunkWithLock>& ChunkContainer::Stencil::chunkQuery(const GlobalIndex& indexOffset)
-{
-  std::optional<ChunkWithLock>& query = m_Chunks[indexOffset.i + 1][indexOffset.j + 1][indexOffset.k + 1];
-  if (!query)
-    query = m_ChunkContainer->acquireChunk(m_CenterChunk + indexOffset);
-  return query;
-}
-
-
-
-bool ChunkContainer::isLoaded(const GlobalIndex& chunkIndex) const
-{
-  for (const mapType<GlobalIndex, Chunk*>& chunkGroup : m_Chunks)
-    if (chunkGroup.find(chunkIndex) != chunkGroup.end())
+    const Chunk* cardinalNeighbor = find(chunkIndex + GlobalIndex::Dir(direction));
+    if (cardinalNeighbor && !cardinalNeighbor->isFaceOpaque(!direction))
       return true;
+  }
   return false;
 }
 
-bool ChunkContainer::isOnBoundary(const Chunk& chunk) const
+Chunk* ChunkContainer::find(const GlobalIndex& chunkIndex)
 {
-  for (Direction direction : Directions())
-    if (!isLoaded(chunk.globalIndex() + GlobalIndex::Dir(direction)) && !chunk.isFaceOpaque(direction))
-      return true;
-  return false;
+  return const_cast<Chunk*>(static_cast<const ChunkContainer*>(this)->find(chunkIndex));
 }
 
-std::pair<ChunkType, Chunk*> ChunkContainer::find(const GlobalIndex& chunkIndex)
+const Chunk* ChunkContainer::find(const GlobalIndex& chunkIndex) const
 {
-  auto [chunkType, chunk] = static_cast<const ChunkContainer*>(this)->find(chunkIndex);
-  return { chunkType, const_cast<Chunk*>(chunk) };
+  mapType<GlobalIndex, Chunk*>::const_iterator it = m_Chunks.find(chunkIndex);
+  return it == m_Chunks.end() ? nullptr : it->second;
 }
 
-std::pair<ChunkType, const Chunk*> ChunkContainer::find(const GlobalIndex& chunkIndex) const
+void ChunkContainer::boundaryUpdate(const GlobalIndex& chunkIndex)
 {
-  for (int chunkType = 0; chunkType < m_Chunks.size(); ++chunkType)
-  {
-    mapType<GlobalIndex, Chunk*>::const_iterator it = m_Chunks[chunkType].find(chunkIndex);
-
-    if (it != m_Chunks[chunkType].end())
-      return { static_cast<ChunkType>(chunkType), it->second };
-  }
-  return { ChunkType::DNE, nullptr };
-}
-
-void ChunkContainer::sendChunkLoadUpdate(Chunk& newChunk)
-{
-  boundaryChunkUpdate(newChunk);
-
-  // Move cardinal neighbors out of m_BoundaryChunks if they are no longer on boundary
-  for (Direction direction : Directions())
-  {
-    auto [neighborType, neighbor] = find(newChunk.globalIndex() + GlobalIndex::Dir(direction));
-    if (neighborType == ChunkType::Boundary)
-      boundaryChunkUpdate(*neighbor);
-  }
-}
-
-void ChunkContainer::sendChunkRemovalUpdate(const GlobalIndex& removalIndex)
-{
-  for (Direction direction : Directions())
-  {
-    auto [neighborType, neighbor] = find(removalIndex + GlobalIndex::Dir(direction));
-    if (neighborType == ChunkType::Interior)
-      recategorizeChunk(*neighbor, ChunkType::Interior, ChunkType::Boundary);
-  }
-}
-
-void ChunkContainer::boundaryChunkUpdate(Chunk& chunk)
-{
-  EN_ASSERT(find(chunk.globalIndex()).first == ChunkType::Boundary, "Chunk is not a boundary chunk!");
-
-  if (!isOnBoundary(chunk))
-  {
-    ChunkType destination = ChunkType::Interior;
-    recategorizeChunk(chunk, ChunkType::Boundary, destination);
-  }
-}
-
-void ChunkContainer::recategorizeChunk(Chunk& chunk, ChunkType source, ChunkType destination)
-{
-  EN_ASSERT(source != destination, "Source and destination are the same!");
-  EN_ASSERT(find(chunk.globalIndex()).first == source, "Chunk is not of the source type!");
-
-  // Chunks moved from m_BoundaryChunks get queued for updating, along with all their neighbors
-  if (source == ChunkType::Boundary)
-    for (int i = -1; i <= 1; ++i)
-      for (int j = -1; j <= 1; ++j)
-        for (int k = -1; k <= 1; ++k)
-        {
-          GlobalIndex neighborIndex = chunk.globalIndex() + GlobalIndex(i, j, k);
-          if (isLoaded(neighborIndex))
-            m_LazyUpdateQueue.add(neighborIndex);
-        }
-
-  int sourceTypeID = static_cast<int>(source);
-  int destinationTypeID = static_cast<int>(destination);
-
-  m_Chunks[destinationTypeID].insert({ chunk.globalIndex(), &chunk});
-  m_Chunks[sourceTypeID].erase(m_Chunks[sourceTypeID].find(chunk.globalIndex()));
+  if (m_Chunks.contains(chunkIndex) || !isOnBoundary(chunkIndex))
+    m_BoundaryIndices.erase(chunkIndex);
+  else
+    m_BoundaryIndices.insert(chunkIndex);
 }

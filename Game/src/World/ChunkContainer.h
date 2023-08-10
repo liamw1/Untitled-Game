@@ -8,14 +8,6 @@ constexpr int c_RenderDistance = 16;
 constexpr int c_LoadDistance = c_RenderDistance + 1;
 constexpr int c_UnloadDistance = c_LoadDistance;
 
-enum class ChunkType
-{
-  Boundary,
-  Interior,
-
-  DNE
-};
-
 /*
   Class that handles the classification of chunks.
 
@@ -26,6 +18,8 @@ class ChunkContainer
 {
 public:
   ChunkContainer();
+
+  bool canMesh(const GlobalIndex& chunkIndex);
 
   /*
     Inserts chunk and adds it to boundary map. Its neighbors are moved from boundary map
@@ -55,13 +49,13 @@ public:
     \returns All chunks of the specified type that match the given conditional.
   */
   template<typename F, typename... Args>
-  std::vector<GlobalIndex> findAll(ChunkType chunkType, F condition, Args&&... args) const
+  std::vector<GlobalIndex> findAll(F condition, Args&&... args) const
   {
     std::vector<GlobalIndex> indexList;
 
     std::shared_lock lock(m_ContainerMutex);
 
-    for (const auto& [key, chunk] : m_Chunks[static_cast<int>(chunkType)])
+    for (const auto& [key, chunk] : m_Chunks)
       if (condition(*chunk, std::forward<Args>(args)...))
         indexList.push_back(chunk->globalIndex());
     return indexList;
@@ -97,30 +91,13 @@ public:
   bool empty() const;
   bool contains(const GlobalIndex& chunkIndex) const;
 
-  class Stencil
-  {
-  public:
-    Stencil(ChunkContainer& chunkContainer, const GlobalIndex& centerChunk);
-
-    Block::Light getBlockLight(BlockIndex blockIndex);
-    void setBlockLight(BlockIndex blockIndex, Block::Light blockLight);
-
-  private:
-    ChunkContainer* m_ChunkContainer;
-    GlobalIndex m_CenterChunk;
-    StackArray3D<std::optional<ChunkWithLock>, 3> m_Chunks;
-
-    std::optional<ChunkWithLock>& chunkQuery(const GlobalIndex& indexOffset);
-  };
-
 private:
   template<typename Key, typename Val>
   using mapType = std::unordered_map<Key, Val>;
 
   // Chunk pointers
-  std::array<mapType<GlobalIndex, Chunk*>, 2> m_Chunks;
-  mapType<GlobalIndex, Chunk*>& m_BoundaryChunks = m_Chunks[static_cast<int>(ChunkType::Boundary)];
-  mapType<GlobalIndex, Chunk*>& m_InteriorChunks = m_Chunks[static_cast<int>(ChunkType::Interior)];
+  mapType<GlobalIndex, Chunk*> m_Chunks;
+  std::unordered_set<GlobalIndex> m_BoundaryIndices;
 
   // Chunk data
   std::unique_ptr<Chunk[]> m_ChunkArray;
@@ -134,19 +111,12 @@ private:
 // Helper functions for chunk container access. These assume the map mutex has already been locked by one of the public functions
 private:
   /*
-    \returns True if there exists a chunk in the container at the specified index.
-
-    Requires at minimum a shared lock to be owned on the container mutex.
-  */
-  bool isLoaded(const GlobalIndex& chunkIndex) const;
-
-  /*
     \returns True if the given chunk meets the requirements to be a boundary chunk.
              Does not check if the chunk is in the boundary map.
 
     Requires at minimum a shared lock to be owned on the container mutex.
   */
-  bool isOnBoundary(const Chunk& chunk) const;
+  bool isOnBoundary(const GlobalIndex& chunkIndex) const;
 
   /*
     \returns The Chunk and it's type at the specified chunk index.
@@ -154,39 +124,8 @@ private:
 
     Requires at minium a shared lock to be owned on the container mutex.
   */
-  std::pair<ChunkType, Chunk*> find(const GlobalIndex& chunkIndex);
-  std::pair<ChunkType, const Chunk*> find(const GlobalIndex& chunkIndex) const;
+  Chunk* find(const GlobalIndex& chunkIndex);
+  const Chunk* find(const GlobalIndex& chunkIndex) const;
 
-  /*
-    Re-categorizes loaded chunk and its cardinal neighbors if they are no longer on boundary.
-    Should be called for each newly-loaded chunk.
-
-    Requires an exclusive lock on the container mutex, as it will modify chunk maps.
-  */
-  void sendChunkLoadUpdate(Chunk& newChunk);
-
-  /*
-    Re-categorizes the cardinal neighbors of a removed chunk as boundary chunks.
-    Should be called for each chunk removed by unloadChunk function.
-
-    Requires an exclusive lock on the container mutex, as it will modify chunk maps.
-  */
-  void sendChunkRemovalUpdate(const GlobalIndex& removalIndex);
-
-  /*
-    Moves chunk from m_BoundaryChunks if no longer on boundary.
-    Given chunk must be a boundary chunk.
-
-    Requires an exclusive lock on the container mutex, as it will modify chunk maps.
-  */
-  void boundaryChunkUpdate(Chunk& chunk);
-
-  /*
-    Moves chunk from one grouping to another.
-    \param source      The type the chunk is currently classified as.
-    \param destination The type the chunk will be classified as.
-
-    Requires an exclusive lock on the container mutex, as it will modify chunk maps.
-  */
-  void recategorizeChunk(Chunk& chunk, ChunkType source, ChunkType destination);
+  void boundaryUpdate(const GlobalIndex& chunkIndex);
 };

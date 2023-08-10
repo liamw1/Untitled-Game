@@ -3,6 +3,7 @@
 #include "Player/Player.h"
 #include "Terrain.h"
 #include "Util/Util.h"
+#include "Util/ExpandedArrays.h"
 
 ChunkManager::ChunkManager()
   : m_Running(true),
@@ -170,7 +171,7 @@ void ChunkManager::clean()
 
   EN_PROFILE_FUNCTION();
 
-  std::vector<GlobalIndex> chunksMarkedForDeletion = m_ChunkContainer.findAll(ChunkType::Boundary, [&originIndex](const Chunk& chunk)
+  std::vector<GlobalIndex> chunksMarkedForDeletion = m_ChunkContainer.findAll([&originIndex](const Chunk& chunk)
     {
       return !Util::IsInRange(chunk.globalIndex(), originIndex, c_UnloadDistance);
     });
@@ -310,22 +311,27 @@ void ChunkManager::updateWorker()
     EN_PROFILE_SCOPE("Update worker");
 
     std::optional<GlobalIndex> updateIndex = m_ChunkContainer.getLazyUpdateIndex();
-    if (updateIndex)
+    if (!updateIndex)
     {
-      bool meshGenerated = meshChunk(*updateIndex);
-      m_ChunkContainer.update(*updateIndex, meshGenerated);
-    }
-    else
       std::this_thread::sleep_for(100ms);
+      continue;
+    }
+    if (!m_ChunkContainer.canMesh(*updateIndex))
+      continue;
+
+    bool meshGenerated = meshChunk(*updateIndex);
+    m_ChunkContainer.update(*updateIndex, meshGenerated);
   }
 }
 
 void ChunkManager::generateNewChunk(const GlobalIndex& chunkIndex)
 {
+  EN_PROFILE_FUNCTION();
+
   Chunk chunk;
   switch (m_LoadMode)
   {
-    case LoadMode::NotSet:  EN_ERROR("Load mode not set!");                     break;
+    case LoadMode::NotSet:  EN_ERROR("Load mode not set!");               break;
     case LoadMode::Void:    chunk = Terrain::GenerateEmpty(chunkIndex);   break;
     case LoadMode::Terrain: chunk = Terrain::GenerateNew(chunkIndex);     break;
     default:                EN_ERROR("Unknown load mode!");

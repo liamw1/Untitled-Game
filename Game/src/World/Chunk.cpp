@@ -325,8 +325,6 @@ bool Chunk::DrawCommand::sort(const GlobalIndex& originIndex, const Vec3& viewPo
   if (originBlock == m_SortState)
     return false;
 
-  EN_PROFILE_FUNCTION();
-
   // Sort based on L1 distance to originBlock
   std::sort(m_Voxels.begin(), m_Voxels.end(), [&originBlock](const Voxel& voxelA, const Voxel& voxelB)
     {
