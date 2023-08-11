@@ -19,8 +19,6 @@ class ChunkContainer
 public:
   ChunkContainer();
 
-  bool canMesh(const GlobalIndex& chunkIndex);
-
   /*
     Inserts chunk and adds it to boundary map. Its neighbors are moved from boundary map
     if they are no longer on the boundary.
@@ -36,14 +34,6 @@ public:
     \returns True if the chunk existed, was a boundary chunk, and was successfully removed.
   */
   bool erase(const GlobalIndex& chunkIndex);
-
-  /*
-    Updates the chunk at the given index.
-    Boundary chunks will not receive updates.
-
-    \returns True if the chunk existed, was not a boundary chunk, and was successfully updated.
-  */
-  bool update(const GlobalIndex& chunkIndex, bool meshGenerated);
 
   /*
     \returns All chunks of the specified type that match the given conditional.
@@ -69,24 +59,13 @@ public:
 
   void uploadMeshes(Engine::Threads::UnorderedSetQueue<Chunk::DrawCommand>& commandQueue, std::unique_ptr<Engine::MultiDrawIndexedArray<Chunk::DrawCommand>>& multiDrawArray) const;
 
+  bool hasBoundaryNeighbors(const GlobalIndex& chunkIndex);
+
   /*
     \returns The chunk along with a lock on its mutex. Will return nullptr is no chunk is found.
   */
   [[nodiscard]] ChunkWithLock acquireChunk(const GlobalIndex& chunkIndex);
   [[nodiscard]] ConstChunkWithLock acquireChunk(const GlobalIndex& chunkIndex) const;
-
-  /*
-    Queues chunk where the block update occured for updating. If specified block is on chunk border,
-    will also update neighboring chunks. Chunk and its cardinal neighbors are queue for an immediate update,
-    while edge and corner neighbors are queued for later.
-  */
-  void sendBlockUpdate(const GlobalIndex& chunkIndex, const BlockIndex& blockIndex);
-
-  std::optional<GlobalIndex> getLazyUpdateIndex();
-  std::optional<GlobalIndex> getForceUpdateIndex();
-
-  void addToLazyUpdateQueue(const GlobalIndex& chunkIndex);
-  void addToForceUpdateQueue(const GlobalIndex& chunkIndex);
 
   bool empty() const;
   bool contains(const GlobalIndex& chunkIndex) const;
@@ -104,9 +83,6 @@ private:
   std::stack<int, std::vector<int>> m_OpenChunkSlots;
 
   mutable std::shared_mutex m_ContainerMutex;
-
-  Engine::Threads::UnorderedSetQueue<GlobalIndex> m_LazyUpdateQueue;
-  Engine::Threads::UnorderedSetQueue<GlobalIndex> m_ForceUpdateQueue;
 
 // Helper functions for chunk container access. These assume the map mutex has already been locked by one of the public functions
 private:

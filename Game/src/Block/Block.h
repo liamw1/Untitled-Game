@@ -27,7 +27,10 @@ namespace Block
     Light();
     Light(int8_t sunlight);
 
-    int8_t sunlight();
+    bool operator==(Light other) const;
+    bool operator!=(Light other) const;
+
+    int8_t sunlight() const;
 
     static constexpr int MaxValue() { return 15; }
 

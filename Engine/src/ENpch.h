@@ -5,7 +5,7 @@
 #include "Engine/Core/Log.h"
 
 // =========================== Math ========================= //
-#include "Engine/Core/VecTypes.h"
+#include "Engine/Math/Vec.h"
 
 // ======================== Platform ======================== //
 #ifdef EN_PLATFORM_WINDOWS

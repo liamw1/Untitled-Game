@@ -179,7 +179,7 @@ static const SurfaceData& getSurfaceData(const GlobalIndex& chunkIndex)
 
 
 
-static bool isEmpty(const Array3D<Block::Type, Chunk::Size()>& composition)
+static bool isEmpty(const CubicArray<Block::Type, Chunk::Size()>& composition)
 {
   EN_ASSERT(composition, "Composition does not exist!");
   for (blockIndex_t i = 0; i < Chunk::Size(); ++i)
@@ -190,7 +190,7 @@ static bool isEmpty(const Array3D<Block::Type, Chunk::Size()>& composition)
   return true;
 }
 
-static void heightMapStage(Array2D<length_t, Chunk::Size()>& heightMap, const GlobalIndex& chunkIndex)
+static void heightMapStage(SquareArray<length_t, Chunk::Size()>& heightMap, const GlobalIndex& chunkIndex)
 {
   const auto& [noiseSamples, biomeMap] = getSurfaceData(chunkIndex);
 
@@ -211,7 +211,7 @@ static void heightMapStage(Array2D<length_t, Chunk::Size()>& heightMap, const Gl
     }
 }
 
-static void soilStage(Array3D<Block::Type, Chunk::Size()>& composition, const Array2D<length_t, Chunk::Size()>& heightMap, const GlobalIndex& chunkIndex)
+static void soilStage(CubicArray<Block::Type, Chunk::Size()>& composition, const SquareArray<length_t, Chunk::Size()>& heightMap, const GlobalIndex& chunkIndex)
 {
   const auto& [noiseSamples, biomeMap] = getSurfaceData(chunkIndex);
 
@@ -225,9 +225,9 @@ static void soilStage(Array3D<Block::Type, Chunk::Size()>& composition, const Ar
     }
 }
 
-static void foliageStage(Array3D<Block::Type, Chunk::Size()>& composition, const Array2D<length_t, Chunk::Size()>& heightMap, const GlobalIndex& chunkIndex)
+static void foliageStage(CubicArray<Block::Type, Chunk::Size()>& composition, const SquareArray<length_t, Chunk::Size()>& heightMap, const GlobalIndex& chunkIndex)
 {
-  const auto createTree = [](Array3D<Block::Type, Chunk::Size()>& composition, const BlockIndex& treeIndex, Block::Type leafType)
+  const auto createTree = [](CubicArray<Block::Type, Chunk::Size()>& composition, const BlockIndex& treeIndex, Block::Type leafType)
   {
     int i = treeIndex.i;
     int j = treeIndex.j;
@@ -271,7 +271,7 @@ static void foliageStage(Array3D<Block::Type, Chunk::Size()>& composition, const
     }
 }
 
-static void lightingStage(Array3D<Block::Light, Chunk::Size()>& lighting, const Array3D<Block::Type, Chunk::Size()>& composition)
+static void lightingStage(CubicArray<Block::Light, Chunk::Size()>& lighting, const CubicArray<Block::Type, Chunk::Size()>& composition)
 {
   for (blockIndex_t i = 0; i < Chunk::Size(); ++i)
     for (blockIndex_t j = 0; j < Chunk::Size(); ++j)
@@ -289,8 +289,8 @@ static void lightingStage(Array3D<Block::Light, Chunk::Size()>& lighting, const 
 
 Chunk Terrain::GenerateNew(const GlobalIndex& chunkIndex)
 {
-  Array2D heightMap = AllocateArray2D<length_t, Chunk::Size()>();
-  Array3D composition = AllocateArray3D<Block::Type, Chunk::Size()>();
+  SquareArray heightMap = MakeSquareArray<length_t, Chunk::Size()>();
+  CubicArray composition = MakeCubicArray<Block::Type, Chunk::Size()>();
 
   std::lock_guard lock(s_Mutex);
 
@@ -304,7 +304,7 @@ Chunk Terrain::GenerateNew(const GlobalIndex& chunkIndex)
   Chunk newChunk(chunkIndex);
   if (composition)
   {
-    Array3D lighting = AllocateArray3D<Block::Light, Chunk::Size()>();
+    CubicArray lighting = MakeCubicArray<Block::Light, Chunk::Size()>();
     lightingStage(lighting, composition);
 
     newChunk.setComposition(std::move(composition));

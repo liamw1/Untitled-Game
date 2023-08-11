@@ -3,7 +3,6 @@
 #include "Chunk.h"
 #include "Block/Block.h"
 #include "Util/Noise.h"
-#include "Util/MultiDimArrays.h"
 
 class Biome
 {

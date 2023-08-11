@@ -16,20 +16,6 @@ ChunkContainer::ChunkContainer()
     m_OpenChunkSlots.push(i);
 }
 
-bool ChunkContainer::canMesh(const GlobalIndex& chunkIndex)
-{
-  EN_PROFILE_FUNCTION();
-
-  std::shared_lock lock(m_ContainerMutex);
-
-  for (int i = -1; i <= 1; ++i)
-    for (int j = -1; j <= 1; ++j)
-      for (int k = -1; k <= 1; ++k)
-        if (m_BoundaryIndices.contains(chunkIndex + GlobalIndex(i, j, k)))
-          return false;
-  return true;
-}
-
 bool ChunkContainer::insert(Chunk&& newChunk)
 {
   std::lock_guard lock(m_ContainerMutex);
@@ -53,7 +39,6 @@ bool ChunkContainer::insert(Chunk&& newChunk)
         {
           GlobalIndex neighborIndex = chunk.globalIndex() + GlobalIndex(i, j, k);
           boundaryUpdate(neighborIndex);
-          m_LazyUpdateQueue.add(neighborIndex);
         }
 
   return insertionSuccess;
@@ -87,18 +72,6 @@ bool ChunkContainer::erase(const GlobalIndex& chunkIndex)
   return true;
 }
 
-bool ChunkContainer::update(const GlobalIndex& chunkIndex, bool meshGenerated)
-{
-  auto [chunk, lock] = acquireChunk(chunkIndex);
-
-  if (!chunk)
-    return false;
-
-  chunk->update(meshGenerated);
-
-  return true;
-}
-
 std::unordered_set<GlobalIndex> ChunkContainer::findAllLoadableIndices() const
 {
   std::shared_lock lock(m_ContainerMutex);
@@ -127,6 +100,18 @@ void ChunkContainer::uploadMeshes(Engine::Threads::UnorderedSetQueue<Chunk::Draw
   }
 }
 
+bool ChunkContainer::hasBoundaryNeighbors(const GlobalIndex& chunkIndex)
+{
+  std::shared_lock lock(m_ContainerMutex);
+
+  for (int i = -1; i <= 1; ++i)
+    for (int j = -1; j <= 1; ++j)
+      for (int k = -1; k <= 1; ++k)
+        if (m_BoundaryIndices.contains(chunkIndex + GlobalIndex(i, j, k)))
+          return true;
+  return false;
+}
+
 ChunkWithLock ChunkContainer::acquireChunk(const GlobalIndex& chunkIndex)
 {
   ConstChunkWithLock chunkWithLock = static_cast<const ChunkContainer*>(this)->acquireChunk(chunkIndex);
@@ -143,70 +128,6 @@ ConstChunkWithLock ChunkContainer::acquireChunk(const GlobalIndex& chunkIndex) c
     chunkLock = chunk->acquireLock();
 
   return { chunk, std::move(chunkLock) };
-}
-
-void ChunkContainer::sendBlockUpdate(const GlobalIndex& chunkIndex, const BlockIndex& blockIndex)
-{
-  m_ForceUpdateQueue.add(chunkIndex);
-
-  std::vector<Direction> updateDirections{};
-  for (Direction direction : Directions())
-    if (Util::BlockNeighborIsInAnotherChunk(blockIndex, direction))
-      updateDirections.push_back(direction);
-
-  EN_ASSERT(updateDirections.size() <= 3, "Too many update directions for a single block update!");
-
-  // Update neighbors in cardinal directions
-  for (Direction direction : updateDirections)
-  {
-    GlobalIndex neighborIndex = chunkIndex + GlobalIndex::Dir(direction);
-    m_ForceUpdateQueue.add(neighborIndex);
-  }
-
-  // Queue edge neighbor for updating
-  if (updateDirections.size() == 2)
-  {
-    GlobalIndex edgeNeighborIndex = chunkIndex + GlobalIndex::Dir(updateDirections[0]) + GlobalIndex::Dir(updateDirections[1]);
-    m_LazyUpdateQueue.add(edgeNeighborIndex);
-  }
-
-  // Queue edge/corner neighbors for updating
-  if (updateDirections.size() == 3)
-  {
-    GlobalIndex cornerNeighborIndex = chunkIndex;
-    for (int i = 0; i < 3; ++i)
-    {
-      int j = (i + 1) % 3;
-      GlobalIndex edgeNeighborIndex = chunkIndex + GlobalIndex::Dir(updateDirections[i]) + GlobalIndex::Dir(updateDirections[j]);
-      m_LazyUpdateQueue.add(edgeNeighborIndex);
-
-      cornerNeighborIndex += GlobalIndex::Dir(updateDirections[i]);
-    }
-
-    m_LazyUpdateQueue.add(cornerNeighborIndex);
-  }
-}
-
-std::optional<GlobalIndex> ChunkContainer::getLazyUpdateIndex()
-{
-  return m_LazyUpdateQueue.tryRemove();
-}
-
-std::optional<GlobalIndex> ChunkContainer::getForceUpdateIndex()
-{
-  return m_ForceUpdateQueue.tryRemove();
-}
-
-void ChunkContainer::addToLazyUpdateQueue(const GlobalIndex& chunkIndex)
-{
-  if (!m_ForceUpdateQueue.contains(chunkIndex))
-    m_LazyUpdateQueue.add(chunkIndex);
-}
-
-void ChunkContainer::addToForceUpdateQueue(const GlobalIndex& chunkIndex)
-{
-  m_LazyUpdateQueue.remove(chunkIndex);
-  m_ForceUpdateQueue.add(chunkIndex);
 }
 
 bool ChunkContainer::empty() const

@@ -1,7 +1,6 @@
 #pragma once
 #include "Indexing.h"
 #include "Block/Block.h"
-#include "Util/MultiDimArrays.h"
 
 /*
   A class representing a NxNxN cube of blocks.
@@ -28,12 +27,11 @@ public:
   */
   const GlobalIndex& globalIndex() const;
 
-  bool empty() const;
+  CubicArray<Block::Type, c_ChunkSize>& composition();
+  const CubicArray<Block::Type, c_ChunkSize>& composition() const;
 
-  Block::Type getBlockType(const BlockIndex& blockIndex) const;
-  Block::Type getBlockType(blockIndex_t i, blockIndex_t j, blockIndex_t k) const;
-  Block::Light getBlockLight(const BlockIndex& blockIndex) const;
-  Block::Light getBlockLight(blockIndex_t i, blockIndex_t j, blockIndex_t k) const;
+  CubicArray<Block::Light, c_ChunkSize>& lighting();
+  const CubicArray<Block::Light, c_ChunkSize>& lighting() const;
 
   /*
     \return Whether or not a given chunk face has transparent blocks. Useful for deciding which chunks should be loaded
@@ -46,16 +44,14 @@ public:
   */
   bool isFaceOpaque(Direction face) const;
 
-  void setBlockType(blockIndex_t i, blockIndex_t j, blockIndex_t k, Block::Type blockType);
   void setBlockType(const BlockIndex& blockIndex, Block::Type blockType);
-  void setBlockLight(blockIndex_t i, blockIndex_t j, blockIndex_t k, Block::Light blockLight);
   void setBlockLight(const BlockIndex& blockIndex, Block::Light blockLight);
 
-  void setComposition(Array3D<Block::Type, c_ChunkSize>&& composition);
-  void setLighting(Array3D<Block::Light, c_ChunkSize>&& lighting);
+  void setComposition(CubicArray<Block::Type, c_ChunkSize>&& composition);
+  void setLighting(CubicArray<Block::Light, c_ChunkSize>&& lighting);
   void determineOpacity();
 
-  void update(bool hasMesh);
+  void update();
   void reset();
 
   _Acquires_lock_(return) std::unique_lock<std::mutex> acquireLock() const;
@@ -157,8 +153,8 @@ public:
 
 private:
   mutable std::mutex m_Mutex;
-  Array3D<Block::Type, c_ChunkSize> m_Composition;
-  Array3D<Block::Light, c_ChunkSize> m_Lighting;
+  CubicArray<Block::Type, c_ChunkSize> m_Composition;
+  CubicArray<Block::Light, c_ChunkSize> m_Lighting;
   GlobalIndex m_GlobalIndex;
   std::atomic<uint16_t> m_NonOpaqueFaces;
 

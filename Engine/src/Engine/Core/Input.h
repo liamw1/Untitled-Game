@@ -1,7 +1,7 @@
 #pragma once
 #include "KeyCodes.h"
 #include "MouseButtonCodes.h"
-#include "VecTypes.h"
+#include "Engine/Math/Vec.h"
 
 /*
   Abstract representation of player input.

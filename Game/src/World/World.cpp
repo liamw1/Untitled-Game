@@ -120,11 +120,11 @@ RayIntersection World::castRaySegment(const Vec3& pointA, const Vec3& pointB) co
 
         // Search to see if chunk is loaded
         auto [chunk, lock] = m_ChunkManager.acquireChunk(chunkIndex);
-        if (!chunk || chunk->empty())
+        if (!chunk || !chunk->composition())
           continue;
 
         // If block has collision, note the intersection and move to next spatial direction
-        if (Block::HasCollision(chunk->getBlockType(blockIndex)))
+        if (Block::HasCollision(chunk->composition()(blockIndex)))
         {
           int faceID = 2 * u + !pointedUpstream;
           tmin = t;

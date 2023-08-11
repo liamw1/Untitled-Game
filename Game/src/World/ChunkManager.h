@@ -64,6 +64,11 @@ private:
   std::unique_ptr<Engine::MultiDrawIndexedArray<Chunk::DrawCommand>> m_OpaqueMultiDrawArray;
   std::unique_ptr<Engine::MultiDrawIndexedArray<Chunk::DrawCommand>> m_TransparentMultiDrawArray;
 
+  // Updates
+  Engine::Threads::UnorderedSetQueue<GlobalIndex> m_LightingUpdateQueue;
+  Engine::Threads::UnorderedSetQueue<GlobalIndex> m_LazyMeshUpdateQueue;
+  Engine::Threads::UnorderedSetQueue<GlobalIndex> m_ForceMeshUpdateQueue;
+
   // Multi-threading
   std::atomic<bool> m_Running;
   std::thread m_LoadThread;
@@ -76,28 +81,28 @@ private:
   void loadWorker();
   void updateWorker();
 
+  void addToLazyUpdateQueue(const GlobalIndex& chunkIndex);
+  void addToForceUpdateQueue(const GlobalIndex& chunkIndex);
+
   void generateNewChunk(const GlobalIndex& chunkIndex);
+
+  /*
+    Queues chunk where the block update occured for updating. If specified block is on chunk border,
+    will also update neighboring chunks. Chunk and its cardinal neighbors are queue for an immediate update,
+    while edge and corner neighbors are queued for later.
+  */
+  void sendBlockUpdate(const GlobalIndex& chunkIndex, const BlockIndex& blockIndex);
 
   // Meshing
 private:
-  class BlockData
+  struct BlockData
   {
-  public:
+    CubicArray<Block::Type, Chunk::Size() + 2, -1> composition;
+    CubicArray<Block::Light, Chunk::Size() + 2, -1> lighting;
+
     BlockData();
 
-    Block::Type getType(const BlockIndex& blockIndex) const;
-    Block::Light getLight(const BlockIndex& blockIndex) const;
-    void set(const BlockIndex& dataIndex, Block::Type blockType, Block::Light blockLight);
-    void set(const BlockIndex& dataIndex, const Chunk* chunk, const BlockIndex& blockIndex);
-
-    void reset();
-    bool empty() const;
-
-  private:
-    static constexpr int c_Size = Chunk::Size() + 2;
-
-    Array3D<Block::Type, Chunk::Size() + 2> m_Type;
-    Array3D<Block::Light, Chunk::Size() + 2> m_Light;
+    void fill(const BlockBox& fillSection, const Chunk* chunk, const BlockIndex& chunkBase);
   };
 
   const BlockData& getBlockData(const GlobalIndex& chunkIndex) const;
@@ -112,5 +117,5 @@ private:
      bits 22-31: Texure ID
      Uses AO algorithm outlined in https://0fps.net/2013/07/03/ambient-occlusion-for-minecraft-like-worlds/
   */
-  bool meshChunk(const GlobalIndex& chunkIndex);
+  void meshChunk(const GlobalIndex& chunkIndex);
 };

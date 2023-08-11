@@ -34,29 +34,24 @@ const GlobalIndex& Chunk::globalIndex() const
   return m_GlobalIndex;
 }
 
-bool Chunk::empty() const
+CubicArray<Block::Type, Chunk::Size()>& Chunk::composition()
 {
-  return !m_Composition;
+  return const_cast<CubicArray<Block::Type, Chunk::Size()>&>(static_cast<const Chunk*>(this)->composition());
 }
 
-Block::Type Chunk::getBlockType(const BlockIndex& blockIndex) const
+const CubicArray<Block::Type, Chunk::Size()>& Chunk::composition() const
 {
-  return getBlockType(blockIndex.i, blockIndex.j, blockIndex.k);
+  return m_Composition;
 }
 
-Block::Type Chunk::getBlockType(blockIndex_t i, blockIndex_t j, blockIndex_t k) const
+CubicArray<Block::Light, Chunk::Size()>& Chunk::lighting()
 {
-  return m_Composition[i][j][k];
+  return const_cast<CubicArray<Block::Light, Chunk::Size()>&>(static_cast<const Chunk*>(this)->lighting());
 }
 
-Block::Light Chunk::getBlockLight(const BlockIndex& blockIndex) const
+const CubicArray<Block::Light, Chunk::Size()>& Chunk::lighting() const
 {
-  return getBlockLight(blockIndex.i, blockIndex.j, blockIndex.k);
-}
-
-Block::Light Chunk::getBlockLight(blockIndex_t i, blockIndex_t j, blockIndex_t k) const
-{
-  return m_Lighting[i][j][k];
+  return m_Lighting;
 }
 
 bool Chunk::isFaceOpaque(Direction face) const
@@ -65,43 +60,31 @@ bool Chunk::isFaceOpaque(Direction face) const
   return !(nonOpaqueFaces & bit(static_cast<int>(face)));
 }
 
-void Chunk::setBlockType(blockIndex_t i, blockIndex_t j, blockIndex_t k, Block::Type blockType)
+void Chunk::setBlockType(const BlockIndex& blockIndex, Block::Type blockType)
 {
-  if (empty())
+  if (!m_Composition)
   {
     if (blockType == Block::Type::Air)
       return;
 
-    m_Composition = AllocateArray3D<Block::Type, c_ChunkSize>(Block::Type::Air);
-    m_Lighting = AllocateArray3D<Block::Light, c_ChunkSize>(15);
+    m_Composition = MakeCubicArray<Block::Type, c_ChunkSize>(Block::Type::Air);
   }
-  m_Composition[i][j][k] = blockType;
-}
-
-void Chunk::setBlockType(const BlockIndex& blockIndex, Block::Type blockType)
-{
-  setBlockType(blockIndex.i, blockIndex.j, blockIndex.k, blockType);
-}
-
-void Chunk::setBlockLight(blockIndex_t i, blockIndex_t j, blockIndex_t k, Block::Light blockLight)
-{
-  if (empty())
-  {
-    if (blockLight.sunlight() == Block::Light::MaxValue())
-      return;
-
-    m_Composition = AllocateArray3D<Block::Type, c_ChunkSize>(Block::Type::Air);
-    m_Lighting = AllocateArray3D<Block::Light, c_ChunkSize>(15);
-  }
-  m_Lighting[i][j][k] = blockLight;
+  m_Composition(blockIndex) = blockType;
 }
 
 void Chunk::setBlockLight(const BlockIndex& blockIndex, Block::Light blockLight)
 {
-  setBlockLight(blockIndex.i, blockIndex.j, blockIndex.k, blockLight);
+  if (!m_Lighting)
+  {
+    if (blockLight.sunlight() == Block::Light::MaxValue())
+      return;
+
+    m_Lighting = MakeCubicArray<Block::Light, c_ChunkSize>(Block::Light::MaxValue());
+  }
+  m_Lighting(blockIndex) = blockLight;
 }
 
-void Chunk::setComposition(Array3D<Block::Type, c_ChunkSize>&& composition)
+void Chunk::setComposition(CubicArray<Block::Type, c_ChunkSize>&& composition)
 {
   if (m_Composition)
     EN_WARN("Calling setComposition on a non-empty chunk!  Deleting previous allocation...");
@@ -109,7 +92,7 @@ void Chunk::setComposition(Array3D<Block::Type, c_ChunkSize>&& composition)
   determineOpacity();
 }
 
-void Chunk::setLighting(Array3D<Block::Light, c_ChunkSize>&& lighting)
+void Chunk::setLighting(CubicArray<Block::Light, c_ChunkSize>&& lighting)
 {
   if (m_Lighting)
     EN_WARN("Calling setLighting on an already lit chunk!  Deleting previous allocation...");
@@ -121,7 +104,7 @@ void Chunk::determineOpacity()
 {
   static constexpr blockIndex_t chunkLimits[2] = { 0, Chunk::Size() - 1 };
 
-  if (empty())
+  if (!m_Composition)
   {
     m_NonOpaqueFaces.store(0x3F);
     return;
@@ -134,7 +117,7 @@ void Chunk::determineOpacity()
       for (blockIndex_t j = 0; j < Chunk::Size(); ++j)
       {
         BlockIndex blockIndex = BlockIndex::CreatePermuted(chunkLimits[IsUpstream(face)], i, j, GetCoordID(face));
-        if (Block::HasTransparency(getBlockType(blockIndex)))
+        if (Block::HasTransparency(m_Composition(blockIndex)))
         {
           nonOpaqueFaces |= bit(static_cast<int>(face));
           goto nextFace;
@@ -145,13 +128,12 @@ void Chunk::determineOpacity()
   m_NonOpaqueFaces.store(nonOpaqueFaces);
 }
 
-void Chunk::update(bool hasMesh)
+void Chunk::update()
 {
-  if (!empty() && !hasMesh && getBlockType(0, 0, 0) == Block::Type::Air)
-  {
+  if (m_Composition && m_Composition.filledWith(Block::Type::Air))
     m_Composition.reset();
+  if (m_Lighting && m_Lighting.filledWith(Block::Light::MaxValue()))
     m_Lighting.reset();
-  }
 
   determineOpacity();
 }

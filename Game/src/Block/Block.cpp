@@ -1,6 +1,5 @@
 #include "GMpch.h"
 #include "Block.h"
-#include "Util/MultiDimArrays.h"
 #include <filesystem>
 
 struct BlockUniformData
@@ -166,7 +165,17 @@ Block::Light::Light(int8_t sunlight)
   EN_ASSERT(boundsCheck(sunlight, 0, MaxValue() + 1), "Invalid value for sunlight!");
 }
 
-int8_t Block::Light::sunlight()
+bool Block::Light::operator==(Light other) const
+{
+  return m_Sunlight == other.m_Sunlight;
+}
+
+bool Block::Light::operator!=(Light other) const
+{
+  return !(*this == other);
+}
+
+int8_t Block::Light::sunlight() const
 {
   return m_Sunlight;
 }
