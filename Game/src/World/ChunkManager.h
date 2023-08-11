@@ -36,7 +36,8 @@ public:
   void setLoadModeTerrain();
   void setLoadModeVoid();
   void launchLoadThread();
-  void launchUpdateThread();
+  void launchMeshingThread();
+  void launchLightingThread();
 
   // Debug
   void loadChunk(const GlobalIndex& chunkIndex, Block::Type blockType);
@@ -72,17 +73,20 @@ private:
   // Multi-threading
   std::atomic<bool> m_Running;
   std::thread m_LoadThread;
-  std::thread m_UpdateThread;
+  std::thread m_MeshingThread;
+  std::thread m_LightingThread;
   ChunkContainer m_ChunkContainer;
 
   LoadMode m_LoadMode;
   GlobalIndex m_PrevPlayerOriginIndex;
 
   void loadWorker();
-  void updateWorker();
+  void meshingWorker();
+  void lightingWorker();
 
-  void addToLazyUpdateQueue(const GlobalIndex& chunkIndex);
-  void addToForceUpdateQueue(const GlobalIndex& chunkIndex);
+  void addToLightingUpdateQueue(const GlobalIndex& chunkIndex);
+  void addToLazyMeshUpdateQueue(const GlobalIndex& chunkIndex);
+  void addToForceMeshUpdateQueue(const GlobalIndex& chunkIndex);
 
   void generateNewChunk(const GlobalIndex& chunkIndex);
 
@@ -105,7 +109,7 @@ private:
     void fill(const BlockBox& fillSection, const Chunk* chunk, const BlockIndex& chunkBase);
   };
 
-  const BlockData& getBlockData(const GlobalIndex& chunkIndex) const;
+  BlockData& getBlockData(const GlobalIndex& chunkIndex, bool getInteriorLighting = true) const;
 
   /*
     Generates simplistic mesh in a compressed format based on chunk compostion.
@@ -118,4 +122,6 @@ private:
      Uses AO algorithm outlined in https://0fps.net/2013/07/03/ambient-occlusion-for-minecraft-like-worlds/
   */
   void meshChunk(const GlobalIndex& chunkIndex);
+
+  void updateLighting(const GlobalIndex& chunkIndex);
 };

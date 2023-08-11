@@ -417,6 +417,23 @@ public:
     return true;
   }
 
+  template<IntegerType IndexType, int ArrLen, int ArrBase>
+  bool contentsEqual(const IBox3<IndexType>& compareSection, const CubicArray<T, ArrLen, ArrBase>& arr, const IVec3<IndexType>& arrBase)
+  {
+    EN_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
+
+    if (!arr)
+      return false;
+
+    IVec3<IndexType> compareExtents = compareSection.extents();
+    for (IndexType i = 0; i < compareExtents.i; ++i)
+      for (IndexType j = 0; j < compareExtents.j; ++j)
+        for (IndexType k = 0; k < compareExtents.k; ++k)
+          if ((*this)[compareSection.min.i + i][compareSection.min.j + j][compareSection.min.k + k] != arr[arrBase.i + i][arrBase.j + j][arrBase.k + k])
+            return false;
+    return true;
+  }
+
   void fill(const T& val)
   {
     EN_CORE_ASSERT(m_Data, "Data has not yet been allocated!");

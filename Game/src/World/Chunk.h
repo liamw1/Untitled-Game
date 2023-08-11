@@ -44,6 +44,9 @@ public:
   */
   bool isFaceOpaque(Direction face) const;
 
+  Block::Type getBlockType(const BlockIndex& blockIndex) const;
+  Block::Light getBlockLight(const BlockIndex& blockIndex) const;
+
   void setBlockType(const BlockIndex& blockIndex, Block::Type blockType);
   void setBlockLight(const BlockIndex& blockIndex, Block::Light blockLight);
 

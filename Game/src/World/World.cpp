@@ -20,7 +20,8 @@ void World::initialize()
   // m_ChunkManager.loadChunk({ 0, -1, 2 }, Block::Type::Air);
   // m_ChunkManager.loadChunk({ 0, -1, 1 }, Block::Type::Sand);
   m_ChunkManager.launchLoadThread();
-  m_ChunkManager.launchUpdateThread();
+  m_ChunkManager.launchMeshingThread();
+  m_ChunkManager.launchLightingThread();
 
 #if USE_LODS
   if (createLODs)
@@ -120,11 +121,11 @@ RayIntersection World::castRaySegment(const Vec3& pointA, const Vec3& pointB) co
 
         // Search to see if chunk is loaded
         auto [chunk, lock] = m_ChunkManager.acquireChunk(chunkIndex);
-        if (!chunk || !chunk->composition())
+        if (!chunk)
           continue;
 
         // If block has collision, note the intersection and move to next spatial direction
-        if (Block::HasCollision(chunk->composition()(blockIndex)))
+        if (Block::HasCollision(chunk->getBlockType(blockIndex)))
         {
           int faceID = 2 * u + !pointedUpstream;
           tmin = t;

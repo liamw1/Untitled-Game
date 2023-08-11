@@ -60,6 +60,16 @@ bool Chunk::isFaceOpaque(Direction face) const
   return !(nonOpaqueFaces & bit(static_cast<int>(face)));
 }
 
+Block::Type Chunk::getBlockType(const BlockIndex& blockIndex) const
+{
+  return m_Composition ? m_Composition(blockIndex) : Block::Type::Air;
+}
+
+Block::Light Chunk::getBlockLight(const BlockIndex& blockIndex) const
+{
+  return m_Lighting ? m_Lighting(blockIndex) : Block::Light::MaxValue();
+}
+
 void Chunk::setBlockType(const BlockIndex& blockIndex, Block::Type blockType)
 {
   if (!m_Composition)
@@ -94,8 +104,6 @@ void Chunk::setComposition(CubicArray<Block::Type, c_ChunkSize>&& composition)
 
 void Chunk::setLighting(CubicArray<Block::Light, c_ChunkSize>&& lighting)
 {
-  if (m_Lighting)
-    EN_WARN("Calling setLighting on an already lit chunk!  Deleting previous allocation...");
   m_Lighting = std::move(lighting);
   determineOpacity();
 }
