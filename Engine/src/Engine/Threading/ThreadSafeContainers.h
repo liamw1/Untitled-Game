@@ -85,10 +85,16 @@ namespace Engine::Threads
       return std::nullopt;
     }
 
-    size_t empty()
+    bool empty()
     {
       std::lock_guard lock(m_Mutex);
       return m_Data.empty();
+    }
+
+    size_t size()
+    {
+      std::lock_guard lock(m_Mutex);
+      return m_Data.size();
     }
 
     template<typename T>

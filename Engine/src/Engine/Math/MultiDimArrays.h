@@ -410,28 +410,34 @@ public:
   bool filledWith(const T& val) const
   {
     EN_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
+    return std::all_of(m_Data, m_Data + Size(), [&val](const T& data)
+      {
+        return data == val;
+      });
+  }
 
-    for (int i = 0; i < Size(); ++i)
-      if (m_Data[i] != val)
-        return false;
-    return true;
+  template<IntegerType IndexType>
+  bool filledWith(const IBox3<IndexType>& section, const T& val) const
+  {
+    EN_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
+    return section.AllOf([this, &val](const IVec3<IndexType>& index)
+      {
+        return (*this)(index) == val;
+      });
   }
 
   template<IntegerType IndexType, int ArrLen, int ArrBase>
   bool contentsEqual(const IBox3<IndexType>& compareSection, const CubicArray<T, ArrLen, ArrBase>& arr, const IVec3<IndexType>& arrBase)
   {
-    EN_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
-
-    if (!arr)
+    if (!m_Data && !arr)
+      return true;
+    if (!m_Data || !arr)
       return false;
 
-    IVec3<IndexType> compareExtents = compareSection.extents();
-    for (IndexType i = 0; i < compareExtents.i; ++i)
-      for (IndexType j = 0; j < compareExtents.j; ++j)
-        for (IndexType k = 0; k < compareExtents.k; ++k)
-          if ((*this)[compareSection.min.i + i][compareSection.min.j + j][compareSection.min.k + k] != arr[arrBase.i + i][arrBase.j + j][arrBase.k + k])
-            return false;
-    return true;
+    return compareSection.AllOf([this, &compareSection, &arr, &arrBase](const IVec3<IndexType>& index)
+      {
+        return (*this)(index) == arr(arrBase + index - compareSection.min);
+      });
   }
 
   void fill(const T& val)
@@ -444,23 +450,20 @@ public:
   void fill(const IBox3<IndexType>& fillSection, const T& val)
   {
     EN_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
-
-    for (IndexType i = fillSection.min.i; i < fillSection.max.i; ++i)
-      for (IndexType j = fillSection.min.j; j < fillSection.max.j; ++j)
-        for (IndexType k = fillSection.min.k; k < fillSection.max.k; ++k)
-          (*this)[i][j][k] = val;
+    fillSection.forEach([this, &val](const IVec3<IndexType>& index)
+      {
+        (*this)(index) = val;
+      });
   }
 
   template<IntegerType IndexType, int ArrLen, int ArrBase>
   void fill(const IBox3<IndexType>& fillSection, const CubicArray<T, ArrLen, ArrBase>& arr, const IVec3<IndexType>& arrBase)
   {
     EN_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
-
-    IVec3<IndexType> fillExtents = fillSection.extents();
-    for (IndexType i = 0; i < fillExtents.i; ++i)
-      for (IndexType j = 0; j < fillExtents.j; ++j)
-        for (IndexType k = 0; k < fillExtents.k; ++k)
-          (*this)[fillSection.min.i + i][fillSection.min.j + j][fillSection.min.k + k] = arr[arrBase.i + i][arrBase.j + j][arrBase.k + k];
+    fillSection.forEach([this, &fillSection, &arr, &arrBase](const IVec3<IndexType>& index)
+      {
+        (*this)(index) = arr(arrBase + index - fillSection.min);
+      });
   }
 
   void reset()

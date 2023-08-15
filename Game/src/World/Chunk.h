@@ -75,8 +75,9 @@ public:
   static Vec3 AnchorPosition(const GlobalIndex& chunkIndex, const GlobalIndex& originIndex);
 
   static constexpr blockIndex_t Size() { return c_ChunkSize; }
-  static constexpr length_t Length() { return Block::Length() * c_ChunkSize; }
-  static constexpr int TotalBlocks() { return c_ChunkSize * c_ChunkSize * c_ChunkSize; }
+  static constexpr length_t Length() { return Block::Length() * Size(); }
+  static constexpr int TotalBlocks() { return Size() * Size() * Size(); }
+  static constexpr BlockBox Bounds() { return BlockBox(0, Chunk::Size()); }
 
   class Vertex
   {

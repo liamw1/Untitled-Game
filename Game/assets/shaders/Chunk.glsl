@@ -15,6 +15,11 @@ layout(std140, binding = 1) uniform Block
 {
   float u_BlockLength;
 };
+layout(std140, binding = 2) uniform Light
+{
+  float u_MaxSunlight;
+  float u_SunIntensity;
+};
 layout(std430, binding = 0) buffer ChunkAnchors
 {
   vec4 u_AnchorPosition[];
@@ -41,7 +46,7 @@ void main()
   uint sunlightLevel =         (a_Lighting >> 16) & 0xF;
   uint ambientOcclusionLevel = (a_Lighting >> 20) & 0x3;
 
-  float light = float(sunlightLevel + 1) / 16.0;
+  float light = u_SunIntensity * float(sunlightLevel + 1) / (u_MaxSunlight + 1);
   light *= 1.0 - 0.2 * ambientOcclusionLevel;
   v_BasicLight = vec4(vec3(light), 1.0f);
 

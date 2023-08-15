@@ -51,6 +51,32 @@ struct IBox3
     return boxExtents.i * boxExtents.j * boxExtents.k;
   }
 
+  template<typename F, typename... Args>
+  bool AllOf(F condition, Args&&... args) const
+  {
+    EN_CORE_ASSERT(valid());
+
+    IVec3<IntType> index;
+    for (index.i = min.i; index.i < max.i; ++index.i)
+      for (index.j = min.j; index.j < max.j; ++index.j)
+        for (index.k = min.k; index.k < max.k; ++index.k)
+          if (!condition(index, std::forward<Args>(args)...))
+            return false;
+    return true;
+  }
+
+  template<typename F, typename... Args>
+  void forEach(F function, Args&&... args) const
+  {
+    EN_CORE_ASSERT(valid());
+
+    IVec3<IntType> index;
+    for (index.i = min.i; index.i < max.i; ++index.i)
+      for (index.j = min.j; index.j < max.j; ++index.j)
+        for (index.k = min.k; index.k < max.k; ++index.k)
+          function(index, std::forward<Args>(args)...);
+  }
+
   static constexpr IBox3<IntType> Union(const IBox3<IntType>& other)
   {
     return { componentWiseMin(min, other.min), componentWiseMax(max, other.max) };

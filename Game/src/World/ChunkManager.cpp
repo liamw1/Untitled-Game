@@ -27,6 +27,7 @@ void ChunkManager::initialize()
   if (!s_Shader)
   {
     s_Shader = Engine::Shader::Create("assets/shaders/Chunk.glsl");
+    s_LightUniform = Engine::Uniform::Create(2, sizeof(LightUniforms));
     s_TextureArray = Block::GetTextureArray();
 
     s_SSBO = Engine::StorageBuffer::Create(Engine::StorageBuffer::Type::SSBO, c_StorageBufferBinding);
@@ -36,6 +37,10 @@ void ChunkManager::initialize()
 
   m_OpaqueMultiDrawArray = std::make_unique<Engine::MultiDrawIndexedArray<Chunk::DrawCommand>>(s_VertexBufferLayout);
   m_TransparentMultiDrawArray = std::make_unique<Engine::MultiDrawIndexedArray<Chunk::DrawCommand>>(s_VertexBufferLayout);
+
+  LightUniforms lightUniforms;
+  lightUniforms.sunIntensity = 1.0f;
+  s_LightUniform->set(&lightUniforms, sizeof(LightUniforms));
 }
 
 void ChunkManager::render()
@@ -201,30 +206,18 @@ const ConstChunkWithLock ChunkManager::acquireChunk(const LocalIndex& chunkIndex
 
 void ChunkManager::placeBlock(GlobalIndex chunkIndex, BlockIndex blockIndex, Direction face, Block::Type blockType)
 {
+  if (Util::BlockNeighborIsInAnotherChunk(blockIndex, face))
+  {
+    chunkIndex += GlobalIndex::Dir(face);
+    blockIndex -= static_cast<blockIndex_t>(Chunk::Size() - 1) * BlockIndex::Dir(face);
+  }
+  else
+    blockIndex += BlockIndex::Dir(face);
+
   {
     auto [chunk, lock] = m_ChunkContainer.acquireChunk(chunkIndex);
-
-    if (!chunk || !Block::HasCollision(chunk->getBlockType(blockIndex)))
-    {
-      EN_WARN("Cannot call placeBlock on block with no collision!");
+    if (!chunk)
       return;
-    }
-
-    if (Util::BlockNeighborIsInAnotherChunk(blockIndex, face))
-    {
-      chunkIndex += GlobalIndex::Dir(face);
-      auto [neighbor, neighborLock] = m_ChunkContainer.acquireChunk(chunkIndex);
-
-      if (!neighbor)
-        return;
-
-      chunk = neighbor;
-      lock = std::move(neighborLock);
-
-      blockIndex -= static_cast<blockIndex_t>(Chunk::Size() - 1) * BlockIndex::Dir(face);
-    }
-    else
-      blockIndex += BlockIndex::Dir(face);
 
     // If trying to place an air block or trying to place a block in a space occupied by another block with collision, do nothing
     if (blockType == Block::Type::Air || Block::HasCollision(chunk->getBlockType(blockIndex)))
@@ -236,15 +229,19 @@ void ChunkManager::placeBlock(GlobalIndex chunkIndex, BlockIndex blockIndex, Dir
     chunk->setBlockType(blockIndex, blockType);
   }
 
+  if (!Block::HasTransparency(blockType))
+    addToLightingUpdateQueue(chunkIndex);
   sendBlockUpdate(chunkIndex, blockIndex);
 }
 
 void ChunkManager::removeBlock(const GlobalIndex& chunkIndex, const BlockIndex& blockIndex)
 {
+  Block::Type removedBlock = Block::Type::Null;
+
   {
     auto [chunk, lock] = m_ChunkContainer.acquireChunk(chunkIndex);
 
-    Block::Type removedBlock = chunk->getBlockType(blockIndex);
+    removedBlock = chunk->getBlockType(blockIndex);
     chunk->setBlockType(blockIndex, Block::Type::Air);
 
     // Update lighting for effected block for immediate meshing
@@ -257,11 +254,10 @@ void ChunkManager::removeBlock(const GlobalIndex& chunkIndex, const BlockIndex& 
       chunk->setBlockLight(blockIndex, chunk->getBlockLight(blockNeighbor));
       break;
     }
-
-    if (!Block::HasTransparency(removedBlock))
-      addToLightingUpdateQueue(chunkIndex);
   }
 
+  if (!Block::HasTransparency(removedBlock))
+    addToLightingUpdateQueue(chunkIndex);
   sendBlockUpdate(chunkIndex, blockIndex);
 }
 
@@ -450,12 +446,15 @@ ChunkManager::BlockData::BlockData()
   : composition(MakeCubicArray<Block::Type, Chunk::Size() + 2, -1>()),
     lighting(MakeCubicArray<Block::Light, Chunk::Size() + 2, -1>()) {}
 
-void ChunkManager::BlockData::fill(const BlockBox& fillSection, const Chunk* chunk, const BlockIndex& chunkBase)
+void ChunkManager::BlockData::fill(const BlockBox& fillSection, const Chunk* chunk, const BlockIndex& chunkBase, bool fillLight)
 {
   if (chunk->composition())
     composition.fill(fillSection, chunk->composition(), chunkBase);
   else
     composition.fill(fillSection, Block::Type::Air);
+
+  if (!fillLight)
+    return;
 
   if (chunk->lighting())
     lighting.fill(fillSection, chunk->lighting(), chunkBase);
@@ -511,6 +510,8 @@ static BlockBox corner(const CubicArray<T, Len, Base>& arr, const GlobalIndex& o
 
 ChunkManager::BlockData& ChunkManager::getBlockData(const GlobalIndex& chunkIndex, bool getInteriorLighting) const
 {
+  EN_PROFILE_FUNCTION();
+
   thread_local BlockData blockData;
   blockData.composition.fill(Block::Type::Null);
   blockData.lighting.fill(Block::Light());
@@ -518,19 +519,11 @@ ChunkManager::BlockData& ChunkManager::getBlockData(const GlobalIndex& chunkInde
   // Load blocks from chunk
   {
     auto [chunk, lock] = m_ChunkContainer.acquireChunk(chunkIndex);
-    if (!chunk || !chunk->composition())
+    if (!chunk)
       return blockData;
 
     BlockBox fillSection(0, Chunk::Size());
-    blockData.composition.fill(fillSection, chunk->composition(), BlockIndex(0));
-
-    if (getInteriorLighting)
-    {
-      if (chunk->lighting())
-        blockData.lighting.fill(fillSection, chunk->lighting(), BlockIndex(0));
-      else
-        blockData.lighting.fill(fillSection, Block::Light::MaxValue());
-    }
+    blockData.fill(fillSection, chunk, BlockIndex(0), getInteriorLighting);
   }
 
   // Load blocks from cardinal neighbors
@@ -568,9 +561,9 @@ ChunkManager::BlockData& ChunkManager::getBlockData(const GlobalIndex& chunkInde
     }
 
   // Load blocks from corner neighbors
-  for (int i = -1; i < 2; i += 2)
-    for (int j = -1; j < 2; j += 2)
-      for (int k = -1; k < 2; k += 2)
+  for (int i = -1; i <= 1; i += 2)
+    for (int j = -1; j <= 1; j += 2)
+      for (int k = -1; k <= 1; k += 2)
       {
         GlobalIndex offset(i, j, k);
         GlobalIndex neighborIndex = chunkIndex + offset;
@@ -590,94 +583,94 @@ ChunkManager::BlockData& ChunkManager::getBlockData(const GlobalIndex& chunkInde
 
 void ChunkManager::meshChunk(const GlobalIndex& chunkIndex)
 {
-  const BlockData& blockData = getBlockData(chunkIndex);
-
-  if (blockData.composition(BlockIndex(0)) == Block::Type::Null)
   {
-    m_OpaqueCommandQueue.emplace(chunkIndex, false);
-    m_TransparentCommandQueue.emplace(chunkIndex, false);
-    return;
+    auto [chunk, lock] = m_ChunkContainer.acquireChunk(chunkIndex);
+    if (!chunk || !chunk->composition())
+    {
+      m_OpaqueCommandQueue.emplace(chunkIndex, false);
+      m_TransparentCommandQueue.emplace(chunkIndex, false);
+      return;
+    }
   }
 
   EN_PROFILE_FUNCTION();
 
+  const BlockData& blockData = getBlockData(chunkIndex);
+  if (blockData.composition(BlockIndex(0)) == Block::Type::Null)
+    return;
+
   Chunk::DrawCommand opaqueDraw(chunkIndex, true);
   Chunk::DrawCommand transparentDraw(chunkIndex, false);
-  for (blockIndex_t i = 0; i < Chunk::Size(); ++i)
-    for (blockIndex_t j = 0; j < Chunk::Size(); ++j)
-      for (blockIndex_t k = 0; k < Chunk::Size(); ++k)
-      {
-        BlockIndex blockIndex(i, j, k);
-        Block::Type blockType = blockData.composition(blockIndex);
+  Chunk::Bounds().forEach([&blockData, &opaqueDraw, &transparentDraw](const BlockIndex& blockIndex)
+    {
+      Block::Type blockType = blockData.composition(blockIndex);
 
-        if (blockType == Block::Type::Air)
+      if (blockType == Block::Type::Air)
+        return;
+
+      uint8_t enabledFaces = 0;
+      bool blockIsTransparent = Block::HasTransparency(blockType);
+      Chunk::DrawCommand& draw = blockIsTransparent ? transparentDraw : opaqueDraw;
+      for (Direction face : Directions())
+      {
+        BlockIndex cardinalIndex = blockIndex + BlockIndex::Dir(face);
+        Block::Type cardinalNeighbor = blockData.composition(cardinalIndex);
+        if (cardinalNeighbor == blockType || (!blockIsTransparent && !Block::HasTransparency(cardinalNeighbor)))
           continue;
 
-        uint8_t enabledFaces = 0;
-        bool blockIsTransparent = Block::HasTransparency(blockType);
-        Chunk::DrawCommand& draw = blockIsTransparent ? transparentDraw : opaqueDraw;
-        for (Direction face : Directions())
+        enabledFaces |= 1 << static_cast<int>(face);
+
+        // Calculate lighting
+        std::array<int, 4> sunlight{};
+        for (int quadIndex = 0; quadIndex < 4; ++quadIndex)
         {
-          BlockIndex cardinalIndex = blockIndex + BlockIndex::Dir(face);
-          Block::Type cardinalNeighbor = blockData.composition(cardinalIndex);
-          if (cardinalNeighbor == blockType || (!blockIsTransparent && !Block::HasTransparency(cardinalNeighbor)))
-            continue;
-
-          enabledFaces |= 1 << static_cast<int>(face);
-
-          // Calculate lighting
-          std::array<int, 4> sunlight{};
-          for (int quadIndex = 0; quadIndex < 4; ++quadIndex)
-          {
-            int transparentNeighbors = 0;
-            int totalSunlight = 0;
-            BlockIndex vertexPosition = blockIndex + Chunk::Vertex::GetOffset(face, quadIndex);
-            for (int I = -1; I <= 0; ++I)
-              for (int J = -1; J <= 0; ++J)
-                for (int K = -1; K <= 0; ++K)
+          int transparentNeighbors = 0;
+          int totalSunlight = 0;
+          BlockIndex vertexPosition = blockIndex + Chunk::Vertex::GetOffset(face, quadIndex);
+          for (int I = -1; I <= 0; ++I)
+            for (int J = -1; J <= 0; ++J)
+              for (int K = -1; K <= 0; ++K)
+              {
+                BlockIndex neighbor = vertexPosition + BlockIndex(I, J, K);
+                if (Block::HasTransparency(blockData.composition(neighbor)))
                 {
-                  BlockIndex neighbor = vertexPosition + BlockIndex(I, J, K);
-                  if (Block::HasTransparency(blockData.composition(neighbor)))
-                  {
-                    totalSunlight += blockData.lighting(neighbor).sunlight();
-                    transparentNeighbors++;
-                  }
+                  totalSunlight += blockData.lighting(neighbor).sunlight();
+                  transparentNeighbors++;
                 }
+              }
 
-            sunlight[quadIndex] = totalSunlight / std::max(transparentNeighbors, 1);
-          }
-
-          // Calculate ambient occlusion
-          std::array<int, 4> quadAmbientOcclusion{};
-          Block::Texture quadTexture = Block::GetTexture(blockType, face);
-          if (!Block::HasTransparency(quadTexture))
-            for (int quadIndex = 0; quadIndex < 4; ++quadIndex)
-            {
-              int u = GetCoordID(face);
-              int v = (u + 1) % 3;
-              int w = (u + 2) % 3;
-
-              Direction edgeADir = FromCoordID(v, Chunk::Vertex::GetOffset(face, quadIndex)[v]);
-              Direction edgeBDir = FromCoordID(w, Chunk::Vertex::GetOffset(face, quadIndex)[w]);
-
-              BlockIndex edgeA = blockIndex + BlockIndex::Dir(face) + BlockIndex::Dir(edgeADir);
-              BlockIndex edgeB = blockIndex + BlockIndex::Dir(face) + BlockIndex::Dir(edgeBDir);
-              BlockIndex corner = blockIndex + BlockIndex::Dir(face) + BlockIndex::Dir(edgeADir) + BlockIndex::Dir(edgeBDir);
-
-              bool edgeAIsOpaque = !Block::HasTransparency(blockData.composition(edgeA));
-              bool edgeBIsOpaque = !Block::HasTransparency(blockData.composition(edgeB));
-              bool cornerIsOpaque = !Block::HasTransparency(blockData.composition(corner));
-              quadAmbientOcclusion[quadIndex] = edgeAIsOpaque && edgeBIsOpaque ? 3 : edgeAIsOpaque + edgeBIsOpaque + cornerIsOpaque;
-            }
-
-          draw.addQuad(blockIndex, face, quadTexture, sunlight, quadAmbientOcclusion);
+          sunlight[quadIndex] = totalSunlight / std::max(transparentNeighbors, 1);
         }
 
-        if (enabledFaces == 0)
-          continue;
+        // Calculate ambient occlusion
+        std::array<int, 4> quadAmbientOcclusion{};
+        Block::Texture quadTexture = Block::GetTexture(blockType, face);
+        if (!Block::HasTransparency(quadTexture))
+          for (int quadIndex = 0; quadIndex < 4; ++quadIndex)
+          {
+            int u = GetCoordID(face);
+            int v = (u + 1) % 3;
+            int w = (u + 2) % 3;
 
-        draw.addVoxel(blockIndex, enabledFaces);
+            Direction edgeADir = FromCoordID(v, Chunk::Vertex::GetOffset(face, quadIndex)[v]);
+            Direction edgeBDir = FromCoordID(w, Chunk::Vertex::GetOffset(face, quadIndex)[w]);
+
+            BlockIndex edgeA = blockIndex + BlockIndex::Dir(face) + BlockIndex::Dir(edgeADir);
+            BlockIndex edgeB = blockIndex + BlockIndex::Dir(face) + BlockIndex::Dir(edgeBDir);
+            BlockIndex corner = blockIndex + BlockIndex::Dir(face) + BlockIndex::Dir(edgeADir) + BlockIndex::Dir(edgeBDir);
+
+            bool edgeAIsOpaque = !Block::HasTransparency(blockData.composition(edgeA));
+            bool edgeBIsOpaque = !Block::HasTransparency(blockData.composition(edgeB));
+            bool cornerIsOpaque = !Block::HasTransparency(blockData.composition(corner));
+            quadAmbientOcclusion[quadIndex] = edgeAIsOpaque && edgeBIsOpaque ? 3 : edgeAIsOpaque + edgeBIsOpaque + cornerIsOpaque;
+          }
+
+        draw.addQuad(blockIndex, face, quadTexture, sunlight, quadAmbientOcclusion);
       }
+
+      if (enabledFaces != 0)
+        draw.addVoxel(blockIndex, enabledFaces);
+    });
   opaqueDraw.setIndices();
 
   m_OpaqueCommandQueue.add(std::move(opaqueDraw));
@@ -686,108 +679,107 @@ void ChunkManager::meshChunk(const GlobalIndex& chunkIndex)
 
 void ChunkManager::updateLighting(const GlobalIndex& chunkIndex)
 {
+  BlockData& blockData = getBlockData(chunkIndex, false);
+  if (blockData.composition(BlockIndex(0)) == Block::Type::Null)
+    return;
+
   EN_PROFILE_FUNCTION();
 
-  static constexpr BlockBox chunkRegion(0, Chunk::Size());
-  static constexpr BlockBox bounds(-1, Chunk::Size() + 1);
-
-  BlockData& blockData = getBlockData(chunkIndex, false);
-
   std::array<std::stack<BlockIndex>, Block::Light::MaxValue() + 1> light;
-  for (blockIndex_t i = -1; i < Chunk::Size() + 1; ++i)
-    for (blockIndex_t j = -1; j < Chunk::Size() + 1; ++j)
-      for (blockIndex_t k = -1; k < Chunk::Size() + 1; ++k)
-      {
-        BlockIndex blockIndex(i, j, k);
-        if (chunkRegion.encloses(blockIndex) || !Block::HasTransparency(blockData.composition(blockIndex)))
-          continue;
+  BlockData::Bounds().forEach([&blockData, &light](const BlockIndex& blockIndex)
+    {
+      if (Chunk::Bounds().encloses(blockIndex) || !Block::HasTransparency(blockData.composition(blockIndex)))
+        return;
 
-        light[blockData.lighting(blockIndex).sunlight()].push(blockIndex);
-      }
+      light[blockData.lighting(blockIndex).sunlight()].push(blockIndex);
+    });
 
   for (int8_t intensity = Block::Light::MaxValue(); intensity > 0; --intensity)
     while (!light[intensity].empty())
     {
-      BlockIndex blockIndex = light[intensity].top();
+      BlockIndex lightIndex = light[intensity].top();
       light[intensity].pop();
 
       for (Direction direction : Directions())
       {
-        BlockIndex blockNeighbor = blockIndex + BlockIndex::Dir(direction);
-        if (!bounds.encloses(blockNeighbor) || !Block::HasTransparency(blockData.composition(blockNeighbor)))
+        BlockIndex lightNeighbor = lightIndex + BlockIndex::Dir(direction);
+        if (!Chunk::Bounds().encloses(lightNeighbor) || !Block::HasTransparency(blockData.composition(lightNeighbor)))
           continue;
 
-        int8_t neighborIntensity = direction == Direction::Bottom ? intensity : intensity - 1;
-        if (blockData.lighting(blockNeighbor).sunlight() >= neighborIntensity)
+        int8_t neighborIntensity = intensity == Block::Light::MaxValue() && direction == Direction::Bottom ? intensity : intensity - 1;
+        if (neighborIntensity <= blockData.lighting(lightNeighbor).sunlight())
           continue;
 
-        blockData.lighting(blockNeighbor) = neighborIntensity;
-        light[neighborIntensity].push(blockNeighbor);
+        blockData.lighting(lightNeighbor) = neighborIntensity;
+        light[neighborIntensity].push(lightNeighbor);
       }
     }
 
-  CubicArray newLighting = MakeCubicArray<Block::Light, Chunk::Size()>();
-  newLighting.fill(chunkRegion, blockData.lighting, BlockIndex(0));
+  CubicArray<Block::Light, Chunk::Size()> newLighting;
+  if (!blockData.lighting.filledWith(Chunk::Bounds(), Block::Light::MaxValue()))
+  {
+    newLighting = MakeCubicArray<Block::Light, Chunk::Size()>();
+    newLighting.fill(Chunk::Bounds(), blockData.lighting, BlockIndex(0));
+  }
 
   auto [chunk, lock] = m_ChunkContainer.acquireChunk(chunkIndex);
-  if (chunk)
+  if (!chunk)
+    return;
+
+  std::unordered_set<GlobalIndex> additionalLightingUpdates;
+
+  for (Direction direction : Directions())
   {
-    std::unordered_set<GlobalIndex> additionalLightingUpdates;
-
-    // for (Direction direction : Directions())
-    // {
-    //   BlockBox compareSection = faceInterior(chunk->lighting(), direction);
-    //   if (!newLighting.contentsEqual(compareSection, chunk->lighting(), compareSection.min))
-    //     additionalLightingUpdates.insert(chunkIndex + GlobalIndex::Dir(direction));
-    // }
-    // 
-    // for (auto itA = Directions().begin(); itA != Directions().end(); ++itA)
-    //   for (auto itB = itA.next(); itB != Directions().end(); ++itB)
-    //   {
-    //     Direction faceA = *itA;
-    //     Direction faceB = *itB;
-    // 
-    //     // Opposite faces cannot form edge
-    //     if (faceB == !faceA)
-    //       continue;
-    // 
-    //     BlockBox compareSection = edgeInterior(chunk->lighting(), faceA, faceB);
-    //     if (!newLighting.contentsEqual(compareSection, chunk->lighting(), compareSection.min))
-    //     {
-    //       additionalLightingUpdates.insert(chunkIndex + GlobalIndex::Dir(faceA));
-    //       additionalLightingUpdates.insert(chunkIndex + GlobalIndex::Dir(faceB));
-    //       additionalLightingUpdates.insert(chunkIndex + GlobalIndex::Dir(faceA) + GlobalIndex::Dir(faceB));
-    //     }
-    //   }
-    // 
-    // for (int i = -1; i < 2; i += 2)
-    //   for (int j = -1; j < 2; j += 2)
-    //     for (int k = -1; k < 2; k += 2)
-    //     {
-    //       GlobalIndex offset(i, j, k);
-    // 
-    //       BlockBox compareSection = corner(chunk->lighting(), offset);
-    //       if (!newLighting.contentsEqual(compareSection, chunk->lighting(), compareSection.min))
-    //       {
-    //         GlobalIndex offsetI{}, offsetJ{}, offsetK{};
-    //         offsetI.i = offset.i;
-    //         offsetJ.j = offset.j;
-    //         offsetK.k = offset.k;
-    // 
-    //         additionalLightingUpdates.insert(chunkIndex + offsetI);
-    //         additionalLightingUpdates.insert(chunkIndex + offsetJ);
-    //         additionalLightingUpdates.insert(chunkIndex + offsetK);
-    //         additionalLightingUpdates.insert(chunkIndex + offsetI + offsetJ);
-    //         additionalLightingUpdates.insert(chunkIndex + offsetI + offsetK);
-    //         additionalLightingUpdates.insert(chunkIndex + offsetJ + offsetK);
-    //         additionalLightingUpdates.insert(chunkIndex + offset);
-    //       }
-    //     }
-
-    chunk->setLighting(std::move(newLighting));
-    addToLazyMeshUpdateQueue(chunkIndex);
-    for (const GlobalIndex& updateIndex : additionalLightingUpdates)
-      if (m_ChunkContainer.contains(updateIndex))
-        addToLightingUpdateQueue(updateIndex);
+    BlockBox compareSection = faceInterior(chunk->lighting(), direction);
+    if (!newLighting.contentsEqual(compareSection, chunk->lighting(), compareSection.min))
+      additionalLightingUpdates.insert(chunkIndex + GlobalIndex::Dir(direction));
   }
+  
+  for (auto itA = Directions().begin(); itA != Directions().end(); ++itA)
+    for (auto itB = itA.next(); itB != Directions().end(); ++itB)
+    {
+      Direction faceA = *itA;
+      Direction faceB = *itB;
+  
+      // Opposite faces cannot form edge
+      if (faceB == !faceA)
+        continue;
+  
+      BlockBox compareSection = edgeInterior(chunk->lighting(), faceA, faceB);
+      if (!newLighting.contentsEqual(compareSection, chunk->lighting(), compareSection.min))
+      {
+        additionalLightingUpdates.insert(chunkIndex + GlobalIndex::Dir(faceA));
+        additionalLightingUpdates.insert(chunkIndex + GlobalIndex::Dir(faceB));
+        additionalLightingUpdates.insert(chunkIndex + GlobalIndex::Dir(faceA) + GlobalIndex::Dir(faceB));
+      }
+    }
+  
+  for (int i = -1; i < 2; i += 2)
+    for (int j = -1; j < 2; j += 2)
+      for (int k = -1; k < 2; k += 2)
+      {
+        GlobalIndex offset(i, j, k);
+  
+        BlockBox compareSection = corner(chunk->lighting(), offset);
+        if (!newLighting.contentsEqual(compareSection, chunk->lighting(), compareSection.min))
+        {
+          GlobalIndex offsetI{}, offsetJ{}, offsetK{};
+          offsetI.i = offset.i;
+          offsetJ.j = offset.j;
+          offsetK.k = offset.k;
+  
+          additionalLightingUpdates.insert(chunkIndex + offsetI);
+          additionalLightingUpdates.insert(chunkIndex + offsetJ);
+          additionalLightingUpdates.insert(chunkIndex + offsetK);
+          additionalLightingUpdates.insert(chunkIndex + offsetI + offsetJ);
+          additionalLightingUpdates.insert(chunkIndex + offsetI + offsetK);
+          additionalLightingUpdates.insert(chunkIndex + offsetJ + offsetK);
+          additionalLightingUpdates.insert(chunkIndex + offset);
+        }
+      }
+
+  chunk->setLighting(std::move(newLighting));
+  addToLazyMeshUpdateQueue(chunkIndex);
+  for (const GlobalIndex& updateIndex : additionalLightingUpdates)
+    addToLightingUpdateQueue(updateIndex);
 }

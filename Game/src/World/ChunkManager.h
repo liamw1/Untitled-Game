@@ -51,7 +51,14 @@ private:
   };
 
   // Rendering
+  struct LightUniforms
+  {
+    const float maxSunlight = static_cast<float>(Block::Light::MaxValue());
+    float sunIntensity;
+  };
+
   static inline std::unique_ptr<Engine::Shader> s_Shader;
+  static inline std::unique_ptr<Engine::Uniform> s_LightUniform;
   static inline std::unique_ptr<Engine::StorageBuffer> s_SSBO;
   static inline std::shared_ptr<Engine::TextureArray> s_TextureArray;
   static inline const Engine::BufferLayout s_VertexBufferLayout = { { ShaderDataType::Uint32, "a_VertexData" },
@@ -106,7 +113,9 @@ private:
 
     BlockData();
 
-    void fill(const BlockBox& fillSection, const Chunk* chunk, const BlockIndex& chunkBase);
+    void fill(const BlockBox& fillSection, const Chunk* chunk, const BlockIndex& chunkBase, bool fillLight = true);
+
+    static constexpr BlockBox Bounds() { return BlockBox(-1, Chunk::Size() + 1); }
   };
 
   BlockData& getBlockData(const GlobalIndex& chunkIndex, bool getInteriorLighting = true) const;

@@ -209,9 +209,14 @@ Chunk::Quad::Quad(const BlockIndex& blockIndex, Direction face, Block::Texture t
   static constexpr std::array<int, 4> standardOrder = { 0, 1, 2, 3 };
   static constexpr std::array<int, 4> reversedOrder = { 1, 3, 0, 2 };
 
-  int ambientOcclusionDifferenceAlongStandardSeam = std::abs(ambientOcclusion[1] - ambientOcclusion[2]);
-  int ambientOcclusionDifferenceAlongReversedSeam = std::abs(ambientOcclusion[0] - ambientOcclusion[3]);
-  const std::array<int, 4>& quadOrder = ambientOcclusionDifferenceAlongStandardSeam > ambientOcclusionDifferenceAlongReversedSeam ? reversedOrder : standardOrder;
+  auto totalLightAtVertex = [&sunlight, &ambientOcclusion](int index)
+  {
+    return sunlight[index] + ambientOcclusion[index];
+  };
+
+  int lightDifferenceAlongStandardSeam = std::abs(totalLightAtVertex(2) - totalLightAtVertex(1));
+  int lightDifferenceAlongReversedSeam = std::abs(totalLightAtVertex(3) - totalLightAtVertex(0));
+  const std::array<int, 4>& quadOrder = lightDifferenceAlongStandardSeam > lightDifferenceAlongReversedSeam ? reversedOrder : standardOrder;
   for (int i = 0; i < 4; ++i)
   {
     int quadIndex = quadOrder[i];
