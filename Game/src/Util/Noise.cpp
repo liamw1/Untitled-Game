@@ -1,6 +1,7 @@
 #include "GMpch.h"
 #include "Noise.h"
 #include "Block/Block.h"
+#include <glm/gtc/noise.hpp>
 
 // Operators for element-wise vector-vector multiplication
 constexpr Vec2 operator*(Vec2 v, Vec2 u) { return { v.x * u.x, v.y * u.y }; }
@@ -39,4 +40,9 @@ length_t Noise::FastTerrainNoise3D(const Vec3& position)
   length_t octave1 = glm::simplex(position / 128.0 / Block::Length());
 
   return octave1;
+}
+
+length_t Noise::SimplexNoise2D(const Vec2& pointXY)
+{
+  return glm::simplex(pointXY);
 }

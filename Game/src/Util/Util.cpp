@@ -1,6 +1,7 @@
 #include "GMpch.h"
 #include "Util.h"
 #include "Player/Player.h"
+#include <glm/gtc/matrix_access.hpp>
 
 bool Util::IsInRange(const GlobalIndex& chunkIndex, const GlobalIndex& originIndex, globalIndex_t range)
 {

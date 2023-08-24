@@ -54,7 +54,7 @@ private:
   struct LightUniforms
   {
     const float maxSunlight = static_cast<float>(Block::Light::MaxValue());
-    float sunIntensity;
+    float sunIntensity = 1.0f;
   };
 
   static inline std::unique_ptr<Engine::Shader> s_Shader;
