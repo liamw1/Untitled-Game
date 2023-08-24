@@ -2,6 +2,7 @@ Engine formatting guidelines:
   Classes should be PascalCase.
   Static members should be PascalCase.
   Namespace names should be PascalCase.
+    - There's one exception to this rule: the 'detail' namespace
   Enums should be written in PascalCase.
   Macros should be written in UPPER_CASE.
   Free-floating public-facing functions should be PascalCase.
@@ -25,5 +26,6 @@ Engine formatting guidelines:
   
   Identation should consist of two spaces.
   Curly brackets should always be on their own lines, except in the cases of empty constructors or simple inline functions.
+  Omit brackets whenever possible from if/else blocks and for/while loops.
 
   Use angular brackets when including libraries, i.e. #include <string>. Quotes for everything else, i.e. #include "MyFile.h".

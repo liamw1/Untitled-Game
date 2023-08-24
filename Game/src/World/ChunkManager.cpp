@@ -380,7 +380,7 @@ void ChunkManager::addToLazyMeshUpdateQueue(const GlobalIndex& chunkIndex)
 
 void ChunkManager::addToForceMeshUpdateQueue(const GlobalIndex& chunkIndex)
 {
-  m_LazyMeshUpdateQueue.remove(chunkIndex);
+  m_LazyMeshUpdateQueue.erase(chunkIndex);
   m_ForceMeshUpdateQueue.add(chunkIndex);
 }
 

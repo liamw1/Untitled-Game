@@ -3,7 +3,7 @@
 #include "Engine/Core/Concepts.h"
 #include <ostream>
 
-template<IntegerType IntType>
+template<std::integral IntType>
 struct IVec2
 {
   IntType i;
@@ -87,7 +87,7 @@ struct IVec2
   }
 };
 
-template<IntegerType IntType>
+template<std::integral IntType>
 struct IVec3
 {
   IntType i;
@@ -200,19 +200,19 @@ struct IVec3
   }
 };
 
-template<IntegerType IntType>
+template<std::integral IntType>
 constexpr IVec3<IntType> operator*(IntType n, IVec3<IntType> index)
 {
   return index *= n;
 }
 
-template<IntegerType IntType>
+template<std::integral IntType>
 constexpr IVec3<IntType> componentWiseMin(const IVec3<IntType>& a, const IVec3<IntType>& b)
 {
   return IVec3<IntType>(std::min(a.i, b.i), std::min(a.j, b.j), std::min(a.k, b.k));
 }
 
-template<IntegerType IntType>
+template<std::integral IntType>
 constexpr IVec3<IntType> componentWiseMax(const IVec3<IntType>& a, const IVec3<IntType>& b)
 {
   return IVec3<IntType>(std::max(a.i, b.i), std::max(a.j, b.j), std::max(a.k, b.k));
@@ -223,13 +223,13 @@ constexpr IVec3<IntType> componentWiseMax(const IVec3<IntType>& a, const IVec3<I
 
 namespace std
 {
-  template<IntegerType IntType>
+  template<std::integral IntType>
   inline ostream& operator<<(ostream& os, const IVec2<IntType>& index)
   {
     return os << '[' << index.i << ", " << index.j << ']';
   }
 
-  template<IntegerType IntType>
+  template<std::integral IntType>
   inline ostream& operator<<(ostream& os, const IVec3<IntType>& index)
   {
     return os << '[' << index.i << ", " << index.j << ", " << index.k << ']';

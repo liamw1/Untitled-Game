@@ -2,13 +2,14 @@
 
 namespace Engine::Threads
 {
-  template<typename K, typename V>
+  template<Hashable K, Movable V>
+    requires std::move_constructible<K>
   class UnorderedMapQueue
   {
   public:
     UnorderedMapQueue() = default;
 
-    template<typename T>
+    template<DecaysTo<V> T>
     void add(const K& key, T&& value)
     {
       std::lock_guard lock(m_Mutex);
@@ -41,13 +42,13 @@ namespace Engine::Threads
 
 
 
-  template<typename V>
+  template<Movable V>
   class UnorderedSetQueue
   {
   public:
     UnorderedSetQueue() = default;
 
-    template<typename T>
+    template<DecaysTo<V> T>
     bool add(T&& value)
     {
       std::lock_guard lock(m_Mutex);
@@ -65,8 +66,8 @@ namespace Engine::Threads
       return insertionSuccess;
     }
 
-    template<typename T>
-    void remove(T&& value)
+    template<DecaysTo<V> T>
+    void erase(T&& value)
     {
       std::lock_guard lock(m_Mutex);
       m_Data.erase(value);

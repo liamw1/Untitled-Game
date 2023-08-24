@@ -1,7 +1,7 @@
 #pragma once
 #include "IVec.h"
 
-template<IntegerType IntType>
+template<std::integral IntType>
 struct IBox3
 {
   IVec3<IntType> min;

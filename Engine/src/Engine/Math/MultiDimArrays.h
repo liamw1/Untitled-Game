@@ -10,6 +10,7 @@ using StackArray3D = std::array<std::array<std::array<T, Depth>, Columns>, Rows>
 
 
 template<typename T, int Size, int Base = 0>
+  requires positive<Size>
 class ArraySection
 {
 public:
@@ -33,6 +34,7 @@ private:
 };
 
 template<typename T, int Len, int Base>
+  requires positive<Len>
 class CubicArraySection
 {
 public:
@@ -56,6 +58,7 @@ private:
 };
 
 template<typename T, int Columns, int Depth = Columns>
+  requires allPositive<Columns, Depth>
 class ArraySection2D
 {
 public:
@@ -90,6 +93,7 @@ private:
   Huge advantages in efficiency for "tall" arrays (rows >> cols).
 */
 template<typename T, int Rows, int Columns = Rows>
+  requires allPositive<Rows, Columns>
 class Array2D
 {
 public:
@@ -156,6 +160,7 @@ private:
 };
 
 template<typename T, int Rows, int Columns = Rows>
+  requires allPositive<Rows, Columns>
 Array2D<T, Rows, Columns> AllocateArray2D()
 {
   Array2D<T, Rows, Columns> arr;
@@ -164,6 +169,7 @@ Array2D<T, Rows, Columns> AllocateArray2D()
 }
 
 template<typename T, int Rows, int Columns = Rows>
+  requires allPositive<Rows, Columns>
 Array2D<T, Rows, Columns> AllocateArray2D(const T& initialValue)
 {
   Array2D<T, Rows, Columns> arr = AllocateArray2D<T, Rows, Columns>();
@@ -181,6 +187,7 @@ Array2D<T, Rows, Columns> AllocateArray2D(const T& initialValue)
   arr[i][j][k]
 */
 template<typename T, int Rows, int Columns = Rows, int Depth = Columns>
+  requires allPositive<Rows, Columns, Depth>
 class Array3D
 {
 public:
@@ -247,6 +254,7 @@ private:
 };
 
 template<typename T, int Rows, int Columns = Rows, int Depth = Columns>
+  requires allPositive<Rows, Columns, Depth>
 Array3D<T, Rows, Columns, Depth> AllocateArray3D()
 {
   Array3D<T, Rows, Columns, Depth> arr;
@@ -255,6 +263,7 @@ Array3D<T, Rows, Columns, Depth> AllocateArray3D()
 }
 
 template<typename T, int Rows, int Columns = Rows, int Depth = Columns>
+  requires allPositive<Rows, Columns, Depth>
 Array3D<T, Rows, Columns, Depth> AllocateArray3D(const T& initialValue)
 {
   Array3D<T, Rows, Columns, Depth> arr = AllocateArray3D<T, Rows, Columns, Depth>();
@@ -265,6 +274,7 @@ Array3D<T, Rows, Columns, Depth> AllocateArray3D(const T& initialValue)
 
 
 template<typename T, int Len, int Base = 0>
+  requires positive<Len>
 class SquareArray
 {
 public:
@@ -334,6 +344,7 @@ private:
 };
 
 template<typename T, int Len, int Base = 0>
+  requires positive<Len>
 SquareArray<T, Len, Base> MakeSquareArray()
 {
   SquareArray<T, Len, Base> arr;
@@ -342,6 +353,7 @@ SquareArray<T, Len, Base> MakeSquareArray()
 }
 
 template<typename T, int Len, int Base = 0>
+  requires positive<Len>
 SquareArray<T, Len, Base> MakeSquareArray(const T& initialValue)
 {
   SquareArray arr = MakeSquareArray<T, Len, Base>();
@@ -352,6 +364,7 @@ SquareArray<T, Len, Base> MakeSquareArray(const T& initialValue)
 
 
 template<typename T, int Len, int Base = 0>
+  requires positive<Len>
 class CubicArray
 {
 public:
@@ -392,13 +405,13 @@ public:
 
   operator bool() const { return m_Data; }
 
-  template<IntegerType IndexType>
+  template<std::integral IndexType>
   T& operator()(const IVec3<IndexType>& index)
   {
     return const_cast<T&>(static_cast<const CubicArray*>(this)->operator()(index));
   }
 
-  template<IntegerType IndexType>
+  template<std::integral IndexType>
   const T& operator()(const IVec3<IndexType>& index) const
   {
     EN_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
@@ -416,7 +429,7 @@ public:
       });
   }
 
-  template<IntegerType IndexType>
+  template<std::integral IndexType>
   bool filledWith(const IBox3<IndexType>& section, const T& val) const
   {
     EN_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
@@ -426,7 +439,7 @@ public:
       });
   }
 
-  template<IntegerType IndexType, int ArrLen, int ArrBase>
+  template<std::integral IndexType, int ArrLen, int ArrBase>
   bool contentsEqual(const IBox3<IndexType>& compareSection, const CubicArray<T, ArrLen, ArrBase>& arr, const IVec3<IndexType>& arrBase)
   {
     if (!m_Data && !arr)
@@ -446,7 +459,7 @@ public:
     std::fill(m_Data, m_Data + Size(), val);
   }
 
-  template<IntegerType IndexType>
+  template<std::integral IndexType>
   void fill(const IBox3<IndexType>& fillSection, const T& val)
   {
     EN_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
@@ -456,7 +469,7 @@ public:
       });
   }
 
-  template<IntegerType IndexType, int ArrLen, int ArrBase>
+  template<std::integral IndexType, int ArrLen, int ArrBase>
   void fill(const IBox3<IndexType>& fillSection, const CubicArray<T, ArrLen, ArrBase>& arr, const IVec3<IndexType>& arrBase)
   {
     EN_CORE_ASSERT(m_Data, "Data has not yet been allocated!");

@@ -1,5 +1,35 @@
 #pragma once
 #include <type_traits>
 
+namespace detail
+{
+  template<int... args>
+  constexpr bool allPositive()
+  {
+    for (int n : { args... })
+      if (n <= 0)
+        return false;
+    return true;
+  }
+}
+
+template<int N>
+concept positive = N > 0;
+
+template<int... args>
+concept allPositive = detail::allPositive<args...>();
+
 template<typename T>
-concept IntegerType = std::is_integral_v<T>;
+concept Movable = std::move_constructible<T> && std::is_move_assignable_v<T>;
+
+template<typename T>
+concept Hashable = requires(T instance)
+{
+  { std::hash<T>{}(instance) } -> std::convertible_to<std::size_t>;
+};
+
+template<typename T, typename DecayedType>
+concept DecaysTo = std::same_as<std::decay_t<T>, DecayedType>;
+
+template<typename Func, typename ReturnType, typename... Args>
+concept Invocable = std::is_invocable_r_v<ReturnType, Func, Args...>;
