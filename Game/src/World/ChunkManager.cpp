@@ -4,6 +4,8 @@
 #include "Terrain.h"
 #include "Util/Util.h"
 
+#include "Engine/Utilities/MoveableFunction.h"
+
 ChunkManager::ChunkManager()
   : m_Running(true),
     m_LoadMode(LoadMode::NotSet),
@@ -63,6 +65,12 @@ void ChunkManager::render()
 
   s_Shader->bind();
   s_TextureArray->bind(c_TextureSlot);
+
+  int a = 0;
+  Engine::MoveableFunction func([&a]()
+    {
+      a++;
+    });
 
   {
     Engine::RenderCommand::SetDepthWriting(true);
