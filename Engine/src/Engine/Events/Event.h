@@ -24,11 +24,11 @@ namespace Engine
   enum class EventCategory : uint8_t
   {
     None,
-    Application  = bit(0),
-    Input        = bit(1),
-    Keyboard     = bit(2),
-    Mouse        = bit(3),
-    MouseButton  = bit(4)
+    Application  = Bit(0),
+    Input        = Bit(1),
+    Keyboard     = Bit(2),
+    Mouse        = Bit(3),
+    MouseButton  = Bit(4)
   };
   EN_ENABLE_BITMASK_OPERATORS(EventCategory);
 

@@ -57,7 +57,7 @@ const CubicArray<Block::Light, Chunk::Size()>& Chunk::lighting() const
 bool Chunk::isFaceOpaque(Direction face) const
 {
   uint16_t nonOpaqueFaces = m_NonOpaqueFaces.load();
-  return !(nonOpaqueFaces & bit(static_cast<int>(face)));
+  return !(nonOpaqueFaces & Engine::Bit(static_cast<int>(face)));
 }
 
 Block::Type Chunk::getBlockType(const BlockIndex& blockIndex) const
@@ -127,7 +127,7 @@ void Chunk::determineOpacity()
         BlockIndex blockIndex = BlockIndex::CreatePermuted(chunkLimits[IsUpstream(face)], i, j, GetCoordID(face));
         if (Block::HasTransparency(m_Composition(blockIndex)))
         {
-          nonOpaqueFaces |= bit(static_cast<int>(face));
+          nonOpaqueFaces |= Engine::Bit(static_cast<int>(face));
           goto nextFace;
         }
       }

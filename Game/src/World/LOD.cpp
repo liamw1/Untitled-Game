@@ -50,7 +50,7 @@ namespace LOD
 
   globalIndex_t Octree::Node::size() const
   {
-    return static_cast<globalIndex_t>(pow2(LODLevel()));
+    return static_cast<globalIndex_t>(Engine::Pow2(LODLevel()));
   }
 
   length_t Octree::Node::length() const
@@ -96,7 +96,7 @@ namespace LOD
       for (int j = 0; j < 2; ++j)
         for (int k = 0; k < 2; ++k)
         {
-          int childIndex = i * bitUi32(2) + j * bitUi32(1) + k * bitUi32(0);
+          int childIndex = i * Engine::BitUi32(2) + j * Engine::BitUi32(1) + k * Engine::BitUi32(0);
           EN_ASSERT(node->children[childIndex] == nullptr, "Child node already exists!");
 
           GlobalIndex nodeChildAnchor = node->anchor + nodeChildSize * GlobalIndex(i, j, k);
@@ -170,7 +170,7 @@ namespace LOD
       int i = index.i >= branch->anchor.i + branch->size() / 2;
       int j = index.j >= branch->anchor.j + branch->size() / 2;
       int k = index.k >= branch->anchor.k + branch->size() / 2;
-      int childIndex = i * bitUi32(2) + j * bitUi32(1) + k * bitUi32(0);
+      int childIndex = i * Engine::BitUi32(2) + j * Engine::BitUi32(1) + k * Engine::BitUi32(0);
 
       return findLeafPriv(branch->children[childIndex], index);
     }
@@ -207,7 +207,7 @@ namespace LOD
     // Set local anchor position and texture scaling
     UniformData uniformData{};
     uniformData.anchor = Chunk::Length() * static_cast<Vec3>(leaf->anchor - Player::OriginIndex());
-    uniformData.textureScaling = static_cast<float>(bit(leaf->LODLevel()));
+    uniformData.textureScaling = static_cast<float>(Engine::Bit(leaf->LODLevel()));
     MeshData::SetUniforms(uniformData);
 
     Engine::RenderCommand::DrawIndexed(leaf->data->primaryMesh.vertexArray.get(), primaryMeshIndexCount);
@@ -217,7 +217,7 @@ namespace LOD
 
       uint32_t transitionMeshIndexCount = static_cast<uint32_t>(leaf->data->transitionMeshes[faceID].indices.size());
 
-      if (transitionMeshIndexCount == 0 || !(leaf->data->transitionFaces & bit(faceID)))
+      if (transitionMeshIndexCount == 0 || !(leaf->data->transitionFaces & Engine::Bit(faceID)))
         continue;
 
       Engine::RenderCommand::DrawIndexed(leaf->data->transitionMeshes[faceID].vertexArray.get(), transitionMeshIndexCount);
@@ -416,13 +416,13 @@ namespace LOD
           for (int v = 0; v < 8; ++v)
           {
             // Cell corner indices and z-position
-            int I = v & bit(0) ? i + 1 : i;
-            int J = v & bit(1) ? j + 1 : j;
-            int K = v & bit(2) ? k + 1 : k;
+            int I = v & Engine::Bit(0) ? i + 1 : i;
+            int J = v & Engine::Bit(1) ? j + 1 : j;
+            int K = v & Engine::Bit(2) ? k + 1 : k;
             length_t Z = LODFloor + K * cellLength;
 
             if (noiseValues[I][J].getElevation() > Z)
-              cellCase |= bit(v);
+              cellCase |= Engine::Bit(v);
           }
           if (cellCase == 0 || cellCase == 255)
             continue;
@@ -460,9 +460,9 @@ namespace LOD
               currLayer[j][k].vertexOrder[sharedVertexIndex] = cellVertexCount;
             else
             {
-              int I = sharedVertexDirection & bit(0) ? i - 1 : i;
-              int J = sharedVertexDirection & bit(1) ? j - 1 : j;
-              int K = sharedVertexDirection & bit(2) ? k - 1 : k;
+              int I = sharedVertexDirection & Engine::Bit(0) ? i - 1 : i;
+              int J = sharedVertexDirection & Engine::Bit(1) ? j - 1 : j;
+              int K = sharedVertexDirection & Engine::Bit(2) ? k - 1 : k;
 
               if (I >= 0 && J >= 0 && K >= 0)
               {
@@ -484,13 +484,13 @@ namespace LOD
 
             // Indices of corners A,B
             BlockIndex cornerA{};
-            cornerA.i = cornerIndexA & bit(0) ? i + 1 : i;
-            cornerA.j = cornerIndexA & bit(1) ? j + 1 : j;
-            cornerA.k = cornerIndexA & bit(2) ? k + 1 : k;
+            cornerA.i = cornerIndexA & Engine::Bit(0) ? i + 1 : i;
+            cornerA.j = cornerIndexA & Engine::Bit(1) ? j + 1 : j;
+            cornerA.k = cornerIndexA & Engine::Bit(2) ? k + 1 : k;
             BlockIndex cornerB{};
-            cornerB.i = cornerIndexB & bit(0) ? i + 1 : i;
-            cornerB.j = cornerIndexB & bit(1) ? j + 1 : j;
-            cornerB.k = cornerIndexB & bit(2) ? k + 1 : k;
+            cornerB.i = cornerIndexB & Engine::Bit(0) ? i + 1 : i;
+            cornerB.j = cornerIndexB & Engine::Bit(1) ? j + 1 : j;
+            cornerB.k = cornerIndexB & Engine::Bit(2) ? k + 1 : k;
 
             NoiseData noiseData = interpolateNoiseData(node, noiseValues, noiseNormals, cornerA, cornerB, smoothness);
 
@@ -567,7 +567,7 @@ namespace LOD
             length_t Z = LODFloor + K * cellLength;
 
             if (noiseValues[I][J].getElevation() > Z)
-              cellCase |= bit(c_SampleIndexToBitFlip[p]);
+              cellCase |= Engine::Bit(c_SampleIndexToBitFlip[p]);
           }
           if (cellCase == 0 || cellCase == 511)
             continue;
@@ -607,8 +607,8 @@ namespace LOD
               currRow[j / 2].vertexOrder[sharedVertexIndex] = cellVertexCount;
             else if (isReusable)
             {
-              int I = sharedVertexDirection & bit(0) ? i / 2 - 1 : i / 2;
-              int J = sharedVertexDirection & bit(1) ? j / 2 - 1 : j / 2;
+              int I = sharedVertexDirection & Engine::Bit(0) ? i / 2 - 1 : i / 2;
+              int J = sharedVertexDirection & Engine::Bit(1) ? j / 2 - 1 : j / 2;
 
               if (I >= 0 && J >= 0)
               {
@@ -730,7 +730,7 @@ namespace LOD
 
       if (isVertexNearFace(facingPositiveDir, vertex.position[coordID], cellLength))
       {
-        if (transitionFaces & bit(faceID))
+        if (transitionFaces & Engine::Bit(faceID))
           vertexAdjustment[coordID] = vertexAdjustment1D(facingPositiveDir, vertex.position[coordID], cellLength);
         else
         {
@@ -810,7 +810,7 @@ namespace LOD
       if (node->LODLevel() == neighbor->LODLevel())
         continue;
       else if (neighbor->LODLevel() - node->LODLevel() == 1)
-        transitionFaces |= bit(faceID);
+        transitionFaces |= Engine::Bit(faceID);
       else if (neighbor->LODLevel() - node->LODLevel() > 1)
         EN_WARN("LOD neighbor is more than one level lower resolution");
     }

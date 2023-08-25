@@ -8,7 +8,7 @@ enum class Direction : int
 
   Begin = 0, End = Null
 };
-using Directions = Iterator<Direction, Direction::Begin, Direction::End>;
+using Directions = Engine::EnumIterator<Direction, Direction::Begin, Direction::End>;
 
 /*
   \returns The direction opposite the given direction.

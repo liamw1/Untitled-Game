@@ -1,9 +1,12 @@
 #pragma once
 
-class ThreadPool
+namespace Engine::Threads
 {
-public:
+  class ThreadPool
+  {
+  public:
 
-private:
+  private:
 
-};
+  };
+}

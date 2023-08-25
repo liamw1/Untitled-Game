@@ -31,7 +31,8 @@ namespace std
   {
     int operator()(const SurfaceMapIndex& index) const
     {
-      return index.i % bitUi32(16) + bitUi32(16) * (index.j % bitUi32(16));
+      return Engine::BitUi32( 0) * (index.i % Engine::BitUi32(16)) +
+             Engine::BitUi32(16) * (index.j % Engine::BitUi32(16));
     }
   };
 
@@ -40,7 +41,9 @@ namespace std
   {
     int operator()(const GlobalIndex& index) const
     {
-      return index.i % bitUi32(10) + bitUi32(10) * (index.j % bitUi32(10)) + bitUi32(20) * (index.k % bitUi32(10));
+      return Engine::BitUi32( 0) * (index.i % Engine::BitUi32(10)) +
+             Engine::BitUi32(10) * (index.j % Engine::BitUi32(10)) +
+             Engine::BitUi32(20) * (index.k % Engine::BitUi32(10));
     }
   };
 }

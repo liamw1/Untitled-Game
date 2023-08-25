@@ -65,7 +65,7 @@ private:
                                                                     { ShaderDataType::Uint32, "a_Lighting"   } };
   static constexpr int c_TextureSlot = 0;
   static constexpr int c_StorageBufferBinding = 0;
-  static constexpr uint32_t c_StorageBufferSize = static_cast<uint32_t>(pow2(20));
+  static constexpr uint32_t c_StorageBufferSize = static_cast<uint32_t>(Engine::Pow2(20));
 
   Engine::Threads::UnorderedSetQueue<Chunk::DrawCommand> m_OpaqueCommandQueue;
   Engine::Threads::UnorderedSetQueue<Chunk::DrawCommand> m_TransparentCommandQueue;

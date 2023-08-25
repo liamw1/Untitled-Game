@@ -49,5 +49,5 @@ namespace Block
     Null,
     Begin = 0, End = Null
   };
-  using TextureIterator = Iterator<Texture, Texture::Begin, Texture::End>;
+  using TextureIterator = Engine::EnumIterator<Texture, Texture::Begin, Texture::End>;
 }
