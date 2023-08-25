@@ -36,7 +36,6 @@ public:
   void setLoadModeTerrain();
   void setLoadModeVoid();
   void launchLoadThread();
-  void launchMeshingThread();
   void launchLightingThread();
 
   // Debug
@@ -74,21 +73,19 @@ private:
 
   // Updates
   Engine::Threads::UnorderedSetQueue<GlobalIndex> m_LightingUpdateQueue;
-  Engine::Threads::UnorderedSetQueue<GlobalIndex> m_LazyMeshUpdateQueue;
   Engine::Threads::UnorderedSetQueue<GlobalIndex> m_ForceMeshUpdateQueue;
 
   // Multi-threading
   std::atomic<bool> m_Running;
   std::thread m_LoadThread;
-  std::thread m_MeshingThread;
   std::thread m_LightingThread;
   ChunkContainer m_ChunkContainer;
+  Engine::Threads::ThreadPool m_ThreadPool;
 
   LoadMode m_LoadMode;
   GlobalIndex m_PrevPlayerOriginIndex;
 
   void loadWorker();
-  void meshingWorker();
   void lightingWorker();
 
   void addToLightingUpdateQueue(const GlobalIndex& chunkIndex);
@@ -133,4 +130,7 @@ private:
   void meshChunk(const GlobalIndex& chunkIndex);
 
   void updateLighting(const GlobalIndex& chunkIndex);
+
+public:
+  void meshPacket(const GlobalIndex& chunkIndex);
 };

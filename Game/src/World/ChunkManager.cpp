@@ -4,22 +4,17 @@
 #include "Terrain.h"
 #include "Util/Util.h"
 
-#include "Engine/Utilities/MoveableFunction.h"
-
 ChunkManager::ChunkManager()
   : m_Running(true),
+    m_ThreadPool(2),
     m_LoadMode(LoadMode::NotSet),
-    m_PrevPlayerOriginIndex(Player::OriginIndex())
-{
-}
+    m_PrevPlayerOriginIndex(Player::OriginIndex()) {}
 
 ChunkManager::~ChunkManager()
 {
-  m_Running.store(false);
+  m_Running = false;
   if (m_LoadThread.joinable())
     m_LoadThread.join();
-  if (m_MeshingThread.joinable())
-    m_MeshingThread.join();
   if (m_LightingThread.joinable())
     m_LightingThread.join();
 }
@@ -65,12 +60,6 @@ void ChunkManager::render()
 
   s_Shader->bind();
   s_TextureArray->bind(c_TextureSlot);
-
-  int a = 0;
-  Engine::MoveableFunction func([&a]()
-    {
-      a++;
-    });
 
   {
     Engine::RenderCommand::SetDepthWriting(true);
@@ -284,11 +273,6 @@ void ChunkManager::launchLoadThread()
   m_LoadThread = std::thread(&ChunkManager::loadWorker, this);
 }
 
-void ChunkManager::launchMeshingThread()
-{
-  m_MeshingThread = std::thread(&ChunkManager::meshingWorker, this);
-}
-
 void ChunkManager::launchLightingThread()
 {
   m_LightingThread = std::thread(&ChunkManager::lightingWorker, this);
@@ -330,30 +314,6 @@ void ChunkManager::loadWorker()
   }
 }
 
-void ChunkManager::meshingWorker()
-{
-  using namespace std::chrono_literals;
-
-  while (m_Running.load())
-  {
-    EN_PROFILE_SCOPE("Meshing worker");
-
-    std::optional<GlobalIndex> updateIndex = m_LazyMeshUpdateQueue.tryRemove();
-    if (!updateIndex)
-    {
-      std::this_thread::sleep_for(100ms);
-      continue;
-    }
-    if (m_ChunkContainer.hasBoundaryNeighbors(*updateIndex))
-      continue;
-
-    meshChunk(*updateIndex);
-    auto [chunk, lock] = m_ChunkContainer.acquireChunk(*updateIndex);
-    if (chunk)
-      chunk->update();
-  }
-}
-
 void ChunkManager::lightingWorker()
 {
   using namespace std::chrono_literals;
@@ -383,12 +343,16 @@ void ChunkManager::addToLightingUpdateQueue(const GlobalIndex& chunkIndex)
 void ChunkManager::addToLazyMeshUpdateQueue(const GlobalIndex& chunkIndex)
 {
   if (!m_ForceMeshUpdateQueue.contains(chunkIndex) && !m_LightingUpdateQueue.contains(chunkIndex))
-    m_LazyMeshUpdateQueue.add(chunkIndex);
+  {
+    m_ThreadPool.submit([this, chunkIndex]()
+      {
+        this->meshPacket(chunkIndex);
+      }, Engine::Priority::Normal);
+  }
 }
 
 void ChunkManager::addToForceMeshUpdateQueue(const GlobalIndex& chunkIndex)
 {
-  m_LazyMeshUpdateQueue.erase(chunkIndex);
   m_ForceMeshUpdateQueue.add(chunkIndex);
 }
 
@@ -790,4 +754,15 @@ void ChunkManager::updateLighting(const GlobalIndex& chunkIndex)
   addToLazyMeshUpdateQueue(chunkIndex);
   for (const GlobalIndex& updateIndex : additionalLightingUpdates)
     addToLightingUpdateQueue(updateIndex);
+}
+
+void ChunkManager::meshPacket(const GlobalIndex& chunkIndex)
+{
+  if (m_ChunkContainer.hasBoundaryNeighbors(chunkIndex))
+    return;
+
+  meshChunk(chunkIndex);
+  auto [chunk, lock] = m_ChunkContainer.acquireChunk(chunkIndex);
+  if (chunk)
+    chunk->update();
 }

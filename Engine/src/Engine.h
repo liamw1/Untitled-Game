@@ -40,7 +40,9 @@
 #include "Engine/Scene/Scene.h"
 #include "Engine/Scene/Scripting.h"
 
-#include "Engine/Threading/ThreadSafeContainers.h"
+#include "Engine/Threading/ThreadPool.h"
+#include "Engine/Threading/Containers/UnorderedMapQueue.h"
+#include "Engine/Threading/Containers/UnorderedSetQueue.h"
 
 #include "Engine/Utilities/BitUtilities.h"
 #include "Engine/Utilities/EnumUtilities.h"

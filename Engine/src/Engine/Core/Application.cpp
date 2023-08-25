@@ -1,5 +1,6 @@
 #include "ENpch.h"
 #include "Application.h"
+#include "Core.h"
 #include "Engine/Renderer/Renderer.h"
 #include "Engine/Debug/Instrumentor.h"
 

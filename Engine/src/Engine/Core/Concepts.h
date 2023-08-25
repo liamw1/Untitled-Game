@@ -1,5 +1,4 @@
 #pragma once
-#include <type_traits>
 
 namespace detail
 {
@@ -32,4 +31,4 @@ template<typename T, typename DecayedType>
 concept DecaysTo = std::same_as<std::decay_t<T>, DecayedType>;
 
 template<typename Func, typename ReturnType, typename... Args>
-concept Invocable = std::is_invocable_r_v<ReturnType, Func, Args...>;
+concept InvocableWithReturnType = std::is_invocable_r_v<ReturnType, Func, Args...>;

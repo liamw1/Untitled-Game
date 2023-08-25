@@ -20,7 +20,6 @@ void World::initialize()
   // m_ChunkManager.loadChunk({ 0, -1, 2 }, Block::Type::Air);
   // m_ChunkManager.loadChunk({ 0, -1, 1 }, Block::Type::Sand);
   m_ChunkManager.launchLoadThread();
-  m_ChunkManager.launchMeshingThread();
   m_ChunkManager.launchLightingThread();
 
 #if USE_LODS

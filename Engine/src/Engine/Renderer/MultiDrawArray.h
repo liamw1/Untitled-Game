@@ -169,7 +169,7 @@ namespace Engine
       m_DrawCommands.pop_back();
     }
 
-    template<Invocable<bool, Identifier> F>
+    template<InvocableWithReturnType<bool, Identifier> F>
     int mask(F condition)
     {
       int leftIndex = 0;
@@ -191,7 +191,7 @@ namespace Engine
       return leftIndex;
     }
 
-    template<Invocable<bool, Identifier, Identifier> F>
+    template<InvocableWithReturnType<bool, Identifier, Identifier> F>
     void sort(int drawCount, F comparision)
     {
       std::sort(m_DrawCommands.begin(), m_DrawCommands.begin() + drawCount, [&](const DrawCommandType& drawA, const DrawCommandType& drawB)
@@ -203,7 +203,7 @@ namespace Engine
         *m_DrawCommands[i].commandIndex() = i;
     }
 
-    template<Invocable<bool, DrawCommandType&> F>
+    template<InvocableWithReturnType<bool, DrawCommandType&> F>
     void amend(int drawCount, F function)
     {
       for (auto it = m_DrawCommands.begin(); it != m_DrawCommands.begin() + drawCount; ++it)
@@ -304,7 +304,7 @@ namespace Engine
       m_DrawCommands.pop_back();
     }
 
-    template<Invocable<bool, Identifier> F>
+    template<InvocableWithReturnType<bool, Identifier> F>
     int mask(F condition)
     {
       int leftIndex = 0;
@@ -326,7 +326,7 @@ namespace Engine
       return leftIndex;
     }
 
-    template<Invocable<bool, Identifier, Identifier> F>
+    template<InvocableWithReturnType<bool, Identifier, Identifier> F>
     void sort(int drawCount, F comparision)
     {
       std::sort(m_DrawCommands.begin(), m_DrawCommands.begin() + drawCount, [&](const DrawCommandType& drawA, const DrawCommandType& drawB)
@@ -338,7 +338,7 @@ namespace Engine
         *m_DrawCommands[i].commandIndex() = i;
     }
 
-    template<Invocable<bool, DrawCommandType&> F>
+    template<InvocableWithReturnType<bool, DrawCommandType&> F>
     void amend(int drawCount, F function)
     {
       for (auto it = m_DrawCommands.begin(); it != m_DrawCommands.begin() + drawCount; ++it)
