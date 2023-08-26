@@ -1,4 +1,5 @@
 #pragma once
+#include "Engine/Core/Concepts.h"
 
 namespace Engine
 {

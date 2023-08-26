@@ -10,7 +10,7 @@ namespace Engine
     Derived classes can store arbitrary amounts of extra data
     as long as the layout of the first 16 bytes is preserved.
   */
-  template<typename Identifier, typename Derived>
+  template<Hashable Identifier, typename Derived>
   class MultiDrawCommand
   {
   public:
@@ -52,7 +52,7 @@ namespace Engine
     Derived classes can store arbitrary amounts of extra data
     as long as the layout of the first 20 bytes is preserved.
   */
-  template<typename Identifier, typename Derived>
+  template<Hashable Identifier, typename Derived>
   class MultiDrawIndexedCommand
   {
   public:

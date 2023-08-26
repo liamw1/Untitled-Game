@@ -5,19 +5,13 @@
 #include "Util/Util.h"
 
 ChunkManager::ChunkManager()
-  : m_Running(true),
-    m_ThreadPool(2),
+  : m_ThreadPool(std::make_shared<Engine::Threads::ThreadPool>(2)),
+    m_LoadWork(m_ThreadPool, Engine::Threads::Priority::Normal),
+    m_LightingWork(m_ThreadPool, Engine::Threads::Priority::Normal),
+    m_LazyMeshingWork(m_ThreadPool, Engine::Threads::Priority::Low),
+    m_ForceMeshingWork(m_ThreadPool, Engine::Threads::Priority::High),
     m_LoadMode(LoadMode::NotSet),
     m_PrevPlayerOriginIndex(Player::OriginIndex()) {}
-
-ChunkManager::~ChunkManager()
-{
-  m_Running = false;
-  if (m_LoadThread.joinable())
-    m_LoadThread.join();
-  if (m_LightingThread.joinable())
-    m_LightingThread.join();
-}
 
 void ChunkManager::initialize()
 {
@@ -148,19 +142,7 @@ void ChunkManager::update()
 {
   EN_PROFILE_FUNCTION();
 
-  std::optional<GlobalIndex> updateIndex = m_ForceMeshUpdateQueue.tryRemove();
-  while (updateIndex)
-  {
-    if (!m_ChunkContainer.contains(*updateIndex))
-      generateNewChunk(*updateIndex);
-
-    meshChunk(*updateIndex);
-    auto [chunk, lock] = m_ChunkContainer.acquireChunk(*updateIndex);
-    if (chunk)
-      chunk->update();
-
-    updateIndex = m_ForceMeshUpdateQueue.tryRemove();
-  }
+  m_ForceMeshingWork.waitAndDiscardSaved();
 
   if (!m_OpaqueCommandQueue.empty())
     m_ChunkContainer.uploadMeshes(m_OpaqueCommandQueue, m_OpaqueMultiDrawArray);
@@ -193,6 +175,24 @@ void ChunkManager::clean()
   }
 
   m_PrevPlayerOriginIndex = originIndex;
+}
+
+void ChunkManager::loadNewChunks()
+{
+  EN_PROFILE_FUNCTION();
+
+  std::unordered_set<GlobalIndex> newChunkIndices = m_ChunkContainer.findAllLoadableIndices();
+
+  // Load First chunk if none exist
+  if (newChunkIndices.empty() && m_ChunkContainer.empty())
+    newChunkIndices.insert(Player::OriginIndex());
+
+  if (!newChunkIndices.empty())
+    for (const GlobalIndex& newChunkIndex : newChunkIndices)
+      m_LoadWork.submit(newChunkIndex, [this, newChunkIndex]()
+        {
+          this->generateNewChunk(newChunkIndex);
+        });
 }
 
 const ConstChunkWithLock ChunkManager::acquireChunk(const LocalIndex& chunkIndex) const
@@ -268,16 +268,6 @@ void ChunkManager::setLoadModeVoid()
   m_LoadMode = LoadMode::Void;
 }
 
-void ChunkManager::launchLoadThread()
-{
-  m_LoadThread = std::thread(&ChunkManager::loadWorker, this);
-}
-
-void ChunkManager::launchLightingThread()
-{
-  m_LightingThread = std::thread(&ChunkManager::lightingWorker, this);
-}
-
 void ChunkManager::loadChunk(const GlobalIndex& chunkIndex, Block::Type blockType)
 {
   Chunk chunk(chunkIndex);
@@ -292,68 +282,31 @@ void ChunkManager::loadChunk(const GlobalIndex& chunkIndex, Block::Type blockTyp
 
 
 
-void ChunkManager::loadWorker()
-{
-  using namespace std::chrono_literals;
-
-  while (m_Running.load())
-  {
-    EN_PROFILE_SCOPE("Load worker");
-
-    std::unordered_set<GlobalIndex> newChunkIndices = m_ChunkContainer.findAllLoadableIndices();
-
-    // Load First chunk if none exist
-    if (newChunkIndices.empty() && m_ChunkContainer.empty())
-      newChunkIndices.insert(Player::OriginIndex());
-
-    if (!newChunkIndices.empty())
-      for (const GlobalIndex& newChunkIndex : newChunkIndices)
-        generateNewChunk(newChunkIndex);
-    else
-      std::this_thread::sleep_for(100ms);
-  }
-}
-
-void ChunkManager::lightingWorker()
-{
-  using namespace std::chrono_literals;
-
-  while (m_Running.load())
-  {
-    EN_PROFILE_SCOPE("Lighting worker");
-
-    std::optional<GlobalIndex> updateIndex = m_LightingUpdateQueue.tryRemove();
-    if (!updateIndex)
-    {
-      std::this_thread::sleep_for(100ms);
-      continue;
-    }
-    if (m_ChunkContainer.hasBoundaryNeighbors(*updateIndex))
-      continue;
-
-    updateLighting(*updateIndex);
-  }
-}
-
 void ChunkManager::addToLightingUpdateQueue(const GlobalIndex& chunkIndex)
 {
-  m_LightingUpdateQueue.add(chunkIndex);
+  m_LightingWork.submit(chunkIndex, [this, chunkIndex]()
+    {
+      this->lightingPacket(chunkIndex);
+    });
 }
 
 void ChunkManager::addToLazyMeshUpdateQueue(const GlobalIndex& chunkIndex)
 {
-  if (!m_ForceMeshUpdateQueue.contains(chunkIndex) && !m_LightingUpdateQueue.contains(chunkIndex))
-  {
-    m_ThreadPool.submit([this, chunkIndex]()
-      {
-        this->meshPacket(chunkIndex);
-      }, Engine::Priority::Normal);
-  }
+  if (m_ForceMeshingWork.contains(chunkIndex))
+    return;
+
+  m_LazyMeshingWork.submit(chunkIndex, [this, chunkIndex]()
+    {
+      this->lazyMeshingPacket(chunkIndex);
+    });
 }
 
 void ChunkManager::addToForceMeshUpdateQueue(const GlobalIndex& chunkIndex)
 {
-  m_ForceMeshUpdateQueue.add(chunkIndex);
+  m_ForceMeshingWork.submitAndSaveResult(chunkIndex, [this, chunkIndex]()
+    {
+      this->forceMeshingPacket(chunkIndex);
+    });
 }
 
 void ChunkManager::generateNewChunk(const GlobalIndex& chunkIndex)
@@ -645,8 +598,8 @@ void ChunkManager::meshChunk(const GlobalIndex& chunkIndex)
     });
   opaqueDraw.setIndices();
 
-  m_OpaqueCommandQueue.add(std::move(opaqueDraw));
-  m_TransparentCommandQueue.add(std::move(transparentDraw));
+  m_OpaqueCommandQueue.insert(std::move(opaqueDraw));
+  m_TransparentCommandQueue.insert(std::move(transparentDraw));
 }
 
 void ChunkManager::updateLighting(const GlobalIndex& chunkIndex)
@@ -756,10 +709,31 @@ void ChunkManager::updateLighting(const GlobalIndex& chunkIndex)
     addToLightingUpdateQueue(updateIndex);
 }
 
-void ChunkManager::meshPacket(const GlobalIndex& chunkIndex)
+void ChunkManager::lightingPacket(const GlobalIndex& chunkIndex)
 {
   if (m_ChunkContainer.hasBoundaryNeighbors(chunkIndex))
     return;
+
+  updateLighting(chunkIndex);
+}
+
+void ChunkManager::lazyMeshingPacket(const GlobalIndex& chunkIndex)
+{
+  if (m_ChunkContainer.hasBoundaryNeighbors(chunkIndex))
+    return;
+
+  meshChunk(chunkIndex);
+  auto [chunk, lock] = m_ChunkContainer.acquireChunk(chunkIndex);
+  if (chunk)
+    chunk->update();
+}
+
+void ChunkManager::forceMeshingPacket(const GlobalIndex& chunkIndex)
+{
+  EN_PROFILE_FUNCTION();
+
+  if (!m_ChunkContainer.contains(chunkIndex))
+    generateNewChunk(chunkIndex);
 
   meshChunk(chunkIndex);
   auto [chunk, lock] = m_ChunkContainer.acquireChunk(chunkIndex);

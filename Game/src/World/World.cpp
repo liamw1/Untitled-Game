@@ -19,8 +19,6 @@ void World::initialize()
   m_ChunkManager.setLoadModeTerrain();
   // m_ChunkManager.loadChunk({ 0, -1, 2 }, Block::Type::Air);
   // m_ChunkManager.loadChunk({ 0, -1, 1 }, Block::Type::Sand);
-  m_ChunkManager.launchLoadThread();
-  m_ChunkManager.launchLightingThread();
 
 #if USE_LODS
   if (createLODs)
@@ -55,6 +53,7 @@ void World::onUpdate(Engine::Timestep timestep)
 
   Engine::Renderer::EndScene();
 
+  m_ChunkManager.loadNewChunks();
   m_ChunkManager.update();
   m_ChunkManager.clean();
 }

@@ -6,7 +6,6 @@ class ChunkManager
 {
 public:
   ChunkManager();
-  ~ChunkManager();
 
   void initialize();
 
@@ -25,6 +24,8 @@ public:
   */
   void clean();
 
+  void loadNewChunks();
+
   /*
     \returns The chunk along with a lock on its mutex. Chunk will be nullptr is no chunk is found.
   */
@@ -35,8 +36,6 @@ public:
 
   void setLoadModeTerrain();
   void setLoadModeVoid();
-  void launchLoadThread();
-  void launchLightingThread();
 
   // Debug
   void loadChunk(const GlobalIndex& chunkIndex, Block::Type blockType);
@@ -71,22 +70,16 @@ private:
   std::unique_ptr<Engine::MultiDrawIndexedArray<Chunk::DrawCommand>> m_OpaqueMultiDrawArray;
   std::unique_ptr<Engine::MultiDrawIndexedArray<Chunk::DrawCommand>> m_TransparentMultiDrawArray;
 
-  // Updates
-  Engine::Threads::UnorderedSetQueue<GlobalIndex> m_LightingUpdateQueue;
-  Engine::Threads::UnorderedSetQueue<GlobalIndex> m_ForceMeshUpdateQueue;
-
   // Multi-threading
-  std::atomic<bool> m_Running;
-  std::thread m_LoadThread;
-  std::thread m_LightingThread;
   ChunkContainer m_ChunkContainer;
-  Engine::Threads::ThreadPool m_ThreadPool;
+  std::shared_ptr<Engine::Threads::ThreadPool> m_ThreadPool;
+  Engine::Threads::WorkSet<GlobalIndex, void> m_LoadWork;
+  Engine::Threads::WorkSet<GlobalIndex, void> m_LightingWork;
+  Engine::Threads::WorkSet<GlobalIndex, void> m_LazyMeshingWork;
+  Engine::Threads::WorkSet<GlobalIndex, void> m_ForceMeshingWork;
 
   LoadMode m_LoadMode;
   GlobalIndex m_PrevPlayerOriginIndex;
-
-  void loadWorker();
-  void lightingWorker();
 
   void addToLightingUpdateQueue(const GlobalIndex& chunkIndex);
   void addToLazyMeshUpdateQueue(const GlobalIndex& chunkIndex);
@@ -132,5 +125,7 @@ private:
   void updateLighting(const GlobalIndex& chunkIndex);
 
 public:
-  void meshPacket(const GlobalIndex& chunkIndex);
+  void lightingPacket(const GlobalIndex& chunkIndex);
+  void lazyMeshingPacket(const GlobalIndex& chunkIndex);
+  void forceMeshingPacket(const GlobalIndex& chunkIndex);
 };

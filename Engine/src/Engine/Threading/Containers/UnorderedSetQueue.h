@@ -9,7 +9,7 @@ namespace Engine::Threads
     UnorderedSetQueue() = default;
 
     template<DecaysTo<V> T>
-    bool add(T&& value)
+    bool insert(T&& value)
     {
       std::lock_guard lock(m_Mutex);
 

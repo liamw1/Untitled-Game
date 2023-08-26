@@ -10,7 +10,7 @@ namespace Engine::Threads
     UnorderedMapQueue() = default;
 
     template<DecaysTo<V> T>
-    void add(const K& key, T&& value)
+    void insert(const K& key, T&& value)
     {
       std::lock_guard lock(m_Mutex);
       m_Data[key] = std::forward<T>(value);
