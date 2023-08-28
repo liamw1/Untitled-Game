@@ -46,7 +46,7 @@ struct IBox3
 
   constexpr int volume() const
   {
-    EN_CORE_ASSERT(valid());
+    EN_CORE_ASSERT(valid(), "Box is not valid!");
     IVec3<IntType> boxExtents = extents();
     return boxExtents.i * boxExtents.j * boxExtents.k;
   }
@@ -54,7 +54,7 @@ struct IBox3
   template<typename F, typename... Args>
   bool AllOf(F condition, Args&&... args) const
   {
-    EN_CORE_ASSERT(valid());
+    EN_CORE_ASSERT(valid(), "Box is not valid!");
 
     IVec3<IntType> index;
     for (index.i = min.i; index.i < max.i; ++index.i)
@@ -68,7 +68,7 @@ struct IBox3
   template<typename F, typename... Args>
   void forEach(F function, Args&&... args) const
   {
-    EN_CORE_ASSERT(valid());
+    EN_CORE_ASSERT(valid(), "Box is not valid!");
 
     IVec3<IntType> index;
     for (index.i = min.i; index.i < max.i; ++index.i)

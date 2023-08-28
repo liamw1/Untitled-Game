@@ -13,6 +13,11 @@ ChunkManager::ChunkManager()
     m_LoadMode(LoadMode::NotSet),
     m_PrevPlayerOriginIndex(Player::OriginIndex()) {}
 
+ChunkManager::~ChunkManager()
+{
+  m_ThreadPool->shutdown();
+}
+
 void ChunkManager::initialize()
 {
   if (!s_Shader)
@@ -189,10 +194,7 @@ void ChunkManager::loadNewChunks()
 
   if (!newChunkIndices.empty())
     for (const GlobalIndex& newChunkIndex : newChunkIndices)
-      m_LoadWork.submit(newChunkIndex, [this, newChunkIndex]()
-        {
-          this->generateNewChunk(newChunkIndex);
-        });
+      m_LoadWork.submit(newChunkIndex, &ChunkManager::generateNewChunk, this, newChunkIndex);
 }
 
 const ConstChunkWithLock ChunkManager::acquireChunk(const LocalIndex& chunkIndex) const
@@ -284,10 +286,7 @@ void ChunkManager::loadChunk(const GlobalIndex& chunkIndex, Block::Type blockTyp
 
 void ChunkManager::addToLightingUpdateQueue(const GlobalIndex& chunkIndex)
 {
-  m_LightingWork.submit(chunkIndex, [this, chunkIndex]()
-    {
-      this->lightingPacket(chunkIndex);
-    });
+  m_LightingWork.submit(chunkIndex, &ChunkManager::lightingPacket, this, chunkIndex);
 }
 
 void ChunkManager::addToLazyMeshUpdateQueue(const GlobalIndex& chunkIndex)
@@ -295,18 +294,12 @@ void ChunkManager::addToLazyMeshUpdateQueue(const GlobalIndex& chunkIndex)
   if (m_ForceMeshingWork.contains(chunkIndex))
     return;
 
-  m_LazyMeshingWork.submit(chunkIndex, [this, chunkIndex]()
-    {
-      this->lazyMeshingPacket(chunkIndex);
-    });
+  m_LazyMeshingWork.submit(chunkIndex, &ChunkManager::lazyMeshingPacket, this, chunkIndex);
 }
 
 void ChunkManager::addToForceMeshUpdateQueue(const GlobalIndex& chunkIndex)
 {
-  m_ForceMeshingWork.submitAndSaveResult(chunkIndex, [this, chunkIndex]()
-    {
-      this->forceMeshingPacket(chunkIndex);
-    });
+  m_ForceMeshingWork.submitAndSaveResult(chunkIndex, &ChunkManager::forceMeshingPacket, this, chunkIndex);
 }
 
 void ChunkManager::generateNewChunk(const GlobalIndex& chunkIndex)

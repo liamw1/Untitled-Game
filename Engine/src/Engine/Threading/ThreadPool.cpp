@@ -13,6 +13,17 @@ namespace Engine
 
   Threads::ThreadPool::~ThreadPool()
   {
+    shutdown();
+  }
+
+  bool Threads::ThreadPool::running() const
+  {
+    std::lock_guard lock(m_Mutex);
+    return !m_Stop;
+  }
+
+  void Threads::ThreadPool::shutdown()
+  {
     {
       std::lock_guard lock(m_Mutex);
       m_Stop = true;
@@ -26,7 +37,7 @@ namespace Engine
 
   bool Threads::ThreadPool::hasWork()
   {
-    for (const std::queue<MoveableFunction>& workQueue : m_Work)
+    for (const std::queue<MoveOnlyFunction>& workQueue : m_Work)
       if (!workQueue.empty())
         return true;
     return false;
@@ -36,7 +47,7 @@ namespace Engine
   {
     while (true)
     {
-      MoveableFunction task;
+      MoveOnlyFunction task;
 
       {
         std::unique_lock lock(m_Mutex);
@@ -45,7 +56,7 @@ namespace Engine
         if (m_Stop)
           return;
 
-        for (std::queue<MoveableFunction>& workQueue : m_Work)
+        for (std::queue<MoveOnlyFunction>& workQueue : m_Work)
           if (!workQueue.empty())
           {
             task = std::move(workQueue.front());

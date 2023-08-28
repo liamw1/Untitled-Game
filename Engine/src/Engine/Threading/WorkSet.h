@@ -13,8 +13,9 @@ namespace Engine::Threads
     WorkSet(const std::shared_ptr<ThreadPool>& threadPool, Priority priority)
       : m_ThreadPool(threadPool), m_Priority(priority) {}
 
-    template<InvocableWithReturnType<ReturnType> F>
-    std::future<ReturnType> submit(const Identifier& id, F function)
+    template<typename F, typename... Args>
+      requires std::is_invocable_r_v<ReturnType, F, Args...>
+    std::future<ReturnType> submit(const Identifier& id, F&& function, Args&&... args)
     {
       {
         std::lock_guard lock(m_Mutex);
@@ -24,17 +25,14 @@ namespace Engine::Threads
           return {};
       }
 
-      return m_ThreadPool->submit([this, id, function]()
-        {
-          this->submitCallback(id);
-          return function();
-        }, m_Priority);
+      return m_ThreadPool->submit(m_Priority, &WorkSet::workPacket<F, Args...>, this, id, std::forward<F>(function), std::forward<Args>(args)...);
     }
 
-    template<InvocableWithReturnType<ReturnType> F>
-    void submitAndSaveResult(const Identifier& id, F function)
+    template<typename F, typename... Args>
+      requires std::is_invocable_r_v<ReturnType, F, Args...>
+    void submitAndSaveResult(const Identifier& id, F&& function, Args&&... args)
     {
-      std::future<ReturnType> future = submit(id, function);
+      std::future<ReturnType> future = submit(id, std::forward<F>(function), std::forward<Args>(args)...);
       if (future.valid())
       {
         std::lock_guard lock(m_Mutex);
@@ -72,6 +70,22 @@ namespace Engine::Threads
     {
       std::lock_guard lock(m_Mutex);
       m_Work.erase(id);
+    }
+
+  public:
+    template<typename F, typename... Args>
+      requires std::is_invocable_r_v<ReturnType, F, Args...>
+    ReturnType workPacket(const Identifier& id, const F& function, const Args&... args)
+    {
+      {
+        std::lock_guard lock(m_Mutex);
+        m_Work.erase(id);
+      }
+
+      if constexpr (std::is_member_function_pointer_v<F>)
+        return std::mem_fn(function)(args...);
+      else
+        return function(args...);
     }
   };
 }

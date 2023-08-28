@@ -1,6 +1,6 @@
 #pragma once
 #include "Threads.h"
-#include "Engine/Utilities/MoveableFunction.h"
+#include "Engine/Utilities/MoveOnlyFunction.h"
 
 #include <future>
 #include <mutex>
@@ -14,28 +14,32 @@ namespace Engine::Threads
     ThreadPool(int numThreads);
     ~ThreadPool();
 
-    template<std::invocable<> F>
-    std::future<std::invoke_result_t<F>> submit(F function, Priority priority)
+    template<typename F, typename... Args>
+      requires std::is_invocable_v<F, Args...>
+    std::future<std::invoke_result_t<F, Args...>> submit(Priority priority, F&& function, Args&&... args)
     {
-      using ReturnType = std::invoke_result_t<F>;
+      using ReturnType = std::invoke_result_t<F, Args...>;
 
-      std::packaged_task<ReturnType()> task(std::move(function));
+      std::packaged_task<ReturnType()> task(std::bind(std::forward<F>(function), std::forward<Args>(args)...));
       std::future<ReturnType> future(task.get_future());
       {
         std::lock_guard lock(m_Mutex);
-        m_Work[static_cast<int>(priority)].emplace(std::move(task));
+        m_Work[static_cast<int>(priority)].push(std::move(task));
       }
       m_Condition.notify_one();
 
       return future;
     }
 
+    bool running() const;
+    void shutdown();
+
   private:
     bool m_Stop;
-    std::mutex m_Mutex;
+    mutable std::mutex m_Mutex;
     std::condition_variable m_Condition;
     std::vector<std::thread> m_Threads;
-    std::array<std::queue<MoveableFunction>, c_PriorityCount> m_Work;
+    std::array<std::queue<MoveOnlyFunction>, c_PriorityCount> m_Work;
 
     bool hasWork();
 

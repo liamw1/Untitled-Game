@@ -6,6 +6,7 @@ class ChunkManager
 {
 public:
   ChunkManager();
+  ~ChunkManager();
 
   void initialize();
 
@@ -124,7 +125,6 @@ private:
 
   void updateLighting(const GlobalIndex& chunkIndex);
 
-public:
   void lightingPacket(const GlobalIndex& chunkIndex);
   void lazyMeshingPacket(const GlobalIndex& chunkIndex);
   void forceMeshingPacket(const GlobalIndex& chunkIndex);

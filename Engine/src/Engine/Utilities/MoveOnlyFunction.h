@@ -7,19 +7,21 @@ namespace Engine
     A class similar to std::function that performs type erasure on the given
     callable object given to the constructor. Unlike std::function, this class
     can handle move-only types, like std::packaged_task.
+
+    C++23: Should be replaced by std::move_only_function
   */
-  class MoveableFunction
+  class MoveOnlyFunction
   {
   public:
-    MoveableFunction() = default;
+    MoveOnlyFunction() = default;
 
     template<InvocableWithReturnType<void> F>
       requires Movable<F>
-    MoveableFunction(F&& f)
+    MoveOnlyFunction(F&& f)
       : m_TypeErasedFunction(new FunctionModel<F>(std::move(f))) {}
 
-    MoveableFunction(MoveableFunction&& other) noexcept = default;
-    MoveableFunction& operator=(MoveableFunction&& other) noexcept = default;
+    MoveOnlyFunction(MoveOnlyFunction&& other) noexcept = default;
+    MoveOnlyFunction& operator=(MoveOnlyFunction&& other) noexcept = default;
 
     void operator()() { m_TypeErasedFunction->call(); }
   
@@ -45,8 +47,8 @@ namespace Engine
       F m_Function;
     };
 
-    MoveableFunction(const MoveableFunction& other) = delete;
-    MoveableFunction& operator=(const MoveableFunction& other) = delete;
+    MoveOnlyFunction(const MoveOnlyFunction& other) = delete;
+    MoveOnlyFunction& operator=(const MoveOnlyFunction& other) = delete;
   
     std::unique_ptr<FunctionConcept> m_TypeErasedFunction;
   };
