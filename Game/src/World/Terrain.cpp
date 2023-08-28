@@ -3,7 +3,6 @@
 #include "ChunkContainer.h"
 #include "Util/Noise.h"
 #include "Util/Util.h"
-#include "Util/LRUCache.h"
 #include "Player/Player.h"
 
 Terrain::CompoundSurfaceData::CompoundSurfaceData() = default;
@@ -74,7 +73,7 @@ struct SurfaceData
 };
 
 static constexpr int c_CacheSize = (2 * c_UnloadDistance + 5) * (2 * c_UnloadDistance + 5);
-static LRUCache<SurfaceMapIndex, SurfaceData> s_SurfaceDataCache(c_CacheSize);
+static Engine::Threads::LRUCache<SurfaceMapIndex, std::shared_ptr<SurfaceData>> s_SurfaceDataCache(c_CacheSize);
 static std::mutex s_Mutex;
 
 // From https://stackoverflow.com/questions/664014/what-integer-hash-function-are-good-that-accepts-an-integer-hash-key
@@ -150,31 +149,26 @@ static CompoundBiome getBiomeData(const Vec2& surfaceLocation)
   return CompoundBiome(nearbyBiomes);
 }
 
-static const SurfaceData& getSurfaceData(const GlobalIndex& chunkIndex)
+static std::shared_ptr<SurfaceData> getSurfaceData(const GlobalIndex& chunkIndex)
 {
   SurfaceMapIndex mapIndex = static_cast<SurfaceMapIndex>(chunkIndex);
-  auto cachePosition = s_SurfaceDataCache.find(mapIndex);
-  if (cachePosition == s_SurfaceDataCache.end())
-  {
-    // NOTE: Voronoi points could be calculated here instead of each time getBiomeData is called
+  std::optional<std::shared_ptr<SurfaceData>> cachedSurfaceData = s_SurfaceDataCache.get(mapIndex);
+  if (cachedSurfaceData)
+    return *cachedSurfaceData;
 
-    // Generate surface data
-    SurfaceData surfaceData{};
-    for (blockIndex_t i = 0; i < Chunk::Size(); ++i)
-      for (blockIndex_t j = 0; j < Chunk::Size(); ++j)
-      {
-        Vec2 blockXY = Chunk::Length() * static_cast<Vec2>(mapIndex) + Block::Length() * (Vec2(i, j) + Vec2(0.5));
+  // Generate surface data
+  std::shared_ptr<SurfaceData> surfaceData = std::make_shared<SurfaceData>();
+  for (blockIndex_t i = 0; i < Chunk::Size(); ++i)
+    for (blockIndex_t j = 0; j < Chunk::Size(); ++j)
+    {
+      Vec2 blockXY = Chunk::Length() * static_cast<Vec2>(mapIndex) + Block::Length() * (Vec2(i, j) + Vec2(0.5));
 
-        surfaceData.noiseSamples[i][j] = Noise::OctaveNoise2D<Biome::LocalElevationOctaves()>(blockXY, 1_m / c_LargestNoiseScale, c_NoiseLacunarity);
-        surfaceData.biomeData[i][j] = getBiomeData(blockXY);
-      }
+      surfaceData->noiseSamples[i][j] = Noise::OctaveNoise2D<Biome::LocalElevationOctaves()>(blockXY, 1_m / c_LargestNoiseScale, c_NoiseLacunarity);
+      surfaceData->biomeData[i][j] = getBiomeData(blockXY);
+    }
 
-    auto [insertionPosition, insertionSuccess] = s_SurfaceDataCache.insert(mapIndex, std::move(surfaceData));
-    cachePosition = insertionPosition;
-    EN_ASSERT(insertionSuccess, "HeightMap insertion failed!");
-  }
-
-  return cachePosition->second;
+  s_SurfaceDataCache.insert(mapIndex, surfaceData);
+  return surfaceData;
 }
 
 
@@ -192,7 +186,8 @@ static bool isEmpty(const CubicArray<Block::Type, Chunk::Size()>& composition)
 
 static void heightMapStage(SquareArray<length_t, Chunk::Size()>& heightMap, const GlobalIndex& chunkIndex)
 {
-  const auto& [noiseSamples, biomeMap] = getSurfaceData(chunkIndex);
+  std::shared_ptr<SurfaceData> surfaceData = getSurfaceData(chunkIndex);
+  const auto& [noiseSamples, biomeMap] = *surfaceData;
 
   for (blockIndex_t i = 0; i < Chunk::Size(); ++i)
     for (blockIndex_t j = 0; j < Chunk::Size(); ++j)
@@ -213,7 +208,8 @@ static void heightMapStage(SquareArray<length_t, Chunk::Size()>& heightMap, cons
 
 static void soilStage(CubicArray<Block::Type, Chunk::Size()>& composition, const SquareArray<length_t, Chunk::Size()>& heightMap, const GlobalIndex& chunkIndex)
 {
-  const auto& [noiseSamples, biomeMap] = getSurfaceData(chunkIndex);
+  std::shared_ptr<SurfaceData> surfaceData = getSurfaceData(chunkIndex);
+  const auto& [noiseSamples, biomeMap] = *surfaceData;
 
   length_t chunkFloor = Chunk::Length() * chunkIndex.k;
   for (blockIndex_t i = 0; i < Chunk::Size(); ++i)
@@ -243,7 +239,8 @@ static void foliageStage(CubicArray<Block::Type, Chunk::Size()>& composition, co
             composition[i + I][j + J][k + K + 5] = leafType;
   };
 
-  const auto& [noiseSamples, biomeMap] = getSurfaceData(chunkIndex);
+  std::shared_ptr<SurfaceData> surfaceData = getSurfaceData(chunkIndex);
+  const auto& [noiseSamples, biomeMap] = *surfaceData;
 
   length_t chunkFloor = Chunk::Length() * chunkIndex.k;
   if (chunkFloor < 0.0)
@@ -291,8 +288,6 @@ Chunk Terrain::GenerateNew(const GlobalIndex& chunkIndex)
 {
   SquareArray heightMap = MakeSquareArray<length_t, Chunk::Size()>();
   CubicArray composition = MakeCubicArray<Block::Type, Chunk::Size()>();
-
-  std::lock_guard lock(s_Mutex);
 
   heightMapStage(heightMap, chunkIndex);
   soilStage(composition, heightMap, chunkIndex);

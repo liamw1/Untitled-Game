@@ -26,10 +26,12 @@
 #include <cstdint>
 #include <memory>
 #include <type_traits>
+#include <utility>
 
 // Data structures
 #include <array>
 #include <functional>
+#include <list>
 #include <map>
 #include <queue>
 #include <set>

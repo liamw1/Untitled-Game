@@ -36,7 +36,7 @@ namespace Engine::Threads
     }
 
   private:
-    std::unordered_map<K, V> m_Data;
     std::mutex m_Mutex;
+    std::unordered_map<K, V> m_Data;
   };
 }

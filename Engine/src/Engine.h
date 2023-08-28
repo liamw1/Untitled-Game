@@ -42,8 +42,10 @@
 
 #include "Engine/Threading/ThreadPool.h"
 #include "Engine/Threading/WorkSet.h"
+#include "Engine/Threading/Containers/LRUCache.h"
 #include "Engine/Threading/Containers/UnorderedMapQueue.h"
 #include "Engine/Threading/Containers/UnorderedSetQueue.h"
 
 #include "Engine/Utilities/BitUtilities.h"
 #include "Engine/Utilities/EnumUtilities.h"
+#include "Engine/Utilities/LRUCache.h"

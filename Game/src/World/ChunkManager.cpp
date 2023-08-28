@@ -5,10 +5,10 @@
 #include "Util/Util.h"
 
 ChunkManager::ChunkManager()
-  : m_ThreadPool(std::make_shared<Engine::Threads::ThreadPool>(2)),
+  : m_ThreadPool(std::make_shared<Engine::Threads::ThreadPool>(1)),
     m_LoadWork(m_ThreadPool, Engine::Threads::Priority::Normal),
     m_LightingWork(m_ThreadPool, Engine::Threads::Priority::Normal),
-    m_LazyMeshingWork(m_ThreadPool, Engine::Threads::Priority::Low),
+    m_LazyMeshingWork(m_ThreadPool, Engine::Threads::Priority::Normal),
     m_ForceMeshingWork(m_ThreadPool, Engine::Threads::Priority::High),
     m_LoadMode(LoadMode::NotSet),
     m_PrevPlayerOriginIndex(Player::OriginIndex()) {}

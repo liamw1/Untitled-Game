@@ -66,7 +66,7 @@ namespace Engine::Threads
     }
 
   private:
-    std::unordered_set<V> m_Data;
     std::mutex m_Mutex;
+    std::unordered_set<V> m_Data;
   };
 }
