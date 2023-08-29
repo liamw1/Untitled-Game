@@ -66,8 +66,8 @@ private:
   static constexpr int c_StorageBufferBinding = 0;
   static constexpr uint32_t c_StorageBufferSize = static_cast<uint32_t>(Engine::Pow2(20));
 
-  Engine::Threads::UnorderedSetQueue<Chunk::DrawCommand> m_OpaqueCommandQueue;
-  Engine::Threads::UnorderedSetQueue<Chunk::DrawCommand> m_TransparentCommandQueue;
+  Engine::Threads::UnorderedSet<Chunk::DrawCommand> m_OpaqueCommandQueue;
+  Engine::Threads::UnorderedSet<Chunk::DrawCommand> m_TransparentCommandQueue;
   std::unique_ptr<Engine::MultiDrawIndexedArray<Chunk::DrawCommand>> m_OpaqueMultiDrawArray;
   std::unique_ptr<Engine::MultiDrawIndexedArray<Chunk::DrawCommand>> m_TransparentMultiDrawArray;
 

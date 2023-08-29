@@ -87,18 +87,18 @@ std::unordered_set<GlobalIndex> ChunkContainer::findAllLoadableIndices() const
   return newChunkIndices;
 }
 
-void ChunkContainer::uploadMeshes(Engine::Threads::UnorderedSetQueue<Chunk::DrawCommand>& commandQueue, std::unique_ptr<Engine::MultiDrawIndexedArray<Chunk::DrawCommand>>& multiDrawArray) const
+void ChunkContainer::uploadMeshes(Engine::Threads::UnorderedSet<Chunk::DrawCommand>& commandQueue, std::unique_ptr<Engine::MultiDrawIndexedArray<Chunk::DrawCommand>>& multiDrawArray) const
 {
   std::shared_lock lock(m_ContainerMutex);
 
-  std::optional<Chunk::DrawCommand> drawCommand = commandQueue.tryRemove();
+  std::optional<Chunk::DrawCommand> drawCommand = commandQueue.tryRemoveAny();
   while (drawCommand)
   {
     multiDrawArray->remove(drawCommand->id());
     if (find(drawCommand->id()))
       multiDrawArray->add(std::move(*drawCommand));
 
-    drawCommand = commandQueue.tryRemove();
+    drawCommand = commandQueue.tryRemoveAny();
   }
 }
 

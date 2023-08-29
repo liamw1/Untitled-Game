@@ -3,10 +3,11 @@
 namespace Engine::Threads
 {
   template<Movable V>
-  class UnorderedSetQueue
+    requires Hashable<V>
+  class UnorderedSet
   {
   public:
-    UnorderedSetQueue() = default;
+    UnorderedSet() = default;
 
     template<DecaysTo<V> T>
     bool insert(T&& value)
@@ -26,14 +27,13 @@ namespace Engine::Threads
       return insertionSuccess;
     }
 
-    template<DecaysTo<V> T>
-    void erase(T&& value)
+    void erase(const V& value)
     {
       std::lock_guard lock(m_Mutex);
       m_Data.erase(value);
     }
 
-    std::optional<V> tryRemove()
+    std::optional<V> tryRemoveAny()
     {
       std::lock_guard lock(m_Mutex);
 
@@ -46,27 +46,26 @@ namespace Engine::Threads
       return std::nullopt;
     }
 
-    bool empty()
-    {
-      std::lock_guard lock(m_Mutex);
-      return m_Data.empty();
-    }
-
-    size_t size()
-    {
-      std::lock_guard lock(m_Mutex);
-      return m_Data.size();
-    }
-
-    template<typename T>
-    bool contains(T&& value)
+    bool contains(const V& value) const
     {
       std::lock_guard lock(m_Mutex);
       return m_Data.contains(value);
     }
 
+    bool empty() const
+    {
+      std::lock_guard lock(m_Mutex);
+      return m_Data.empty();
+    }
+
+    size_t size() const
+    {
+      std::lock_guard lock(m_Mutex);
+      return m_Data.size();
+    }
+
   private:
-    std::mutex m_Mutex;
+    mutable std::mutex m_Mutex;
     std::unordered_set<V> m_Data;
   };
 }

@@ -57,7 +57,7 @@ public:
   */
   std::unordered_set<GlobalIndex> findAllLoadableIndices() const;
 
-  void uploadMeshes(Engine::Threads::UnorderedSetQueue<Chunk::DrawCommand>& commandQueue, std::unique_ptr<Engine::MultiDrawIndexedArray<Chunk::DrawCommand>>& multiDrawArray) const;
+  void uploadMeshes(Engine::Threads::UnorderedSet<Chunk::DrawCommand>& commandQueue, std::unique_ptr<Engine::MultiDrawIndexedArray<Chunk::DrawCommand>>& multiDrawArray) const;
 
   bool hasBoundaryNeighbors(const GlobalIndex& chunkIndex);
 

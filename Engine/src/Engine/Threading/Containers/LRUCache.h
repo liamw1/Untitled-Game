@@ -6,8 +6,10 @@ namespace Engine::Threads
   template<Hashable K, typename V>
   class LRUCache
   {
-  public:
+  private:
     using iterator = Engine::LRUCache<K, V>::iterator;
+
+  public:
 
     LRUCache(int size)
       : m_Cache(size) {}

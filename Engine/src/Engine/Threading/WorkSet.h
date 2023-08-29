@@ -1,8 +1,5 @@
 #pragma once
-
 #include "ThreadPool.h"
-#include "Engine/Core/Concepts.h"
-#include <memory>
 
 namespace Engine::Threads
 {
