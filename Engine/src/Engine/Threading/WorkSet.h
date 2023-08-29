@@ -25,7 +25,11 @@ namespace Engine::Threads
           return {};
       }
 
-      return m_ThreadPool->submit(m_Priority, &WorkSet::workPacket<F, Args...>, this, id, std::forward<F>(function), std::forward<Args>(args)...);
+      return m_ThreadPool->submit(m_Priority, [this, id]<typename F, typename... Args>(F&& f, Args&&... a)
+      {
+        this->submitCallback(id);
+        return std::invoke(std::forward<F>(f), std::forward<Args>(a)...);
+      }, std::forward<F>(function), std::forward<Args>(args)...);
     }
 
     template<typename F, typename... Args>
@@ -53,14 +57,26 @@ namespace Engine::Threads
         future.get();
     }
 
-    bool contains(const Identifier& id)
+    bool contains(const Identifier& id) const
     {
       std::lock_guard lock(m_Mutex);
       return m_Work.contains(id);
     }
 
+    size_t queuedTasks() const
+    {
+      std::lock_guard lock(m_Mutex);
+      return m_Work.size();
+    }
+
+    size_t savedResults() const
+    {
+      std::lock_guard lock(m_Mutex);
+      return m_Futures.size();
+    }
+
   private:
-    std::mutex m_Mutex;
+    mutable std::mutex m_Mutex;
     std::shared_ptr<ThreadPool> m_ThreadPool;
     std::unordered_set<Identifier> m_Work;
     std::unordered_map<Identifier, std::future<ReturnType>> m_Futures;
@@ -70,22 +86,6 @@ namespace Engine::Threads
     {
       std::lock_guard lock(m_Mutex);
       m_Work.erase(id);
-    }
-
-  public:
-    template<typename F, typename... Args>
-      requires std::is_invocable_r_v<ReturnType, F, Args...>
-    ReturnType workPacket(const Identifier& id, const F& function, const Args&... args)
-    {
-      {
-        std::lock_guard lock(m_Mutex);
-        m_Work.erase(id);
-      }
-
-      if constexpr (std::is_member_function_pointer_v<F>)
-        return std::mem_fn(function)(args...);
-      else
-        return function(args...);
     }
   };
 }

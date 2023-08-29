@@ -31,6 +31,8 @@ namespace Engine::Threads
       return future;
     }
 
+    size_t queuedTasks() const;
+
     bool running() const;
     void shutdown();
 

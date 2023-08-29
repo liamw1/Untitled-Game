@@ -16,6 +16,16 @@ namespace Engine
     shutdown();
   }
 
+  size_t Threads::ThreadPool::queuedTasks() const
+  {
+    std::lock_guard lock(m_Mutex);
+
+    size_t queuedTasks = 0;
+    for (const std::queue<MoveOnlyFunction>& workQueue : m_Work)
+      queuedTasks += workQueue.size();
+    return queuedTasks;
+  }
+
   bool Threads::ThreadPool::running() const
   {
     std::lock_guard lock(m_Mutex);

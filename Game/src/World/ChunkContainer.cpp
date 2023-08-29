@@ -18,6 +18,8 @@ ChunkContainer::ChunkContainer()
 
 bool ChunkContainer::insert(Chunk&& newChunk)
 {
+  EN_PROFILE_FUNCTION();
+
   std::lock_guard lock(m_ContainerMutex);
 
   if (m_OpenChunkSlots.empty())
@@ -33,10 +35,13 @@ bool ChunkContainer::insert(Chunk&& newChunk)
   auto [insertionPosition, insertionSuccess] = m_Chunks.insert({ chunk.globalIndex(), &chunk });
 
   if (insertionSuccess)
+  {
+    EN_PROFILE_SCOPE("Boundary update");
     for (int i = -1; i <= 1; ++i)
       for (int j = -1; j <= 1; ++j)
         for (int k = -1; k <= 1; ++k)
           boundaryUpdate(chunk.globalIndex() + GlobalIndex(i, j, k));
+  }
 
   return insertionSuccess;
 }

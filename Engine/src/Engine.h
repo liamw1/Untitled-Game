@@ -10,6 +10,7 @@
 #include "Engine/Core/MouseButtonCodes.h"
 
 #include "Engine/Debug/Instrumentor.h"
+#include "Engine/Debug/TestClasses.h"
 
 #include "Engine/Events/ApplicationEvent.h"
 #include "Engine/Events/KeyEvent.h"

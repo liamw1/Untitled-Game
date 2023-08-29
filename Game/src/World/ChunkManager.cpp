@@ -5,7 +5,7 @@
 #include "Util/Util.h"
 
 ChunkManager::ChunkManager()
-  : m_ThreadPool(std::make_shared<Engine::Threads::ThreadPool>(1)),
+  : m_ThreadPool(std::make_shared<Engine::Threads::ThreadPool>(8)),
     m_LoadWork(m_ThreadPool, Engine::Threads::Priority::Normal),
     m_LightingWork(m_ThreadPool, Engine::Threads::Priority::Normal),
     m_LazyMeshingWork(m_ThreadPool, Engine::Threads::Priority::Normal),
@@ -184,6 +184,12 @@ void ChunkManager::clean()
 
 void ChunkManager::loadNewChunks()
 {
+  if (m_LoadWork.queuedTasks() > 0)
+    return;
+
+  if (m_LoadWork.savedResults() > 0)
+    m_LoadWork.waitAndDiscardSaved();
+
   EN_PROFILE_FUNCTION();
 
   std::unordered_set<GlobalIndex> newChunkIndices = m_ChunkContainer.findAllLoadableIndices();
@@ -194,7 +200,7 @@ void ChunkManager::loadNewChunks()
 
   if (!newChunkIndices.empty())
     for (const GlobalIndex& newChunkIndex : newChunkIndices)
-      m_LoadWork.submit(newChunkIndex, &ChunkManager::generateNewChunk, this, newChunkIndex);
+      m_LoadWork.submitAndSaveResult(newChunkIndex, &ChunkManager::generateNewChunk, this, newChunkIndex);
 }
 
 const ConstChunkWithLock ChunkManager::acquireChunk(const LocalIndex& chunkIndex) const
