@@ -2,13 +2,12 @@
 
 namespace Engine::Threads
 {
-  template<Hashable K, Movable V>
-    requires std::move_constructible<K>
+  template<Hashable K, typename V>
+    requires std::is_default_constructible_v<K> && std::move_constructible<K>
   class UnorderedMap
   {
   private:
-    using iterator = std::unordered_map<K, V>::iterator;
-    using const_iterator = std::unordered_map<K, V>::const_iterator;
+    using const_iterator = std::unordered_map<K, std::shared_ptr<V>>::const_iterator;
 
   public:
     UnorderedMap() = default;
@@ -17,76 +16,76 @@ namespace Engine::Threads
     bool insert(const K& key, T&& value)
     {
       std::lock_guard lock(m_Mutex);
-      auto [insertionPosition, insertionSuccess] = m_Data.insert({ key, std::forward<T>(value) });
+      std::shared_ptr valuePointer = std::make_shared<V>(std::forward<T>(value));
+      auto [insertionPosition, insertionSuccess] = m_Data.insert({ key, valuePointer });
       return insertionSuccess;
     }
 
-    void erase(const K& key)
+    bool erase(const K& key)
     {
       std::lock_guard lock(m_Mutex);
-      m_Data.erase(key);
+      size_t elementsErased = m_Data.erase(key);
+      return elementsErased > 0;
     }
 
-    std::optional<std::pair<K, V>> tryRemoveAny()
+    std::pair<K, std::shared_ptr<V>> tryRemoveAny()
     {
-      std::lock_guard lock(m_Mutex);
+      std::pair<K, std::shared_ptr<V>> keyValue{};
 
+      std::lock_guard lock(m_Mutex);
       if (!m_Data.empty())
       {
-        std::pair<K, V> keyVal = std::move(*m_Data.begin());
+        keyValue = std::move(*m_Data.begin());
         m_Data.erase(m_Data.begin());
-        return keyVal;
       }
-      return std::nullopt;
+      return keyValue;
     }
 
-    std::optional<V> get(const K& key) const
+    std::shared_ptr<V> get(const K& key) const
     {
-      std::lock_guard lock(m_Mutex);
+      std::shared_lock lock(m_Mutex);
       const_iterator mapPosition = m_Data.find(key);
-      return mapPosition == m_Data.end() ? std::nullopt : std::make_optional<V>(mapPosition->second);
+      return mapPosition == m_Data.end() ? nullptr : mapPosition->second;
     }
 
-    std::unordered_map<K, V> getCurrentState() const
+    template<InvocableWithReturnType<bool, const K&> F>
+    std::vector<K> getKeys(const F& condition) const
     {
-      std::lock_guard lock(m_Mutex);
+      std::vector<K> keysMatchingCondition;
+
+      std::shared_lock lock(m_Mutex);
+      for (const auto& [key, value] : m_Data)
+        if (condition(key))
+          keysMatchingCondition.push_back(key);
+      return keysMatchingCondition;
+    }
+
+    std::unordered_map<K, std::shared_ptr<V>> getCurrentState() const
+    {
+      std::shared_lock lock(m_Mutex);
       return m_Data;
-    }
-
-    std::unordered_map<K, V> getSubsetOfCurrentState(const std::vector<K>& keys) const
-    {
-      std::lock_guard lock(m_Mutex);
-
-      std::unordered_map<K, V> subset;
-      for (const K& key : keys)
-      {
-        const_iterator keyValuePosition = m_Data.find(key);
-        if (keyValuePosition != m_Data.end())
-          subset.insert(*keyValuePosition);
-      }
-      return subset;
     }
 
     bool contains(const K& key) const
     {
-      std::lock_guard lock(m_Mutex);
+      std::shared_lock lock(m_Mutex);
       return m_Data.contains(key);
     }
 
     bool empty() const
     {
-      std::lock_guard lock(m_Mutex);
+      std::shared_lock lock(m_Mutex);
       return m_Data.empty();
     }
 
     size_t size() const
     {
-      std::lock_guard lock(m_Mutex);
+      std::shared_lock lock(m_Mutex);
       return m_Data.size();
     }
 
   private:
-    mutable std::mutex m_Mutex;
-    std::unordered_map<K, V> m_Data;
+    mutable std::shared_mutex m_Mutex;
+    std::unordered_map<K, std::shared_ptr<V>> m_Data;
   };
 }

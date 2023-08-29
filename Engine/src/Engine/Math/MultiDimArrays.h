@@ -433,7 +433,7 @@ public:
   bool filledWith(const IBox3<IndexType>& section, const T& val) const
   {
     EN_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
-    return section.AllOf([this, &val](const IVec3<IndexType>& index)
+    return section.allOf([this, &val](const IVec3<IndexType>& index)
       {
         return (*this)(index) == val;
       });
@@ -447,7 +447,7 @@ public:
     if (!m_Data || !arr)
       return false;
 
-    return compareSection.AllOf([this, &compareSection, &arr, &arrBase](const IVec3<IndexType>& index)
+    return compareSection.allOf([this, &compareSection, &arr, &arrBase](const IVec3<IndexType>& index)
       {
         return (*this)(index) == arr(arrBase + index - compareSection.min);
       });

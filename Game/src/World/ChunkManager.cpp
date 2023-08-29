@@ -150,9 +150,9 @@ void ChunkManager::update()
   m_ForceMeshingWork.waitAndDiscardSaved();
 
   if (!m_OpaqueCommandQueue.empty())
-    m_ChunkContainer.uploadMeshes(m_OpaqueCommandQueue, m_OpaqueMultiDrawArray);
+    uploadMeshes(m_OpaqueCommandQueue, m_OpaqueMultiDrawArray);
   if (!m_TransparentCommandQueue.empty())
-    m_ChunkContainer.uploadMeshes(m_TransparentCommandQueue, m_TransparentMultiDrawArray);
+    uploadMeshes(m_TransparentCommandQueue, m_TransparentMultiDrawArray);
 }
 
 void ChunkManager::clean()
@@ -163,7 +163,7 @@ void ChunkManager::clean()
 
   EN_PROFILE_FUNCTION();
 
-  std::vector<GlobalIndex> chunksMarkedForDeletion = m_ChunkContainer.findAll([&originIndex](const Chunk& chunk)
+  std::vector<GlobalIndex> chunksMarkedForDeletion = m_ChunkContainer.chunks().getKeys([&originIndex](const Chunk& chunk)
     {
       return !Util::IsInRange(chunk.globalIndex(), originIndex, c_UnloadDistance);
     });
@@ -195,7 +195,7 @@ void ChunkManager::loadNewChunks()
   std::unordered_set<GlobalIndex> newChunkIndices = m_ChunkContainer.findAllLoadableIndices();
 
   // Load First chunk if none exist
-  if (newChunkIndices.empty() && m_ChunkContainer.empty())
+  if (newChunkIndices.empty() && m_ChunkContainer.chunks().empty())
     newChunkIndices.insert(Player::OriginIndex());
 
   if (!newChunkIndices.empty())
@@ -323,10 +323,10 @@ void ChunkManager::generateNewChunk(const GlobalIndex& chunkIndex)
 
   bool insertionSuccess = m_ChunkContainer.insert(std::move(chunk));
   if (insertionSuccess)
-    for (int i = -1; i <= 1; ++i)
-      for (int j = -1; j <= 1; ++j)
-        for (int k = -1; k <= 1; ++k)
-          addToLazyMeshUpdateQueue(chunkIndex + GlobalIndex(i, j, k));
+    Chunk::Stencil(chunkIndex).forEach([this](const GlobalIndex& stencilIndex)
+      {
+        addToLazyMeshUpdateQueue(stencilIndex);
+      });
 }
 
 void ChunkManager::sendBlockUpdate(const GlobalIndex& chunkIndex, const BlockIndex& blockIndex)
@@ -361,6 +361,20 @@ void ChunkManager::sendBlockUpdate(const GlobalIndex& chunkIndex, const BlockInd
       cornerNeighborIndex += GlobalIndex::Dir(updateDirections[i]);
     }
     addToLazyMeshUpdateQueue(cornerNeighborIndex);
+  }
+}
+
+void ChunkManager::uploadMeshes(Engine::Threads::UnorderedSet<Chunk::DrawCommand>& commandQueue, std::unique_ptr<Engine::MultiDrawIndexedArray<Chunk::DrawCommand>>& multiDrawArray)
+{
+  std::unordered_set<Chunk::DrawCommand> drawCommands = commandQueue.removeAll();
+  while (!drawCommands.empty())
+  {
+    auto nodeHandle = drawCommands.extract(drawCommands.begin());
+    Chunk::DrawCommand drawCommand = std::move(nodeHandle.value());
+
+    multiDrawArray->remove(drawCommand.id());
+    if (m_ChunkContainer.chunks().contains(drawCommand.id()))
+      multiDrawArray->add(std::move(drawCommand));
   }
 }
 
@@ -731,7 +745,7 @@ void ChunkManager::forceMeshingPacket(const GlobalIndex& chunkIndex)
 {
   EN_PROFILE_FUNCTION();
 
-  if (!m_ChunkContainer.contains(chunkIndex))
+  if (!m_ChunkContainer.chunks().contains(chunkIndex))
     generateNewChunk(chunkIndex);
 
   meshChunk(chunkIndex);

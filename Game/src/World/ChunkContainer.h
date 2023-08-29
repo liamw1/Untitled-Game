@@ -32,28 +32,13 @@ public:
   */
   bool erase(const GlobalIndex& chunkIndex);
 
-  /*
-    \returns All chunks of the specified type that match the given conditional.
-  */
-  template<typename F, typename... Args>
-  std::vector<GlobalIndex> findAll(F condition, Args&&... args) const
-  {
-    std::unordered_map<GlobalIndex, std::shared_ptr<Chunk>> chunks = m_Chunks.getCurrentState();
-
-    std::vector<GlobalIndex> indexList;
-    for (const auto& [key, chunk] : chunks)
-      if (condition(*chunk, std::forward<Args>(args)...))
-        indexList.push_back(chunk->globalIndex());
-    return indexList;
-  }
+  const Engine::Threads::UnorderedMap<GlobalIndex, Chunk>& chunks() const;
 
   /*
     Scans boundary for places where new chunks can be loaded and returns possible locations
     as an unordered set.
   */
   std::unordered_set<GlobalIndex> findAllLoadableIndices() const;
-
-  void uploadMeshes(Engine::Threads::UnorderedSet<Chunk::DrawCommand>& commandQueue, std::unique_ptr<Engine::MultiDrawIndexedArray<Chunk::DrawCommand>>& multiDrawArray) const;
 
   bool hasBoundaryNeighbors(const GlobalIndex& chunkIndex);
 
@@ -62,11 +47,8 @@ public:
   */
   [[nodiscard]] ChunkWithLock acquireChunk(const GlobalIndex& chunkIndex) const;
 
-  bool empty() const;
-  bool contains(const GlobalIndex& chunkIndex) const;
-
 private:
-  Engine::Threads::UnorderedMap<GlobalIndex, std::shared_ptr<Chunk>> m_Chunks;
+  Engine::Threads::UnorderedMap<GlobalIndex, Chunk> m_Chunks;
   Engine::Threads::UnorderedSet<GlobalIndex> m_BoundaryIndices;
 
 // Helper functions for chunk container access. These assume the map mutex has already been locked by one of the public functions
@@ -79,15 +61,5 @@ private:
   */
   bool isOnBoundary(const GlobalIndex& chunkIndex) const;
 
-  /*
-    \returns The Chunk and it's type at the specified chunk index.
-             If no such chunk can be found, returns ChunkType::DNE and nullptr.
-
-    Requires at minium a shared lock to be owned on the container mutex.
-  */
-  std::shared_ptr<Chunk> find(const GlobalIndex& chunkIndex) const;
-
   void boundaryUpdate(const GlobalIndex& chunkIndex);
-
-  void boundaryUpdate2(const GlobalIndex& chunkIndex);
 };

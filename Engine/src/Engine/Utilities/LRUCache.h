@@ -7,6 +7,7 @@ namespace Engine
   {
   public:
     using iterator = std::list<std::pair<K, V>>::iterator;
+    using const_iterator = std::list<std::pair<K, V>>::iterator;
   
     LRUCache(int size)
       : m_Size(size) {}

@@ -95,6 +95,8 @@ private:
   */
   void sendBlockUpdate(const GlobalIndex& chunkIndex, const BlockIndex& blockIndex);
 
+  void uploadMeshes(Engine::Threads::UnorderedSet<Chunk::DrawCommand>& commandQueue, std::unique_ptr<Engine::MultiDrawIndexedArray<Chunk::DrawCommand>>& multiDrawArray);
+
   // Meshing
 private:
   struct BlockData

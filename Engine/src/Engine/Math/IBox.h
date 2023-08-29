@@ -16,6 +16,11 @@ struct IBox3
   constexpr IBox3(IntType iMin, IntType jMin, IntType kMin, IntType iMax, IntType jMax, IntType kMax)
     : min(iMin, jMin, kMin), max(iMax, jMax, kMax) {}
 
+  constexpr IBox3 operator+(const IVec3<IntType>& intVec3) const
+  {
+    return IBox3(min + intVec3, max + intVec3);
+  }
+
   constexpr bool valid() const
   {
     for (int i = 0; i < 3; ++i)
@@ -51,8 +56,8 @@ struct IBox3
     return boxExtents.i * boxExtents.j * boxExtents.k;
   }
 
-  template<typename F, typename... Args>
-  bool AllOf(F condition, Args&&... args) const
+  template<InvocableWithReturnType<bool, const IVec3<IntType>&> F>
+  bool allOf(const F& condition) const
   {
     EN_CORE_ASSERT(valid(), "Box is not valid!");
 
@@ -60,14 +65,13 @@ struct IBox3
     for (index.i = min.i; index.i < max.i; ++index.i)
       for (index.j = min.j; index.j < max.j; ++index.j)
         for (index.k = min.k; index.k < max.k; ++index.k)
-          if (!condition(index, std::forward<Args>(args)...))
+          if (!condition(index))
             return false;
     return true;
   }
 
-  // Take F by const&?
-  template<typename F, typename... Args>
-  void forEach(F function, Args&&... args) const
+  template<InvocableWithReturnType<bool, const IVec3<IntType>&> F>
+  bool noneOf(const F& condition) const
   {
     EN_CORE_ASSERT(valid(), "Box is not valid!");
 
@@ -75,7 +79,21 @@ struct IBox3
     for (index.i = min.i; index.i < max.i; ++index.i)
       for (index.j = min.j; index.j < max.j; ++index.j)
         for (index.k = min.k; index.k < max.k; ++index.k)
-          function(index, std::forward<Args>(args)...);
+          if (condition(index))
+            return false;
+    return true;
+  }
+
+  template<InvocableWithReturnType<void, const IVec3<IntType>&> F>
+  void forEach(const F& function) const
+  {
+    EN_CORE_ASSERT(valid(), "Box is not valid!");
+
+    IVec3<IntType> index;
+    for (index.i = min.i; index.i < max.i; ++index.i)
+      for (index.j = min.j; index.j < max.j; ++index.j)
+        for (index.k = min.k; index.k < max.k; ++index.k)
+          function(index);  
   }
 
   static constexpr IBox3<IntType> Union(const IBox3<IntType>& other)

@@ -73,7 +73,7 @@ struct SurfaceData
 };
 
 static constexpr int c_CacheSize = (2 * c_UnloadDistance + 5) * (2 * c_UnloadDistance + 5);
-static Engine::Threads::LRUCache<SurfaceMapIndex, std::shared_ptr<SurfaceData>> s_SurfaceDataCache(c_CacheSize);
+static Engine::Threads::LRUCache<SurfaceMapIndex, SurfaceData> s_SurfaceDataCache(c_CacheSize);
 static std::mutex s_Mutex;
 
 // From https://stackoverflow.com/questions/664014/what-integer-hash-function-are-good-that-accepts-an-integer-hash-key
@@ -152,9 +152,9 @@ static CompoundBiome getBiomeData(const Vec2& surfaceLocation)
 static std::shared_ptr<SurfaceData> getSurfaceData(const GlobalIndex& chunkIndex)
 {
   SurfaceMapIndex mapIndex = static_cast<SurfaceMapIndex>(chunkIndex);
-  std::optional<std::shared_ptr<SurfaceData>> cachedSurfaceData = s_SurfaceDataCache.get(mapIndex);
+  std::shared_ptr<SurfaceData> cachedSurfaceData = s_SurfaceDataCache.get(mapIndex);
   if (cachedSurfaceData)
-    return *cachedSurfaceData;
+    return cachedSurfaceData;
 
   // Generate surface data
   std::shared_ptr<SurfaceData> surfaceData = std::make_shared<SurfaceData>();

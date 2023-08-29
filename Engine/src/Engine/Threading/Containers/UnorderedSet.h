@@ -35,10 +35,11 @@ namespace Engine::Threads
       return insertionSuccess;
     }
 
-    void erase(const V& value)
+    bool erase(const V& value)
     {
       std::lock_guard lock(m_Mutex);
-      m_Data.erase(value);
+      size_t elementsErased = m_Data.erase(value);
+      return elementsErased > 0;
     }
 
     void eraseAll(const std::vector<V>& values)
@@ -70,30 +71,30 @@ namespace Engine::Threads
 
     std::unordered_set<V> getCurrentState() const
     {
-      std::lock_guard lock(m_Mutex);
+      std::shared_lock lock(m_Mutex);
       return m_Data;
     }
 
     bool contains(const V& value) const
     {
-      std::lock_guard lock(m_Mutex);
+      std::shared_lock lock(m_Mutex);
       return m_Data.contains(value);
     }
 
     bool empty() const
     {
-      std::lock_guard lock(m_Mutex);
+      std::shared_lock lock(m_Mutex);
       return m_Data.empty();
     }
 
     size_t size() const
     {
-      std::lock_guard lock(m_Mutex);
+      std::shared_lock lock(m_Mutex);
       return m_Data.size();
     }
 
   private:
-    mutable std::mutex m_Mutex;
+    mutable std::shared_mutex m_Mutex;
     std::unordered_set<V> m_Data;
   };
 }

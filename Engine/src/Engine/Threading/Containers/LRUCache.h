@@ -7,29 +7,38 @@ namespace Engine::Threads
   class LRUCache
   {
   private:
-    using iterator = Engine::LRUCache<K, V>::iterator;
+    using const_iterator = Engine::LRUCache<K, std::shared_ptr<V>>::const_iterator;
 
   public:
 
     LRUCache(int size)
       : m_Cache(size) {}
 
-    template<DecaysTo<V> T>
-    void insert(const K& key, T&& value)
+    bool insert(const K& key, const std::shared_ptr<V>& valuePointer)
     {
       std::lock_guard lock(m_Mutex);
-      m_Cache[key] = std::forward<T>(value);
+      auto [insertionPosition, insertionSuccess] = m_Cache.insert(key, valuePointer);
+      return insertionSuccess;
     }
 
-    std::optional<V> get(const K& key)
+    template<DecaysTo<V> T>
+    bool insert(const K& key, T&& value)
     {
       std::lock_guard lock(m_Mutex);
-      iterator cachePosition = m_Cache.find(key);
-      return cachePosition == m_Cache.end() ? std::nullopt : std::make_optional<V>(cachePosition->second);
+      std::shared_ptr valuePointer = std::make_shared<V>(std::forward<T>(value));
+      auto [insertionPosition, insertionSuccess] = m_Cache.insert(key, valuePointer);
+      return insertionSuccess;
+    }
+
+    std::shared_ptr<V> get(const K& key)
+    {
+      std::lock_guard lock(m_Mutex);
+      const_iterator cachePosition = m_Cache.find(key);
+      return cachePosition == m_Cache.end() ? nullptr : cachePosition->second;
     }
 
   private:
     std::mutex m_Mutex;
-    Engine::LRUCache<K, V> m_Cache;
+    Engine::LRUCache<K, std::shared_ptr<V>> m_Cache;
   };
 }
