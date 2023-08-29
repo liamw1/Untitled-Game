@@ -18,6 +18,14 @@ namespace Engine::Threads
       return insertionSuccess;
     }
 
+    void insertAll(const std::vector<V>& values)
+    {
+      std::lock_guard lock(m_Mutex);
+
+      for (const V& value : values)
+        m_Data.insert(value);
+    }
+
     template<typename... Args>
     bool emplace(Args&&... args)
     {
@@ -33,6 +41,14 @@ namespace Engine::Threads
       m_Data.erase(value);
     }
 
+    void eraseAll(const std::vector<V>& values)
+    {
+      std::lock_guard lock(m_Mutex);
+
+      for (const V& value : values)
+        m_Data.erase(value);
+    }
+
     std::optional<V> tryRemoveAny()
     {
       std::lock_guard lock(m_Mutex);
@@ -44,6 +60,18 @@ namespace Engine::Threads
         return value;
       }
       return std::nullopt;
+    }
+
+    std::unordered_set<V> removeAll()
+    {
+      std::lock_guard lock(m_Mutex);
+      return std::move(m_Data);
+    }
+
+    std::unordered_set<V> getCurrentState() const
+    {
+      std::lock_guard lock(m_Mutex);
+      return m_Data;
     }
 
     bool contains(const V& value) const

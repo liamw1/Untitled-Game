@@ -19,6 +19,8 @@ using LocalIndex = IVec3<localIndex_t>;
 using GlobalIndex = IVec3<globalIndex_t>;
 
 using BlockBox = IBox3<blockIndex_t>;
+using LocalBox = IBox3<localIndex_t>;
+using GlobalBox = IBox3<globalIndex_t>;
 
 
 

@@ -182,12 +182,6 @@ namespace std
 
 struct ChunkWithLock
 {
-  Chunk* chunk;
-  std::unique_lock<std::mutex> lock;
-};
-
-struct ConstChunkWithLock
-{
-  const Chunk* chunk;
+  std::shared_ptr<Chunk> chunk;
   std::unique_lock<std::mutex> lock;
 };

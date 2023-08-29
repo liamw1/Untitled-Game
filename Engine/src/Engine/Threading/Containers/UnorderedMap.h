@@ -8,6 +8,7 @@ namespace Engine::Threads
   {
   private:
     using iterator = std::unordered_map<K, V>::iterator;
+    using const_iterator = std::unordered_map<K, V>::const_iterator;
 
   public:
     UnorderedMap() = default;
@@ -39,14 +40,34 @@ namespace Engine::Threads
       return std::nullopt;
     }
 
-    std::optional<V> get(const K& key)
+    std::optional<V> get(const K& key) const
     {
       std::lock_guard lock(m_Mutex);
-      iterator mapPosition = m_Data.find(key);
+      const_iterator mapPosition = m_Data.find(key);
       return mapPosition == m_Data.end() ? std::nullopt : std::make_optional<V>(mapPosition->second);
     }
 
-    bool contains(const K& key)
+    std::unordered_map<K, V> getCurrentState() const
+    {
+      std::lock_guard lock(m_Mutex);
+      return m_Data;
+    }
+
+    std::unordered_map<K, V> getSubsetOfCurrentState(const std::vector<K>& keys) const
+    {
+      std::lock_guard lock(m_Mutex);
+
+      std::unordered_map<K, V> subset;
+      for (const K& key : keys)
+      {
+        const_iterator keyValuePosition = m_Data.find(key);
+        if (keyValuePosition != m_Data.end())
+          subset.insert(*keyValuePosition);
+      }
+      return subset;
+    }
+
+    bool contains(const K& key) const
     {
       std::lock_guard lock(m_Mutex);
       return m_Data.contains(key);

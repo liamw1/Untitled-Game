@@ -65,6 +65,7 @@ struct IBox3
     return true;
   }
 
+  // Take F by const&?
   template<typename F, typename... Args>
   void forEach(F function, Args&&... args) const
   {

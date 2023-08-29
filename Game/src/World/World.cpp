@@ -49,7 +49,7 @@ void World::onUpdate(Engine::Timestep timestep)
   }
 #endif
 
-  playerWorldInteraction();
+  // playerWorldInteraction();
 
   Engine::Renderer::EndScene();
 
@@ -207,6 +207,8 @@ void World::playerCollisionHandling(Engine::Timestep timestep) const
 
 void World::playerWorldInteraction()
 {
+  EN_PROFILE_FUNCTION();
+
   static constexpr blockIndex_t chunkLimits[2] = { 0, Chunk::Size() - 1 };
   static constexpr length_t maxInteractionDistance = 1000 * Block::Length();
 

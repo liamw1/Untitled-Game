@@ -5,10 +5,10 @@
 #include "Util/Util.h"
 
 ChunkManager::ChunkManager()
-  : m_ThreadPool(std::make_shared<Engine::Threads::ThreadPool>(8)),
+  : m_ThreadPool(std::make_shared<Engine::Threads::ThreadPool>(4)),
     m_LoadWork(m_ThreadPool, Engine::Threads::Priority::Normal),
     m_LightingWork(m_ThreadPool, Engine::Threads::Priority::Normal),
-    m_LazyMeshingWork(m_ThreadPool, Engine::Threads::Priority::Normal),
+    m_LazyMeshingWork(m_ThreadPool, Engine::Threads::Priority::Low),
     m_ForceMeshingWork(m_ThreadPool, Engine::Threads::Priority::High),
     m_LoadMode(LoadMode::NotSet),
     m_PrevPlayerOriginIndex(Player::OriginIndex()) {}
@@ -203,7 +203,7 @@ void ChunkManager::loadNewChunks()
       m_LoadWork.submitAndSaveResult(newChunkIndex, &ChunkManager::generateNewChunk, this, newChunkIndex);
 }
 
-const ConstChunkWithLock ChunkManager::acquireChunk(const LocalIndex& chunkIndex) const
+ChunkWithLock ChunkManager::acquireChunk(const LocalIndex& chunkIndex) const
 {
   GlobalIndex originChunk = Player::OriginIndex();
   return m_ChunkContainer.acquireChunk(GlobalIndex(originChunk.i + chunkIndex.i, originChunk.j + chunkIndex.j, originChunk.k + chunkIndex.k));
@@ -370,7 +370,7 @@ ChunkManager::BlockData::BlockData()
   : composition(MakeCubicArray<Block::Type, Chunk::Size() + 2, -1>()),
     lighting(MakeCubicArray<Block::Light, Chunk::Size() + 2, -1>()) {}
 
-void ChunkManager::BlockData::fill(const BlockBox& fillSection, const Chunk* chunk, const BlockIndex& chunkBase, bool fillLight)
+void ChunkManager::BlockData::fill(const BlockBox& fillSection, std::shared_ptr<Chunk> chunk, const BlockIndex& chunkBase, bool fillLight)
 {
   if (chunk->composition())
     composition.fill(fillSection, chunk->composition(), chunkBase);

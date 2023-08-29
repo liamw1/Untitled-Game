@@ -10,9 +10,6 @@ constexpr int c_UnloadDistance = c_LoadDistance;
 
 /*
   Class that handles the classification of chunks.
-
-  NOTE: With the changes to chunk rendering, its possible that ChunkType::Renderable
-        is no longer needed. Implementation may be made simpler by removing that category.
 */
 class ChunkContainer
 {
@@ -41,11 +38,10 @@ public:
   template<typename F, typename... Args>
   std::vector<GlobalIndex> findAll(F condition, Args&&... args) const
   {
+    std::unordered_map<GlobalIndex, std::shared_ptr<Chunk>> chunks = m_Chunks.getCurrentState();
+
     std::vector<GlobalIndex> indexList;
-
-    std::shared_lock lock(m_ContainerMutex);
-
-    for (const auto& [key, chunk] : m_Chunks)
+    for (const auto& [key, chunk] : chunks)
       if (condition(*chunk, std::forward<Args>(args)...))
         indexList.push_back(chunk->globalIndex());
     return indexList;
@@ -64,25 +60,14 @@ public:
   /*
     \returns The chunk along with a lock on its mutex. Will return nullptr is no chunk is found.
   */
-  [[nodiscard]] ChunkWithLock acquireChunk(const GlobalIndex& chunkIndex);
-  [[nodiscard]] ConstChunkWithLock acquireChunk(const GlobalIndex& chunkIndex) const;
+  [[nodiscard]] ChunkWithLock acquireChunk(const GlobalIndex& chunkIndex) const;
 
   bool empty() const;
   bool contains(const GlobalIndex& chunkIndex) const;
 
 private:
-  template<typename Key, typename Val>
-  using mapType = std::unordered_map<Key, Val>;
-
-  // Chunk pointers
-  mapType<GlobalIndex, Chunk*> m_Chunks;
-  std::unordered_set<GlobalIndex> m_BoundaryIndices;
-
-  // Chunk data
-  std::unique_ptr<Chunk[]> m_ChunkArray;
-  std::stack<int, std::vector<int>> m_OpenChunkSlots;
-
-  mutable std::shared_mutex m_ContainerMutex;
+  Engine::Threads::UnorderedMap<GlobalIndex, std::shared_ptr<Chunk>> m_Chunks;
+  Engine::Threads::UnorderedSet<GlobalIndex> m_BoundaryIndices;
 
 // Helper functions for chunk container access. These assume the map mutex has already been locked by one of the public functions
 private:
@@ -100,8 +85,9 @@ private:
 
     Requires at minium a shared lock to be owned on the container mutex.
   */
-  Chunk* find(const GlobalIndex& chunkIndex);
-  const Chunk* find(const GlobalIndex& chunkIndex) const;
+  std::shared_ptr<Chunk> find(const GlobalIndex& chunkIndex) const;
 
   void boundaryUpdate(const GlobalIndex& chunkIndex);
+
+  void boundaryUpdate2(const GlobalIndex& chunkIndex);
 };

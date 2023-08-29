@@ -5,66 +5,24 @@
 
 static constexpr int c_MaxChunks = (2 * c_UnloadDistance + 1) * (2 * c_UnloadDistance + 1) * (2 * c_UnloadDistance + 1);
 
-ChunkContainer::ChunkContainer()
-{
-  m_ChunkArray = std::make_unique<Chunk[]>(c_MaxChunks);
-
-  std::vector<int> stackData;
-  stackData.reserve(c_MaxChunks);
-  m_OpenChunkSlots = std::stack<int, std::vector<int>>(std::move(stackData));
-  for (int i = c_MaxChunks - 1; i >= 0; --i)
-    m_OpenChunkSlots.push(i);
-}
+ChunkContainer::ChunkContainer() = default;
 
 bool ChunkContainer::insert(Chunk&& newChunk)
 {
   EN_PROFILE_FUNCTION();
 
-  std::lock_guard lock(m_ContainerMutex);
-
-  if (m_OpenChunkSlots.empty())
-    return false;
-
-  // Grab first open chunk slot
-  int chunkSlot = m_OpenChunkSlots.top();
-  m_OpenChunkSlots.pop();
-
-  // Insert chunk into array
-  Chunk& chunk = m_ChunkArray[chunkSlot];
-  chunk = std::move(newChunk);
-  auto [insertionPosition, insertionSuccess] = m_Chunks.insert({ chunk.globalIndex(), &chunk });
+  GlobalIndex chunkIndex = newChunk.globalIndex();
+  bool insertionSuccess = m_Chunks.insert(chunkIndex, std::make_shared<Chunk>(std::move(newChunk)));
 
   if (insertionSuccess)
-  {
-    EN_PROFILE_SCOPE("Boundary update");
-    for (int i = -1; i <= 1; ++i)
-      for (int j = -1; j <= 1; ++j)
-        for (int k = -1; k <= 1; ++k)
-          boundaryUpdate(chunk.globalIndex() + GlobalIndex(i, j, k));
-  }
+    boundaryUpdate2(chunkIndex);
 
   return insertionSuccess;
 }
 
 bool ChunkContainer::erase(const GlobalIndex& chunkIndex)
 {
-  std::lock_guard lock(m_ContainerMutex);
-
-  mapType<GlobalIndex, Chunk*>::iterator erasePosition = m_Chunks.find(chunkIndex);
-  if (erasePosition == m_Chunks.end())
-    return false;
-  Chunk* chunk = erasePosition->second;
-
-  // Open up chunk slot
-  int chunkSlot = static_cast<int>(chunk - &m_ChunkArray[0]);
-  m_OpenChunkSlots.push(chunkSlot);
-
-  // Delete chunk data
-  {
-    std::lock_guard chunkLock = chunk->acquireLockGuard();
-    m_ChunkArray[chunkSlot].reset();
-  }
-  m_Chunks.erase(erasePosition);
+  m_Chunks.erase(chunkIndex);
 
   for (int i = -1; i <= 1; ++i)
     for (int j = -1; j <= 1; ++j)
@@ -76,11 +34,11 @@ bool ChunkContainer::erase(const GlobalIndex& chunkIndex)
 
 std::unordered_set<GlobalIndex> ChunkContainer::findAllLoadableIndices() const
 {
-  std::shared_lock lock(m_ContainerMutex);
+  std::unordered_set<GlobalIndex> boundaryIndices = m_BoundaryIndices.getCurrentState();
 
   GlobalIndex originIndex = Player::OriginIndex();
   std::unordered_set<GlobalIndex> newChunkIndices;
-  for (const GlobalIndex& boundaryIndex : m_BoundaryIndices)
+  for (const GlobalIndex& boundaryIndex : boundaryIndices)
     if (Util::IsInRange(boundaryIndex, originIndex, c_LoadDistance))
       newChunkIndices.insert(boundaryIndex);
 
@@ -89,23 +47,26 @@ std::unordered_set<GlobalIndex> ChunkContainer::findAllLoadableIndices() const
 
 void ChunkContainer::uploadMeshes(Engine::Threads::UnorderedSet<Chunk::DrawCommand>& commandQueue, std::unique_ptr<Engine::MultiDrawIndexedArray<Chunk::DrawCommand>>& multiDrawArray) const
 {
-  std::shared_lock lock(m_ContainerMutex);
+  std::unordered_set<Chunk::DrawCommand> drawCommands = commandQueue.removeAll();
 
-  std::optional<Chunk::DrawCommand> drawCommand = commandQueue.tryRemoveAny();
-  while (drawCommand)
+  std::vector<GlobalIndex> drawIDs;
+  for (const Chunk::DrawCommand& drawCommand : drawCommands)
+    drawIDs.push_back(drawCommand.id());
+
+  std::unordered_map<GlobalIndex, std::shared_ptr<Chunk>> subset = m_Chunks.getSubsetOfCurrentState(drawIDs);
+  while (!drawCommands.empty())
   {
-    multiDrawArray->remove(drawCommand->id());
-    if (find(drawCommand->id()))
-      multiDrawArray->add(std::move(*drawCommand));
+    auto nodeHandle = drawCommands.extract(drawCommands.begin());
+    Chunk::DrawCommand drawCommand = std::move(nodeHandle.value());
 
-    drawCommand = commandQueue.tryRemoveAny();
+    multiDrawArray->remove(drawCommand.id());
+    if (subset.contains(drawCommand.id()))
+      multiDrawArray->add(std::move(drawCommand));
   }
 }
 
 bool ChunkContainer::hasBoundaryNeighbors(const GlobalIndex& chunkIndex)
 {
-  std::shared_lock lock(m_ContainerMutex);
-
   for (int i = -1; i <= 1; ++i)
     for (int j = -1; j <= 1; ++j)
       for (int k = -1; k <= 1; ++k)
@@ -114,18 +75,11 @@ bool ChunkContainer::hasBoundaryNeighbors(const GlobalIndex& chunkIndex)
   return false;
 }
 
-ChunkWithLock ChunkContainer::acquireChunk(const GlobalIndex& chunkIndex)
+ChunkWithLock ChunkContainer::acquireChunk(const GlobalIndex& chunkIndex) const
 {
-  ConstChunkWithLock chunkWithLock = static_cast<const ChunkContainer*>(this)->acquireChunk(chunkIndex);
-  return { const_cast<Chunk*>(chunkWithLock.chunk), std::move(chunkWithLock.lock) };
-}
-
-ConstChunkWithLock ChunkContainer::acquireChunk(const GlobalIndex& chunkIndex) const
-{
-  std::shared_lock lock(m_ContainerMutex);
   std::unique_lock<std::mutex> chunkLock;
 
-  const Chunk* chunk = find(chunkIndex);
+  std::shared_ptr<Chunk> chunk = find(chunkIndex);
   if (chunk)
     chunkLock = chunk->acquireLock();
 
@@ -134,14 +88,12 @@ ConstChunkWithLock ChunkContainer::acquireChunk(const GlobalIndex& chunkIndex) c
 
 bool ChunkContainer::empty() const
 {
-  std::shared_lock lock(m_ContainerMutex);
-  return m_OpenChunkSlots.size() == c_MaxChunks;
+  return m_Chunks.empty();
 }
 
 bool ChunkContainer::contains(const GlobalIndex& chunkIndex) const
 {
-  std::shared_lock lock(m_ContainerMutex);
-  return find(chunkIndex);
+  return m_Chunks.contains(chunkIndex);
 }
 
 
@@ -152,22 +104,17 @@ bool ChunkContainer::isOnBoundary(const GlobalIndex& chunkIndex) const
 
   for (Direction direction : Directions())
   {
-    const Chunk* cardinalNeighbor = find(chunkIndex + GlobalIndex::Dir(direction));
+    std::shared_ptr<Chunk> cardinalNeighbor = find(chunkIndex + GlobalIndex::Dir(direction));
     if (cardinalNeighbor && !cardinalNeighbor->isFaceOpaque(!direction))
       return true;
   }
   return false;
 }
 
-Chunk* ChunkContainer::find(const GlobalIndex& chunkIndex)
+std::shared_ptr<Chunk> ChunkContainer::find(const GlobalIndex& chunkIndex) const
 {
-  return const_cast<Chunk*>(static_cast<const ChunkContainer*>(this)->find(chunkIndex));
-}
-
-const Chunk* ChunkContainer::find(const GlobalIndex& chunkIndex) const
-{
-  mapType<GlobalIndex, Chunk*>::const_iterator it = m_Chunks.find(chunkIndex);
-  return it == m_Chunks.end() ? nullptr : it->second;
+  std::optional<std::shared_ptr<Chunk>> chunk = m_Chunks.get(chunkIndex);
+  return chunk ? *chunk : nullptr;
 }
 
 void ChunkContainer::boundaryUpdate(const GlobalIndex& chunkIndex)
@@ -176,4 +123,44 @@ void ChunkContainer::boundaryUpdate(const GlobalIndex& chunkIndex)
     m_BoundaryIndices.erase(chunkIndex);
   else
     m_BoundaryIndices.insert(chunkIndex);
+}
+
+void ChunkContainer::boundaryUpdate2(const GlobalIndex& chunkIndex)
+{
+  std::vector<GlobalIndex> surroundingIndices;
+  for (int i = -2; i <= 2; ++i)
+    for (int j = -2; j <= 2; ++j)
+      for (int k = -2; k <= 2; ++k)
+        surroundingIndices.push_back(chunkIndex + GlobalIndex(i, j, k));
+
+  std::unordered_map<GlobalIndex, std::shared_ptr<Chunk>> chunks;
+  chunks = m_Chunks.getSubsetOfCurrentState(surroundingIndices);
+
+  auto isOnBoundary2 = [&chunks](const GlobalIndex& chunkIndex)
+    {
+      for (Direction direction : Directions())
+      {
+        auto cardinalNeighborPosition = chunks.find(chunkIndex + GlobalIndex::Dir(direction));
+        if (cardinalNeighborPosition != chunks.end() && !cardinalNeighborPosition->second->isFaceOpaque(!direction))
+          return true;
+      }
+      return false;
+    };
+
+  std::vector<GlobalIndex> indicesToErase;
+  std::vector<GlobalIndex> indicesToInsert;
+  for (int i = -1; i <= 1; ++i)
+    for (int j = -1; j <= 1; ++j)
+      for (int k = -1; k <= 1; ++k)
+      {
+        GlobalIndex neighborIndex = chunkIndex + GlobalIndex(i, j, k);
+
+        if (chunks.contains(neighborIndex) || !isOnBoundary2(neighborIndex))
+          indicesToErase.push_back(neighborIndex);
+        else
+          indicesToInsert.push_back(neighborIndex);
+      }
+
+  m_BoundaryIndices.eraseAll(indicesToErase);
+  m_BoundaryIndices.insertAll(indicesToInsert);
 }

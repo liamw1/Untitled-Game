@@ -30,7 +30,7 @@ public:
   /*
     \returns The chunk along with a lock on its mutex. Chunk will be nullptr is no chunk is found.
   */
-  [[nodiscard]] const ConstChunkWithLock acquireChunk(const LocalIndex& chunkIndex) const;
+  [[nodiscard]] ChunkWithLock acquireChunk(const LocalIndex& chunkIndex) const;
 
   void placeBlock(GlobalIndex chunkIndex, BlockIndex blockIndex, Direction face, Block::Type blockType);
   void removeBlock(const GlobalIndex& chunkIndex, const BlockIndex& blockIndex);
@@ -104,7 +104,7 @@ private:
 
     BlockData();
 
-    void fill(const BlockBox& fillSection, const Chunk* chunk, const BlockIndex& chunkBase, bool fillLight = true);
+    void fill(const BlockBox& fillSection, std::shared_ptr<Chunk> chunk, const BlockIndex& chunkBase, bool fillLight = true);
 
     static constexpr BlockBox Bounds() { return BlockBox(-1, Chunk::Size() + 1); }
   };
