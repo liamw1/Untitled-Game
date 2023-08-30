@@ -7,13 +7,9 @@ static constexpr int c_MaxChunks = (2 * c_UnloadDistance + 1) * (2 * c_UnloadDis
 
 ChunkContainer::ChunkContainer() = default;
 
-bool ChunkContainer::insert(Chunk&& newChunk)
+bool ChunkContainer::insert(const GlobalIndex& chunkIndex, Chunk&& newChunk)
 {
-  EN_PROFILE_FUNCTION();
-
-  GlobalIndex chunkIndex = newChunk.globalIndex();
   bool chunkInserted = m_Chunks.insert(chunkIndex, std::move(newChunk));
-
   if (chunkInserted)
     boundaryUpdate(chunkIndex);
 
@@ -23,7 +19,6 @@ bool ChunkContainer::insert(Chunk&& newChunk)
 bool ChunkContainer::erase(const GlobalIndex& chunkIndex)
 {
   bool chunkErased = m_Chunks.erase(chunkIndex);
-
   if (chunkErased)
     boundaryUpdate(chunkIndex);
 
@@ -71,8 +66,6 @@ ChunkWithLock ChunkContainer::acquireChunk(const GlobalIndex& chunkIndex) const
 
 bool ChunkContainer::isOnBoundary(const GlobalIndex& chunkIndex) const
 {
-  EN_ASSERT(!m_Chunks.contains(chunkIndex), "Given index is already loaded!");
-
   for (Direction direction : Directions())
   {
     std::shared_ptr<Chunk> cardinalNeighbor = m_Chunks.get(chunkIndex + GlobalIndex::Dir(direction));

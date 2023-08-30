@@ -11,6 +11,15 @@ enum class Direction : int
 using Directions = Engine::EnumIterator<Direction, Direction::Begin, Direction::End>;
 
 /*
+  \returns The next direction in sequence.
+*/
+constexpr void operator++(Direction& direction)
+{
+  int directionID = static_cast<int>(direction);
+  direction = static_cast<Direction>(directionID + 1);
+}
+
+/*
   \returns The direction opposite the given direction.
 */
 constexpr Direction operator!(const Direction& direction)

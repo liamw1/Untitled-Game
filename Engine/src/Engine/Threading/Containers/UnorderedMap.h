@@ -6,7 +6,6 @@ namespace Engine::Threads
     requires std::is_default_constructible_v<K> && std::move_constructible<K>
   class UnorderedMap
   {
-  private:
     using const_iterator = std::unordered_map<K, std::shared_ptr<V>>::const_iterator;
 
   public:
@@ -16,8 +15,7 @@ namespace Engine::Threads
     bool insert(const K& key, T&& value)
     {
       std::lock_guard lock(m_Mutex);
-      std::shared_ptr valuePointer = std::make_shared<V>(std::forward<T>(value));
-      auto [insertionPosition, insertionSuccess] = m_Data.insert({ key, valuePointer });
+      auto [insertionPosition, insertionSuccess] = m_Data.emplace(key, std::make_shared<V>(std::forward<T>(value)));
       return insertionSuccess;
     }
 

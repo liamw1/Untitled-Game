@@ -163,9 +163,9 @@ void ChunkManager::clean()
 
   EN_PROFILE_FUNCTION();
 
-  std::vector<GlobalIndex> chunksMarkedForDeletion = m_ChunkContainer.chunks().getKeys([&originIndex](const Chunk& chunk)
+  std::vector<GlobalIndex> chunksMarkedForDeletion = m_ChunkContainer.chunks().getKeys([&originIndex](const GlobalIndex& chunkIndex)
     {
-      return !Util::IsInRange(chunk.globalIndex(), originIndex, c_UnloadDistance);
+      return !Util::IsInRange(chunkIndex, originIndex, c_UnloadDistance);
     });
 
   if (!chunksMarkedForDeletion.empty())
@@ -281,11 +281,11 @@ void ChunkManager::loadChunk(const GlobalIndex& chunkIndex, Block::Type blockTyp
   Chunk chunk(chunkIndex);
   if (blockType != Block::Type::Air)
   {
-    chunk.setComposition(MakeCubicArray<Block::Type, Chunk::Size()>(blockType));
-    chunk.setLighting(MakeCubicArray<Block::Light, Chunk::Size()>());
+    chunk.setComposition(CubicArray<Block::Type, Chunk::Size()>(blockType));
+    chunk.setLighting(CubicArray<Block::Light, Chunk::Size()>(AllocationPolicy::ForOverWrite));
   }
 
-  m_ChunkContainer.insert(std::move(chunk));
+  m_ChunkContainer.insert(chunkIndex, std::move(chunk));
 }
 
 
@@ -321,7 +321,7 @@ void ChunkManager::generateNewChunk(const GlobalIndex& chunkIndex)
     default:                EN_ERROR("Unknown load mode!");
   }
 
-  bool insertionSuccess = m_ChunkContainer.insert(std::move(chunk));
+  bool insertionSuccess = m_ChunkContainer.insert(chunkIndex, std::move(chunk));
   if (insertionSuccess)
     Chunk::Stencil(chunkIndex).forEach([this](const GlobalIndex& stencilIndex)
       {
@@ -381,8 +381,8 @@ void ChunkManager::uploadMeshes(Engine::Threads::UnorderedSet<Chunk::DrawCommand
 
 
 ChunkManager::BlockData::BlockData()
-  : composition(MakeCubicArray<Block::Type, Chunk::Size() + 2, -1>()),
-    lighting(MakeCubicArray<Block::Light, Chunk::Size() + 2, -1>()) {}
+  : composition(CubicArray<Block::Type, Chunk::Size() + 2, -1>(AllocationPolicy::ForOverWrite)),
+    lighting(CubicArray<Block::Light, Chunk::Size() + 2, -1>(AllocationPolicy::ForOverWrite)) {}
 
 void ChunkManager::BlockData::fill(const BlockBox& fillSection, std::shared_ptr<Chunk> chunk, const BlockIndex& chunkBase, bool fillLight)
 {
@@ -656,7 +656,7 @@ void ChunkManager::updateLighting(const GlobalIndex& chunkIndex)
   CubicArray<Block::Light, Chunk::Size()> newLighting;
   if (!blockData.lighting.filledWith(Chunk::Bounds(), Block::Light::MaxValue()))
   {
-    newLighting = MakeCubicArray<Block::Light, Chunk::Size()>();
+    newLighting = CubicArray<Block::Light, Chunk::Size()>(AllocationPolicy::ForOverWrite);
     newLighting.fill(Chunk::Bounds(), blockData.lighting, BlockIndex(0));
   }
 

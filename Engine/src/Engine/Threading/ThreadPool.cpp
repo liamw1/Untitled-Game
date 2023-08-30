@@ -1,21 +1,21 @@
 #include "ENpch.h"
 #include "ThreadPool.h"
 
-namespace Engine
+namespace Engine::Threads
 {
-  Threads::ThreadPool::ThreadPool(int numThreads)
+  ThreadPool::ThreadPool(int numThreads)
     : m_Stop(false)
   {
     for (int i = 0; i < numThreads; ++i)
       m_Threads.emplace_back(&ThreadPool::workerThread, this);
   }
 
-  Threads::ThreadPool::~ThreadPool()
+  ThreadPool::~ThreadPool()
   {
     shutdown();
   }
 
-  size_t Threads::ThreadPool::queuedTasks() const
+  size_t ThreadPool::queuedTasks() const
   {
     std::lock_guard lock(m_Mutex);
 
@@ -25,13 +25,13 @@ namespace Engine
     return queuedTasks;
   }
 
-  bool Threads::ThreadPool::running() const
+  bool ThreadPool::running() const
   {
     std::lock_guard lock(m_Mutex);
     return !m_Stop;
   }
 
-  void Threads::ThreadPool::shutdown()
+  void ThreadPool::shutdown()
   {
     {
       std::lock_guard lock(m_Mutex);
@@ -44,7 +44,7 @@ namespace Engine
         thread.join();
   }
 
-  bool Threads::ThreadPool::hasWork()
+  bool ThreadPool::hasWork()
   {
     for (const std::queue<MoveOnlyFunction>& workQueue : m_Work)
       if (!workQueue.empty())
@@ -52,7 +52,7 @@ namespace Engine
     return false;
   }
 
-  void Threads::ThreadPool::workerThread()
+  void ThreadPool::workerThread()
   {
     while (true)
     {

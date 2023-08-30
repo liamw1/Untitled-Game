@@ -38,6 +38,9 @@ void World::onUpdate(Engine::Timestep timestep)
   /* Rendering stage */
   Engine::Renderer::BeginScene(Engine::Scene::ActiveCamera());
 
+  playerWorldInteraction();
+  m_ChunkManager.update();
+
   m_ChunkManager.render();
 
 #if USE_LODS
@@ -49,12 +52,9 @@ void World::onUpdate(Engine::Timestep timestep)
   }
 #endif
 
-  // playerWorldInteraction();
-
   Engine::Renderer::EndScene();
 
   m_ChunkManager.loadNewChunks();
-  m_ChunkManager.update();
   m_ChunkManager.clean();
 }
 

@@ -108,7 +108,7 @@ private:
 
     void fill(const BlockBox& fillSection, std::shared_ptr<Chunk> chunk, const BlockIndex& chunkBase, bool fillLight = true);
 
-    static constexpr BlockBox Bounds() { return BlockBox(-1, Chunk::Size() + 1); }
+    static constexpr BlockBox Bounds() { return decltype(composition)::Bounds<blockIndex_t>(); }
   };
 
   BlockData& getBlockData(const GlobalIndex& chunkIndex, bool getInteriorLighting = true) const;

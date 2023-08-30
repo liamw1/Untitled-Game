@@ -1,7 +1,7 @@
 #include "ENpch.h"
 #include "Instrumentor.h"
 
-namespace Engine
+namespace Engine::Debug
 {
   void Instrumentor::beginSession(const std::string& name, const std::string& filepath)
   {
@@ -14,7 +14,7 @@ namespace Engine
         newly opened session instead.  That's better than having badly formatted
         profiling output.
       */
-      if (Log::GetCoreLogger()) // Edge case: BeginSession() might be before Log::Init()
+      if (::Engine::Log::GetCoreLogger()) // Edge case: BeginSession() might be before Log::Init()
         EN_CORE_ERROR("Instrumentor::BeginSession('{0}') when session '{1}' already open.", name, m_CurrentSession->name);
 
       internalEndSession();
@@ -26,7 +26,7 @@ namespace Engine
       m_CurrentSession = new InstrumentationSession({ name });
       writeHeader();
     }
-    else if (Log::GetCoreLogger()) // Edge case: BeginSession() might be before Log::Init()
+    else if (::Engine::Log::GetCoreLogger()) // Edge case: BeginSession() might be before Log::Init()
       EN_CORE_ERROR("Instrumentor could not open results file '{0}'.", filepath);
   }
 

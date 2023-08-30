@@ -51,7 +51,7 @@ namespace Engine::Threads
       }
 
       for (auto& [id, future] : futures)
-        future.get();
+        future.wait();
     }
 
     bool contains(const Identifier& id) const

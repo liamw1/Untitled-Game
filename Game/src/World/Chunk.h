@@ -12,7 +12,6 @@
 */
 class Chunk
 {
-private:
   static constexpr blockIndex_t c_ChunkSize = 32;
 
 public:
@@ -21,11 +20,6 @@ public:
 
   Chunk(Chunk&& other) noexcept;
   Chunk& operator=(Chunk&& other) noexcept;
-
-  /*
-    \returns The chunk's global index, which identifies it uniquely.
-  */
-  const GlobalIndex& globalIndex() const;
 
   CubicArray<Block::Type, c_ChunkSize>& composition();
   const CubicArray<Block::Type, c_ChunkSize>& composition() const;
@@ -55,7 +49,6 @@ public:
   void determineOpacity();
 
   void update();
-  void reset();
 
   _Acquires_lock_(return) std::unique_lock<std::mutex> acquireLock() const;
   _Acquires_lock_(return) std::lock_guard<std::mutex> acquireLockGuard() const;
@@ -160,7 +153,6 @@ private:
   mutable std::mutex m_Mutex;
   CubicArray<Block::Type, c_ChunkSize> m_Composition;
   CubicArray<Block::Light, c_ChunkSize> m_Lighting;
-  GlobalIndex m_GlobalIndex;
   std::atomic<uint16_t> m_NonOpaqueFaces;
 
   Chunk(const Chunk& other) = delete;

@@ -20,7 +20,8 @@
 
 #include "Engine/ImGui/ImGuiLayer.h"
 
-#include "Engine/Math/MultiDimArrays.h"
+#include "Engine/Math/ArrayBox.h"
+#include "Engine/Math/CubicArrays.h"
 #include "Engine/Math/Vec.h"
 
 #include "Engine/Renderer/BufferLayout.h"

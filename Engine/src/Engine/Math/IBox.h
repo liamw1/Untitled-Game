@@ -46,7 +46,7 @@ struct IBox3
   constexpr IVec3<IntType> extents() const
   {
     EN_CORE_ASSERT(valid(), "Box is not valid!");
-    return { max.i - min.i, max.j - min.j, max.k - min.k };
+    return IVec3<IntType>(max.i - min.i, max.j - min.j, max.k - min.k);
   }
 
   constexpr int volume() const
@@ -105,4 +105,28 @@ struct IBox3
   {
     return { std::numeric_limits<IntType>::max(), std::numeric_limits<IntType>::min() };
   }
+};
+
+
+
+template<std::integral IntType>
+class BoxFaceIterator
+{
+public:
+  constexpr BoxFaceIterator(const IBox3<IntType>& box, Direction face = Direction::Begin)
+    : m_Box(box), m_Face(face) {}
+
+  constexpr BoxFaceIterator& operator++()
+  {
+    ++m_Face;
+    return *this;
+  }
+  constexpr bool operator!=(const BoxFaceIterator& other) { return m_Face != other.m_Face; }
+
+  constexpr BoxFaceIterator begin() { return *this; }
+  constexpr BoxFaceIterator end() { return BoxFaceIterator(m_Box, Direction::End); }
+
+private:
+  IBox3<IntType> m_Box;
+  Direction m_Face;
 };

@@ -68,8 +68,8 @@ using BiomeData = Array2D<CompoundBiome, Chunk::Size()>;
 
 struct SurfaceData
 {
-  NoiseSamples noiseSamples = AllocateArray2D<Noise::OctaveNoiseData<Biome::LocalElevationOctaves()>, Chunk::Size()>();
-  BiomeData biomeData = AllocateArray2D<CompoundBiome, Chunk::Size()>();
+  NoiseSamples noiseSamples = Array2D<Noise::OctaveNoiseData<Biome::LocalElevationOctaves()>, Chunk::Size()>(AllocationPolicy::ForOverWrite);
+  BiomeData biomeData = Array2D<CompoundBiome, Chunk::Size()>(AllocationPolicy::ForOverWrite);
 };
 
 static constexpr int c_CacheSize = (2 * c_UnloadDistance + 5) * (2 * c_UnloadDistance + 5);
@@ -286,8 +286,8 @@ static void lightingStage(CubicArray<Block::Light, Chunk::Size()>& lighting, con
 
 Chunk Terrain::GenerateNew(const GlobalIndex& chunkIndex)
 {
-  SquareArray heightMap = MakeSquareArray<length_t, Chunk::Size()>();
-  CubicArray composition = MakeCubicArray<Block::Type, Chunk::Size()>();
+  SquareArray heightMap = SquareArray<length_t, Chunk::Size()>(AllocationPolicy::ForOverWrite);
+  CubicArray composition = CubicArray<Block::Type, Chunk::Size()>(AllocationPolicy::ForOverWrite);
 
   heightMapStage(heightMap, chunkIndex);
   soilStage(composition, heightMap, chunkIndex);
@@ -299,7 +299,7 @@ Chunk Terrain::GenerateNew(const GlobalIndex& chunkIndex)
   Chunk newChunk(chunkIndex);
   if (composition)
   {
-    CubicArray lighting = MakeCubicArray<Block::Light, Chunk::Size()>();
+    CubicArray lighting = CubicArray<Block::Light, Chunk::Size()>(AllocationPolicy::ForOverWrite);
     lightingStage(lighting, composition);
 
     newChunk.setComposition(std::move(composition));

@@ -59,7 +59,7 @@ namespace Engine
     std::string source = ReadFile(filepath);
     std::unordered_map<std::string, std::string> shaderSources = PreProcess(source, preprocessorDefinitions);
 
-    Timer timer("Shader creation");
+    Debug::Timer timer("Shader creation");
     timer.timeStart();
     compileVulkanBinaries(shaderSources);
     compileOpenGLBinaries();

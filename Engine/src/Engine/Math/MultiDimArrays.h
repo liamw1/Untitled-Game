@@ -1,13 +1,10 @@
 #pragma once
 #include "IBox.h"
 
-template<typename T, int Rows, int Columns = Rows>
-using StackArray2D = std::array<std::array<T, Columns>, Rows>;
-
-template<typename T, int Rows, int Columns = Rows, int Depth = Columns>
-using StackArray3D = std::array<std::array<std::array<T, Depth>, Columns>, Rows>;
-
-
+enum class AllocationPolicy
+{
+  ForOverWrite
+};
 
 template<typename T, int Size, int Base = 0>
   requires positive<Size>
@@ -33,29 +30,7 @@ private:
   ~ArraySection() = default;
 };
 
-template<typename T, int Len, int Base>
-  requires positive<Len>
-class CubicArraySection
-{
-public:
-  CubicArraySection(T* begin)
-    : m_Begin(begin) {}
 
-  ArraySection<T, Len, Base> operator[](int columnIndex)
-  {
-    return static_cast<const CubicArraySection*>(this)->operator[](columnIndex);
-  }
-  const ArraySection<T, Len, Base> operator[](int columnIndex) const
-  {
-    EN_CORE_ASSERT(boundsCheck(columnIndex - Base, 0, Len), "Index is out of bounds!");
-    return ArraySection<T, Len, Base>(m_Begin + Len * (columnIndex - Base));
-  }
-
-private:
-  T* m_Begin;
-
-  ~CubicArraySection() = default;
-};
 
 template<typename T, int Columns, int Depth = Columns>
   requires allPositive<Columns, Depth>
@@ -99,10 +74,11 @@ class Array2D
 public:
   Array2D()
     : m_Data(nullptr) {}
+  Array2D(AllocationPolicy policy)
+    : m_Data(new T[size()]) {}
+  Array2D(const T& initialValue)
+    : Array2D(AllocationPolicy::ForOverWrite) { fill(initialValue); }
   ~Array2D() { delete[] m_Data; }
-
-  Array2D(const Array2D& other) = delete;
-  Array2D& operator=(const Array2D& other) = delete;
 
   Array2D(Array2D&& other) noexcept
   {
@@ -136,8 +112,6 @@ public:
 
   constexpr int size() { return Rows * Columns; }
 
-  const T* get() const { return m_Data; }
-
   void fill(const T& val)
   {
     EN_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
@@ -153,29 +127,9 @@ public:
 private:
   T* m_Data;
 
-  void allocate() { m_Data = new T[size()]; }
-
-  friend Array2D AllocateArray2D<T, Rows, Columns>();
-  friend Array2D AllocateArray2D<T, Rows, Columns>(const T& initialValue);
+  Array2D(const Array2D& other) = delete;
+  Array2D& operator=(const Array2D& other) = delete;
 };
-
-template<typename T, int Rows, int Columns = Rows>
-  requires allPositive<Rows, Columns>
-Array2D<T, Rows, Columns> AllocateArray2D()
-{
-  Array2D<T, Rows, Columns> arr;
-  arr.allocate();
-  return arr;
-}
-
-template<typename T, int Rows, int Columns = Rows>
-  requires allPositive<Rows, Columns>
-Array2D<T, Rows, Columns> AllocateArray2D(const T& initialValue)
-{
-  Array2D<T, Rows, Columns> arr = AllocateArray2D<T, Rows, Columns>();
-  arr.fill(initialValue);
-  return arr;
-}
 
 
 
@@ -193,10 +147,11 @@ class Array3D
 public:
   Array3D()
     : m_Data(nullptr) {}
+  Array3D(AllocationPolicy policy)
+    : m_Data(new T[size()]) { }
+  Array3D(const T& initialValue)
+    : Array3D(AllocationPolicy::ForOverWrite) { fill(initialValue); }
   ~Array3D() { delete[] m_Data; }
-
-  Array3D(const Array3D& other) = delete;
-  Array3D& operator=(const Array3D& other) = delete;
 
   Array3D(Array3D&& other) noexcept
   {
@@ -230,8 +185,6 @@ public:
 
   constexpr int size() const { return Rows * Columns * Depth; }
 
-  const T* get() const { return m_Data; }
-
   void fill(const T& val)
   {
     EN_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
@@ -247,268 +200,6 @@ public:
 private:
   T* m_Data;
 
-  void allocate() { m_Data = new T[size()]; }
-
-  friend Array3D AllocateArray3D<T, Rows, Columns, Depth>();
-  friend Array3D AllocateArray3D<T, Rows, Columns, Depth>(const T& initialValue);
+  Array3D(const Array3D& other) = delete;
+  Array3D& operator=(const Array3D& other) = delete;
 };
-
-template<typename T, int Rows, int Columns = Rows, int Depth = Columns>
-  requires allPositive<Rows, Columns, Depth>
-Array3D<T, Rows, Columns, Depth> AllocateArray3D()
-{
-  Array3D<T, Rows, Columns, Depth> arr;
-  arr.allocate();
-  return arr;
-}
-
-template<typename T, int Rows, int Columns = Rows, int Depth = Columns>
-  requires allPositive<Rows, Columns, Depth>
-Array3D<T, Rows, Columns, Depth> AllocateArray3D(const T& initialValue)
-{
-  Array3D<T, Rows, Columns, Depth> arr = AllocateArray3D<T, Rows, Columns, Depth>();
-  arr.fill(initialValue);
-  return arr;
-}
-
-
-
-template<typename T, int Len, int Base = 0>
-  requires positive<Len>
-class SquareArray
-{
-public:
-  SquareArray()
-    : m_Data(nullptr)
-  {
-  }
-  ~SquareArray() { delete[] m_Data; }
-
-  SquareArray(const SquareArray& other) = delete;
-  SquareArray& operator=(const SquareArray& other) = delete;
-
-  SquareArray(SquareArray&& other) noexcept
-  {
-    m_Data = other.m_Data;
-    other.m_Data = nullptr;
-  }
-
-  SquareArray& operator=(SquareArray&& other) noexcept
-  {
-    if (&other != this)
-    {
-      delete[] m_Data;
-      m_Data = other.m_Data;
-      other.m_Data = nullptr;
-    }
-    return *this;
-  }
-
-  ArraySection<T, Len, Base> operator[](int rowIndex)
-  {
-    return static_cast<const SquareArray*>(this)->operator[](rowIndex);
-  }
-  const ArraySection<T, Len, Base> operator[](int rowIndex) const
-  {
-    EN_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
-    EN_CORE_ASSERT(boundsCheck(rowIndex - Base, 0, Len), "Index is out of bounds!");
-    return ArraySection<T, Len, Base>(m_Data + Len * (rowIndex - Base));
-  }
-
-  operator bool() const { return m_Data; }
-
-  const T* get() const { return m_Data; }
-
-  void fill(const T& val)
-  {
-    EN_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
-    std::fill(m_Data, m_Data + Size(), val);
-  }
-
-  void reset()
-  {
-    delete[] m_Data;
-    m_Data = nullptr;
-  }
-
-  static constexpr int Length() { return Len; }
-  static constexpr int Size() { return Len * Len; }
-
-private:
-  T* m_Data;
-
-  void allocate() { m_Data = new T[Size()]; }
-
-  friend SquareArray MakeSquareArray<T, Len, Base>();
-  friend SquareArray MakeSquareArray<T, Len, Base>(const T& initialValue);
-};
-
-template<typename T, int Len, int Base = 0>
-  requires positive<Len>
-SquareArray<T, Len, Base> MakeSquareArray()
-{
-  SquareArray<T, Len, Base> arr;
-  arr.allocate();
-  return arr;
-}
-
-template<typename T, int Len, int Base = 0>
-  requires positive<Len>
-SquareArray<T, Len, Base> MakeSquareArray(const T& initialValue)
-{
-  SquareArray arr = MakeSquareArray<T, Len, Base>();
-  arr.fill(initialValue);
-  return arr;
-}
-
-
-
-template<typename T, int Len, int Base = 0>
-  requires positive<Len>
-class CubicArray
-{
-public:
-  CubicArray()
-    : m_Data(nullptr) {}
-  ~CubicArray() { delete[] m_Data; }
-
-  CubicArray(const CubicArray& other) = delete;
-  CubicArray& operator=(const CubicArray& other) = delete;
-
-  CubicArray(CubicArray&& other) noexcept
-  {
-    m_Data = other.m_Data;
-    other.m_Data = nullptr;
-  }
-
-  CubicArray& operator=(CubicArray&& other) noexcept
-  {
-    if (&other != this)
-    {
-      delete[] m_Data;
-      m_Data = other.m_Data;
-      other.m_Data = nullptr;
-    }
-    return *this;
-  }
-
-  CubicArraySection<T, Len, Base> operator[](int rowIndex)
-  {
-    return static_cast<const CubicArray*>(this)->operator[](rowIndex);
-  }
-  const CubicArraySection<T, Len, Base> operator[](int rowIndex) const
-  {
-    EN_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
-    EN_CORE_ASSERT(boundsCheck(rowIndex - Base, 0, Len), "Index is out of bounds!");
-    return CubicArraySection<T, Len, Base>(m_Data + Len * Len * (rowIndex - Base));
-  }
-
-  operator bool() const { return m_Data; }
-
-  template<std::integral IndexType>
-  T& operator()(const IVec3<IndexType>& index)
-  {
-    return const_cast<T&>(static_cast<const CubicArray*>(this)->operator()(index));
-  }
-
-  template<std::integral IndexType>
-  const T& operator()(const IVec3<IndexType>& index) const
-  {
-    EN_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
-    return m_Data[Len * Len * (index.i - Base) + Len * (index.j - Base) + (index.k - Base)];
-  }
-
-  const T* get() { return m_Data; }
-
-  bool filledWith(const T& val) const
-  {
-    EN_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
-    return std::all_of(m_Data, m_Data + Size(), [&val](const T& data)
-      {
-        return data == val;
-      });
-  }
-
-  template<std::integral IndexType>
-  bool filledWith(const IBox3<IndexType>& section, const T& val) const
-  {
-    EN_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
-    return section.allOf([this, &val](const IVec3<IndexType>& index)
-      {
-        return (*this)(index) == val;
-      });
-  }
-
-  template<std::integral IndexType, int ArrLen, int ArrBase>
-  bool contentsEqual(const IBox3<IndexType>& compareSection, const CubicArray<T, ArrLen, ArrBase>& arr, const IVec3<IndexType>& arrBase)
-  {
-    if (!m_Data && !arr)
-      return true;
-    if (!m_Data || !arr)
-      return false;
-
-    return compareSection.allOf([this, &compareSection, &arr, &arrBase](const IVec3<IndexType>& index)
-      {
-        return (*this)(index) == arr(arrBase + index - compareSection.min);
-      });
-  }
-
-  void fill(const T& val)
-  {
-    EN_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
-    std::fill(m_Data, m_Data + Size(), val);
-  }
-
-  template<std::integral IndexType>
-  void fill(const IBox3<IndexType>& fillSection, const T& val)
-  {
-    EN_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
-    fillSection.forEach([this, &val](const IVec3<IndexType>& index)
-      {
-        (*this)(index) = val;
-      });
-  }
-
-  template<std::integral IndexType, int ArrLen, int ArrBase>
-  void fill(const IBox3<IndexType>& fillSection, const CubicArray<T, ArrLen, ArrBase>& arr, const IVec3<IndexType>& arrBase)
-  {
-    EN_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
-    fillSection.forEach([this, &fillSection, &arr, &arrBase](const IVec3<IndexType>& index)
-      {
-        (*this)(index) = arr(arrBase + index - fillSection.min);
-      });
-  }
-
-  void reset()
-  {
-    delete[] m_Data;
-    m_Data = nullptr;
-  }
-
-  static constexpr int Length() { return Len; }
-  static constexpr int Size() { return Len * Len * Len; }
-
-private:
-  T* m_Data;
-
-  void allocate() { m_Data = new T[Size()]; }
-
-  friend CubicArray MakeCubicArray<T, Len, Base>();
-  friend CubicArray MakeCubicArray<T, Len, Base>(const T& initialValue);
-};
-
-template<typename T, int Len, int Base = 0>
-CubicArray<T, Len, Base> MakeCubicArray()
-{
-  CubicArray<T, Len, Base> arr;
-  arr.allocate();
-  return arr;
-}
-
-template<typename T, int Len, int Base = 0>
-CubicArray<T, Len, Base> MakeCubicArray(const T& initialValue)
-{
-  CubicArray arr = MakeCubicArray<T, Len, Base>();
-  arr.fill(initialValue);
-  return arr;
-}

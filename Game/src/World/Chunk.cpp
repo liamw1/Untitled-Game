@@ -8,13 +8,11 @@ Chunk::Chunk() = default;
 Chunk::Chunk(const GlobalIndex& chunkIndex)
   : m_Composition(),
     m_Lighting(),
-    m_GlobalIndex(chunkIndex),
     m_NonOpaqueFaces(0x3F) {}
 
 Chunk::Chunk(Chunk&& other) noexcept
   : m_Composition(std::move(other.m_Composition)),
     m_Lighting(std::move(other.m_Lighting)),
-    m_GlobalIndex(std::move(other.m_GlobalIndex)),
     m_NonOpaqueFaces(other.m_NonOpaqueFaces.load()) {}
 
 Chunk& Chunk::operator=(Chunk&& other) noexcept
@@ -23,15 +21,9 @@ Chunk& Chunk::operator=(Chunk&& other) noexcept
   {
     m_Composition = std::move(other.m_Composition);
     m_Lighting = std::move(other.m_Lighting);
-    m_GlobalIndex = std::move(other.m_GlobalIndex);
     m_NonOpaqueFaces.store(other.m_NonOpaqueFaces.load());
   }
   return *this;
-}
-
-const GlobalIndex& Chunk::globalIndex() const
-{
-  return m_GlobalIndex;
 }
 
 CubicArray<Block::Type, Chunk::Size()>& Chunk::composition()
@@ -77,7 +69,7 @@ void Chunk::setBlockType(const BlockIndex& blockIndex, Block::Type blockType)
     if (blockType == Block::Type::Air)
       return;
 
-    m_Composition = MakeCubicArray<Block::Type, c_ChunkSize>(Block::Type::Air);
+    m_Composition = CubicArray<Block::Type, c_ChunkSize>(Block::Type::Air);
   }
   m_Composition(blockIndex) = blockType;
 }
@@ -89,7 +81,7 @@ void Chunk::setBlockLight(const BlockIndex& blockIndex, Block::Light blockLight)
     if (blockLight.sunlight() == Block::Light::MaxValue())
       return;
 
-    m_Lighting = MakeCubicArray<Block::Light, c_ChunkSize>(Block::Light::MaxValue());
+    m_Lighting = CubicArray<Block::Light, c_ChunkSize>(Block::Light::MaxValue());
   }
   m_Lighting(blockIndex) = blockLight;
 }
@@ -105,7 +97,6 @@ void Chunk::setComposition(CubicArray<Block::Type, c_ChunkSize>&& composition)
 void Chunk::setLighting(CubicArray<Block::Light, c_ChunkSize>&& lighting)
 {
   m_Lighting = std::move(lighting);
-  determineOpacity();
 }
 
 void Chunk::determineOpacity()
@@ -144,15 +135,6 @@ void Chunk::update()
     m_Lighting.reset();
 
   determineOpacity();
-}
-
-void Chunk::reset()
-{
-  // Reset data to default values
-  m_Composition.reset();
-  m_Lighting.reset();
-  m_GlobalIndex = {};
-  m_NonOpaqueFaces.store(0x3F);
 }
 
 _Acquires_lock_(return) std::unique_lock<std::mutex> Chunk::acquireLock() const
