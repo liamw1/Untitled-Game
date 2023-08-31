@@ -7,9 +7,11 @@ static constexpr int c_MaxChunks = (2 * c_UnloadDistance + 1) * (2 * c_UnloadDis
 
 ChunkContainer::ChunkContainer() = default;
 
-bool ChunkContainer::insert(const GlobalIndex& chunkIndex, Chunk&& newChunk)
+bool ChunkContainer::insert(const GlobalIndex& chunkIndex, const std::shared_ptr<Chunk>& newChunk)
 {
-  bool chunkInserted = m_Chunks.insert(chunkIndex, std::move(newChunk));
+  EN_ASSERT(newChunk, "Chunk does not exist!");
+
+  bool chunkInserted = m_Chunks.insert(chunkIndex, newChunk);
   if (chunkInserted)
     boundaryUpdate(chunkIndex);
 

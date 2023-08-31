@@ -11,6 +11,13 @@ namespace Engine::Threads
   public:
     UnorderedMap() = default;
 
+    bool insert(const K& key, const std::shared_ptr<V>& valuePointer)
+    {
+      std::lock_guard lock(m_Mutex);
+      auto [insertionPosition, insertionSuccess] = m_Data.emplace(key, valuePointer);
+      return insertionSuccess;
+    }
+
     template<DecaysTo<V> T>
     bool insert(const K& key, T&& value)
     {

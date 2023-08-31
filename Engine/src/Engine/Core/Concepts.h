@@ -19,9 +19,6 @@ template<int... args>
 concept allPositive = detail::allPositive<args...>();
 
 template<typename T>
-concept Movable = std::move_constructible<T> && std::is_move_assignable_v<T>;
-
-template<typename T>
 concept Hashable = requires(T instance)
 {
   { std::hash<T>{}(instance) } -> std::convertible_to<std::size_t>;

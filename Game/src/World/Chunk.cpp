@@ -10,22 +10,6 @@ Chunk::Chunk(const GlobalIndex& chunkIndex)
     m_Lighting(),
     m_NonOpaqueFaces(0x3F) {}
 
-Chunk::Chunk(Chunk&& other) noexcept
-  : m_Composition(std::move(other.m_Composition)),
-    m_Lighting(std::move(other.m_Lighting)),
-    m_NonOpaqueFaces(other.m_NonOpaqueFaces.load()) {}
-
-Chunk& Chunk::operator=(Chunk&& other) noexcept
-{
-  if (this != &other)
-  {
-    m_Composition = std::move(other.m_Composition);
-    m_Lighting = std::move(other.m_Lighting);
-    m_NonOpaqueFaces.store(other.m_NonOpaqueFaces.load());
-  }
-  return *this;
-}
-
 CubicArray<Block::Type, Chunk::Size()>& Chunk::composition()
 {
   return const_cast<CubicArray<Block::Type, Chunk::Size()>&>(static_cast<const Chunk*>(this)->composition());

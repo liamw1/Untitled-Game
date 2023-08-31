@@ -36,11 +36,7 @@ public:
   operator rad_t () = delete;
   operator rad_t& () = delete;
 
-  constexpr bool operator>(Angle other) const { return m_Degrees > other.m_Degrees; }
-  constexpr bool operator<(Angle other) const { return m_Degrees < other.m_Degrees; }
-  constexpr bool operator>=(Angle other) const { return m_Degrees >= other.m_Degrees; }
-  constexpr bool operator<=(Angle other) const { return m_Degrees <= other.m_Degrees; }
-  constexpr bool operator==(Angle other) const { return m_Degrees == other.m_Degrees; }
+  constexpr std::partial_ordering operator<=>(const Angle& other) const = default;
 
   constexpr Angle operator-() const { return Angle(-m_Degrees); }
 

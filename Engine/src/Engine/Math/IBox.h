@@ -121,6 +121,7 @@ public:
     ++m_Face;
     return *this;
   }
+  constexpr BoxFaceIterator operator!() { return BoxFaceIterator(m_Box, !m_Face); }
   constexpr bool operator!=(const BoxFaceIterator& other) { return m_Face != other.m_Face; }
 
   constexpr BoxFaceIterator begin() { return *this; }

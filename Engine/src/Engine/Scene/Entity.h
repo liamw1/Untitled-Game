@@ -49,8 +49,7 @@ namespace Engine
 
     operator entt::entity() const { return m_EntityID; }
 
-    bool operator==(const Entity& other) const { return m_EntityID == other.m_EntityID; }
-    bool operator!=(const Entity& other) const { return m_EntityID != other.m_EntityID; }
+    bool operator==(const Entity& other) const = default;
 
   private:
     static inline entt::registry s_Registry{};

@@ -4,22 +4,14 @@
 
 /*
   A class representing a NxNxN cube of blocks.
-
-  Most functions require a lock on the chunk mutex to be used safely.
-  There are two exceptions to this rule. The first is globalIndex(), which only needs a lock
-  on the ChunkContainer mutex, as the global index of a chunk is only modified during insertion
-  or deletion. The second is isFaceOpaque(face), which uses atomics for synchronization.
 */
-class Chunk
+class Chunk : private Engine::NonCopyable, Engine::NonMovable
 {
   static constexpr blockIndex_t c_ChunkSize = 32;
 
 public:
   Chunk();
   Chunk(const GlobalIndex& chunkIndex);
-
-  Chunk(Chunk&& other) noexcept;
-  Chunk& operator=(Chunk&& other) noexcept;
 
   CubicArray<Block::Type, c_ChunkSize>& composition();
   const CubicArray<Block::Type, c_ChunkSize>& composition() const;
@@ -110,7 +102,7 @@ public:
     int m_BaseVertex;
   };
 
-  class DrawCommand : public Engine::MultiDrawIndexedCommand<GlobalIndex, DrawCommand>
+  class DrawCommand : public Engine::MultiDrawIndexedCommand<GlobalIndex, DrawCommand>, private Engine::NonCopyable
   {
   public:
     DrawCommand(const GlobalIndex& chunkIndex, bool canPruneIndices);
@@ -141,10 +133,6 @@ public:
 
     int m_VoxelBaseVertex;
 
-    // Copy operators deleted to prevent copying of mesh data
-    DrawCommand(const DrawCommand& other) = delete;
-    DrawCommand& operator=(const DrawCommand& other) = delete;
-
     void addQuadIndices(int baseVertex);
     void setIndices(const GlobalIndex& originIndex, const Vec3& viewPosition);
   };
@@ -154,9 +142,6 @@ private:
   CubicArray<Block::Type, c_ChunkSize> m_Composition;
   CubicArray<Block::Light, c_ChunkSize> m_Lighting;
   std::atomic<uint16_t> m_NonOpaqueFaces;
-
-  Chunk(const Chunk& other) = delete;
-  Chunk& operator=(const Chunk& other) = delete;
 };
 
 namespace std

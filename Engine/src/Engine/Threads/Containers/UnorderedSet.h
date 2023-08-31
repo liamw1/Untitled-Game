@@ -2,7 +2,7 @@
 
 namespace Engine::Threads
 {
-  template<Movable V>
+  template<std::movable V>
     requires Hashable<V>
   class UnorderedSet
   {

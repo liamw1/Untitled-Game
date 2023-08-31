@@ -1,7 +1,7 @@
 #pragma once
 #include "Application.h"
 #include "Engine/Debug/Instrumentor.h"
-#include "Engine/Threading/Threads.h"
+#include "Engine/Threads/Threads.h"
 
 #ifdef EN_PLATFORM_WINDOWS
 

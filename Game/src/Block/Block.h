@@ -28,7 +28,6 @@ namespace Block
     Light(int8_t sunlight);
 
     bool operator==(Light other) const;
-    bool operator!=(Light other) const;
 
     int8_t sunlight() const;
 

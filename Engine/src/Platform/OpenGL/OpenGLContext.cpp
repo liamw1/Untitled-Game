@@ -1,7 +1,7 @@
 #include "ENpch.h"
 #include "OpenGLContext.h"
 #include "Engine/Renderer/GraphicsContext.h"
-#include "Engine/Threading/Threads.h"
+#include "Engine/Threads/Threads.h"
 #include "Engine/Debug/Instrumentor.h"
 
 #include <GLFW/glfw3.h>

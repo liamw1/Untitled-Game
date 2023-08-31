@@ -1,6 +1,6 @@
 #include "ENpch.h"
 #include "OpenGLRendererAPI.h"
-#include "Engine/Threading/Threads.h"
+#include "Engine/Threads/Threads.h"
 #include "Engine/Debug/Instrumentor.h"
 #include <glad/glad.h>
 

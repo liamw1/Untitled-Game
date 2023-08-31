@@ -284,7 +284,7 @@ static void lightingStage(CubicArray<Block::Light, Chunk::Size()>& lighting, con
     }
 }
 
-Chunk Terrain::GenerateNew(const GlobalIndex& chunkIndex)
+std::shared_ptr<Chunk> Terrain::GenerateNew(const GlobalIndex& chunkIndex)
 {
   SquareArray heightMap = SquareArray<length_t, Chunk::Size()>(AllocationPolicy::ForOverWrite);
   CubicArray composition = CubicArray<Block::Type, Chunk::Size()>(AllocationPolicy::ForOverWrite);
@@ -296,20 +296,20 @@ Chunk Terrain::GenerateNew(const GlobalIndex& chunkIndex)
   if (isEmpty(composition))
     composition.reset();
 
-  Chunk newChunk(chunkIndex);
+  std::shared_ptr newChunk = std::make_shared<Chunk>(chunkIndex);
   if (composition)
   {
     CubicArray lighting = CubicArray<Block::Light, Chunk::Size()>(AllocationPolicy::ForOverWrite);
     lightingStage(lighting, composition);
 
-    newChunk.setComposition(std::move(composition));
-    newChunk.setLighting(std::move(lighting));
+    newChunk->setComposition(std::move(composition));
+    newChunk->setLighting(std::move(lighting));
   }
 
   return newChunk;
 }
 
-Chunk Terrain::GenerateEmpty(const GlobalIndex& chunkIndex)
+std::shared_ptr<Chunk> Terrain::GenerateEmpty(const GlobalIndex& chunkIndex)
 {
-  return Chunk(chunkIndex);
+  return std::make_shared<Chunk>(chunkIndex);
 }

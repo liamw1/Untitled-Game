@@ -29,7 +29,7 @@ private:
 
 template<typename T, int Len, int Base = 0>
   requires positive<Len>
-class SquareArray
+class SquareArray : private Engine::NonCopyable
 {
 public:
   SquareArray()
@@ -86,16 +86,13 @@ public:
 
 private:
   T* m_Data;
-
-  SquareArray(const SquareArray& other) = delete;
-  SquareArray& operator=(const SquareArray& other) = delete;
 };
 
 
 
 template<typename T, int Len, int Base = 0>
   requires positive<Len>
-class CubicArray
+class CubicArray : private Engine::NonCopyable
 {
 public:
   CubicArray()
@@ -221,7 +218,4 @@ public:
 
 private:
   T* m_Data;
-
-  CubicArray(const CubicArray& other) = delete;
-  CubicArray& operator=(const CubicArray& other) = delete;
 };

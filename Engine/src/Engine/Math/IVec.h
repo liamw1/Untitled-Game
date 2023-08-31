@@ -1,7 +1,6 @@
 #pragma once
 #include "Direction.h"
 #include "Engine/Core/Concepts.h"
-#include <ostream>
 
 template<std::integral IntType>
 struct IVec2
@@ -27,13 +26,8 @@ struct IVec2
     return *(&i + index);
   }
 
-  // Comparison operators define lexicographical ordering on 3D indices
-  constexpr bool operator==(const IVec2<IntType>& other) const { return i == other.i && j == other.j; }
-  constexpr bool operator!=(const IVec2<IntType>& other) const { return !(*this == other); }
-  constexpr bool operator<(const IVec2<IntType>& other) const { return i < other.i || (i == other.i && j < other.j); }
-  constexpr bool operator>(const IVec2<IntType>& other) const { return i > other.i || (i == other.i && j > other.j); }
-  constexpr bool operator<=(const IVec2<IntType>& other) const { return !(*this > other); }
-  constexpr bool operator>=(const IVec2<IntType>& other) const { return !(*this < other); }
+  // Define lexicographical ordering on 2D indices
+  constexpr std::strong_ordering operator<=>(const IVec2<IntType>& other) const = default;
 
   constexpr IVec2<IntType> operator-() const { return IVec2<IntType>(-i, -j); };
   constexpr IVec2<IntType> operator+=(const IVec2<IntType>& other)
@@ -114,13 +108,8 @@ struct IVec3
     return *(&i + index);
   }
 
-  // Comparison operators define lexicographical ordering on 3D indices
-  constexpr bool operator==(const IVec3<IntType>& other) const { return i == other.i && j == other.j && k == other.k; }
-  constexpr bool operator!=(const IVec3<IntType>& other) const { return !(*this == other); }
-  constexpr bool operator<(const IVec3<IntType>& other) const { return i < other.i || (i == other.i && j < other.j) || (i == other.i && j == other.j && k < other.k); }
-  constexpr bool operator>(const IVec3<IntType>& other) const { return i > other.i || (i == other.i && j > other.j) || (i == other.i && j == other.j && k > other.k); }
-  constexpr bool operator<=(const IVec3<IntType>& other) const { return !(*this > other); }
-  constexpr bool operator>=(const IVec3<IntType>& other) const { return !(*this < other); }
+  // Define lexicographical ordering on 3D indices
+  constexpr std::strong_ordering operator<=>(const IVec3<IntType>& other) const = default;
 
   constexpr IVec3<IntType> operator-() const { return IVec3<IntType>(-i, -j, -k); };
   constexpr IVec3<IntType> operator+=(const IVec3<IntType>& other)

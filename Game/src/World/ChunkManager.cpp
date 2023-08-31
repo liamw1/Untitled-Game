@@ -278,11 +278,11 @@ void ChunkManager::setLoadModeVoid()
 
 void ChunkManager::loadChunk(const GlobalIndex& chunkIndex, Block::Type blockType)
 {
-  Chunk chunk(chunkIndex);
+  std::shared_ptr chunk = std::make_shared<Chunk>(chunkIndex);
   if (blockType != Block::Type::Air)
   {
-    chunk.setComposition(CubicArray<Block::Type, Chunk::Size()>(blockType));
-    chunk.setLighting(CubicArray<Block::Light, Chunk::Size()>(AllocationPolicy::ForOverWrite));
+    chunk->setComposition(CubicArray<Block::Type, Chunk::Size()>(blockType));
+    chunk->setLighting(CubicArray<Block::Light, Chunk::Size()>(AllocationPolicy::ForOverWrite));
   }
 
   m_ChunkContainer.insert(chunkIndex, std::move(chunk));
@@ -312,7 +312,7 @@ void ChunkManager::generateNewChunk(const GlobalIndex& chunkIndex)
 {
   EN_PROFILE_FUNCTION();
 
-  Chunk chunk;
+  std::shared_ptr<Chunk> chunk;
   switch (m_LoadMode)
   {
     case LoadMode::NotSet:  EN_ERROR("Load mode not set!");               break;

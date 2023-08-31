@@ -1,4 +1,5 @@
 #pragma once
+#include "Constraints.h"
 #include "Engine/Core/Concepts.h"
 
 namespace Engine
@@ -10,18 +11,15 @@ namespace Engine
 
     C++23: Should be replaced by std::move_only_function
   */
-  class MoveOnlyFunction
+  class MoveOnlyFunction : private NonCopyable
   {
   public:
     MoveOnlyFunction() = default;
 
     template<InvocableWithReturnType<void> F>
-      requires Movable<F>
+      requires std::movable<F>
     MoveOnlyFunction(F&& f)
       : m_TypeErasedFunction(new FunctionModel<F>(std::move(f))) {}
-
-    MoveOnlyFunction(MoveOnlyFunction&& other) noexcept = default;
-    MoveOnlyFunction& operator=(MoveOnlyFunction&& other) noexcept = default;
 
     void operator()() { m_TypeErasedFunction->call(); }
   
@@ -34,7 +32,7 @@ namespace Engine
     };
   
     template<InvocableWithReturnType<void> F>
-      requires Movable<F>
+      requires std::movable<F>
     class FunctionModel : public FunctionConcept
     {
     public:
@@ -46,9 +44,6 @@ namespace Engine
     private:
       F m_Function;
     };
-
-    MoveOnlyFunction(const MoveOnlyFunction& other) = delete;
-    MoveOnlyFunction& operator=(const MoveOnlyFunction& other) = delete;
   
     std::unique_ptr<FunctionConcept> m_TypeErasedFunction;
   };

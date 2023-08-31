@@ -1,4 +1,5 @@
 #pragma once
+#include "Engine/Utilities/Constraints.h"
 
 #define EN_PROFILE 1
 #if EN_PROFILE
@@ -21,12 +22,9 @@
 */
 namespace Engine::Debug
 {
-  class Instrumentor
+  class Instrumentor : private NonCopyable, NonMovable
   {
   public:
-    Instrumentor(const Instrumentor&) = delete;
-    Instrumentor(Instrumentor&&) = delete;
-
     void beginSession(const std::string& name, const std::string& filepath = "results.json");
     void endSession();
 

@@ -170,11 +170,6 @@ bool Block::Light::operator==(Light other) const
   return m_Sunlight == other.m_Sunlight;
 }
 
-bool Block::Light::operator!=(Light other) const
-{
-  return !(*this == other);
-}
-
 int8_t Block::Light::sunlight() const
 {
   return m_Sunlight;

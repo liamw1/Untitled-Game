@@ -1,6 +1,6 @@
 #include "ENpch.h"
 #include "OpenGLVertexArray.h"
-#include "Engine/Threading/Threads.h"
+#include "Engine/Threads/Threads.h"
 #include <glad/glad.h>
 
 namespace Engine

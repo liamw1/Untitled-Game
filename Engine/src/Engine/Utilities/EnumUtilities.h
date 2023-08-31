@@ -1,8 +1,8 @@
 ﻿#pragma once
 
-// ==================== Enabling Bitmasking for Enum Classes ==================== //
 namespace Engine
 {
+  // ==================== Enabling Bitmasking for Enum Classes ==================== //
   #define EN_ENABLE_BITMASK_OPERATORS(x)  \
   template<>                              \
   struct EnableBitMaskOperators<x> { static const bool enable = true; };

@@ -22,7 +22,7 @@ public:
 
     \returns True if the chunk was successfully inserted into the boundary map.
   */
-  bool insert(const GlobalIndex& chunkIndex, Chunk&& newChunk);
+  bool insert(const GlobalIndex& chunkIndex, const std::shared_ptr<Chunk>& newChunk);
 
   /*
     Removes chunk from boundary map, unloads it, and frees the slot it was occupying.

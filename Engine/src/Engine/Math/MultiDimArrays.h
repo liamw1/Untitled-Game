@@ -1,5 +1,6 @@
 #pragma once
 #include "IBox.h"
+#include "Engine/Utilities/Constraints.h"
 
 enum class AllocationPolicy
 {
@@ -69,7 +70,7 @@ private:
 */
 template<typename T, int Rows, int Columns = Rows>
   requires allPositive<Rows, Columns>
-class Array2D
+class Array2D : private Engine::NonCopyable
 {
 public:
   Array2D()
@@ -126,9 +127,6 @@ public:
 
 private:
   T* m_Data;
-
-  Array2D(const Array2D& other) = delete;
-  Array2D& operator=(const Array2D& other) = delete;
 };
 
 
@@ -142,7 +140,7 @@ private:
 */
 template<typename T, int Rows, int Columns = Rows, int Depth = Columns>
   requires allPositive<Rows, Columns, Depth>
-class Array3D
+class Array3D : private Engine::NonCopyable
 {
 public:
   Array3D()
@@ -199,7 +197,4 @@ public:
 
 private:
   T* m_Data;
-
-  Array3D(const Array3D& other) = delete;
-  Array3D& operator=(const Array3D& other) = delete;
 };

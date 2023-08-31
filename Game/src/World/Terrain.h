@@ -34,6 +34,6 @@ namespace Terrain
     operator CompoundSurfaceData() const { return CompoundSurfaceData(elevation, blockType); }
   };
 
-  Chunk GenerateNew(const GlobalIndex& chunkIndex);
-  Chunk GenerateEmpty(const GlobalIndex& chunkIndex);
+  std::shared_ptr<Chunk> GenerateNew(const GlobalIndex& chunkIndex);
+  std::shared_ptr<Chunk> GenerateEmpty(const GlobalIndex& chunkIndex);
 }
