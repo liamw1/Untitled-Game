@@ -1,6 +1,5 @@
 #include "GMpch.h"
 #include "Block.h"
-#include <filesystem>
 
 struct BlockUniformData
 {
@@ -14,7 +13,7 @@ static constexpr int c_UniformBinding = 1;
 static int s_BlocksInitialized = 0;
 static bool s_Initialized = false;
 
-static Array2D<Block::Texture, c_MaxBlockTypes, 6> s_TexIDs(Block::Texture::ErrorTexture);
+static ArrayRect<Block::Texture, 0, c_MaxBlockTypes, 0, 6> s_TexIDs(Block::Texture::ErrorTexture);
 static std::array<std::filesystem::path, c_MaxBlockTextures> s_TexturePaths{};
 static std::shared_ptr<Engine::TextureArray> s_TextureArray;
 static std::unique_ptr<Engine::Uniform> s_Uniform;

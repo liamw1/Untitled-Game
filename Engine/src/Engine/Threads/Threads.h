@@ -12,6 +12,6 @@ namespace Engine::Threads
   };
   static constexpr int c_PriorityCount = 1 + static_cast<int>(Priority::End) - static_cast<int>(Priority::Begin);
 
-  std::thread::id MainThreadID();
-  void SetMainThreadID(std::thread::id threadID);
+  void SetAsMainThread();
+  bool IsMainThread();
 }

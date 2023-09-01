@@ -22,7 +22,7 @@ namespace Engine
       m_Binding(binding),
       m_RendererID(0)
   {
-    EN_CORE_ASSERT(std::this_thread::get_id() == Threads::MainThreadID(), "OpenGL calls must be made on the main thread!");
+    EN_CORE_ASSERT(Threads::IsMainThread(), "OpenGL calls must be made on the main thread!");
     glCreateBuffers(1, &m_RendererID);
 
 #if EN_DEBUG
@@ -32,13 +32,13 @@ namespace Engine
 
   OpenGLStorageBuffer::~OpenGLStorageBuffer()
   {
-    EN_CORE_ASSERT(std::this_thread::get_id() == Threads::MainThreadID(), "OpenGL calls must be made on the main thread!");
+    EN_CORE_ASSERT(Threads::IsMainThread(), "OpenGL calls must be made on the main thread!");
     glDeleteBuffers(1, &m_RendererID);
   }
 
   void OpenGLStorageBuffer::bind() const
   {
-    EN_CORE_ASSERT(std::this_thread::get_id() == Threads::MainThreadID(), "OpenGL calls must be made on the main thread!");
+    EN_CORE_ASSERT(Threads::IsMainThread(), "OpenGL calls must be made on the main thread!");
 
     GLenum target = convertTypeToGLEnum(m_Type);
 
@@ -49,7 +49,7 @@ namespace Engine
 
   void OpenGLStorageBuffer::unBind() const
   {
-    EN_CORE_ASSERT(std::this_thread::get_id() == Threads::MainThreadID(), "OpenGL calls must be made on the main thread!");
+    EN_CORE_ASSERT(Threads::IsMainThread(), "OpenGL calls must be made on the main thread!");
     glBindBuffer(convertTypeToGLEnum(m_Type), 0);
   }
 
@@ -65,7 +65,7 @@ namespace Engine
 
   void OpenGLStorageBuffer::set(const void* data, uint32_t size)
   {
-    EN_CORE_ASSERT(std::this_thread::get_id() == Threads::MainThreadID(), "OpenGL calls must be made on the main thread!");
+    EN_CORE_ASSERT(Threads::IsMainThread(), "OpenGL calls must be made on the main thread!");
     glNamedBufferData(m_RendererID, size, data, GL_DYNAMIC_DRAW);
     m_Size = size;
 
@@ -76,7 +76,7 @@ namespace Engine
 
   void OpenGLStorageBuffer::update(const void* data, uint32_t offset, uint32_t size)
   {
-    EN_CORE_ASSERT(std::this_thread::get_id() == Threads::MainThreadID(), "OpenGL calls must be made on the main thread!");
+    EN_CORE_ASSERT(Threads::IsMainThread(), "OpenGL calls must be made on the main thread!");
     EN_CORE_ASSERT(offset + size <= m_Size, "Data is outside of buffer range!");
     glNamedBufferSubData(m_RendererID, offset, size, data);
 
@@ -87,7 +87,7 @@ namespace Engine
 
   void OpenGLStorageBuffer::resize(uint32_t newSize)
   {
-    EN_CORE_ASSERT(std::this_thread::get_id() == Threads::MainThreadID(), "OpenGL calls must be made on the main thread!");
+    EN_CORE_ASSERT(Threads::IsMainThread(), "OpenGL calls must be made on the main thread!");
 
     // Set up new vertex buffer
     uint32_t oldRendererID = m_RendererID;

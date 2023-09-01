@@ -25,11 +25,11 @@
 
 #include "Engine/ImGui/ImGuiLayer.h"
 
-#include "Engine/Math/CubicArrays.h"
+#include "Engine/Math/ArrayBox.h"
+#include "Engine/Math/ArrayRect.h"
 #include "Engine/Math/Direction.h"
 #include "Engine/Math/IBox.h"
 #include "Engine/Math/IVec.h"
-#include "Engine/Math/MultiDimArrays.h"
 #include "Engine/Math/Vec.h"
 
 #include "Engine/Renderer/BufferLayout.h"

@@ -10,22 +10,22 @@ Chunk::Chunk(const GlobalIndex& chunkIndex)
     m_Lighting(),
     m_NonOpaqueFaces(0x3F) {}
 
-CubicArray<Block::Type, Chunk::Size()>& Chunk::composition()
+ArrayBox<Block::Type, 0, Chunk::Size()>& Chunk::composition()
 {
-  return const_cast<CubicArray<Block::Type, Chunk::Size()>&>(static_cast<const Chunk*>(this)->composition());
+  return const_cast<ArrayBox<Block::Type, 0, Chunk::Size()>&>(static_cast<const Chunk*>(this)->composition());
 }
 
-const CubicArray<Block::Type, Chunk::Size()>& Chunk::composition() const
+const ArrayBox<Block::Type, 0, Chunk::Size()>& Chunk::composition() const
 {
   return m_Composition;
 }
 
-CubicArray<Block::Light, Chunk::Size()>& Chunk::lighting()
+ArrayBox<Block::Light, 0, Chunk::Size()>& Chunk::lighting()
 {
-  return const_cast<CubicArray<Block::Light, Chunk::Size()>&>(static_cast<const Chunk*>(this)->lighting());
+  return const_cast<ArrayBox<Block::Light, 0, Chunk::Size()>&>(static_cast<const Chunk*>(this)->lighting());
 }
 
-const CubicArray<Block::Light, Chunk::Size()>& Chunk::lighting() const
+const ArrayBox<Block::Light, 0, Chunk::Size()>& Chunk::lighting() const
 {
   return m_Lighting;
 }
@@ -53,7 +53,7 @@ void Chunk::setBlockType(const BlockIndex& blockIndex, Block::Type blockType)
     if (blockType == Block::Type::Air)
       return;
 
-    m_Composition = CubicArray<Block::Type, c_ChunkSize>(Block::Type::Air);
+    m_Composition = ArrayBox<Block::Type, 0, c_ChunkSize>(Block::Type::Air);
   }
   m_Composition(blockIndex) = blockType;
 }
@@ -65,12 +65,12 @@ void Chunk::setBlockLight(const BlockIndex& blockIndex, Block::Light blockLight)
     if (blockLight.sunlight() == Block::Light::MaxValue())
       return;
 
-    m_Lighting = CubicArray<Block::Light, c_ChunkSize>(Block::Light::MaxValue());
+    m_Lighting = ArrayBox<Block::Light, 0, c_ChunkSize>(Block::Light::MaxValue());
   }
   m_Lighting(blockIndex) = blockLight;
 }
 
-void Chunk::setComposition(CubicArray<Block::Type, c_ChunkSize>&& composition)
+void Chunk::setComposition(ArrayBox<Block::Type, 0, c_ChunkSize>&& composition)
 {
   if (m_Composition)
     EN_WARN("Calling setComposition on a non-empty chunk!  Deleting previous allocation...");
@@ -78,7 +78,7 @@ void Chunk::setComposition(CubicArray<Block::Type, c_ChunkSize>&& composition)
   determineOpacity();
 }
 
-void Chunk::setLighting(CubicArray<Block::Light, c_ChunkSize>&& lighting)
+void Chunk::setLighting(ArrayBox<Block::Light, 0, c_ChunkSize>&& lighting)
 {
   m_Lighting = std::move(lighting);
 }
@@ -124,11 +124,6 @@ void Chunk::update()
 _Acquires_lock_(return) std::unique_lock<std::mutex> Chunk::acquireLock() const
 {
   return std::unique_lock(m_Mutex);
-}
-
-_Acquires_lock_(return) std::lock_guard<std::mutex> Chunk::acquireLockGuard() const
-{
-  return std::lock_guard(m_Mutex);
 }
 
 Vec3 Chunk::Center(const Vec3& anchorPosition)

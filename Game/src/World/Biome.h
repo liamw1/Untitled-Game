@@ -26,7 +26,7 @@ public:
   Biome();
 
   virtual length_t localSurfaceElevation(const NoiseSamples& noiseSamples) const = 0;
-  virtual void fillColumn(ArraySection<Block::Type, Chunk::Size()> column, length_t chunkFloor, length_t elevation) const = 0;
+  virtual void fillColumn(ArrayBoxStrip<Block::Type, 0, Chunk::Size()> column, length_t chunkFloor, length_t elevation) const = 0;
 
   static void Initialize();
   static const Biome* Get(Type biome);
@@ -36,7 +36,7 @@ public:
 
 protected:
   static length_t CalculateOctaveNoise(const NoiseSamples& noiseSamples, length_t largestAmplitude, float persistence);
-  static void StandardColumnFill(ArraySection<Block::Type, Chunk::Size()> column, length_t chunkFloor, length_t elevation, Block::Type surfaceType, int surfaceDepth, Block::Type soilType, int soilDepth);
+  static void StandardColumnFill(ArrayBoxStrip<Block::Type, 0, Chunk::Size()> column, length_t chunkFloor, length_t elevation, Block::Type surfaceType, int surfaceDepth, Block::Type soilType, int soilDepth);
 
 private:
   static constexpr int c_BiomeCount = static_cast<int>(Type::End) - static_cast<int>(Type::Begin);

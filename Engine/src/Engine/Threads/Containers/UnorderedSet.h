@@ -4,7 +4,7 @@ namespace Engine::Threads
 {
   template<std::movable V>
     requires Hashable<V>
-  class UnorderedSet
+  class UnorderedSet : private NonCopyable, NonMovable
   {
   public:
     UnorderedSet() = default;

@@ -16,6 +16,9 @@ struct IBox3
   constexpr IBox3(IntType iMin, IntType jMin, IntType kMin, IntType iMax, IntType jMax, IntType kMax)
     : min(iMin, jMin, kMin), max(iMax, jMax, kMax) {}
 
+  template<std::integral NewIntType>
+  explicit constexpr operator IBox3<NewIntType>() const { return IBox3<NewIntType>(static_cast<IVec3<NewIntType>>(min), static_cast<IVec3<NewIntType>>(max)); }
+
   constexpr IBox3 operator+(const IVec3<IntType>& intVec3) const
   {
     return IBox3(min + intVec3, max + intVec3);
@@ -54,6 +57,46 @@ struct IBox3
     EN_CORE_ASSERT(valid(), "Box is not valid!");
     IVec3<IntType> boxExtents = extents();
     return boxExtents.i * boxExtents.j * boxExtents.k;
+  }
+
+  constexpr void expand(IntType n = 1)
+  {
+    min -= n;
+    max += n;
+    EN_CORE_ASSERT(valid(), "Box is not valid!");
+  }
+  constexpr void shrink(IntType n = 1)
+  {
+    min += n;
+    max -= n;
+    EN_CORE_ASSERT(valid(), "Box is not valid!");
+  }
+
+  constexpr IntType limitAlongDirection(Direction direction) const
+  {
+    int coordID = GetCoordID(direction);
+    return IsUpstream(direction) ? max[coordID] - 1 : min[coordID];
+  }
+
+  constexpr IBox3<IntType> face(Direction direction) const
+  {
+    int coordID = GetCoordID(direction);
+    IntType faceNormalLimit = limitAlongDirection(direction);
+
+    IVec3<IntType> faceLower = min;
+    faceLower[coordID] = faceNormalLimit;
+
+    IVec3<IntType> faceUpper = max;
+    faceUpper[coordID] = faceNormalLimit + 1;
+
+    return { faceLower, faceUpper };
+  }
+
+  constexpr IBox3<IntType> edge(Direction faceA, Direction faceB) const
+  {
+    EN_CORE_ASSERT(faceA != !faceB, "Opposite faces cannot form edge!");
+
+    return {};
   }
 
   template<InvocableWithReturnType<bool, const IVec3<IntType>&> F>
@@ -131,3 +174,14 @@ private:
   IBox3<IntType> m_Box;
   Direction m_Face;
 };
+
+
+
+namespace std
+{
+  template<std::integral IntType>
+  inline ostream& operator<<(ostream& os, const IBox3<IntType>& index)
+  {
+    return os << '(' << index.min << ", " << index.max << ')';
+  }
+}

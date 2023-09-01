@@ -13,11 +13,11 @@ public:
   Chunk();
   Chunk(const GlobalIndex& chunkIndex);
 
-  CubicArray<Block::Type, c_ChunkSize>& composition();
-  const CubicArray<Block::Type, c_ChunkSize>& composition() const;
+  ArrayBox<Block::Type, 0, c_ChunkSize>& composition();
+  const ArrayBox<Block::Type, 0, c_ChunkSize>& composition() const;
 
-  CubicArray<Block::Light, c_ChunkSize>& lighting();
-  const CubicArray<Block::Light, c_ChunkSize>& lighting() const;
+  ArrayBox<Block::Light, 0, c_ChunkSize>& lighting();
+  const ArrayBox<Block::Light, 0, c_ChunkSize>& lighting() const;
 
   /*
     \return Whether or not a given chunk face has transparent blocks. Useful for deciding which chunks should be loaded
@@ -36,14 +36,13 @@ public:
   void setBlockType(const BlockIndex& blockIndex, Block::Type blockType);
   void setBlockLight(const BlockIndex& blockIndex, Block::Light blockLight);
 
-  void setComposition(CubicArray<Block::Type, c_ChunkSize>&& composition);
-  void setLighting(CubicArray<Block::Light, c_ChunkSize>&& lighting);
+  void setComposition(ArrayBox<Block::Type, 0, c_ChunkSize>&& composition);
+  void setLighting(ArrayBox<Block::Light, 0, c_ChunkSize>&& lighting);
   void determineOpacity();
 
   void update();
 
   _Acquires_lock_(return) std::unique_lock<std::mutex> acquireLock() const;
-  _Acquires_lock_(return) std::lock_guard<std::mutex> acquireLockGuard() const;
 
   /*
     \returns The chunk's geometric center relative to origin chunk.
@@ -139,8 +138,8 @@ public:
 
 private:
   mutable std::mutex m_Mutex;
-  CubicArray<Block::Type, c_ChunkSize> m_Composition;
-  CubicArray<Block::Light, c_ChunkSize> m_Lighting;
+  ArrayBox<Block::Type, 0, c_ChunkSize> m_Composition;
+  ArrayBox<Block::Light, 0, c_ChunkSize> m_Lighting;
   std::atomic<uint16_t> m_NonOpaqueFaces;
 };
 

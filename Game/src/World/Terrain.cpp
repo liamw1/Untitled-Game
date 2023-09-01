@@ -62,14 +62,14 @@ static constexpr int c_BiomeRegionSize = 8;
 static constexpr int c_RegionRadius = 1;
 static constexpr int c_RegionWidth = 2 * c_RegionRadius + 1;
 
-using NoiseSamples = Array2D<Noise::OctaveNoiseData<Biome::LocalElevationOctaves()>, Chunk::Size()>;
+using NoiseSamples = ArrayRect<Noise::OctaveNoiseData<Biome::LocalElevationOctaves()>, 0, Chunk::Size()>;
 using CompoundBiome = CompoundType<Biome::Type, c_MaxCompoundBiomes, Biome::Type::Null>;
-using BiomeData = Array2D<CompoundBiome, Chunk::Size()>;
+using BiomeData = ArrayRect<CompoundBiome, 0, Chunk::Size()>;
 
 struct SurfaceData
 {
-  NoiseSamples noiseSamples = Array2D<Noise::OctaveNoiseData<Biome::LocalElevationOctaves()>, Chunk::Size()>(AllocationPolicy::ForOverWrite);
-  BiomeData biomeData = Array2D<CompoundBiome, Chunk::Size()>(AllocationPolicy::ForOverWrite);
+  NoiseSamples noiseSamples = ArrayRect<Noise::OctaveNoiseData<Biome::LocalElevationOctaves()>, 0, Chunk::Size()>(AllocationPolicy::ForOverWrite);
+  BiomeData biomeData = ArrayRect<CompoundBiome, 0, Chunk::Size()>(AllocationPolicy::ForOverWrite);
 };
 
 static constexpr int c_CacheSize = (2 * c_UnloadDistance + 5) * (2 * c_UnloadDistance + 5);
@@ -173,18 +173,7 @@ static std::shared_ptr<SurfaceData> getSurfaceData(const GlobalIndex& chunkIndex
 
 
 
-static bool isEmpty(const CubicArray<Block::Type, Chunk::Size()>& composition)
-{
-  EN_ASSERT(composition, "Composition does not exist!");
-  for (blockIndex_t i = 0; i < Chunk::Size(); ++i)
-    for (blockIndex_t j = 0; j < Chunk::Size(); ++j)
-      for (blockIndex_t k = 0; k < Chunk::Size(); ++k)
-        if (composition[i][j][k] != Block::Type::Air)
-          return false;
-  return true;
-}
-
-static void heightMapStage(SquareArray<length_t, Chunk::Size()>& heightMap, const GlobalIndex& chunkIndex)
+static void heightMapStage(ArrayRect<length_t, 0, Chunk::Size()>& heightMap, const GlobalIndex& chunkIndex)
 {
   std::shared_ptr<SurfaceData> surfaceData = getSurfaceData(chunkIndex);
   const auto& [noiseSamples, biomeMap] = *surfaceData;
@@ -206,7 +195,7 @@ static void heightMapStage(SquareArray<length_t, Chunk::Size()>& heightMap, cons
     }
 }
 
-static void soilStage(CubicArray<Block::Type, Chunk::Size()>& composition, const SquareArray<length_t, Chunk::Size()>& heightMap, const GlobalIndex& chunkIndex)
+static void soilStage(ArrayBox<Block::Type, 0, Chunk::Size()>& composition, const ArrayRect<length_t, 0, Chunk::Size()>& heightMap, const GlobalIndex& chunkIndex)
 {
   std::shared_ptr<SurfaceData> surfaceData = getSurfaceData(chunkIndex);
   const auto& [noiseSamples, biomeMap] = *surfaceData;
@@ -221,9 +210,9 @@ static void soilStage(CubicArray<Block::Type, Chunk::Size()>& composition, const
     }
 }
 
-static void foliageStage(CubicArray<Block::Type, Chunk::Size()>& composition, const SquareArray<length_t, Chunk::Size()>& heightMap, const GlobalIndex& chunkIndex)
+static void foliageStage(ArrayBox<Block::Type, 0, Chunk::Size()>& composition, const ArrayRect<length_t, 0, Chunk::Size()>& heightMap, const GlobalIndex& chunkIndex)
 {
-  const auto createTree = [](CubicArray<Block::Type, Chunk::Size()>& composition, const BlockIndex& treeIndex, Block::Type leafType)
+  const auto createTree = [](ArrayBox<Block::Type, 0, Chunk::Size()>& composition, const BlockIndex& treeIndex, Block::Type leafType)
   {
     int i = treeIndex.i;
     int j = treeIndex.j;
@@ -268,7 +257,7 @@ static void foliageStage(CubicArray<Block::Type, Chunk::Size()>& composition, co
     }
 }
 
-static void lightingStage(CubicArray<Block::Light, Chunk::Size()>& lighting, const CubicArray<Block::Type, Chunk::Size()>& composition)
+static void lightingStage(ArrayBox<Block::Light, 0, Chunk::Size()>& lighting, const ArrayBox<Block::Type, 0, Chunk::Size()>& composition)
 {
   for (blockIndex_t i = 0; i < Chunk::Size(); ++i)
     for (blockIndex_t j = 0; j < Chunk::Size(); ++j)
@@ -286,20 +275,20 @@ static void lightingStage(CubicArray<Block::Light, Chunk::Size()>& lighting, con
 
 std::shared_ptr<Chunk> Terrain::GenerateNew(const GlobalIndex& chunkIndex)
 {
-  SquareArray heightMap = SquareArray<length_t, Chunk::Size()>(AllocationPolicy::ForOverWrite);
-  CubicArray composition = CubicArray<Block::Type, Chunk::Size()>(AllocationPolicy::ForOverWrite);
+  ArrayRect heightMap = ArrayRect<length_t, 0, Chunk::Size()>(AllocationPolicy::ForOverWrite);
+  ArrayBox composition = ArrayBox<Block::Type, 0, Chunk::Size()>(AllocationPolicy::ForOverWrite);
 
   heightMapStage(heightMap, chunkIndex);
   soilStage(composition, heightMap, chunkIndex);
   foliageStage(composition, heightMap, chunkIndex);
 
-  if (isEmpty(composition))
+  if (composition.filledWith(Block::Type::Air))
     composition.reset();
 
   std::shared_ptr newChunk = std::make_shared<Chunk>(chunkIndex);
   if (composition)
   {
-    CubicArray lighting = CubicArray<Block::Light, Chunk::Size()>(AllocationPolicy::ForOverWrite);
+    ArrayBox lighting = ArrayBox<Block::Light, 0, Chunk::Size()>(AllocationPolicy::ForOverWrite);
     lightingStage(lighting, composition);
 
     newChunk->setComposition(std::move(composition));

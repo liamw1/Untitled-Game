@@ -19,7 +19,7 @@ namespace Engine
       m_DataFormat(GL_RGBA)
   {
     EN_PROFILE_FUNCTION();
-    EN_CORE_ASSERT(std::this_thread::get_id() == Threads::MainThreadID(), "OpenGL calls must be made on the main thread!");
+    EN_CORE_ASSERT(Threads::IsMainThread(), "OpenGL calls must be made on the main thread!");
 
     glCreateTextures(GL_TEXTURE_2D, 1, &m_RendererID);
     glTextureStorage2D(m_RendererID, 1, m_InternalFormat, m_Width, m_Height);
@@ -36,7 +36,7 @@ namespace Engine
       m_RendererID(0)
   {
     EN_PROFILE_FUNCTION();
-    EN_CORE_ASSERT(std::this_thread::get_id() == Threads::MainThreadID(), "OpenGL calls must be made on the main thread!");
+    EN_CORE_ASSERT(Threads::IsMainThread(), "OpenGL calls must be made on the main thread!");
 
     int width, height, channels;
     stbi_set_flip_vertically_on_load(true);
@@ -81,7 +81,7 @@ namespace Engine
   OpenGLTexture2D::~OpenGLTexture2D()
   {
     EN_PROFILE_FUNCTION();
-    EN_CORE_ASSERT(std::this_thread::get_id() == Threads::MainThreadID(), "OpenGL calls must be made on the main thread!");
+    EN_CORE_ASSERT(Threads::IsMainThread(), "OpenGL calls must be made on the main thread!");
 
     glDeleteTextures(1, &m_RendererID);
   }
@@ -93,7 +93,7 @@ namespace Engine
   void OpenGLTexture2D::setData(void* data, uint32_t size)
   {
     EN_PROFILE_FUNCTION();
-    EN_CORE_ASSERT(std::this_thread::get_id() == Threads::MainThreadID(), "OpenGL calls must be made on the main thread!");
+    EN_CORE_ASSERT(Threads::IsMainThread(), "OpenGL calls must be made on the main thread!");
 
     EN_CORE_ASSERT(size == m_Width * m_Height * (m_DataFormat == GL_RGBA ? 4 : 3), "Data must be entire texture!");
     glTextureSubImage2D(m_RendererID, 0, 0, 0, m_Width, m_Height, m_DataFormat, GL_UNSIGNED_BYTE, data);
@@ -101,7 +101,7 @@ namespace Engine
 
   void OpenGLTexture2D::bind(uint32_t slot) const
   {
-    EN_CORE_ASSERT(std::this_thread::get_id() == Threads::MainThreadID(), "OpenGL calls must be made on the main thread!");
+    EN_CORE_ASSERT(Threads::IsMainThread(), "OpenGL calls must be made on the main thread!");
     glBindTextureUnit(slot, m_RendererID);
   }
 
@@ -121,7 +121,7 @@ namespace Engine
       m_DataFormat(GL_RGBA)
   {
     EN_PROFILE_FUNCTION();
-    EN_CORE_ASSERT(std::this_thread::get_id() == Threads::MainThreadID(), "OpenGL calls must be made on the main thread!");
+    EN_CORE_ASSERT(Threads::IsMainThread(), "OpenGL calls must be made on the main thread!");
 
     glCreateTextures(GL_TEXTURE_2D_ARRAY, 1, &m_RendererID);
     glTextureStorage3D(m_RendererID, c_MipmapLevels, m_InternalFormat, m_TextureSize, m_TextureSize, m_MaxTextures);
@@ -130,21 +130,21 @@ namespace Engine
   OpenGLTextureArray::~OpenGLTextureArray()
   {
     EN_PROFILE_FUNCTION();
-    EN_CORE_ASSERT(std::this_thread::get_id() == Threads::MainThreadID(), "OpenGL calls must be made on the main thread!");
+    EN_CORE_ASSERT(Threads::IsMainThread(), "OpenGL calls must be made on the main thread!");
 
     glDeleteTextures(1, &m_RendererID);
   }
 
   void OpenGLTextureArray::bind(uint32_t slot) const
   {
-    EN_CORE_ASSERT(std::this_thread::get_id() == Threads::MainThreadID(), "OpenGL calls must be made on the main thread!");
+    EN_CORE_ASSERT(Threads::IsMainThread(), "OpenGL calls must be made on the main thread!");
     glBindTextureUnit(slot, m_RendererID);
   }
 
   void OpenGLTextureArray::addTexture(const std::string& path)
   {
     EN_PROFILE_FUNCTION();
-    EN_CORE_ASSERT(std::this_thread::get_id() == Threads::MainThreadID(), "OpenGL calls must be made on the main thread!");
+    EN_CORE_ASSERT(Threads::IsMainThread(), "OpenGL calls must be made on the main thread!");
 
     EN_CORE_ASSERT(path.size() > 0, "Filepath is an empty string!");
 

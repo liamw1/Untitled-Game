@@ -9,8 +9,7 @@ extern Engine::Application* Engine::CreateApplication(ApplicationCommandLineArgs
 
 int main(int argc, char** argv)
 {
-  Engine::Threads::SetMainThreadID(std::this_thread::get_id());
-
+  Engine::Threads::SetAsMainThread();
   Engine::Log::Initialize();
 
   EN_PROFILE_BEGIN_SESSION("Startup", "EngineProfile-Startup.json");

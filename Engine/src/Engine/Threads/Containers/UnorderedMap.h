@@ -1,10 +1,11 @@
 #pragma once
+#include "Engine/Core/Concepts.h"
 
 namespace Engine::Threads
 {
   template<Hashable K, typename V>
     requires std::is_default_constructible_v<K> && std::move_constructible<K>
-  class UnorderedMap
+  class UnorderedMap : private NonCopyable, NonMovable
   {
     using const_iterator = std::unordered_map<K, std::shared_ptr<V>>::const_iterator;
 
@@ -50,7 +51,8 @@ namespace Engine::Threads
     {
       std::shared_lock lock(m_Mutex);
       const_iterator mapPosition = m_Data.find(key);
-      return mapPosition == m_Data.end() ? nullptr : mapPosition->second;
+      std::shared_ptr<V> copy = mapPosition == m_Data.end() ? nullptr : mapPosition->second;
+      return copy;
     }
 
     template<InvocableWithReturnType<bool, const K&> F>

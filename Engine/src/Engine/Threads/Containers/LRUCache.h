@@ -4,7 +4,7 @@
 namespace Engine::Threads
 {
   template<Hashable K, typename V>
-  class LRUCache
+  class LRUCache : private NonCopyable, NonMovable
   {
     using const_iterator = Engine::LRUCache<K, std::shared_ptr<V>>::const_iterator;
 

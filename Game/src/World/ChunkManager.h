@@ -101,14 +101,14 @@ private:
 private:
   struct BlockData
   {
-    CubicArray<Block::Type, Chunk::Size() + 2, -1> composition;
-    CubicArray<Block::Light, Chunk::Size() + 2, -1> lighting;
+    ArrayBox<Block::Type, -1, Chunk::Size() + 1> composition;
+    ArrayBox<Block::Light, -1, Chunk::Size() + 1> lighting;
 
     BlockData();
 
     void fill(const BlockBox& fillSection, std::shared_ptr<Chunk> chunk, const BlockIndex& chunkBase, bool fillLight = true);
 
-    static constexpr BlockBox Bounds() { return decltype(composition)::Bounds<blockIndex_t>(); }
+    constexpr BlockBox bounds() { return composition.box<blockIndex_t>(); }
   };
 
   BlockData& getBlockData(const GlobalIndex& chunkIndex, bool getInteriorLighting = true) const;

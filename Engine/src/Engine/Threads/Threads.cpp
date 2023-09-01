@@ -1,20 +1,18 @@
 #include "ENpch.h"
 #include "Threads.h"
 
-static bool mainThreadSet = false;
-static std::thread::id mainThreadID{};
+static std::thread::id mainThreadID;
 
 namespace Engine
 {
-  std::thread::id Threads::MainThreadID()
+  void Threads::SetAsMainThread()
   {
-    EN_CORE_ASSERT(mainThreadID != std::thread::id(), "Main thread has not been set!");
-    return mainThreadID;
+    mainThreadID = std::this_thread::get_id();
   }
 
-  void Threads::SetMainThreadID(std::thread::id threadID)
+  bool Threads::IsMainThread()
   {
-    EN_CORE_ASSERT(mainThreadID == std::thread::id(), "Main thread has already been set!");
-    mainThreadID = threadID;
+    EN_CORE_ASSERT(mainThreadID != std::thread::id(), "Main thread has not been set!");
+    return std::this_thread::get_id() == mainThreadID;
   }
 }

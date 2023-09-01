@@ -5,7 +5,7 @@
 #include "Util/Util.h"
 
 ChunkManager::ChunkManager()
-  : m_ThreadPool(std::make_shared<Engine::Threads::ThreadPool>(4)),
+  : m_ThreadPool(std::make_shared<Engine::Threads::ThreadPool>(1)),
     m_LoadWork(m_ThreadPool, Engine::Threads::Priority::Normal),
     m_LightingWork(m_ThreadPool, Engine::Threads::Priority::Normal),
     m_LazyMeshingWork(m_ThreadPool, Engine::Threads::Priority::Low),
@@ -281,8 +281,8 @@ void ChunkManager::loadChunk(const GlobalIndex& chunkIndex, Block::Type blockTyp
   std::shared_ptr chunk = std::make_shared<Chunk>(chunkIndex);
   if (blockType != Block::Type::Air)
   {
-    chunk->setComposition(CubicArray<Block::Type, Chunk::Size()>(blockType));
-    chunk->setLighting(CubicArray<Block::Light, Chunk::Size()>(AllocationPolicy::ForOverWrite));
+    chunk->setComposition(ArrayBox<Block::Type, 0, Chunk::Size()>(blockType));
+    chunk->setLighting(ArrayBox<Block::Light, 0, Chunk::Size()>(AllocationPolicy::ForOverWrite));
   }
 
   m_ChunkContainer.insert(chunkIndex, std::move(chunk));
@@ -331,6 +331,12 @@ void ChunkManager::generateNewChunk(const GlobalIndex& chunkIndex)
 
 void ChunkManager::sendBlockUpdate(const GlobalIndex& chunkIndex, const BlockIndex& blockIndex)
 {
+  /*
+    NOTE: An alternative, more general algorithm is to consider the bounding box of the
+    touched blocks, plus one layer of blocks along each direction. The box of influenced
+    chunks can then be computed directly from this.
+  */
+
   addToForceMeshUpdateQueue(chunkIndex);
 
   std::vector<Direction> updateDirections{};
@@ -381,8 +387,8 @@ void ChunkManager::uploadMeshes(Engine::Threads::UnorderedSet<Chunk::DrawCommand
 
 
 ChunkManager::BlockData::BlockData()
-  : composition(CubicArray<Block::Type, Chunk::Size() + 2, -1>(AllocationPolicy::ForOverWrite)),
-    lighting(CubicArray<Block::Light, Chunk::Size() + 2, -1>(AllocationPolicy::ForOverWrite)) {}
+  : composition(ArrayBox<Block::Type, -1, Chunk::Size() + 1>(AllocationPolicy::ForOverWrite)),
+    lighting(ArrayBox<Block::Light, -1, Chunk::Size() + 1>(AllocationPolicy::ForOverWrite)) {}
 
 void ChunkManager::BlockData::fill(const BlockBox& fillSection, std::shared_ptr<Chunk> chunk, const BlockIndex& chunkBase, bool fillLight)
 {
@@ -402,10 +408,10 @@ void ChunkManager::BlockData::fill(const BlockBox& fillSection, std::shared_ptr<
 
 
 
-template<typename T, int Len, int Base>
-static BlockBox faceInterior(const CubicArray<T, Len, Base>& arr, Direction direction)
+template<typename T, int... Args>
+static BlockBox faceInterior(const ArrayBox<T, Args...>& arr, Direction direction)
 {
-  static constexpr blockIndex_t limits[2] = { Base, Len + Base - 1 };
+  blockIndex_t limits[2] = { arr.box<blockIndex_t>().min.i, arr.box<blockIndex_t>().max.i - 1 };
 
   blockIndex_t faceLimit = limits[IsUpstream(direction)];
   BlockIndex fillLower = BlockIndex::CreatePermuted(faceLimit, 0, 0, GetCoordID(direction));
@@ -414,12 +420,12 @@ static BlockBox faceInterior(const CubicArray<T, Len, Base>& arr, Direction dire
   return { fillLower, fillUpper };
 }
 
-template<typename T, int Len, int Base>
-static BlockBox edgeInterior(const CubicArray<T, Len, Base>& arr, Direction faceA, Direction faceB)
+template<typename T, int... Args>
+static BlockBox edgeInterior(const ArrayBox<T, Args...>& arr, Direction faceA, Direction faceB)
 {
   EN_ASSERT(faceA != faceB, "Opposite faces cannot form an edge!");
 
-  static constexpr blockIndex_t limits[2] = { Base, Len + Base - 1 };
+  blockIndex_t limits[2] = { arr.box<blockIndex_t>().min.i, arr.box<blockIndex_t>().max.i - 1 };
 
   int u = GetCoordID(faceA);
   int v = GetCoordID(faceB);
@@ -435,10 +441,10 @@ static BlockBox edgeInterior(const CubicArray<T, Len, Base>& arr, Direction face
   return { fillLower, fillUpper };
 }
 
-template<typename T, int Len, int Base>
-static BlockBox corner(const CubicArray<T, Len, Base>& arr, const GlobalIndex& offset)
+template<typename T, int... Args>
+static BlockBox corner(const ArrayBox<T, Args...>& arr, const GlobalIndex& offset)
 {
-  static constexpr blockIndex_t limits[2] = { Base, Len + Base - 1 };
+  blockIndex_t limits[2] = { arr.box<blockIndex_t>().min.i, arr.box<blockIndex_t>().max.i - 1 };
 
   BlockIndex fillIndex = { limits[offset.i > 0], limits[offset.j > 0], limits[offset.k > 0] };
   return { fillIndex, fillIndex + 1 };
@@ -624,7 +630,7 @@ void ChunkManager::updateLighting(const GlobalIndex& chunkIndex)
   EN_PROFILE_FUNCTION();
 
   std::array<std::stack<BlockIndex>, Block::Light::MaxValue() + 1> light;
-  BlockData::Bounds().forEach([&blockData, &light](const BlockIndex& blockIndex)
+  blockData.bounds().forEach([&blockData, &light](const BlockIndex& blockIndex)
     {
       if (Chunk::Bounds().encloses(blockIndex) || !Block::HasTransparency(blockData.composition(blockIndex)))
         return;
@@ -653,10 +659,10 @@ void ChunkManager::updateLighting(const GlobalIndex& chunkIndex)
       }
     }
 
-  CubicArray<Block::Light, Chunk::Size()> newLighting;
+  ArrayBox<Block::Light, 0, Chunk::Size()> newLighting;
   if (!blockData.lighting.filledWith(Chunk::Bounds(), Block::Light::MaxValue()))
   {
-    newLighting = CubicArray<Block::Light, Chunk::Size()>(AllocationPolicy::ForOverWrite);
+    newLighting = ArrayBox<Block::Light, 0, Chunk::Size()>(AllocationPolicy::ForOverWrite);
     newLighting.fill(Chunk::Bounds(), blockData.lighting, BlockIndex(0));
   }
 

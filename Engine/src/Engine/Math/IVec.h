@@ -15,6 +15,11 @@ struct IVec2
   constexpr IVec2(IntType _i, IntType _j)
     : i(_i), j(_j) {}
 
+  explicit constexpr operator Vec2() const { return { i, j }; }
+
+  template<std::integral NewIntType>
+  explicit constexpr operator IVec2<NewIntType>() const { return { static_cast<NewIntType>(i), static_cast<NewIntType>(j) }; }
+
   constexpr IntType& operator[](int index)
   {
     return const_cast<IntType&>(static_cast<const IVec2*>(this)->operator[](index));
@@ -73,8 +78,6 @@ struct IVec2
     return copy /= n;
   }
 
-  explicit constexpr operator Vec2() const { return { i, j }; }
-
   static constexpr IVec2<IntType> ToIndex(const Vec2& vec)
   {
     return { static_cast<IntType>(std::floor(vec.x)), static_cast<IntType>(std::floor(vec.y)) };
@@ -96,6 +99,13 @@ struct IVec3
     : i(_i), j(_j), k(_k) {}
   constexpr IVec3(IVec2<IntType> intVec2, IntType _k)
     : i(intVec2.i), j(intVec2.j), k(_k) {}
+
+  explicit constexpr operator Vec2() const { return { i, j }; }
+  explicit constexpr operator Vec3() const { return { i, j, k }; }
+  explicit constexpr operator IVec2<IntType>() const { return { i, j }; }
+
+  template<std::integral NewIntType>
+  explicit constexpr operator IVec3<NewIntType>() const { return { static_cast<NewIntType>(i), static_cast<NewIntType>(j), static_cast<NewIntType>(k) }; }
 
   constexpr IntType& operator[](int index)
   {
@@ -159,10 +169,6 @@ struct IVec3
     return copy /= n;
   }
 
-  explicit constexpr operator Vec2() const { return { i, j }; }
-  explicit constexpr operator Vec3() const { return { i, j, k }; }
-  explicit constexpr operator IVec2<IntType>() const { return { i, j }; }
-
   static constexpr IVec3<IntType> ToIndex(const Vec3& vec)
   {
     return { static_cast<IntType>(std::floor(vec.x)), static_cast<IntType>(std::floor(vec.y)), static_cast<IntType>(std::floor(vec.z)) };
@@ -215,12 +221,12 @@ namespace std
   template<std::integral IntType>
   inline ostream& operator<<(ostream& os, const IVec2<IntType>& index)
   {
-    return os << '[' << index.i << ", " << index.j << ']';
+    return os << '[' << static_cast<int64_t>(index.i) << ", " << static_cast<int64_t>(index.j) << ']';
   }
 
   template<std::integral IntType>
   inline ostream& operator<<(ostream& os, const IVec3<IntType>& index)
   {
-    return os << '[' << index.i << ", " << index.j << ", " << index.k << ']';
+    return os << '[' << static_cast<int64_t>(index.i) << ", " << static_cast<int64_t>(index.j) << ", " << static_cast<int64_t>(index.k) << ']';
   }
 }
