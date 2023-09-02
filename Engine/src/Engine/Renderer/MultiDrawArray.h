@@ -232,7 +232,7 @@ namespace Engine
     std::vector<DrawCommandType> m_DrawCommands;
     std::unordered_map<Identifier, std::shared_ptr<size_t>> m_DrawCommandIndices;
 
-    size_t getDrawCommandAddress(const DrawCommandType& drawCommand)
+    MemoryPool::address_t getDrawCommandAddress(const DrawCommandType& drawCommand)
     {
       return drawCommand.firstVertex() * m_Stride;
     }
@@ -368,12 +368,12 @@ namespace Engine
     std::vector<DrawCommandType> m_DrawCommands;
     std::unordered_map<Identifier, std::shared_ptr<size_t>> m_DrawCommandIndices;
 
-    size_t getDrawCommandIndicesAddress(const DrawCommandType& drawCommand)
+    MemoryPool::address_t getDrawCommandIndicesAddress(const DrawCommandType& drawCommand)
     {
       return drawCommand.firstIndex() * sizeof(uint32_t);
     }
 
-    size_t getDrawCommandVerticesAddress(const DrawCommandType& drawCommand)
+    MemoryPool::address_t getDrawCommandVerticesAddress(const DrawCommandType& drawCommand)
     {
       return drawCommand.baseVertex() * m_Stride;
     }

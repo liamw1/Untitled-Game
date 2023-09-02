@@ -19,6 +19,9 @@ struct IBox3
   template<std::integral NewIntType>
   explicit constexpr operator IBox3<NewIntType>() const { return IBox3<NewIntType>(static_cast<IVec3<NewIntType>>(min), static_cast<IVec3<NewIntType>>(max)); }
 
+  // Define lexicographical ordering on stored IVec3s
+  constexpr std::strong_ordering operator<=>(const IBox3<IntType>& other) const = default;
+
   constexpr IBox3 operator+(const IVec3<IntType>& intVec3) const
   {
     return IBox3(min + intVec3, max + intVec3);
@@ -40,12 +43,6 @@ struct IBox3
     return true;
   }
 
-  constexpr int length(int dimension) const
-  {
-    EN_CORE_ASSERT(valid(), "Box is not valid!");
-    return max[dimension] - min[dimension];
-  }
-
   constexpr IVec3<IntType> extents() const
   {
     EN_CORE_ASSERT(valid(), "Box is not valid!");
@@ -54,22 +51,28 @@ struct IBox3
 
   constexpr int volume() const
   {
-    EN_CORE_ASSERT(valid(), "Box is not valid!");
+    if (!valid())
+      return 0;
+
     IVec3<IntType> boxExtents = extents();
     return boxExtents.i * boxExtents.j * boxExtents.k;
   }
 
-  constexpr void expand(IntType n = 1)
+  constexpr IBox3<IntType>& expand(IntType n = 1)
   {
     min -= n;
     max += n;
-    EN_CORE_ASSERT(valid(), "Box is not valid!");
+    EN_CORE_ASSERT(valid(), "Box is no longer valid after expansion!");
+
+    return *this;
   }
-  constexpr void shrink(IntType n = 1)
+  constexpr IBox3<IntType>& shrink(IntType n = 1)
   {
     min += n;
     max -= n;
-    EN_CORE_ASSERT(valid(), "Box is not valid!");
+    EN_CORE_ASSERT(valid(), "Box is no longer valid after shrinking!");
+
+    return *this;
   }
 
   constexpr IntType limitAlongDirection(Direction direction) const
@@ -91,12 +94,22 @@ struct IBox3
 
     return { faceLower, faceUpper };
   }
-
-  constexpr IBox3<IntType> edge(Direction faceA, Direction faceB) const
+  constexpr IBox3<IntType> faceInterior(Direction direction) const
   {
-    EN_CORE_ASSERT(faceA != !faceB, "Opposite faces cannot form edge!");
+    return face(direction).shrink();
+  }
 
-    return {};
+  constexpr IBox3<IntType> edge(Direction sideA, Direction sideB) const
+  {
+    EN_CORE_ASSERT(sideA != !sideB, "Opposite faces cannot form edge!");
+
+    IBox3<IntType> faceA = face(sideA);
+    IBox3<IntType> faceB = face(sideB);
+    return Intersection(faceA, faceB);
+  }
+  constexpr IBox3<IntType> edgeInterior(Direction sideA, Direction sideB) const
+  {
+    return edge(sideA, sideB).shrink();
   }
 
   template<InvocableWithReturnType<bool, const IVec3<IntType>&> F>
@@ -139,40 +152,20 @@ struct IBox3
           function(index);  
   }
 
-  static constexpr IBox3<IntType> Union(const IBox3<IntType>& other)
+  static constexpr IBox3<IntType> Union(const IBox3<IntType>& boxA, const IBox3<IntType>& boxB)
   {
-    return { componentWiseMin(min, other.min), componentWiseMax(max, other.max) };
+    return { ComponentWiseMin(boxA.min, boxB.min), ComponentWiseMax(boxA.max, boxB.max) };
+  }
+
+  static constexpr IBox3<IntType> Intersection(const IBox3<IntType>& boxA, const IBox3<IntType>& boxB)
+  {
+    return { ComponentWiseMax(boxA.min, boxB.min), ComponentWiseMin(boxA.max, boxB.max) };
   }
 
   static constexpr IBox3<IntType> VoidBox()
   {
     return { std::numeric_limits<IntType>::max(), std::numeric_limits<IntType>::min() };
   }
-};
-
-
-
-template<std::integral IntType>
-class BoxFaceIterator
-{
-public:
-  constexpr BoxFaceIterator(const IBox3<IntType>& box, Direction face = Direction::Begin)
-    : m_Box(box), m_Face(face) {}
-
-  constexpr BoxFaceIterator& operator++()
-  {
-    ++m_Face;
-    return *this;
-  }
-  constexpr BoxFaceIterator operator!() { return BoxFaceIterator(m_Box, !m_Face); }
-  constexpr bool operator!=(const BoxFaceIterator& other) { return m_Face != other.m_Face; }
-
-  constexpr BoxFaceIterator begin() { return *this; }
-  constexpr BoxFaceIterator end() { return BoxFaceIterator(m_Box, Direction::End); }
-
-private:
-  IBox3<IntType> m_Box;
-  Direction m_Face;
 };
 
 

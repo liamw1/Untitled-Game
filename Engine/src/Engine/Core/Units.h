@@ -1,5 +1,4 @@
 #pragma once
-#include <cstdint>
 
 using length_t = float;
 using rad_t = float;

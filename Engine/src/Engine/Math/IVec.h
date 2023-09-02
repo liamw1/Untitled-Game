@@ -202,13 +202,13 @@ constexpr IVec3<IntType> operator*(IntType n, IVec3<IntType> index)
 }
 
 template<std::integral IntType>
-constexpr IVec3<IntType> componentWiseMin(const IVec3<IntType>& a, const IVec3<IntType>& b)
+constexpr IVec3<IntType> ComponentWiseMin(const IVec3<IntType>& a, const IVec3<IntType>& b)
 {
   return IVec3<IntType>(std::min(a.i, b.i), std::min(a.j, b.j), std::min(a.k, b.k));
 }
 
 template<std::integral IntType>
-constexpr IVec3<IntType> componentWiseMax(const IVec3<IntType>& a, const IVec3<IntType>& b)
+constexpr IVec3<IntType> ComponentWiseMax(const IVec3<IntType>& a, const IVec3<IntType>& b)
 {
   return IVec3<IntType>(std::max(a.i, b.i), std::max(a.j, b.j), std::max(a.k, b.k));
 }

@@ -27,7 +27,7 @@ namespace Engine
     return m_Buffer;
   }
 
-  std::pair<bool, size_t> MemoryPool::add(const void* data, int size)
+  std::pair<bool, MemoryPool::address_t> MemoryPool::add(const void* data, int size)
   {
     if (size <= 0)
       return { false, -1 };
@@ -37,7 +37,7 @@ namespace Engine
     RegionsIterator bestRegionPosition = m_Regions.end();
     if (bestFreeRegionPosition != m_FreeRegions.end())
     {
-      size_t regionAddress = bestFreeRegionPosition->second;
+      address_t regionAddress = bestFreeRegionPosition->second;
       m_FreeRegions.erase(bestFreeRegionPosition);
 
       bestRegionPosition = m_Regions.find(regionAddress);
@@ -80,14 +80,14 @@ namespace Engine
     return { triggeredResize, allocationAddress };
   }
 
-  void MemoryPool::remove(size_t address)
+  void MemoryPool::remove(address_t address)
   {
     RegionsIterator allocationPosition = m_Regions.find(address);
     EN_CORE_ASSERT(allocationPosition != m_Regions.end(), "No memory region was found at adress {0}!", address);
     EN_CORE_ASSERT(!isFree(allocationPosition), "Region is already free!");
 
     int freedRegionSize = regionSize(allocationPosition);
-    size_t freedRegionAddress = address;
+    address_t freedRegionAddress = address;
     RegionsIterator freedRegionPosition = allocationPosition;
 
     // If previous region is free, merge with newly freed region
@@ -123,7 +123,7 @@ namespace Engine
     addFreeRegion(freedRegionAddress, freedRegionSize);
   }
 
-  void MemoryPool::amend(const void* data, size_t address)
+  void MemoryPool::amend(const void* data, address_t address)
   {
     RegionsIterator allocationPosition = m_Regions.find(address);
     m_Buffer->update(data, address, regionSize(allocationPosition));
@@ -139,7 +139,7 @@ namespace Engine
     return regionIterator->second.size;
   }
 
-  void MemoryPool::addFreeRegion(size_t address, int size)
+  void MemoryPool::addFreeRegion(address_t address, int size)
   {
     m_Regions.emplace(address, size);
     m_FreeRegions.emplace(size, address);

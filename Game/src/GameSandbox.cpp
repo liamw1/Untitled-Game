@@ -3,7 +3,6 @@
 #include "Player/Player.h"
 #include "World/Biome.h"
 #include "World/LOD.h"
-#include <numeric>
 
 GameSandbox::GameSandbox()
   : Layer("GameSandbox"),

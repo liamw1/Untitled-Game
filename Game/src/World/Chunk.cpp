@@ -1,7 +1,6 @@
 #include "GMpch.h"
 #include "Chunk.h"
 #include "Player/Player.h"
-#include <iostream>
 
 Chunk::Chunk() = default;
 

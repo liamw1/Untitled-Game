@@ -456,6 +456,8 @@ ChunkManager::BlockData& ChunkManager::getBlockData(const GlobalIndex& chunkInde
 {
   EN_PROFILE_FUNCTION();
 
+  static constexpr BlockBox box(-1, Chunk::Size() + 1);
+
   thread_local BlockData blockData;
   blockData.composition.fill(Block::Type::Null);
   blockData.lighting.fill(Block::Light());
@@ -480,8 +482,14 @@ ChunkManager::BlockData& ChunkManager::getBlockData(const GlobalIndex& chunkInde
     BlockBox fillSection = faceInterior(blockData.composition, direction);
     BlockIndex neighborBase = faceInterior(neighbor->composition(), !direction).min;
 
+    BlockBox fillSection2 = box.faceInterior(direction);
+
+    // EN_INFO("Fill Section: {0}, Fill Section 2: {1}", fillSection, fillSection2);
+    // EN_INFO("Neighbor Base: {0}", neighborBase);
+
     blockData.fill(fillSection, neighbor, neighborBase);
   }
+  // EN_INFO("\n");
 
   // Load blocks from edge neighbors
   for (auto itA = Directions().begin(); itA != Directions().end(); ++itA)
