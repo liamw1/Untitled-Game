@@ -20,7 +20,7 @@ public:
   }
   const T& operator[](int index) const
   {
-    EN_CORE_ASSERT(boundsCheck(index, MinZ, MaxZ), "Index is out of bounds!");
+    EN_CORE_ASSERT(Engine::Debug::BoundsCheck(index, MinZ, MaxZ), "Index is out of bounds!");
     return m_Begin[index - MinZ];
   }
 
@@ -43,7 +43,7 @@ public:
   }
   const ArrayBoxStrip<T, MinZ, MaxZ> operator[](int index) const
   {
-    EN_CORE_ASSERT(boundsCheck(index, MinY, MaxY), "Index is out of bounds!");
+    EN_CORE_ASSERT(Engine::Debug::BoundsCheck(index, MinY, MaxY), "Index is out of bounds!");
     return ArrayBoxStrip<T, MinZ, MaxZ>(m_Begin + (MaxZ - MinZ) * (index - MinY));
   }
 
@@ -109,16 +109,18 @@ public:
 
   ArrayBoxLayer<T, MinY, MaxY, MinZ, MaxZ> operator[](int index)
   {
-    return static_cast<const ArrayBox&>(*this).operator[](index);
+    return static_cast<const ArrayBox*>(this)->operator[](index);
   }
   const ArrayBoxLayer<T, MinY, MaxY, MinZ, MaxZ> operator[](int index) const
   {
     EN_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
-    EN_CORE_ASSERT(boundsCheck(index, MinX, MaxX), "Index is out of bounds!");
+    EN_CORE_ASSERT(Engine::Debug::BoundsCheck(index, MinX, MaxX), "Index is out of bounds!");
 
     static constexpr size_t stride = static_cast<size_t>(MaxY - MinY) * static_cast<size_t>(MaxZ - MinZ);
     return ArrayBoxLayer<T, MinY, MaxY, MinZ, MaxZ>(m_Data + stride * index);
   }
+
+  T* get() const { return m_Data; }
 
   constexpr size_t size() const { return c_Box.volume(); }
 
@@ -154,16 +156,16 @@ public:
   }
 
   template<std::integral IndexType, int... Args>
-  bool contentsEqual(const IBox3<IndexType>& compareSection, const ArrayBox<T, Args...>& arr, const IVec3<IndexType>& arrBase)
+  bool contentsEqual(const IBox3<IndexType>& compareSection, const ArrayBox<T, Args...>& arr, const IBox3<IndexType>& arrSection) const
   {
     if (!m_Data && !arr)
       return true;
     if (!m_Data || !arr)
       return false;
 
-    return compareSection.allOf([this, &compareSection, &arr, &arrBase](const IVec3<IndexType>& index)
+    return compareSection.allOf([this, &compareSection, &arr, &arrSection](const IVec3<IndexType>& index)
       {
-        return (*this)(index) == arr(arrBase + index - compareSection.min);
+        return (*this)(index) == arr(arrSection.min + index - compareSection.min);
       });
   }
 
@@ -184,11 +186,11 @@ public:
   }
 
   template<std::integral IndexType, int... Args>
-  void fill(const IBox3<IndexType>& fillSection, const ArrayBox<T, Args...>& arr, const IVec3<IndexType>& arrBase)
+  void fill(const IBox3<IndexType>& fillSection, const ArrayBox<T, Args...>& arr, const IBox3<IndexType>& arrSection)
   {
     EN_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
 
-    IVec3<IndexType> offset = arrBase - fillSection.min;
+    IVec3<IndexType> offset = arrSection.min - fillSection.min;
     fillSection.forEach([this, &arr, offset](const IVec3<IndexType>& index)
       {
         (*this)(index) = arr(index + offset);

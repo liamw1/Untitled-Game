@@ -29,12 +29,3 @@ namespace Engine
 #define EN_WARN(...)         ::Engine::Log::GetClientLogger()->warn(__VA_ARGS__)
 #define EN_ERROR(...)        ::Engine::Log::GetClientLogger()->error(__VA_ARGS__)
 #define EN_FATAL(...)        ::Engine::Log::GetClientLogger()->critical(__VA_ARGS__)
-
-// Assert macros.  Will be removed from code in non-debug builds
-#ifdef EN_ENABLE_ASSERTS
-  #define EN_ASSERT(x, ...) { if (!(x)) { EN_ERROR(__VA_ARGS__); EN_DEBUG_BREAK(); } }
-  #define EN_CORE_ASSERT(x, ...) { if (!(x)) { EN_CORE_ERROR(__VA_ARGS__); EN_DEBUG_BREAK(); } }
-#else
-  #define EN_ASSERT(x, ...)
-  #define EN_CORE_ASSERT(x, ...)
-#endif

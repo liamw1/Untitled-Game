@@ -51,7 +51,7 @@ public:
   const ArrayBoxStrip<T, MinY, MaxY> operator[](int index) const
   {
     EN_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
-    EN_CORE_ASSERT(boundsCheck(index, MinX, MaxX), "Index is out of bounds!");
+    EN_CORE_ASSERT(Engine::Debug::BoundsCheck(index, MinX, MaxX), "Index is out of bounds!");
     return ArrayBoxStrip<T, MinY, MaxY>(m_Data + c_Stride * (index - MinX));
   }
 

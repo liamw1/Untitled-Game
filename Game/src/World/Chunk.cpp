@@ -98,7 +98,7 @@ void Chunk::determineOpacity()
     for (blockIndex_t i = 0; i < Chunk::Size(); ++i)
       for (blockIndex_t j = 0; j < Chunk::Size(); ++j)
       {
-        BlockIndex blockIndex = BlockIndex::CreatePermuted(chunkLimits[IsUpstream(face)], i, j, GetCoordID(face));
+        BlockIndex blockIndex = BlockIndex::CreatePermuted(chunkLimits[IsUpstream(face)], i, j, AxisOf(face));
         if (Block::HasTransparency(m_Composition(blockIndex)))
         {
           nonOpaqueFaces |= Engine::Bit(static_cast<int>(face));

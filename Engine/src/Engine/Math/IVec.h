@@ -20,14 +20,15 @@ struct IVec2
   template<std::integral NewIntType>
   explicit constexpr operator IVec2<NewIntType>() const { return { static_cast<NewIntType>(i), static_cast<NewIntType>(j) }; }
 
+  constexpr IntType& operator[](Axis axis) { return this->operator[][static_cast<int>(axis)]; }
+  constexpr const IntType& operator[](Axis axis) const { return this->operator[][static_cast<int>(axis)]; }
   constexpr IntType& operator[](int index)
   {
     return const_cast<IntType&>(static_cast<const IVec2*>(this)->operator[](index));
   }
-
   constexpr const IntType& operator[](int index) const
   {
-    EN_CORE_ASSERT(boundsCheck(index, 0, 3), "Index is out of bounds!");
+    EN_CORE_ASSERT(Engine::Debug::BoundsCheck(index, 0, 3), "Index is out of bounds!");
     return *(&i + index);
   }
 
@@ -49,7 +50,7 @@ struct IVec2
   }
   constexpr IVec2<IntType> operator*=(IntType n)
   {
-    EN_CORE_ASSERT(n == 0 || (static_cast<IntType>(i * n) / n == i && static_cast<IntType>(j * n) / n == j), "Integer overflow!");
+    EN_CORE_ASSERT(Engine::Debug::OverflowCheck(n, i) && Engine::Debug::OverflowCheck(n, j), "Integer overflow!");
     i *= n;
     j *= n;
     return *this;
@@ -107,14 +108,15 @@ struct IVec3
   template<std::integral NewIntType>
   explicit constexpr operator IVec3<NewIntType>() const { return { static_cast<NewIntType>(i), static_cast<NewIntType>(j), static_cast<NewIntType>(k) }; }
 
+  constexpr IntType& operator[](Axis axis) { return this->operator[](static_cast<int>(axis)); }
+  constexpr const IntType& operator[](Axis axis) const { return this->operator[](static_cast<int>(axis)); }
   constexpr IntType& operator[](int index)
   {
     return const_cast<IntType&>(static_cast<const IVec3*>(this)->operator[](index));
   }
-
   constexpr const IntType& operator[](int index) const
   {
-    EN_CORE_ASSERT(boundsCheck(index, 0, 3), "Index is out of bounds!");
+    EN_CORE_ASSERT(Engine::Debug::BoundsCheck(index, 0, 3), "Index is out of bounds!");
     return *(&i + index);
   }
 
@@ -138,7 +140,7 @@ struct IVec3
   }
   constexpr IVec3<IntType> operator*=(IntType n)
   {
-    EN_CORE_ASSERT(n == 0 || (static_cast<IntType>(i * n) / n == i && static_cast<IntType>(j * n) / n == j && static_cast<IntType>(k * n) / n == k), "Integer overflow!");
+    EN_CORE_ASSERT(Engine::Debug::OverflowCheck(n, i) && Engine::Debug::OverflowCheck(n, j) && Engine::Debug::OverflowCheck(n, k), "Integer overflow!");
     i *= n;
     j *= n;
     k *= n;
@@ -182,9 +184,13 @@ struct IVec3
     return directions[static_cast<int>(direction)];
   }
 
+  static constexpr IVec3<IntType> CreatePermuted(IntType i, IntType j, IntType k, Axis permutation)
+  {
+    return CreatePermuted(i, j, k, static_cast<int>(permutation));
+  }
   static constexpr IVec3<IntType> CreatePermuted(IntType i, IntType j, IntType k, int permutation)
   {
-    EN_CORE_ASSERT(0 <= permutation && permutation < 3, "Not a valid permuation!");
+    EN_CORE_ASSERT(Engine::Debug::BoundsCheck(permutation, 0, 3), "Not a valid permuation!");
     switch (permutation)
     {
       default:

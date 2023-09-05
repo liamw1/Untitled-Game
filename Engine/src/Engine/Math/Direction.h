@@ -1,6 +1,31 @@
 #pragma once
 #include "Engine/Utilities/EnumUtilities.h"
 
+enum class Axis : int
+{
+  X, Y, Z,
+  Null,
+
+  Begin = 0, End = Null
+};
+using Axes = Engine::EnumIterator<Axis, Axis::Begin, Axis::End>;
+
+constexpr Axis Cycle(Axis axis)
+{
+  int axisID = static_cast<int>(axis);
+  return static_cast<Axis>((axisID + 1) % 3);
+}
+
+constexpr Axis GetMissing(Axis axisA, Axis axisB)
+{
+  int u = static_cast<int>(axisA);
+  int v = static_cast<int>(axisB);
+  int w = (2 * (u + v)) % 3;
+  return static_cast<Axis>(w);
+}
+
+
+
 enum class Direction : int
 {
   West, East, South, North, Bottom, Top,
@@ -30,5 +55,5 @@ constexpr Direction operator!(const Direction& direction)
 }
 
 constexpr bool IsUpstream(Direction direction) { return static_cast<int>(direction) % 2; }
-constexpr int GetCoordID(Direction direction) { return static_cast<int>(direction) / 2; }
-constexpr Direction FromCoordID(int coordID, bool isUpstream) { return static_cast<Direction>(2 * coordID + isUpstream); }
+constexpr Axis AxisOf(Direction direction) { return static_cast<Axis>(static_cast<int>(direction) / 2); }
+constexpr Direction ToDirection(Axis axis, bool isUpstream) { return static_cast<Direction>(2 * static_cast<int>(axis) + isUpstream); }

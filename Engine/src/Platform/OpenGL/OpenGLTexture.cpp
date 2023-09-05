@@ -45,7 +45,7 @@ namespace Engine
       EN_PROFILE_SCOPE("stbi_load --> OpenGLTexture2D::OpenGLTexture2D(const std::string&)");
       data = stbi_load(path.c_str(), &width, &height, &channels, 0);
     }
-    EN_CORE_ASSERT(data != nullptr, "Failed to load image!");
+    EN_CORE_ASSERT(data, "Failed to load image!");
     m_Width = width;
     m_Height = height;
 
@@ -155,7 +155,7 @@ namespace Engine
       EN_PROFILE_SCOPE("stbi_load --> OpenGLTexture2D::OpenGLTexture2D(const std::string&)");
       data = stbi_load(path.c_str(), &width, &height, &channels, 0);
     }
-    EN_CORE_ASSERT(data != nullptr, "Failed to load image for texture at {0}.", path);
+    EN_CORE_ASSERT(data, "Failed to load image for texture at {0}.", path);
     EN_CORE_ASSERT(width == m_TextureSize && height == m_TextureSize, "Texture has incorrect size!");
 
     GLenum internalFormat = 0, dataFormat = 0;

@@ -1,6 +1,5 @@
 #include "ENpch.h"
 #include "Application.h"
-#include "Core.h"
 #include "Engine/Renderer/Renderer.h"
 #include "Engine/Debug/Instrumentor.h"
 
@@ -8,7 +7,7 @@ namespace Engine
 {
   const char* ApplicationCommandLineArgs::operator[](int index) const
   {
-    EN_CORE_ASSERT(index < count, "Index is out of bounds!");
+    EN_CORE_ASSERT(Debug::BoundsCheck(index, 0, count), "Index is out of bounds!");
     return args[index];
   }
 
@@ -22,7 +21,7 @@ namespace Engine
   {
     EN_PROFILE_FUNCTION();
 
-    EN_CORE_ASSERT(s_Instance == nullptr, "Application already exists!");
+    EN_CORE_ASSERT(!s_Instance, "Application already exists!");
     s_Instance = this;
 
     m_Window = Window::Create(WindowProps(name));

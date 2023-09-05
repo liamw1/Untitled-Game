@@ -5,7 +5,6 @@
 
 #include "Engine/Core/Application.h"
 #include "Engine/Core/Concepts.h"
-#include "Engine/Core/Core.h"
 #include "Engine/Core/Input.h"
 #include "Engine/Core/KeyCodes.h"
 #include "Engine/Core/Layer.h"
@@ -14,6 +13,7 @@
 #include "Engine/Core/UID.h"
 #include "Engine/Core/Units.h"
 
+#include "Engine/Debug/Assert.h"
 #include "Engine/Debug/Instrumentor.h"
 #include "Engine/Debug/TestClasses.h"
 #include "Engine/Debug/Timer.h"
@@ -55,6 +55,7 @@
 #include "Engine/Threads/Threads.h"
 #include "Engine/Threads/WorkSet.h"
 #include "Engine/Threads/Containers/LRUCache.h"
+#include "Engine/Threads/Containers/MTArrayBox.h"
 #include "Engine/Threads/Containers/UnorderedMap.h"
 #include "Engine/Threads/Containers/UnorderedSet.h"
 

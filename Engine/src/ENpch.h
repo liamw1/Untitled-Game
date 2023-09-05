@@ -9,8 +9,8 @@
 #include <spdlog/sinks/stdout_color_sinks.h>
 #pragma warning(pop)
 
-#include "Engine/Core/Core.h"
 #include "Engine/Core/Log.h"
+#include "Engine/Debug/Assert.h"
 
 // ============================ Math ========================== //
 #include "Engine/Math/Vec.h"

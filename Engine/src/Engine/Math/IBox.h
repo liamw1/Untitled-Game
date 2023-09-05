@@ -60,43 +60,56 @@ struct IBox3
 
   constexpr IBox3<IntType>& expand(IntType n = 1)
   {
-    min -= n;
-    max += n;
-    EN_CORE_ASSERT(valid(), "Box is no longer valid after expansion!");
-
+    for (Axis axis : Axes())
+      expandAlongAxis(axis, n);
     return *this;
   }
+  constexpr IBox3<IntType>& expandAlongAxis(Axis axis, IntType n = 1)
+  {
+    min[axis] -= n;
+    max[axis] += n;
+    return *this;
+  }
+
   constexpr IBox3<IntType>& shrink(IntType n = 1)
   {
-    min += n;
-    max -= n;
-    EN_CORE_ASSERT(valid(), "Box is no longer valid after shrinking!");
-
+    for (Axis axis : Axes())
+      shrinkAlongAxis(axis, n);
+    return *this;
+  }
+  constexpr IBox3<IntType>& shrinkAlongAxis(Axis axis, IntType n = 1)
+  {
+    min[axis] += n;
+    max[axis] -= n;
     return *this;
   }
 
   constexpr IntType limitAlongDirection(Direction direction) const
   {
-    int coordID = GetCoordID(direction);
-    return IsUpstream(direction) ? max[coordID] - 1 : min[coordID];
+    Axis axis = AxisOf(direction);
+    return IsUpstream(direction) ? max[axis] - 1 : min[axis];
   }
 
   constexpr IBox3<IntType> face(Direction direction) const
   {
-    int coordID = GetCoordID(direction);
+    Axis axis = AxisOf(direction);
     IntType faceNormalLimit = limitAlongDirection(direction);
 
     IVec3<IntType> faceLower = min;
-    faceLower[coordID] = faceNormalLimit;
+    faceLower[axis] = faceNormalLimit;
 
     IVec3<IntType> faceUpper = max;
-    faceUpper[coordID] = faceNormalLimit + 1;
+    faceUpper[axis] = faceNormalLimit + 1;
 
     return { faceLower, faceUpper };
   }
   constexpr IBox3<IntType> faceInterior(Direction direction) const
   {
-    return face(direction).shrink();
+    Axis u = AxisOf(direction);
+    Axis v = Cycle(u);
+    Axis w = Cycle(v);
+
+    return face(direction).shrinkAlongAxis(v).shrinkAlongAxis(w);
   }
 
   constexpr IBox3<IntType> edge(Direction sideA, Direction sideB) const
@@ -109,7 +122,19 @@ struct IBox3
   }
   constexpr IBox3<IntType> edgeInterior(Direction sideA, Direction sideB) const
   {
-    return edge(sideA, sideB).shrink();
+    Axis edgeAxis = GetMissing(AxisOf(sideA), AxisOf(sideB));
+    return edge(sideA, sideB).shrinkAlongAxis(edgeAxis);
+  }
+
+  template<std::signed_integral IndexType>
+  constexpr IBox3<IntType> corner(const IVec3<IndexType>& offset) const
+  {
+    EN_CORE_ASSERT(Engine::Debug::EqualsOneOf(offset.i, -1, 1)
+                && Engine::Debug::EqualsOneOf(offset.j, -1, 1)
+                && Engine::Debug::EqualsOneOf(offset.k, -1, 1), "Offset IVec3 must contains values of -1 or 1!");
+
+    IVec3<IntType> cornerIndex(offset.i > 0 ? max.i - 1 : min.i, offset.j > 0 ? max.j - 1 : min.j, offset.k > 0 ? max.k - 1 : min.k);
+    return { cornerIndex, cornerIndex + 1 };
   }
 
   template<InvocableWithReturnType<bool, const IVec3<IntType>&> F>

@@ -12,7 +12,7 @@ bool Util::IsInRange(const GlobalIndex& chunkIndex, const GlobalIndex& originInd
 bool Util::BlockNeighborIsInAnotherChunk(const BlockIndex& blockIndex, Direction direction)
 {
   static constexpr blockIndex_t chunkLimits[2] = { 0, Chunk::Size() - 1 };
-  return blockIndex[GetCoordID(direction)] == chunkLimits[IsUpstream(direction)];
+  return blockIndex[AxisOf(direction)] == chunkLimits[IsUpstream(direction)];
 }
 
 std::array<Vec4, 6> Util::CalculateViewFrustumPlanes(const Mat4& viewProjection)

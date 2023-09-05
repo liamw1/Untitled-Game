@@ -106,7 +106,7 @@ private:
 
     BlockData();
 
-    void fill(const BlockBox& fillSection, std::shared_ptr<Chunk> chunk, const BlockIndex& chunkBase, bool fillLight = true);
+    void fill(const BlockBox& fillSection, std::shared_ptr<Chunk> chunk, const BlockBox& chunkSection, bool fillLight = true);
 
     constexpr BlockBox bounds() { return composition.box<blockIndex_t>(); }
   };

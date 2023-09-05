@@ -390,10 +390,10 @@ ChunkManager::BlockData::BlockData()
   : composition(ArrayBox<Block::Type, -1, Chunk::Size() + 1>(AllocationPolicy::ForOverWrite)),
     lighting(ArrayBox<Block::Light, -1, Chunk::Size() + 1>(AllocationPolicy::ForOverWrite)) {}
 
-void ChunkManager::BlockData::fill(const BlockBox& fillSection, std::shared_ptr<Chunk> chunk, const BlockIndex& chunkBase, bool fillLight)
+void ChunkManager::BlockData::fill(const BlockBox& fillSection, std::shared_ptr<Chunk> chunk, const BlockBox& chunkSection, bool fillLight)
 {
   if (chunk->composition())
-    composition.fill(fillSection, chunk->composition(), chunkBase);
+    composition.fill(fillSection, chunk->composition(), chunkSection);
   else
     composition.fill(fillSection, Block::Type::Air);
 
@@ -401,53 +401,9 @@ void ChunkManager::BlockData::fill(const BlockBox& fillSection, std::shared_ptr<
     return;
 
   if (chunk->lighting())
-    lighting.fill(fillSection, chunk->lighting(), chunkBase);
+    lighting.fill(fillSection, chunk->lighting(), chunkSection);
   else
     lighting.fill(fillSection, Block::Light::MaxValue());
-}
-
-
-
-template<typename T, int... Args>
-static BlockBox faceInterior(const ArrayBox<T, Args...>& arr, Direction direction)
-{
-  blockIndex_t limits[2] = { arr.box<blockIndex_t>().min.i, arr.box<blockIndex_t>().max.i - 1 };
-
-  blockIndex_t faceLimit = limits[IsUpstream(direction)];
-  BlockIndex fillLower = BlockIndex::CreatePermuted(faceLimit, 0, 0, GetCoordID(direction));
-  BlockIndex fillUpper = BlockIndex::CreatePermuted(faceLimit + 1, Chunk::Size(), Chunk::Size(), GetCoordID(direction));
-
-  return { fillLower, fillUpper };
-}
-
-template<typename T, int... Args>
-static BlockBox edgeInterior(const ArrayBox<T, Args...>& arr, Direction faceA, Direction faceB)
-{
-  EN_ASSERT(faceA != faceB, "Opposite faces cannot form an edge!");
-
-  blockIndex_t limits[2] = { arr.box<blockIndex_t>().min.i, arr.box<blockIndex_t>().max.i - 1 };
-
-  int u = GetCoordID(faceA);
-  int v = GetCoordID(faceB);
-  int w = (2 * (u + v)) % 3;  // Extracts coordID that runs along edge
-
-  BlockIndex fillLower(0);
-  fillLower[u] = limits[IsUpstream(faceA)];
-  fillLower[v] = limits[IsUpstream(faceB)];
-  BlockIndex fillUpper(Chunk::Size());
-  fillUpper[u] = fillLower[u] + 1;
-  fillUpper[v] = fillLower[v] + 1;
-
-  return { fillLower, fillUpper };
-}
-
-template<typename T, int... Args>
-static BlockBox corner(const ArrayBox<T, Args...>& arr, const GlobalIndex& offset)
-{
-  blockIndex_t limits[2] = { arr.box<blockIndex_t>().min.i, arr.box<blockIndex_t>().max.i - 1 };
-
-  BlockIndex fillIndex = { limits[offset.i > 0], limits[offset.j > 0], limits[offset.k > 0] };
-  return { fillIndex, fillIndex + 1 };
 }
 
 
@@ -469,7 +425,7 @@ ChunkManager::BlockData& ChunkManager::getBlockData(const GlobalIndex& chunkInde
       return blockData;
 
     BlockBox fillSection(0, Chunk::Size());
-    blockData.fill(fillSection, chunk, BlockIndex(0), getInteriorLighting);
+    blockData.fill(fillSection, chunk, Chunk::Bounds(), getInteriorLighting);
   }
 
   // Load blocks from cardinal neighbors
@@ -479,17 +435,11 @@ ChunkManager::BlockData& ChunkManager::getBlockData(const GlobalIndex& chunkInde
     if (!neighbor)
       continue;
 
-    BlockBox fillSection = faceInterior(blockData.composition, direction);
-    BlockIndex neighborBase = faceInterior(neighbor->composition(), !direction).min;
+    BlockBox fillSection = box.faceInterior(direction);
+    BlockBox neighborFace = Chunk::Bounds().face(!direction);
 
-    BlockBox fillSection2 = box.faceInterior(direction);
-
-    // EN_INFO("Fill Section: {0}, Fill Section 2: {1}", fillSection, fillSection2);
-    // EN_INFO("Neighbor Base: {0}", neighborBase);
-
-    blockData.fill(fillSection, neighbor, neighborBase);
+    blockData.fill(fillSection, neighbor, neighborFace);
   }
-  // EN_INFO("\n");
 
   // Load blocks from edge neighbors
   for (auto itA = Directions().begin(); itA != Directions().end(); ++itA)
@@ -506,10 +456,10 @@ ChunkManager::BlockData& ChunkManager::getBlockData(const GlobalIndex& chunkInde
       if (!neighbor)
         continue;
 
-      BlockBox fillSection = edgeInterior(blockData.composition, faceA, faceB);
-      BlockIndex neighborBase = edgeInterior(neighbor->composition(), !faceA, !faceB).min;
+      BlockBox fillSection = box.edgeInterior(faceA, faceB);
+      BlockBox neighborEdge = Chunk::Bounds().edge(!faceA, !faceB);
 
-      blockData.fill(fillSection, neighbor, neighborBase);
+      blockData.fill(fillSection, neighbor, neighborEdge);
     }
 
   // Load blocks from corner neighbors
@@ -524,8 +474,8 @@ ChunkManager::BlockData& ChunkManager::getBlockData(const GlobalIndex& chunkInde
         if (!neighbor)
           continue;
 
-        BlockBox fillSection = corner(blockData.composition, offset);
-        BlockIndex neighborCorner = corner(neighbor->composition(), -offset).min;
+        BlockBox fillSection = box.corner(offset);
+        BlockBox neighborCorner = Chunk::Bounds().corner(-offset);
 
         blockData.fill(fillSection, neighbor, neighborCorner);
       }
@@ -600,12 +550,12 @@ void ChunkManager::meshChunk(const GlobalIndex& chunkIndex)
         if (!Block::HasTransparency(quadTexture))
           for (int quadIndex = 0; quadIndex < 4; ++quadIndex)
           {
-            int u = GetCoordID(face);
-            int v = (u + 1) % 3;
-            int w = (u + 2) % 3;
+            Axis u = AxisOf(face);
+            Axis v = Cycle(u);
+            Axis w = Cycle(v);
 
-            Direction edgeADir = FromCoordID(v, Chunk::Vertex::GetOffset(face, quadIndex)[v]);
-            Direction edgeBDir = FromCoordID(w, Chunk::Vertex::GetOffset(face, quadIndex)[w]);
+            Direction edgeADir = ToDirection(v, Chunk::Vertex::GetOffset(face, quadIndex)[v]);
+            Direction edgeBDir = ToDirection(w, Chunk::Vertex::GetOffset(face, quadIndex)[w]);
 
             BlockIndex edgeA = blockIndex + BlockIndex::Dir(face) + BlockIndex::Dir(edgeADir);
             BlockIndex edgeB = blockIndex + BlockIndex::Dir(face) + BlockIndex::Dir(edgeBDir);
@@ -671,7 +621,7 @@ void ChunkManager::updateLighting(const GlobalIndex& chunkIndex)
   if (!blockData.lighting.filledWith(Chunk::Bounds(), Block::Light::MaxValue()))
   {
     newLighting = ArrayBox<Block::Light, 0, Chunk::Size()>(AllocationPolicy::ForOverWrite);
-    newLighting.fill(Chunk::Bounds(), blockData.lighting, BlockIndex(0));
+    newLighting.fill(Chunk::Bounds(), blockData.lighting, Chunk::Bounds());
   }
 
   auto [chunk, lock] = m_ChunkContainer.acquireChunk(chunkIndex);
@@ -682,8 +632,8 @@ void ChunkManager::updateLighting(const GlobalIndex& chunkIndex)
 
   for (Direction direction : Directions())
   {
-    BlockBox compareSection = faceInterior(chunk->lighting(), direction);
-    if (!newLighting.contentsEqual(compareSection, chunk->lighting(), compareSection.min))
+    BlockBox compareSection = Chunk::Bounds().faceInterior(direction);
+    if (!newLighting.contentsEqual(Chunk::Bounds().faceInterior(direction), chunk->lighting(), compareSection))
       additionalLightingUpdates.insert(chunkIndex + GlobalIndex::Dir(direction));
   }
   
@@ -697,8 +647,8 @@ void ChunkManager::updateLighting(const GlobalIndex& chunkIndex)
       if (faceB == !faceA)
         continue;
   
-      BlockBox compareSection = edgeInterior(chunk->lighting(), faceA, faceB);
-      if (!newLighting.contentsEqual(compareSection, chunk->lighting(), compareSection.min))
+      BlockBox compareSection = Chunk::Bounds().edgeInterior(faceA, faceB);
+      if (!newLighting.contentsEqual(compareSection, chunk->lighting(), compareSection))
       {
         additionalLightingUpdates.insert(chunkIndex + GlobalIndex::Dir(faceA));
         additionalLightingUpdates.insert(chunkIndex + GlobalIndex::Dir(faceB));
@@ -712,8 +662,8 @@ void ChunkManager::updateLighting(const GlobalIndex& chunkIndex)
       {
         GlobalIndex offset(i, j, k);
   
-        BlockBox compareSection = corner(chunk->lighting(), offset);
-        if (!newLighting.contentsEqual(compareSection, chunk->lighting(), compareSection.min))
+        BlockBox compareSection = Chunk::Bounds().corner(offset);
+        if (!newLighting.contentsEqual(compareSection, chunk->lighting(), compareSection))
         {
           GlobalIndex offsetI{}, offsetJ{}, offsetK{};
           offsetI.i = offset.i;
