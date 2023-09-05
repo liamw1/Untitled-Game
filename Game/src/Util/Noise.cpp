@@ -21,8 +21,8 @@ Vec2 hash(const Vec2& v)
 
 length_t Noise::FastSimplex2D(const Vec2& v)
 {
-  static constexpr length_t K1 = (Constants::SQRT3 - 1) / 2;
-  static constexpr length_t K2 = (3 - Constants::SQRT3) / 6;
+  static constexpr length_t K1 = (std::numbers::sqrt3_v<length_t> - 1) / 2;
+  static constexpr length_t K2 = (3 - std::numbers::sqrt3_v<length_t>) / 6;
 
   Vec2 i = glm::floor(v + (v.x + v.y) * K1);
   Vec2 a = v - i + Vec2((i.x + i.y) * K2);

@@ -5,7 +5,7 @@
 #include "Util/Util.h"
 
 ChunkManager::ChunkManager()
-  : m_ThreadPool(std::make_shared<Engine::Threads::ThreadPool>(1)),
+  : m_ThreadPool(std::make_shared<Engine::Threads::ThreadPool>(4)),
     m_LoadWork(m_ThreadPool, Engine::Threads::Priority::Normal),
     m_LightingWork(m_ThreadPool, Engine::Threads::Priority::Normal),
     m_LazyMeshingWork(m_ThreadPool, Engine::Threads::Priority::Low),
@@ -31,8 +31,8 @@ void ChunkManager::initialize()
     s_SSBO->bind();
   }
 
-  m_OpaqueMultiDrawArray = std::make_unique<Engine::MultiDrawIndexedArray<Chunk::DrawCommand>>(s_VertexBufferLayout);
-  m_TransparentMultiDrawArray = std::make_unique<Engine::MultiDrawIndexedArray<Chunk::DrawCommand>>(s_VertexBufferLayout);
+  m_OpaqueMultiDrawArray = std::make_unique<Engine::MultiDrawIndexedArray<ChunkDrawCommand>>(s_VertexBufferLayout);
+  m_TransparentMultiDrawArray = std::make_unique<Engine::MultiDrawIndexedArray<ChunkDrawCommand>>(s_VertexBufferLayout);
 
   LightUniforms lightUniforms;
   lightUniforms.sunIntensity = 1.0f;
@@ -47,7 +47,7 @@ void ChunkManager::render()
   std::array<Vec4, 6> frustumPlanes = Util::CalculateViewFrustumPlanes(viewProjection);
 
   // Shift each plane by distance equal to radius of sphere that circumscribes chunk
-  static constexpr length_t chunkSphereRadius = Constants::SQRT3 * Chunk::Length() / 2;
+  static constexpr length_t chunkSphereRadius = std::numbers::sqrt3_v<length_t> * Chunk::Length() / 2;
   for (Vec4& plane : frustumPlanes)
   {
     length_t planeNormalMag = glm::length(Vec3(plane));
@@ -73,7 +73,7 @@ void ChunkManager::render()
 
     std::vector<Float4> storageBufferData;
     storageBufferData.reserve(commandCount);
-    const std::vector<Chunk::DrawCommand>& drawCommands = m_OpaqueMultiDrawArray->getDrawCommandBuffer();
+    const std::vector<ChunkDrawCommand>& drawCommands = m_OpaqueMultiDrawArray->getDrawCommandBuffer();
     for (int i = 0; i < commandCount; ++i)
     {
       const GlobalIndex& chunkIndex = drawCommands[i].id();
@@ -87,7 +87,7 @@ void ChunkManager::render()
 
     m_OpaqueMultiDrawArray->bind();
     s_SSBO->update(storageBufferData.data(), 0, bufferDataSize);
-    Engine::RenderCommand::MultiDrawIndexed(drawCommands.data(), commandCount, sizeof(Chunk::DrawCommand));
+    Engine::RenderCommand::MultiDrawIndexed(drawCommands.data(), commandCount, sizeof(ChunkDrawCommand));
   }
 
   {
@@ -117,7 +117,7 @@ void ChunkManager::render()
     
         return distA > distB;
       });
-    m_TransparentMultiDrawArray->amend(commandCount, [&originIndex, &playerCameraPosition](Chunk::DrawCommand& drawCommand)
+    m_TransparentMultiDrawArray->amend(commandCount, [&originIndex, &playerCameraPosition](ChunkDrawCommand& drawCommand)
       {
         bool orderModified = drawCommand.sort(originIndex, playerCameraPosition);
         return orderModified;
@@ -125,7 +125,7 @@ void ChunkManager::render()
 
     std::vector<Float4> storageBufferData;
     storageBufferData.reserve(commandCount);
-    const std::vector<Chunk::DrawCommand>& drawCommands = m_TransparentMultiDrawArray->getDrawCommandBuffer();
+    const std::vector<ChunkDrawCommand>& drawCommands = m_TransparentMultiDrawArray->getDrawCommandBuffer();
     for (int i = 0; i < commandCount; ++i)
     {
       const GlobalIndex& chunkIndex = drawCommands[i].id();
@@ -139,7 +139,7 @@ void ChunkManager::render()
 
     m_TransparentMultiDrawArray->bind();
     s_SSBO->update(storageBufferData.data(), 0, bufferDataSize);
-    Engine::RenderCommand::MultiDrawIndexed(drawCommands.data(), commandCount, sizeof(Chunk::DrawCommand));
+    Engine::RenderCommand::MultiDrawIndexed(drawCommands.data(), commandCount, sizeof(ChunkDrawCommand));
   }
 }
 
@@ -290,6 +290,28 @@ void ChunkManager::loadChunk(const GlobalIndex& chunkIndex, Block::Type blockTyp
 
 
 
+ChunkManager::BlockData::BlockData()
+  : composition(ArrayBox<Block::Type, -1, Chunk::Size() + 1>(AllocationPolicy::ForOverWrite)),
+    lighting(ArrayBox<Block::Light, -1, Chunk::Size() + 1>(AllocationPolicy::ForOverWrite)) {}
+
+void ChunkManager::BlockData::fill(const BlockBox& fillSection, std::shared_ptr<Chunk> chunk, const BlockBox& chunkSection, bool fillLighting)
+{
+  if (chunk->composition())
+    composition.fill(fillSection, chunk->composition(), chunkSection);
+  else
+    composition.fill(fillSection, Block::Type::Air);
+
+  if (!fillLighting)
+    return;
+
+  if (chunk->lighting())
+    lighting.fill(fillSection, chunk->lighting(), chunkSection);
+  else
+    lighting.fill(fillSection, Block::Light::MaxValue());
+}
+
+
+
 void ChunkManager::addToLightingUpdateQueue(const GlobalIndex& chunkIndex)
 {
   m_LightingWork.submit(chunkIndex, &ChunkManager::lightingPacket, this, chunkIndex);
@@ -370,13 +392,13 @@ void ChunkManager::sendBlockUpdate(const GlobalIndex& chunkIndex, const BlockInd
   }
 }
 
-void ChunkManager::uploadMeshes(Engine::Threads::UnorderedSet<Chunk::DrawCommand>& commandQueue, std::unique_ptr<Engine::MultiDrawIndexedArray<Chunk::DrawCommand>>& multiDrawArray)
+void ChunkManager::uploadMeshes(Engine::Threads::UnorderedSet<ChunkDrawCommand>& commandQueue, std::unique_ptr<Engine::MultiDrawIndexedArray<ChunkDrawCommand>>& multiDrawArray)
 {
-  std::unordered_set<Chunk::DrawCommand> drawCommands = commandQueue.removeAll();
+  std::unordered_set<ChunkDrawCommand> drawCommands = commandQueue.removeAll();
   while (!drawCommands.empty())
   {
     auto nodeHandle = drawCommands.extract(drawCommands.begin());
-    Chunk::DrawCommand drawCommand = std::move(nodeHandle.value());
+    ChunkDrawCommand drawCommand = std::move(nodeHandle.value());
 
     multiDrawArray->remove(drawCommand.id());
     if (m_ChunkContainer.chunks().contains(drawCommand.id()))
@@ -384,64 +406,34 @@ void ChunkManager::uploadMeshes(Engine::Threads::UnorderedSet<Chunk::DrawCommand
   }
 }
 
-
-
-ChunkManager::BlockData::BlockData()
-  : composition(ArrayBox<Block::Type, -1, Chunk::Size() + 1>(AllocationPolicy::ForOverWrite)),
-    lighting(ArrayBox<Block::Light, -1, Chunk::Size() + 1>(AllocationPolicy::ForOverWrite)) {}
-
-void ChunkManager::BlockData::fill(const BlockBox& fillSection, std::shared_ptr<Chunk> chunk, const BlockBox& chunkSection, bool fillLight)
+std::pair<bool, bool> ChunkManager::getOnChunkBlockData(BlockData& blockData, const GlobalIndex& chunkIndex, bool getLighting) const
 {
-  if (chunk->composition())
-    composition.fill(fillSection, chunk->composition(), chunkSection);
-  else
-    composition.fill(fillSection, Block::Type::Air);
+  auto [chunk, lock] = m_ChunkContainer.acquireChunk(chunkIndex);
+  if (!chunk)
+    return { true, false };
 
-  if (!fillLight)
-    return;
-
-  if (chunk->lighting())
-    lighting.fill(fillSection, chunk->lighting(), chunkSection);
-  else
-    lighting.fill(fillSection, Block::Light::MaxValue());
+  BlockBox fillSection(0, Chunk::Size());
+  blockData.fill(fillSection, chunk, Chunk::Bounds(), getLighting);
+  return { false, !chunk->composition() };
 }
 
-
-
-ChunkManager::BlockData& ChunkManager::getBlockData(const GlobalIndex& chunkIndex, bool getInteriorLighting) const
+void ChunkManager::getCardinalNeighborBlockData(BlockData& blockData, const GlobalIndex& chunkIndex, bool getLighting) const
 {
-  EN_PROFILE_FUNCTION();
-
-  static constexpr BlockBox box(-1, Chunk::Size() + 1);
-
-  thread_local BlockData blockData;
-  blockData.composition.fill(Block::Type::Null);
-  blockData.lighting.fill(Block::Light());
-
-  // Load blocks from chunk
-  {
-    auto [chunk, lock] = m_ChunkContainer.acquireChunk(chunkIndex);
-    if (!chunk)
-      return blockData;
-
-    BlockBox fillSection(0, Chunk::Size());
-    blockData.fill(fillSection, chunk, Chunk::Bounds(), getInteriorLighting);
-  }
-
-  // Load blocks from cardinal neighbors
   for (Direction direction : Directions())
   {
     auto [neighbor, lock] = m_ChunkContainer.acquireChunk(chunkIndex + GlobalIndex::Dir(direction));
     if (!neighbor)
       continue;
 
-    BlockBox fillSection = box.faceInterior(direction);
+    BlockBox fillSection = BlockData::Bounds().faceInterior(direction);
     BlockBox neighborFace = Chunk::Bounds().face(!direction);
 
-    blockData.fill(fillSection, neighbor, neighborFace);
+    blockData.fill(fillSection, neighbor, neighborFace, getLighting);
   }
+}
 
-  // Load blocks from edge neighbors
+void ChunkManager::getEdgeNeighborBlockData(BlockData& blockData, const GlobalIndex& chunkIndex, bool getLighting) const
+{
   for (auto itA = Directions().begin(); itA != Directions().end(); ++itA)
     for (auto itB = itA.next(); itB != Directions().end(); ++itB)
     {
@@ -456,13 +448,15 @@ ChunkManager::BlockData& ChunkManager::getBlockData(const GlobalIndex& chunkInde
       if (!neighbor)
         continue;
 
-      BlockBox fillSection = box.edgeInterior(faceA, faceB);
+      BlockBox fillSection = BlockData::Bounds().edgeInterior(faceA, faceB);
       BlockBox neighborEdge = Chunk::Bounds().edge(!faceA, !faceB);
 
-      blockData.fill(fillSection, neighbor, neighborEdge);
+      blockData.fill(fillSection, neighbor, neighborEdge, getLighting);
     }
+}
 
-  // Load blocks from corner neighbors
+void ChunkManager::getCornerNeighborBlockData(BlockData& blockData, const GlobalIndex& chunkIndex, bool getLighting) const
+{
   for (int i = -1; i <= 1; i += 2)
     for (int j = -1; j <= 1; j += 2)
       for (int k = -1; k <= 1; k += 2)
@@ -474,35 +468,35 @@ ChunkManager::BlockData& ChunkManager::getBlockData(const GlobalIndex& chunkInde
         if (!neighbor)
           continue;
 
-        BlockBox fillSection = box.corner(offset);
+        BlockBox fillSection = BlockData::Bounds().corner(offset);
         BlockBox neighborCorner = Chunk::Bounds().corner(-offset);
 
-        blockData.fill(fillSection, neighbor, neighborCorner);
+        blockData.fill(fillSection, neighbor, neighborCorner, getLighting);
       }
-
-  return blockData;
 }
 
 void ChunkManager::meshChunk(const GlobalIndex& chunkIndex)
 {
+  BlockData& blockData = tl_BlockData;
+  blockData.composition.fill(Block::Type::Null);
+  blockData.lighting.fill(Block::Light());
+
+  auto [chunkWasUnloaded, chunkWasEmpty] = getOnChunkBlockData(blockData, chunkIndex);
+  if (chunkWasUnloaded || chunkWasEmpty)
   {
-    auto [chunk, lock] = m_ChunkContainer.acquireChunk(chunkIndex);
-    if (!chunk || !chunk->composition())
-    {
-      m_OpaqueCommandQueue.emplace(chunkIndex, false);
-      m_TransparentCommandQueue.emplace(chunkIndex, false);
-      return;
-    }
+    m_OpaqueCommandQueue.emplace(chunkIndex, false);
+    m_TransparentCommandQueue.emplace(chunkIndex, false);
+    return;
   }
 
   EN_PROFILE_FUNCTION();
 
-  const BlockData& blockData = getBlockData(chunkIndex);
-  if (blockData.composition(BlockIndex(0)) == Block::Type::Null)
-    return;
+  getCardinalNeighborBlockData(blockData, chunkIndex);
+  getEdgeNeighborBlockData(blockData, chunkIndex);
+  getCornerNeighborBlockData(blockData, chunkIndex);
 
-  Chunk::DrawCommand opaqueDraw(chunkIndex, true);
-  Chunk::DrawCommand transparentDraw(chunkIndex, false);
+  ChunkDrawCommand opaqueDraw(chunkIndex, true);
+  ChunkDrawCommand transparentDraw(chunkIndex, false);
   Chunk::Bounds().forEach([&blockData, &opaqueDraw, &transparentDraw](const BlockIndex& blockIndex)
     {
       Block::Type blockType = blockData.composition(blockIndex);
@@ -512,7 +506,7 @@ void ChunkManager::meshChunk(const GlobalIndex& chunkIndex)
 
       uint8_t enabledFaces = 0;
       bool blockIsTransparent = Block::HasTransparency(blockType);
-      Chunk::DrawCommand& draw = blockIsTransparent ? transparentDraw : opaqueDraw;
+      ChunkDrawCommand& draw = blockIsTransparent ? transparentDraw : opaqueDraw;
       for (Direction face : Directions())
       {
         BlockIndex cardinalIndex = blockIndex + BlockIndex::Dir(face);
@@ -528,7 +522,7 @@ void ChunkManager::meshChunk(const GlobalIndex& chunkIndex)
         {
           int transparentNeighbors = 0;
           int totalSunlight = 0;
-          BlockIndex vertexPosition = blockIndex + Chunk::Vertex::GetOffset(face, quadIndex);
+          BlockIndex vertexPosition = blockIndex + ChunkVertex::GetOffset(face, quadIndex);
           for (int I = -1; I <= 0; ++I)
             for (int J = -1; J <= 0; ++J)
               for (int K = -1; K <= 0; ++K)
@@ -554,8 +548,8 @@ void ChunkManager::meshChunk(const GlobalIndex& chunkIndex)
             Axis v = Cycle(u);
             Axis w = Cycle(v);
 
-            Direction edgeADir = ToDirection(v, Chunk::Vertex::GetOffset(face, quadIndex)[v]);
-            Direction edgeBDir = ToDirection(w, Chunk::Vertex::GetOffset(face, quadIndex)[w]);
+            Direction edgeADir = ToDirection(v, ChunkVertex::GetOffset(face, quadIndex)[v]);
+            Direction edgeBDir = ToDirection(w, ChunkVertex::GetOffset(face, quadIndex)[w]);
 
             BlockIndex edgeA = blockIndex + BlockIndex::Dir(face) + BlockIndex::Dir(edgeADir);
             BlockIndex edgeB = blockIndex + BlockIndex::Dir(face) + BlockIndex::Dir(edgeBDir);
@@ -581,20 +575,29 @@ void ChunkManager::meshChunk(const GlobalIndex& chunkIndex)
 
 void ChunkManager::updateLighting(const GlobalIndex& chunkIndex)
 {
-  BlockData& blockData = getBlockData(chunkIndex, false);
-  if (blockData.composition(BlockIndex(0)) == Block::Type::Null)
+  BlockData& blockData = tl_BlockData;
+  blockData.composition.fill(Block::Type::Null);
+  blockData.lighting.fill(Block::Light());
+
+  auto [chunkWasUnloaded, chunkWasEmpty] = getOnChunkBlockData(blockData, chunkIndex, false);
+  if (chunkWasUnloaded)
     return;
 
   EN_PROFILE_FUNCTION();
 
-  std::array<std::stack<BlockIndex>, Block::Light::MaxValue() + 1> light;
-  blockData.bounds().forEach([&blockData, &light](const BlockIndex& blockIndex)
-    {
-      if (Chunk::Bounds().encloses(blockIndex) || !Block::HasTransparency(blockData.composition(blockIndex)))
-        return;
+  // Only need data from cardinal neighbors for lighting updates
+  getCardinalNeighborBlockData(blockData, chunkIndex);
 
-      light[blockData.lighting(blockIndex).sunlight()].push(blockIndex);
-    });
+  std::array<std::stack<BlockIndex>, Block::Light::MaxValue() + 1> light;
+  for (Direction direction : Directions())
+  {
+    BlockBox faceInterior = BlockData::Bounds().faceInterior(direction);
+    faceInterior.forEach([&blockData, &light](const BlockIndex& blockIndex)
+      {
+        if (Block::HasTransparency(blockData.composition(blockIndex)))
+          light[blockData.lighting(blockIndex).sunlight()].push(blockIndex);
+      });
+  }
 
   for (int8_t intensity = Block::Light::MaxValue(); intensity > 0; --intensity)
     while (!light[intensity].empty())
@@ -618,7 +621,7 @@ void ChunkManager::updateLighting(const GlobalIndex& chunkIndex)
     }
 
   ArrayBox<Block::Light, 0, Chunk::Size()> newLighting;
-  if (!blockData.lighting.filledWith(Chunk::Bounds(), Block::Light::MaxValue()))
+  if (blockData.lighting.anyOf(Chunk::Bounds(), [](Block::Light blockLight) { return blockLight != Block::Light::MaxValue(); }))
   {
     newLighting = ArrayBox<Block::Light, 0, Chunk::Size()>(AllocationPolicy::ForOverWrite);
     newLighting.fill(Chunk::Bounds(), blockData.lighting, Chunk::Bounds());
@@ -648,42 +651,36 @@ void ChunkManager::updateLighting(const GlobalIndex& chunkIndex)
         continue;
   
       BlockBox compareSection = Chunk::Bounds().edgeInterior(faceA, faceB);
-      if (!newLighting.contentsEqual(compareSection, chunk->lighting(), compareSection))
-      {
-        additionalLightingUpdates.insert(chunkIndex + GlobalIndex::Dir(faceA));
-        additionalLightingUpdates.insert(chunkIndex + GlobalIndex::Dir(faceB));
-        additionalLightingUpdates.insert(chunkIndex + GlobalIndex::Dir(faceA) + GlobalIndex::Dir(faceB));
-      }
+      if (newLighting.contentsEqual(compareSection, chunk->lighting(), compareSection))
+        continue;
+
+      additionalLightingUpdates.insert(chunkIndex + GlobalIndex::Dir(faceA));
+      additionalLightingUpdates.insert(chunkIndex + GlobalIndex::Dir(faceB));
+      additionalLightingUpdates.insert(chunkIndex + GlobalIndex::Dir(faceA) + GlobalIndex::Dir(faceB));
     }
   
   for (int i = -1; i < 2; i += 2)
     for (int j = -1; j < 2; j += 2)
       for (int k = -1; k < 2; k += 2)
       {
-        GlobalIndex offset(i, j, k);
-  
-        BlockBox compareSection = Chunk::Bounds().corner(offset);
-        if (!newLighting.contentsEqual(compareSection, chunk->lighting(), compareSection))
-        {
-          GlobalIndex offsetI{}, offsetJ{}, offsetK{};
-          offsetI.i = offset.i;
-          offsetJ.j = offset.j;
-          offsetK.k = offset.k;
-  
-          additionalLightingUpdates.insert(chunkIndex + offsetI);
-          additionalLightingUpdates.insert(chunkIndex + offsetJ);
-          additionalLightingUpdates.insert(chunkIndex + offsetK);
-          additionalLightingUpdates.insert(chunkIndex + offsetI + offsetJ);
-          additionalLightingUpdates.insert(chunkIndex + offsetI + offsetK);
-          additionalLightingUpdates.insert(chunkIndex + offsetJ + offsetK);
-          additionalLightingUpdates.insert(chunkIndex + offset);
-        }
+        BlockBox compareSection = Chunk::Bounds().corner(GlobalIndex(i, j, k));
+        if (newLighting.contentsEqual(compareSection, chunk->lighting(), compareSection))
+          continue;
+
+        additionalLightingUpdates.insert(chunkIndex + GlobalIndex(i, 0, 0));
+        additionalLightingUpdates.insert(chunkIndex + GlobalIndex(0, j, 0));
+        additionalLightingUpdates.insert(chunkIndex + GlobalIndex(0, 0, k));
+        additionalLightingUpdates.insert(chunkIndex + GlobalIndex(i, j, 0));
+        additionalLightingUpdates.insert(chunkIndex + GlobalIndex(i, 0, k));
+        additionalLightingUpdates.insert(chunkIndex + GlobalIndex(0, j, k));
+        additionalLightingUpdates.insert(chunkIndex + GlobalIndex(i, j, k));
       }
 
   chunk->setLighting(std::move(newLighting));
-  addToLazyMeshUpdateQueue(chunkIndex);
   for (const GlobalIndex& updateIndex : additionalLightingUpdates)
     addToLightingUpdateQueue(updateIndex);
+
+  addToLazyMeshUpdateQueue(chunkIndex);
 }
 
 void ChunkManager::lightingPacket(const GlobalIndex& chunkIndex)

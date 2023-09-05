@@ -152,6 +152,20 @@ struct IBox3
   }
 
   template<InvocableWithReturnType<bool, const IVec3<IntType>&> F>
+  bool anyOf(const F& condition) const
+  {
+    EN_CORE_ASSERT(valid(), "Box is not valid!");
+
+    IVec3<IntType> index;
+    for (index.i = min.i; index.i < max.i; ++index.i)
+      for (index.j = min.j; index.j < max.j; ++index.j)
+        for (index.k = min.k; index.k < max.k; ++index.k)
+          if (condition(index))
+            return true;
+    return false;
+  }
+
+  template<InvocableWithReturnType<bool, const IVec3<IntType>&> F>
   bool noneOf(const F& condition) const
   {
     EN_CORE_ASSERT(valid(), "Box is not valid!");

@@ -11,6 +11,8 @@ Engine formatting guidelines:
     - This also applies to const shader variables
   Private/protected static variables should be preceeded with "s_", i.e. s_StaticVariable.
     - This also applies to globally inaccessible static variables in .cpp files
+  Private/protected thread local variables should be preceeded with "tl_", i.e. tl_ThreadLocalVariable.
+    - This also applies to globally inaccessible thread local variables in .cpp files
   Public non-static members should be camelCase.
   Private/protected non-static variables should be preceeded with "m_", i.e m_Variable.
   Shader uniforms should be preceeded with "u_".

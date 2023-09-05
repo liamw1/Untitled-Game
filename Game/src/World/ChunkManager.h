@@ -1,6 +1,7 @@
 #pragma once
 #include "Chunk.h"
 #include "ChunkContainer.h"
+#include "ChunkHelpers.h"
 
 class ChunkManager
 {
@@ -49,13 +50,25 @@ private:
     Terrain
   };
 
-  // Rendering
+  struct BlockData
+  {
+    ArrayBox<Block::Type, -1, Chunk::Size() + 1> composition;
+    ArrayBox<Block::Light, -1, Chunk::Size() + 1> lighting;
+
+    BlockData();
+
+    void fill(const BlockBox& fillSection, std::shared_ptr<Chunk> chunk, const BlockBox& chunkSection, bool fillLighting);
+
+    static constexpr BlockBox Bounds() { return BlockBox(-1, Chunk::Size() + 1); }
+  };
+
   struct LightUniforms
   {
     const float maxSunlight = static_cast<float>(Block::Light::MaxValue());
     float sunIntensity = 1.0f;
   };
 
+  // Rendering
   static inline std::unique_ptr<Engine::Shader> s_Shader;
   static inline std::unique_ptr<Engine::Uniform> s_LightUniform;
   static inline std::unique_ptr<Engine::StorageBuffer> s_SSBO;
@@ -66,12 +79,14 @@ private:
   static constexpr int c_StorageBufferBinding = 0;
   static constexpr uint32_t c_StorageBufferSize = static_cast<uint32_t>(Engine::Pow2(20));
 
-  Engine::Threads::UnorderedSet<Chunk::DrawCommand> m_OpaqueCommandQueue;
-  Engine::Threads::UnorderedSet<Chunk::DrawCommand> m_TransparentCommandQueue;
-  std::unique_ptr<Engine::MultiDrawIndexedArray<Chunk::DrawCommand>> m_OpaqueMultiDrawArray;
-  std::unique_ptr<Engine::MultiDrawIndexedArray<Chunk::DrawCommand>> m_TransparentMultiDrawArray;
+  Engine::Threads::UnorderedSet<ChunkDrawCommand> m_OpaqueCommandQueue;
+  Engine::Threads::UnorderedSet<ChunkDrawCommand> m_TransparentCommandQueue;
+  std::unique_ptr<Engine::MultiDrawIndexedArray<ChunkDrawCommand>> m_OpaqueMultiDrawArray;
+  std::unique_ptr<Engine::MultiDrawIndexedArray<ChunkDrawCommand>> m_TransparentMultiDrawArray;
 
   // Multi-threading
+  static inline thread_local BlockData tl_BlockData;
+
   ChunkContainer m_ChunkContainer;
   std::shared_ptr<Engine::Threads::ThreadPool> m_ThreadPool;
   Engine::Threads::WorkSet<GlobalIndex, void> m_LoadWork;
@@ -95,23 +110,14 @@ private:
   */
   void sendBlockUpdate(const GlobalIndex& chunkIndex, const BlockIndex& blockIndex);
 
-  void uploadMeshes(Engine::Threads::UnorderedSet<Chunk::DrawCommand>& commandQueue, std::unique_ptr<Engine::MultiDrawIndexedArray<Chunk::DrawCommand>>& multiDrawArray);
+  void uploadMeshes(Engine::Threads::UnorderedSet<ChunkDrawCommand>& commandQueue, std::unique_ptr<Engine::MultiDrawIndexedArray<ChunkDrawCommand>>& multiDrawArray);
 
   // Meshing
 private:
-  struct BlockData
-  {
-    ArrayBox<Block::Type, -1, Chunk::Size() + 1> composition;
-    ArrayBox<Block::Light, -1, Chunk::Size() + 1> lighting;
-
-    BlockData();
-
-    void fill(const BlockBox& fillSection, std::shared_ptr<Chunk> chunk, const BlockBox& chunkSection, bool fillLight = true);
-
-    constexpr BlockBox bounds() { return composition.box<blockIndex_t>(); }
-  };
-
-  BlockData& getBlockData(const GlobalIndex& chunkIndex, bool getInteriorLighting = true) const;
+  std::pair<bool, bool> getOnChunkBlockData(BlockData& blockData, const GlobalIndex& chunkIndex, bool getLighting = true) const;
+  void getCardinalNeighborBlockData(BlockData& blockData, const GlobalIndex& chunkIndex, bool getLighting = true) const;
+  void getEdgeNeighborBlockData(BlockData& blockData, const GlobalIndex& chunkIndex, bool getLighting = true) const;
+  void getCornerNeighborBlockData(BlockData& blockData, const GlobalIndex& chunkIndex, bool getLighting = true) const;
 
   /*
     Generates simplistic mesh in a compressed format based on chunk compostion.

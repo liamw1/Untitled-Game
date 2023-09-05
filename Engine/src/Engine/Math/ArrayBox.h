@@ -145,16 +145,6 @@ public:
       });
   }
 
-  template<std::integral IndexType>
-  bool filledWith(const IBox3<IndexType>& section, const T& value) const
-  {
-    EN_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
-    return section.allOf([this, &value](const IVec3<IndexType>& index)
-      {
-        return (*this)(index) == value;
-      });
-  }
-
   template<std::integral IndexType, int... Args>
   bool contentsEqual(const IBox3<IndexType>& compareSection, const ArrayBox<T, Args...>& arr, const IBox3<IndexType>& arrSection) const
   {
@@ -166,6 +156,36 @@ public:
     return compareSection.allOf([this, &compareSection, &arr, &arrSection](const IVec3<IndexType>& index)
       {
         return (*this)(index) == arr(arrSection.min + index - compareSection.min);
+      });
+  }
+
+  template<std::integral IndexType, InvocableWithReturnType<bool, T> F>
+  bool allOf(const IBox3<IndexType>& section, const F& condition)
+  {
+    EN_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
+    return section.allOf([this, &condition](const IVec3<IndexType>& index)
+      {
+        return condition((*this)(index));
+      });
+  }
+
+  template<std::integral IndexType, InvocableWithReturnType<bool, T> F>
+  bool anyOf(const IBox3<IndexType>& section, const F& condition)
+  {
+    EN_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
+    return section.anyOf([this, &condition](const IVec3<IndexType>& index)
+      {
+        return condition((*this)(index));
+      });
+  }
+
+  template<std::integral IndexType, InvocableWithReturnType<bool, T> F>
+  bool noneOf(const IBox3<IndexType>& section, const F& condition)
+  {
+    EN_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
+    return section.noneOf([this, &condition](const IVec3<IndexType>& index)
+      {
+        return condition((*this)(index));
       });
   }
 

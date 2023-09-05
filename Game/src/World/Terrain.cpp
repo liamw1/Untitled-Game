@@ -100,7 +100,7 @@ static std::pair<Biome::Type, Float2> getRegionVoronoiPoint(const SurfaceMapInde
 {
   uint32_t key = std::hash<SurfaceMapIndex>{}(regionIndex);
   float r = 0.5f * random(key);
-  float theta = 2 * Constants::PI * random(hash(key));
+  float theta = 2 * std::numbers::pi_v<float> * random(hash(key));
 
   Biome::Type biomeType = randomBiome(key);
   Float2 relativeLocation(r * std::cos(theta), r * std::sin(theta));

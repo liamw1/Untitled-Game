@@ -7,13 +7,6 @@ using seconds = float;
 constexpr length_t operator"" _m(long double x) { return static_cast<length_t>(x); }
 constexpr length_t operator"" _m(uint64_t x) { return static_cast<length_t>(x); }
 
-namespace Constants
-{
-  constexpr length_t PI = static_cast<length_t>(3.1415926535897932384626433832795028841971693993751L);
-  constexpr length_t SQRT2 = static_cast<length_t>(1.414213562373095048801688724209698078569671875377L);
-  constexpr length_t SQRT3 = static_cast<length_t>(1.7320508075688772935274463415058723669428052538104L);
-}
-
 class Angle
 {
 public:

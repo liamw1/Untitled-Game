@@ -1,5 +1,6 @@
 #pragma once
 #include "Chunk.h"
+#include "ChunkHelpers.h"
 
 // Will be removed eventually and replaced with settings system
 constexpr int c_RenderDistance = 16;

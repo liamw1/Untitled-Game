@@ -64,96 +64,12 @@ public:
   static constexpr BlockBox Bounds() { return BlockBox(0, Chunk::Size()); }
   static constexpr GlobalBox Stencil(const GlobalIndex& chunkIndex) { return GlobalBox(-1, 2) + chunkIndex; }
 
-  class Vertex
-  {
-  public:
-    Vertex();
-    Vertex(const BlockIndex& vertexPlacement, int quadIndex, Block::Texture texture, int sunlight, int ambientOcclusion);
-
-    static const BlockIndex& GetOffset(Direction face, int quadIndex);
-
-  private:
-    uint32_t m_VertexData;
-    uint32_t m_Lighting;
-  };
-
-  class Quad
-  {
-  public:
-    Quad(const BlockIndex& blockIndex, Direction face, Block::Texture texture, const std::array<int, 4>& sunlight, const std::array<int, 4>& ambientOcclusion);
-
-  private:
-    std::array<Vertex, 4> m_Vertices;
-  };
-
-  class Voxel
-  {
-  public:
-    Voxel(const BlockIndex& blockIndex, uint8_t enabledFaces, int firstVertex);
-
-    const BlockIndex& index() const;
-    bool faceEnabled(Direction direction) const;
-    int baseVertex() const;
-
-  private:
-    BlockIndex m_Index;
-    uint8_t m_EnabledFaces;
-    int m_BaseVertex;
-  };
-
-  class DrawCommand : public Engine::MultiDrawIndexedCommand<GlobalIndex, DrawCommand>, private Engine::NonCopyable
-  {
-  public:
-    DrawCommand(const GlobalIndex& chunkIndex, bool canPruneIndices);
-
-    DrawCommand(DrawCommand&& other) noexcept;
-    DrawCommand& operator=(DrawCommand&& other) noexcept;
-
-    bool operator==(const DrawCommand& other) const;
-
-    int vertexCount() const;
-
-    const void* indexData();
-    const void* vertexData();
-    void prune();
-
-    void addQuad(const BlockIndex& blockIndex, Direction face, Block::Texture texture, const std::array<int, 4>& sunlight, const std::array<int, 4>& ambientOcclusion);
-    void addVoxel(const BlockIndex& blockIndex, uint8_t enabledFaces);
-
-    void setIndices();
-    bool sort(const GlobalIndex& originIndex, const Vec3& viewPosition);
-
-  private:
-    std::vector<Quad> m_Quads;
-    std::vector<Voxel> m_Voxels;
-    std::vector<uint32_t> m_Indices;
-    BlockIndex m_SortState;
-    bool m_CanPruneIndices;
-
-    int m_VoxelBaseVertex;
-
-    void addQuadIndices(int baseVertex);
-    void setIndices(const GlobalIndex& originIndex, const Vec3& viewPosition);
-  };
-
 private:
   mutable std::mutex m_Mutex;
   ArrayBox<Block::Type, 0, c_ChunkSize> m_Composition;
   ArrayBox<Block::Light, 0, c_ChunkSize> m_Lighting;
   std::atomic<uint16_t> m_NonOpaqueFaces;
 };
-
-namespace std
-{
-  template<>
-  struct hash<Chunk::DrawCommand>
-  {
-    int operator()(const Chunk::DrawCommand& drawCommand) const
-    {
-      return std::hash<GlobalIndex>()(drawCommand.id());
-    }
-  };
-}
 
 struct ChunkWithLock
 {

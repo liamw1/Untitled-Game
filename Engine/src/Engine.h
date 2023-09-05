@@ -55,7 +55,6 @@
 #include "Engine/Threads/Threads.h"
 #include "Engine/Threads/WorkSet.h"
 #include "Engine/Threads/Containers/LRUCache.h"
-#include "Engine/Threads/Containers/MTArrayBox.h"
 #include "Engine/Threads/Containers/UnorderedMap.h"
 #include "Engine/Threads/Containers/UnorderedSet.h"
 
