@@ -7,6 +7,7 @@ namespace Engine::Threads
   class WorkSet
   {
   public:
+    WorkSet() = default;
     WorkSet(const std::shared_ptr<ThreadPool>& threadPool, Priority priority)
       : m_ThreadPool(threadPool), m_Priority(priority) {}
 

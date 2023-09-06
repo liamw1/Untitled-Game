@@ -4,8 +4,8 @@
 enum class Axis : int
 {
   X, Y, Z,
-  Null,
 
+  Null,
   Begin = 0, End = Null
 };
 using Axes = Engine::EnumIterator<Axis, Axis::Begin, Axis::End>;
@@ -29,8 +29,8 @@ constexpr Axis GetMissing(Axis axisA, Axis axisB)
 enum class Direction : int
 {
   West, East, South, North, Bottom, Top,
-  Null,
 
+  Null,
   Begin = 0, End = Null
 };
 using Directions = Engine::EnumIterator<Direction, Direction::Begin, Direction::End>;

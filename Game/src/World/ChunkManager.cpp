@@ -5,12 +5,11 @@
 #include "Util/Util.h"
 
 ChunkManager::ChunkManager()
-  : m_ThreadPool(std::make_shared<Engine::Threads::ThreadPool>(4)),
+  : m_ThreadPool(std::make_shared<Engine::Threads::ThreadPool>(1)),
     m_LoadWork(m_ThreadPool, Engine::Threads::Priority::Normal),
     m_LightingWork(m_ThreadPool, Engine::Threads::Priority::Normal),
     m_LazyMeshingWork(m_ThreadPool, Engine::Threads::Priority::Low),
     m_ForceMeshingWork(m_ThreadPool, Engine::Threads::Priority::High),
-    m_LoadMode(LoadMode::NotSet),
     m_PrevPlayerOriginIndex(Player::OriginIndex()) {}
 
 ChunkManager::~ChunkManager()
@@ -266,16 +265,6 @@ void ChunkManager::removeBlock(const GlobalIndex& chunkIndex, const BlockIndex& 
   sendBlockUpdate(chunkIndex, blockIndex);
 }
 
-void ChunkManager::setLoadModeTerrain()
-{
-  m_LoadMode = LoadMode::Terrain;
-}
-
-void ChunkManager::setLoadModeVoid()
-{
-  m_LoadMode = LoadMode::Void;
-}
-
 void ChunkManager::loadChunk(const GlobalIndex& chunkIndex, Block::Type blockType)
 {
   std::shared_ptr chunk = std::make_shared<Chunk>(chunkIndex);
@@ -334,14 +323,7 @@ void ChunkManager::generateNewChunk(const GlobalIndex& chunkIndex)
 {
   EN_PROFILE_FUNCTION();
 
-  std::shared_ptr<Chunk> chunk;
-  switch (m_LoadMode)
-  {
-    case LoadMode::NotSet:  EN_ERROR("Load mode not set!");               break;
-    case LoadMode::Void:    chunk = Terrain::GenerateEmpty(chunkIndex);   break;
-    case LoadMode::Terrain: chunk = Terrain::GenerateNew(chunkIndex);     break;
-    default:                EN_ERROR("Unknown load mode!");
-  }
+  std::shared_ptr<Chunk> chunk = Terrain::GenerateNew(chunkIndex);
 
   bool insertionSuccess = m_ChunkContainer.insert(chunkIndex, std::move(chunk));
   if (insertionSuccess)
@@ -575,6 +557,8 @@ void ChunkManager::meshChunk(const GlobalIndex& chunkIndex)
 
 void ChunkManager::updateLighting(const GlobalIndex& chunkIndex)
 {
+  static constexpr int8_t attenuation = 1;
+
   BlockData& blockData = tl_BlockData;
   blockData.composition.fill(Block::Type::Null);
   blockData.lighting.fill(Block::Light());
@@ -588,22 +572,68 @@ void ChunkManager::updateLighting(const GlobalIndex& chunkIndex)
   // Only need data from cardinal neighbors for lighting updates
   getCardinalNeighborBlockData(blockData, chunkIndex);
 
-  std::array<std::stack<BlockIndex>, Block::Light::MaxValue() + 1> light;
-  for (Direction direction : Directions())
+  // Perform initial propogation of sunlight downward until light hits opaque block
+  ArrayRect<blockIndex_t, 0, Chunk::Size()> attenuatedSunlightExtents(Chunk::Size());
+  BlockData::Bounds().faceInterior(Direction::Top).forEach([&blockData, &attenuatedSunlightExtents](const BlockIndex& blockIndex)
+    {
+      BlockIndex propogationIndex = blockIndex;
+      if (blockData.lighting(propogationIndex) != Block::Light::MaxValue())
+        return;
+
+      for (propogationIndex.k = blockIndex.k - 1; propogationIndex.k >= Chunk::Bounds().min.k; --propogationIndex.k)
+      {
+        if (!Block::HasTransparency(blockData.composition(propogationIndex)))
+          break;
+
+        blockData.lighting(propogationIndex) = Block::Light::MaxValue();
+      }
+
+      blockIndex_t i = propogationIndex.i;
+      blockIndex_t j = propogationIndex.j;
+      blockIndex_t k = propogationIndex.k + 1;
+
+      if (j - 1 > 0)
+        attenuatedSunlightExtents[i][j - 1] = std::min(attenuatedSunlightExtents[i][j - 1], k);
+      if (j + 1 < Chunk::Size())
+        attenuatedSunlightExtents[i][j + 1] = std::min(attenuatedSunlightExtents[i][j + 1], k);
+      if (i - 1 > 0)
+        attenuatedSunlightExtents[i - 1][j] = std::min(attenuatedSunlightExtents[i - 1][j], k);
+      if (i + 1 < Chunk::Size())
+        attenuatedSunlightExtents[i + 1][j] = std::min(attenuatedSunlightExtents[i + 1][j], k);
+    });
+
+  // Light unlit blocks neighboring sunlight with attenuated sunlight value and add them to the propogation stack
+  std::array<std::stack<BlockIndex>, Block::Light::MaxValue() + 1> sunlight;
+  attenuatedSunlightExtents.box<blockIndex_t>().forEach([&blockData, &sunlight, &attenuatedSunlightExtents](const IVec2<blockIndex_t>& index)
+    {
+      for (BlockIndex blockIndex(index, attenuatedSunlightExtents(index)); blockIndex.k < Chunk::Size(); ++blockIndex.k)
+      {
+        if (!Block::HasTransparency(blockData.composition(blockIndex)) || blockData.lighting(blockIndex) == Block::Light::MaxValue())
+          continue;
+
+        int8_t sunlightIntensity = Block::Light::MaxValue() - attenuation;
+        blockData.lighting(blockIndex) = sunlightIntensity;
+        sunlight[sunlightIntensity].push(blockIndex);
+      }
+    });
+
+  // Add lit blocks in neighboring chunk to propogation stack
+  for (Direction direction = Direction::West; direction < Direction::Top; ++direction)
   {
     BlockBox faceInterior = BlockData::Bounds().faceInterior(direction);
-    faceInterior.forEach([&blockData, &light](const BlockIndex& blockIndex)
+    faceInterior.forEach([&blockData, &sunlight](const BlockIndex& blockIndex)
       {
         if (Block::HasTransparency(blockData.composition(blockIndex)))
-          light[blockData.lighting(blockIndex).sunlight()].push(blockIndex);
+          sunlight[blockData.lighting(blockIndex).sunlight()].push(blockIndex);
       });
   }
 
+  // Propogate attenuated sunlight
   for (int8_t intensity = Block::Light::MaxValue(); intensity > 0; --intensity)
-    while (!light[intensity].empty())
+    while (!sunlight[intensity].empty())
     {
-      BlockIndex lightIndex = light[intensity].top();
-      light[intensity].pop();
+      BlockIndex lightIndex = sunlight[intensity].top();
+      sunlight[intensity].pop();
 
       for (Direction direction : Directions())
       {
@@ -611,12 +641,12 @@ void ChunkManager::updateLighting(const GlobalIndex& chunkIndex)
         if (!Chunk::Bounds().encloses(lightNeighbor) || !Block::HasTransparency(blockData.composition(lightNeighbor)))
           continue;
 
-        int8_t neighborIntensity = intensity == Block::Light::MaxValue() && direction == Direction::Bottom ? intensity : intensity - 1;
+        int8_t neighborIntensity = intensity - attenuation;
         if (neighborIntensity <= blockData.lighting(lightNeighbor).sunlight())
           continue;
 
         blockData.lighting(lightNeighbor) = neighborIntensity;
-        light[neighborIntensity].push(lightNeighbor);
+        sunlight[neighborIntensity].push(lightNeighbor);
       }
     }
 
@@ -639,17 +669,17 @@ void ChunkManager::updateLighting(const GlobalIndex& chunkIndex)
     if (!newLighting.contentsEqual(Chunk::Bounds().faceInterior(direction), chunk->lighting(), compareSection))
       additionalLightingUpdates.insert(chunkIndex + GlobalIndex::Dir(direction));
   }
-  
+
   for (auto itA = Directions().begin(); itA != Directions().end(); ++itA)
     for (auto itB = itA.next(); itB != Directions().end(); ++itB)
     {
       Direction faceA = *itA;
       Direction faceB = *itB;
-  
+
       // Opposite faces cannot form edge
       if (faceB == !faceA)
         continue;
-  
+
       BlockBox compareSection = Chunk::Bounds().edgeInterior(faceA, faceB);
       if (newLighting.contentsEqual(compareSection, chunk->lighting(), compareSection))
         continue;
@@ -658,7 +688,7 @@ void ChunkManager::updateLighting(const GlobalIndex& chunkIndex)
       additionalLightingUpdates.insert(chunkIndex + GlobalIndex::Dir(faceB));
       additionalLightingUpdates.insert(chunkIndex + GlobalIndex::Dir(faceA) + GlobalIndex::Dir(faceB));
     }
-  
+
   for (int i = -1; i < 2; i += 2)
     for (int j = -1; j < 2; j += 2)
       for (int k = -1; k < 2; k += 2)

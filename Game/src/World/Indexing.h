@@ -1,5 +1,5 @@
 #pragma once
-#include <Engine/Math/IBox.h>
+#include <Engine/Math/IBox3.h>
 #include <Engine/Utilities/BitUtilities.h>
 
 // =========== Precision selection for Indices ============= //

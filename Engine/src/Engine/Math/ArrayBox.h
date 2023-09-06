@@ -1,5 +1,5 @@
 #pragma once
-#include "IBox.h"
+#include "IBox3.h"
 #include "Engine/Utilities/Constraints.h"
 
 enum class AllocationPolicy
@@ -153,14 +153,15 @@ public:
     if (!m_Data || !arr)
       return false;
 
-    return compareSection.allOf([this, &compareSection, &arr, &arrSection](const IVec3<IndexType>& index)
+    IVec3<IndexType> offset = arrSection.min - compareSection.min;
+    return compareSection.allOf([this, &arr, &offset](const IVec3<IndexType>& index)
       {
-        return (*this)(index) == arr(arrSection.min + index - compareSection.min);
+        return (*this)(index) == arr(index + offset);
       });
   }
 
   template<std::integral IndexType, InvocableWithReturnType<bool, T> F>
-  bool allOf(const IBox3<IndexType>& section, const F& condition)
+  bool allOf(const IBox3<IndexType>& section, const F& condition) const
   {
     EN_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
     return section.allOf([this, &condition](const IVec3<IndexType>& index)
@@ -170,7 +171,7 @@ public:
   }
 
   template<std::integral IndexType, InvocableWithReturnType<bool, T> F>
-  bool anyOf(const IBox3<IndexType>& section, const F& condition)
+  bool anyOf(const IBox3<IndexType>& section, const F& condition) const
   {
     EN_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
     return section.anyOf([this, &condition](const IVec3<IndexType>& index)
@@ -180,7 +181,7 @@ public:
   }
 
   template<std::integral IndexType, InvocableWithReturnType<bool, T> F>
-  bool noneOf(const IBox3<IndexType>& section, const F& condition)
+  bool noneOf(const IBox3<IndexType>& section, const F& condition) const
   {
     EN_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
     return section.noneOf([this, &condition](const IVec3<IndexType>& index)
@@ -211,7 +212,7 @@ public:
     EN_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
 
     IVec3<IndexType> offset = arrSection.min - fillSection.min;
-    fillSection.forEach([this, &arr, offset](const IVec3<IndexType>& index)
+    fillSection.forEach([this, &arr, &offset](const IVec3<IndexType>& index)
       {
         (*this)(index) = arr(index + offset);
       });

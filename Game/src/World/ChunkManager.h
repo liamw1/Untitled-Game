@@ -36,20 +36,10 @@ public:
   void placeBlock(GlobalIndex chunkIndex, BlockIndex blockIndex, Direction face, Block::Type blockType);
   void removeBlock(const GlobalIndex& chunkIndex, const BlockIndex& blockIndex);
 
-  void setLoadModeTerrain();
-  void setLoadModeVoid();
-
   // Debug
   void loadChunk(const GlobalIndex& chunkIndex, Block::Type blockType);
 
 private:
-  enum class LoadMode
-  {
-    NotSet,
-    Void,
-    Terrain
-  };
-
   struct BlockData
   {
     ArrayBox<Block::Type, -1, Chunk::Size() + 1> composition;
@@ -94,7 +84,6 @@ private:
   Engine::Threads::WorkSet<GlobalIndex, void> m_LazyMeshingWork;
   Engine::Threads::WorkSet<GlobalIndex, void> m_ForceMeshingWork;
 
-  LoadMode m_LoadMode;
   GlobalIndex m_PrevPlayerOriginIndex;
 
   void addToLightingUpdateQueue(const GlobalIndex& chunkIndex);

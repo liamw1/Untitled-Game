@@ -16,7 +16,6 @@ void World::initialize()
 {
   m_ChunkManager.initialize();
 
-  m_ChunkManager.setLoadModeTerrain();
   // m_ChunkManager.loadChunk({ 0, -1, 2 }, Block::Type::Air);
   // m_ChunkManager.loadChunk({ 0, -1, 1 }, Block::Type::Sand);
 

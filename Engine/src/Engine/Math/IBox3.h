@@ -1,5 +1,6 @@
 #pragma once
-#include "IVec.h"
+#include "IVec3.h"
+#include "Engine/Core/Concepts.h"
 
 template<std::integral IntType>
 struct IBox3
@@ -9,9 +10,9 @@ struct IBox3
 
   constexpr IBox3()
     : min(), max() {}
-  constexpr IBox3(const IVec3<IntType>& minCorner, const IVec3<IntType>& maxCorner)
-    : min(minCorner), max(maxCorner) {}
   constexpr IBox3(IntType minCorner, IntType maxCorner)
+    : min(minCorner), max(maxCorner) {}
+  constexpr IBox3(const IVec3<IntType>& minCorner, const IVec3<IntType>& maxCorner)
     : min(minCorner), max(maxCorner) {}
   constexpr IBox3(IntType iMin, IntType jMin, IntType kMin, IntType iMax, IntType jMax, IntType kMax)
     : min(iMin, jMin, kMin), max(iMax, jMax, kMax) {}
@@ -20,25 +21,48 @@ struct IBox3
   explicit constexpr operator IBox3<NewIntType>() const { return IBox3<NewIntType>(static_cast<IVec3<NewIntType>>(min), static_cast<IVec3<NewIntType>>(max)); }
 
   // Define lexicographical ordering on stored IVec3s
-  constexpr std::strong_ordering operator<=>(const IBox3<IntType>& other) const = default;
+  constexpr std::strong_ordering operator<=>(const IBox3& other) const = default;
 
-  constexpr IBox3 operator+(const IVec3<IntType>& intVec3) const
+  constexpr IBox3& operator+=(const IVec3<IntType>& iVec3)
   {
-    return IBox3(min + intVec3, max + intVec3);
+    min += iVec3;
+    max += iVec3;
+    return *this;
+  }
+  constexpr IBox3& operator-=(const IVec3<IntType>& iVec3) { return *this += -iVec3; }
+  constexpr IBox3& operator+=(IntType n) { return *this += IBox3(n, n); }
+  constexpr IBox3& operator-=(IntType n) { return *this -= IBox3(n, n); }
+
+  constexpr IBox3& operator*=(IntType n)
+  {
+    min *= n;
+    max *= n;
+    return *this;
+  }
+  constexpr IBox3& operator/=(IntType n)
+  {
+    min /= n;
+    max /= n;
+    return *this;
   }
 
-  constexpr bool valid() const
-  {
-    for (int i = 0; i < 3; ++i)
-      if (min.i > max.i)
-        return false;
-    return true;
-  }
+  constexpr IBox3 operator-() const { return IBox3(-min, -max); }
 
-  constexpr bool encloses(const IVec3<IntType>& intVec3) const
+  constexpr IBox3 operator+(const IVec3<IntType>& iVec3) const { return Engine::Clone(*this) += iVec3; }
+  constexpr IBox3 operator-(const IVec3<IntType>& iVec3) const { return Engine::Clone(*this) -= iVec3; }
+
+  constexpr IBox3 operator+(IntType n) const { return Engine::Clone(*this) += n; }
+  constexpr IBox3 operator-(IntType n) const { return Engine::Clone(*this) -= n; }
+
+  constexpr IBox3 operator*(IntType n) const { return Engine::Clone(*this) *= n; }
+  constexpr IBox3 operator/(IntType n) const { return Engine::Clone(*this) /= n; }
+
+  constexpr bool valid() const { return min.i <= max.i && min.j <= max.j && min.k <= max.k; }
+
+  constexpr bool encloses(const IVec3<IntType>& iVec3) const
   {
     for (int i = 0; i < 3; ++i)
-      if (intVec3[i] < min[i] || intVec3[i] >= max[i])
+      if (iVec3[i] < min[i] || iVec3[i] >= max[i])
         return false;
     return true;
   }
@@ -58,31 +82,26 @@ struct IBox3
     return boxExtents.i * boxExtents.j * boxExtents.k;
   }
 
-  constexpr IBox3<IntType>& expand(IntType n = 1)
+  constexpr IBox3& expand(IntType n = 1)
   {
     for (Axis axis : Axes())
       expandAlongAxis(axis, n);
     return *this;
   }
-  constexpr IBox3<IntType>& expandAlongAxis(Axis axis, IntType n = 1)
+  constexpr IBox3& expandAlongAxis(Axis axis, IntType n = 1)
   {
     min[axis] -= n;
     max[axis] += n;
     return *this;
   }
-
-  constexpr IBox3<IntType>& shrink(IntType n = 1)
+  constexpr IBox3& expandToEnclose(const IVec3<IntType>& iVec3)
   {
-    for (Axis axis : Axes())
-      shrinkAlongAxis(axis, n);
+    min = ComponentWiseMin(min, iVec3);
+    max = ComponentWiseMax(max, iVec3 + 1);
     return *this;
   }
-  constexpr IBox3<IntType>& shrinkAlongAxis(Axis axis, IntType n = 1)
-  {
-    min[axis] += n;
-    max[axis] -= n;
-    return *this;
-  }
+  constexpr IBox3& shrink(IntType n = 1) { return expand(-n); }
+  constexpr IBox3& shrinkAlongAxis(Axis axis, IntType n = 1) { return expandAlongAxis(axis, -n); }
 
   constexpr IntType limitAlongDirection(Direction direction) const
   {
@@ -90,7 +109,7 @@ struct IBox3
     return IsUpstream(direction) ? max[axis] - 1 : min[axis];
   }
 
-  constexpr IBox3<IntType> face(Direction direction) const
+  constexpr IBox3 face(Direction direction) const
   {
     Axis axis = AxisOf(direction);
     IntType faceNormalLimit = limitAlongDirection(direction);
@@ -101,9 +120,9 @@ struct IBox3
     IVec3<IntType> faceUpper = max;
     faceUpper[axis] = faceNormalLimit + 1;
 
-    return { faceLower, faceUpper };
+    return IBox3(faceLower, faceUpper);
   }
-  constexpr IBox3<IntType> faceInterior(Direction direction) const
+  constexpr IBox3 faceInterior(Direction direction) const
   {
     Axis u = AxisOf(direction);
     Axis v = Cycle(u);
@@ -112,22 +131,22 @@ struct IBox3
     return face(direction).shrinkAlongAxis(v).shrinkAlongAxis(w);
   }
 
-  constexpr IBox3<IntType> edge(Direction sideA, Direction sideB) const
+  constexpr IBox3 edge(Direction sideA, Direction sideB) const
   {
     EN_CORE_ASSERT(sideA != !sideB, "Opposite faces cannot form edge!");
 
-    IBox3<IntType> faceA = face(sideA);
-    IBox3<IntType> faceB = face(sideB);
+    IBox3 faceA = face(sideA);
+    IBox3 faceB = face(sideB);
     return Intersection(faceA, faceB);
   }
-  constexpr IBox3<IntType> edgeInterior(Direction sideA, Direction sideB) const
+  constexpr IBox3 edgeInterior(Direction sideA, Direction sideB) const
   {
     Axis edgeAxis = GetMissing(AxisOf(sideA), AxisOf(sideB));
     return edge(sideA, sideB).shrinkAlongAxis(edgeAxis);
   }
 
-  template<std::signed_integral IndexType>
-  constexpr IBox3<IntType> corner(const IVec3<IndexType>& offset) const
+  template<std::integral IndexType>
+  constexpr IBox3 corner(const IVec3<IndexType>& offset) const
   {
     EN_CORE_ASSERT(Engine::Debug::EqualsOneOf(offset.i, -1, 1)
                 && Engine::Debug::EqualsOneOf(offset.j, -1, 1)
@@ -191,17 +210,17 @@ struct IBox3
           function(index);  
   }
 
-  static constexpr IBox3<IntType> Union(const IBox3<IntType>& boxA, const IBox3<IntType>& boxB)
+  static constexpr IBox3 Union(const IBox3& boxA, const IBox3& boxB)
   {
     return { ComponentWiseMin(boxA.min, boxB.min), ComponentWiseMax(boxA.max, boxB.max) };
   }
 
-  static constexpr IBox3<IntType> Intersection(const IBox3<IntType>& boxA, const IBox3<IntType>& boxB)
+  static constexpr IBox3 Intersection(const IBox3& boxA, const IBox3& boxB)
   {
     return { ComponentWiseMax(boxA.min, boxB.min), ComponentWiseMin(boxA.max, boxB.max) };
   }
 
-  static constexpr IBox3<IntType> VoidBox()
+  static constexpr IBox3 VoidBox()
   {
     return { std::numeric_limits<IntType>::max(), std::numeric_limits<IntType>::min() };
   }
@@ -212,8 +231,8 @@ struct IBox3
 namespace std
 {
   template<std::integral IntType>
-  inline ostream& operator<<(ostream& os, const IBox3<IntType>& index)
+  inline ostream& operator<<(ostream& os, const IBox3<IntType>& box)
   {
-    return os << '(' << index.min << ", " << index.max << ')';
+    return os << '(' << box.min << ", " << box.max << ')';
   }
 }
