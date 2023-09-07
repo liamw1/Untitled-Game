@@ -42,8 +42,8 @@ public:
 private:
   struct BlockData
   {
-    ArrayBox<Block::Type, -1, Chunk::Size() + 1> composition;
-    ArrayBox<Block::Light, -1, Chunk::Size() + 1> lighting;
+    ArrayBox<Block::Type, blockIndex_t, -1, Chunk::Size() + 1> composition;
+    ArrayBox<Block::Light, blockIndex_t, -1, Chunk::Size() + 1> lighting;
 
     BlockData();
 

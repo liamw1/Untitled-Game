@@ -61,8 +61,8 @@ struct IBox3
 
   constexpr bool encloses(const IVec3<IntType>& iVec3) const
   {
-    for (int i = 0; i < 3; ++i)
-      if (iVec3[i] < min[i] || iVec3[i] >= max[i])
+    for (Axis axis : Axes())
+      if (iVec3[axis] < min[axis] || iVec3[axis] >= max[axis])
         return false;
     return true;
   }
@@ -73,12 +73,12 @@ struct IBox3
     return IVec3<IntType>(max.i - min.i, max.j - min.j, max.k - min.k);
   }
 
-  constexpr int volume() const
+  constexpr size_t volume() const
   {
     if (!valid())
       return 0;
 
-    IVec3<IntType> boxExtents = extents();
+    IVec3<size_t> boxExtents = static_cast<IVec3<size_t>>(extents());
     return boxExtents.i * boxExtents.j * boxExtents.k;
   }
 
@@ -109,10 +109,10 @@ struct IBox3
     return IsUpstream(direction) ? max[axis] - 1 : min[axis];
   }
 
-  constexpr IBox3 face(Direction direction) const
+  constexpr IBox3 face(Direction side) const
   {
-    Axis axis = AxisOf(direction);
-    IntType faceNormalLimit = limitAlongDirection(direction);
+    Axis axis = AxisOf(side);
+    IntType faceNormalLimit = limitAlongDirection(side);
 
     IVec3<IntType> faceLower = min;
     faceLower[axis] = faceNormalLimit;
@@ -122,13 +122,13 @@ struct IBox3
 
     return IBox3(faceLower, faceUpper);
   }
-  constexpr IBox3 faceInterior(Direction direction) const
+  constexpr IBox3 faceInterior(Direction side) const
   {
-    Axis u = AxisOf(direction);
+    Axis u = AxisOf(side);
     Axis v = Cycle(u);
     Axis w = Cycle(v);
 
-    return face(direction).shrinkAlongAxis(v).shrinkAlongAxis(w);
+    return face(side).shrinkAlongAxis(v).shrinkAlongAxis(w);
   }
 
   constexpr IBox3 edge(Direction sideA, Direction sideB) const
@@ -225,6 +225,123 @@ struct IBox3
     return { std::numeric_limits<IntType>::max(), std::numeric_limits<IntType>::min() };
   }
 };
+
+
+
+template<std::integral IntType>
+struct BoxFace
+{
+  Direction side;
+  IBox3<IntType> bounds;
+
+  constexpr BoxFace()
+    : BoxFace(Direction::Begin, {}) {}
+  constexpr BoxFace(Direction faceSide, const IBox3<IntType>& faceBounds)
+    : side(faceSide), bounds(faceBounds) {}
+};
+
+template<std::integral IntType>
+struct BoxEdge
+{
+  Direction sideA;
+  Direction sideB;
+  IBox3<IntType> bounds;
+
+  constexpr BoxEdge()
+    : BoxEdge(Direction::Begin, Direction::Begin, {}) {}
+  constexpr BoxEdge(Direction edgeSideA, Direction edgeSideB, const IBox3<IntType>& edgeBounds)
+    : sideA(edgeSideA), sideB(edgeSideB), bounds(edgeBounds) {}
+};
+
+template<std::integral IntType>
+struct BoxCorner
+{
+  IVec3<IntType> offset;
+  IBox3<IntType> bounds;
+
+  constexpr BoxCorner() = default;
+  constexpr BoxCorner(const IVec3<IntType>& cornerOffset, const IBox3<IntType>& cornerBounds)
+    : offset(cornerOffset), bounds(cornerBounds) {}
+};
+
+namespace detail
+{
+  template<std::integral IntType>
+  constexpr std::array<BoxFace<IntType>, 6> ConstructFaces(const IBox3<IntType>& box, bool interiorOnly)
+  {
+    std::array<BoxFace<IntType>, 6> faces;
+    for (Direction side : Directions())
+      faces[static_cast<int>(side)] = BoxFace(side, interiorOnly ? box.faceInterior(side) : box.face(side));
+    return faces;
+  }
+
+  template<std::integral IntType>
+  constexpr std::array<BoxEdge<IntType>, 12> ConstructEdges(const IBox3<IntType>& box, bool interiorOnly)
+  {
+    int edgeIndex = 0;
+    std::array<BoxEdge<IntType>, 12> edges;
+    for (auto itA = Directions().begin(); itA != Directions().end(); ++itA)
+      for (auto itB = itA.next(); itB != Directions().end(); ++itB)
+      {
+        Direction sideA = *itA;
+        Direction sideB = *itB;
+
+        // Opposite faces cannot form edge
+        if (sideA == !sideB)
+          continue;
+
+        edges[edgeIndex] = BoxEdge(sideA, sideB, interiorOnly ? box.edgeInterior(sideA, sideB) : box.edge(sideA, sideB));
+        edgeIndex++;
+      }
+    return edges;
+  }
+
+  template<std::integral IntType>
+  constexpr std::array<BoxCorner<IntType>, 8> ConstructCorners(const IBox3<IntType>& box)
+  {
+    int cornerIndex = 0;
+    std::array<BoxCorner<IntType>, 8> corners;
+    for (int i = -1; i < 2; i += 2)
+      for (int j = -1; j < 2; j += 2)
+        for (int k = -1; k < 2; k += 2)
+        {
+          IVec3<IntType> offset(i, j, k);
+          corners[cornerIndex] = BoxCorner(offset, box.corner(offset));
+          cornerIndex++;
+        }
+    return corners;
+  }
+}
+
+template<std::integral IntType>
+constexpr std::array<BoxFace<IntType>, 6> Faces(const IBox3<IntType>& box)
+{
+  return detail::ConstructFaces(box, false);
+}
+
+template<std::integral IntType>
+constexpr std::array<BoxFace<IntType>, 6> FaceInteriors(const IBox3<IntType>& box)
+{
+  return detail::ConstructFaces(box, true);
+}
+
+template<std::integral IntType>
+constexpr std::array<BoxEdge<IntType>, 12> Edges(const IBox3<IntType>& box)
+{
+  return detail::ConstructEdges(box, false);
+}
+
+template<std::integral IntType>
+constexpr std::array<BoxEdge<IntType>, 12> EdgeInteriors(const IBox3<IntType>& box)
+{
+  return detail::ConstructEdges(box, true);
+}
+
+template<std::integral IntType>
+constexpr std::array<BoxCorner<IntType>, 8> Corners(const IBox3<IntType>& box)
+{
+  return detail::ConstructCorners(box);
+}
 
 
 

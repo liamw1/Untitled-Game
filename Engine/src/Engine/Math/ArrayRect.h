@@ -2,7 +2,7 @@
 #include "ArrayBox.h"
 #include "IBox2.h"
 
-template<typename T, int MinX, int MaxX, int MinY = MinX, int MaxY = MaxX>
+template<typename T, std::integral IntType, IntType MinX, IntType MaxX, IntType MinY = MinX, IntType MaxY = MaxX>
 class ArrayRect : private Engine::NonCopyable
 {
 public:
@@ -28,40 +28,35 @@ public:
 
   operator bool() const { return m_Data; }
 
-  template<std::integral IndexType>
-  T& operator()(const IVec2<IndexType>& index)
+  T& operator()(const IVec2<IntType>& index)
   {
     return const_cast<T&>(static_cast<const ArrayRect*>(this)->operator()(index));
   }
 
-  template<std::integral IndexType>
-  const T& operator()(const IVec2<IndexType>& index) const
+  const T& operator()(const IVec2<IntType>& index) const
   {
     EN_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
 
-    static constexpr IVec2<IndexType> base = IVec2<IndexType>(MinX, MinY);
-    IVec2<IndexType> indexRelativeToBase = index - base;
-
+    IVec2<IntType> indexRelativeToBase = index - c_Bounds.min;
     return m_Data[c_Stride * indexRelativeToBase.i + indexRelativeToBase.j];
   }
 
-  ArrayBoxStrip<T, MinY, MaxY> operator[](int index)
+  ArrayBoxStrip<T, IntType, MinY, MaxY> operator[](IntType index)
   {
     return static_cast<const ArrayRect&>(*this).operator[](index);
   }
-  const ArrayBoxStrip<T, MinY, MaxY> operator[](int index) const
+  const ArrayBoxStrip<T, IntType, MinY, MaxY> operator[](IntType index) const
   {
     EN_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
     EN_CORE_ASSERT(Engine::Debug::BoundsCheck(index, MinX, MaxX), "Index is out of bounds!");
-    return ArrayBoxStrip<T, MinY, MaxY>(m_Data + c_Stride * (index - MinX));
+    return ArrayBoxStrip<T, IntType, MinY, MaxY>(m_Data + c_Stride * (index - MinX));
   }
 
   T* get() const { return m_Data; }
 
-  constexpr size_t size() const { return static_cast<size_t>(MaxX - MinX) * c_Stride; }
+  constexpr size_t size() const { return c_Bounds.volume(); }
 
-  template<std::signed_integral IndexType>
-  constexpr IBox2<IndexType> box() const { return static_cast<IBox2<IndexType>>(c_Box); }
+  constexpr IBox2<IntType> bounds() const { return c_Bounds; }
 
   bool contains(const T& value) const
   {
@@ -81,46 +76,48 @@ public:
       });
   }
 
-  template<std::integral IndexType, int... Args>
-  bool contentsEqual(const IBox2<IndexType>& compareSection, const ArrayRect<T, Args...>& arr, const IBox2<IndexType>& arrSection) const
+  template<IntType... Args>
+  bool contentsEqual(const IBox2<IntType>& compareSection, const ArrayBox<T, IntType, Args...>& container, const IBox2<IntType>& containerSection) const
   {
-    if (!m_Data && !arr)
+    EN_CORE_ASSERT(compareSection.extents() == containerSection.extents(), "Compared sections are not the same dimensions!");
+
+    if (!m_Data && !container)
       return true;
-    if (!m_Data || !arr)
+    if (!m_Data || !container)
       return false;
 
-    IVec2<IndexType> offset = arrSection.min - compareSection.min;
-    return compareSection.allOf([this, &arr, &offset](const IVec2<IndexType>& index)
+    IVec2<IntType> offset = containerSection.min - compareSection.min;
+    return compareSection.allOf([this, &container, &offset](const IVec2<IntType>& index)
       {
-        return (*this)(index) == arr(index + offset);
+        return (*this)(index) == container(index + offset);
       });
   }
 
-  template<std::integral IndexType, InvocableWithReturnType<bool, T> F>
-  bool allOf(const IBox2<IndexType>& section, const F& condition) const
+  template<InvocableWithReturnType<bool, T> F>
+  bool allOf(const IBox2<IntType>& section, const F& condition) const
   {
     EN_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
-    return section.allOf([this, &condition](const IVec2<IndexType>& index)
-      {
-        return condition((*this)(index));
-      });
-  }
-
-  template<std::integral IndexType, InvocableWithReturnType<bool, T> F>
-  bool anyOf(const IBox2<IndexType>& section, const F& condition) const
-  {
-    EN_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
-    return section.anyOf([this, &condition](const IVec2<IndexType>& index)
+    return section.allOf([this, &condition](const IVec2<IntType>& index)
       {
         return condition((*this)(index));
       });
   }
 
-  template<std::integral IndexType, InvocableWithReturnType<bool, T> F>
-  bool noneOf(const IBox2<IndexType>& section, const F& condition) const
+  template<InvocableWithReturnType<bool, T> F>
+  bool anyOf(const IBox2<IntType>& section, const F& condition) const
   {
     EN_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
-    return section.noneOf([this, &condition](const IVec2<IndexType>& index)
+    return section.anyOf([this, &condition](const IVec2<IntType>& index)
+      {
+        return condition((*this)(index));
+      });
+  }
+
+  template<InvocableWithReturnType<bool, T> F>
+  bool noneOf(const IBox2<IntType>& section, const F& condition) const
+  {
+    EN_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
+    return section.noneOf([this, &condition](const IVec2<IntType>& index)
       {
         return condition((*this)(index));
       });
@@ -132,26 +129,37 @@ public:
     std::fill(m_Data, m_Data + size(), value);
   }
 
-  template<std::integral IndexType>
-  void fill(const IBox2<IndexType>& fillSection, const T& value)
+  void fill(const IBox2<IntType>& fillSection, const T& value)
   {
     EN_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
-    fillSection.forEach([this, &value](const IVec2<IndexType>& index)
+    fillSection.forEach([this, &value](const IVec2<IntType>& index)
       {
         (*this)(index) = value;
       });
   }
 
-  template<std::integral IndexType, int... Args>
-  void fill(const IBox2<IndexType>& fillSection, const ArrayRect<T, Args...>& arr, const IBox2<IndexType>& arrSection)
+  template<IntType... Args>
+  void fill(const IBox2<IntType>& fillSection, const ArrayBox<T, IntType, Args...>& container, const IBox2<IntType>& containerSection)
   {
     EN_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
+    EN_CORE_ASSERT(fillSection.extents() == containerSection.extents(), "Read and write sections are not the same dimensions!");
 
-    IVec2<IndexType> offset = arrSection.min - fillSection.min;
-    fillSection.forEach([this, &arr, &offset](const IVec2<IndexType>& index)
+    IVec2<IntType> offset = containerSection.min - fillSection.min;
+    fillSection.forEach([this, &container, &offset](const IVec2<IntType>& index)
       {
-        (*this)(index) = arr(index + offset);
+        (*this)(index) = container(index + offset);
       });
+  }
+
+  void allocate()
+  {
+    if (m_Data)
+    {
+      EN_CORE_WARN("Data already allocated to ArrayRect. Ignoring...");
+      return;
+    }
+
+    m_Data = new T[size()];
   }
 
   void reset()
@@ -161,7 +169,7 @@ public:
   }
 
 private:
-  static constexpr IBox2<int> c_Box = IBox2<int>(MinX, MinY, MaxX, MaxY);
+  static constexpr IBox2<IntType> c_Bounds = IBox2<IntType>(MinX, MinY, MaxX, MaxY);
   static constexpr size_t c_Stride = MaxY - MinY;
 
   T* m_Data;

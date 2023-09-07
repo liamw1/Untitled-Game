@@ -46,8 +46,7 @@ namespace Block
     Invisible,
     ErrorTexture,
 
-    Null,
-    Begin = 0, End = Null
+    Begin = 0, End = ErrorTexture
   };
   using TextureIterator = Engine::EnumIterator<Texture, Texture::Begin, Texture::End>;
 }

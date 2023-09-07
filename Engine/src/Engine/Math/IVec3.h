@@ -27,16 +27,19 @@ struct IVec3
   template<std::integral NewIntType>
   explicit constexpr operator IVec3<NewIntType>() const { return { static_cast<NewIntType>(i), static_cast<NewIntType>(j), static_cast<NewIntType>(k) }; }
 
-  constexpr IntType& operator[](Axis axis) { return this->operator[](static_cast<int>(axis)); }
-  constexpr const IntType& operator[](Axis axis) const { return this->operator[](static_cast<int>(axis)); }
-  constexpr IntType& operator[](int index)
+  constexpr IntType& operator[](Axis axis)
   {
-    return const_cast<IntType&>(static_cast<const IVec3*>(this)->operator[](index));
+    return const_cast<IntType&>(static_cast<const IVec3*>(this)->operator[](axis));
   }
-  constexpr const IntType& operator[](int index) const
+  constexpr const IntType& operator[](Axis axis) const
   {
-    EN_CORE_ASSERT(Engine::Debug::BoundsCheck(index, 0, 3), "Index is out of bounds!");
-    return *(&i + index);
+    switch (axis)
+    {
+      case Axis::X: return i;
+      case Axis::Y: return j;
+      case Axis::Z: return k;
+      default:      throw std::invalid_argument("Invalid axis!");
+    }
   }
 
   // Define lexicographical ordering on 3D indices
@@ -95,17 +98,12 @@ struct IVec3
 
   static constexpr IVec3 CreatePermuted(IntType i, IntType j, IntType k, Axis permutation)
   {
-    return CreatePermuted(i, j, k, static_cast<int>(permutation));
-  }
-  static constexpr IVec3 CreatePermuted(IntType i, IntType j, IntType k, int permutation)
-  {
-    EN_CORE_ASSERT(Engine::Debug::BoundsCheck(permutation, 0, 3), "Not a valid permuation!");
     switch (permutation)
     {
-      default:
-      case 0: return IVec3(i, j, k);
-      case 1: return IVec3(k, i, j);
-      case 2: return IVec3(j, k, i);
+      case Axis::X: return IVec3(i, j, k);
+      case Axis::Y: return IVec3(k, i, j);
+      case Axis::Z: return IVec3(j, k, i);
+      default:      throw std::invalid_argument("Invalid permutation!");
     }
   }
 };

@@ -19,16 +19,18 @@ struct IVec2
   template<std::integral NewIntType>
   explicit constexpr operator IVec2<NewIntType>() const { return { static_cast<NewIntType>(i), static_cast<NewIntType>(j) }; }
 
-  constexpr IntType& operator[](Axis axis) { return this->operator[][static_cast<int>(axis)]; }
-  constexpr const IntType& operator[](Axis axis) const { return this->operator[][static_cast<int>(axis)]; }
-  constexpr IntType& operator[](int index)
+  constexpr IntType& operator[](Axis axis)
   {
-    return const_cast<IntType&>(static_cast<const IVec2*>(this)->operator[](index));
+    return const_cast<IntType&>(static_cast<const IVec2*>(this)->operator[](axis));
   }
-  constexpr const IntType& operator[](int index) const
+  constexpr const IntType& operator[](Axis axis) const
   {
-    EN_CORE_ASSERT(Engine::Debug::BoundsCheck(index, 0, 3), "Index is out of bounds!");
-    return *(&i + index);
+    switch (axis)
+    {
+      case Axis::X: return i;
+      case Axis::Y: return j;
+      default:      throw std::invalid_argument("Invalid axis!");
+    }
   }
 
   // Define lexicographical ordering on 2D indices

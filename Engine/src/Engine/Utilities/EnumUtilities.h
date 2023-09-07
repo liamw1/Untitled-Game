@@ -1,4 +1,5 @@
 ﻿#pragma once
+#include "Helpers.h"
 
 namespace Engine
 {
@@ -36,10 +37,10 @@ namespace Engine
     using val_t = typename std::underlying_type_t<Enum>;
 
   public:
+    constexpr EnumIterator()
+      : EnumIterator(beginEnum) {}
     constexpr EnumIterator(Enum valEnum)
       : m_Value(static_cast<val_t>(valEnum)) {}
-    constexpr EnumIterator()
-      : m_Value(static_cast<val_t>(beginEnum)){}
 
     constexpr EnumIterator& operator++()
     {
@@ -49,13 +50,9 @@ namespace Engine
     constexpr Enum operator*() const { return static_cast<Enum>(m_Value); }
     constexpr bool operator!=(const EnumIterator& other) const { return m_Value != other.m_Value; }
 
-    constexpr EnumIterator begin() const { return *this; }
-    constexpr EnumIterator end() const { return EnumIterator(endEnum); }
-    constexpr EnumIterator next() const
-    {
-      EnumIterator copy = *this;
-      return ++copy;
-    }
+    constexpr EnumIterator begin() const { return EnumIterator(beginEnum); }
+    constexpr EnumIterator next() const { return ++Engine::Clone(*this); }
+    constexpr EnumIterator end() const { return ++EnumIterator(endEnum); }
 
   private:
     val_t m_Value;

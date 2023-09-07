@@ -10,14 +10,17 @@ class Chunk : private Engine::NonCopyable, Engine::NonMovable
   static constexpr blockIndex_t c_ChunkSize = 32;
 
 public:
+  template<typename T>
+  using ArrayBox = ArrayBox<T, blockIndex_t, 0, c_ChunkSize>;
+
   Chunk();
   Chunk(const GlobalIndex& chunkIndex);
 
-  ArrayBox<Block::Type, 0, c_ChunkSize>& composition();
-  const ArrayBox<Block::Type, 0, c_ChunkSize>& composition() const;
+  ArrayBox<Block::Type>& composition();
+  const ArrayBox<Block::Type>& composition() const;
 
-  ArrayBox<Block::Light, 0, c_ChunkSize>& lighting();
-  const ArrayBox<Block::Light, 0, c_ChunkSize>& lighting() const;
+  ArrayBox<Block::Light>& lighting();
+  const ArrayBox<Block::Light>& lighting() const;
 
   /*
     \return Whether or not a given chunk face has transparent blocks. Useful for deciding which chunks should be loaded
@@ -36,8 +39,8 @@ public:
   void setBlockType(const BlockIndex& blockIndex, Block::Type blockType);
   void setBlockLight(const BlockIndex& blockIndex, Block::Light blockLight);
 
-  void setComposition(ArrayBox<Block::Type, 0, c_ChunkSize>&& composition);
-  void setLighting(ArrayBox<Block::Light, 0, c_ChunkSize>&& lighting);
+  void setComposition(ArrayBox<Block::Type>&& composition);
+  void setLighting(ArrayBox<Block::Light>&& lighting);
   void determineOpacity();
 
   void update();
@@ -66,8 +69,8 @@ public:
 
 private:
   mutable std::mutex m_Mutex;
-  ArrayBox<Block::Type, 0, c_ChunkSize> m_Composition;
-  ArrayBox<Block::Light, 0, c_ChunkSize> m_Lighting;
+  ArrayBox<Block::Type> m_Composition;
+  ArrayBox<Block::Light> m_Lighting;
   std::atomic<uint16_t> m_NonOpaqueFaces;
 };
 

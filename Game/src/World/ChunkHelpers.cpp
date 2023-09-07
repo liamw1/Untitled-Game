@@ -133,12 +133,12 @@ bool ChunkDrawCommand::sort(const GlobalIndex& originIndex, const Vec3& viewPosi
   // Find block index that is closest to the specified position
   BlockIndex playerBlock = BlockIndex::ToIndex(viewPosition / Block::Length());
   BlockIndex originBlock = playerBlock;
-  for (int i = 0; i < 3; ++i)
+  for (Axis axis : Axes())
   {
-    if (originIndex[i] > id()[i])
-      originBlock[i] = Chunk::Size() - 1;
-    else if (originIndex[i] < id()[i])
-      originBlock[i] = 0;
+    if (originIndex[axis] > id()[axis])
+      originBlock[axis] = Chunk::Size() - 1;
+    else if (originIndex[axis] < id()[axis])
+      originBlock[axis] = 0;
   }
 
   // If this block index is the same as the previous sort, no need to sort

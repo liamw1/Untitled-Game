@@ -251,14 +251,14 @@ namespace LOD
     return ((1 - s) / 2 + s * (1 - t)) * q0 + ((1 - s) / 2 + s * t) * q1;
   }
 
-  static ArrayRect<Terrain::CompoundSurfaceData, 0, c_NumCells + 1> generateNoise(Octree::Node* node)
+  static ArrayRect<Terrain::CompoundSurfaceData, blockIndex_t, 0, c_NumCells + 1> generateNoise(Octree::Node* node)
   {
     EN_PROFILE_FUNCTION();
 
     length_t cellLength = node->length() / c_NumCells;
     Vec2 LODAnchorXY = Chunk::Length() * static_cast<Vec2>(node->anchor);
 
-    ArrayRect<Terrain::CompoundSurfaceData, 0, c_NumCells + 1> noiseValues{};
+    ArrayRect<Terrain::CompoundSurfaceData, blockIndex_t, 0, c_NumCells + 1> noiseValues{};
     for (int i = 0; i < c_NumCells + 1; ++i)
       for (int j = 0; j < c_NumCells + 1; ++j)
       {
@@ -273,7 +273,7 @@ namespace LOD
     return noiseValues;
   }
 
-  static bool needsMesh(Octree::Node* node, const ArrayRect<Terrain::CompoundSurfaceData, 0, c_NumCells + 1>& noiseValues)
+  static bool needsMesh(Octree::Node* node, const ArrayRect<Terrain::CompoundSurfaceData, blockIndex_t, 0, c_NumCells + 1>& noiseValues)
   {
     length_t LODFloor = node->anchor.k * Chunk::Length();
     length_t LODCeiling = LODFloor + node->length();
@@ -296,13 +296,13 @@ namespace LOD
     return needsMesh;
   }
 
-  static ArrayRect<Vec3, 0, c_NumCells + 1> calcNoiseNormals(Octree::Node* node, const ArrayRect<Terrain::CompoundSurfaceData, 0, c_NumCells + 1>& noiseValues)
+  static ArrayRect<Vec3, blockIndex_t, 0, c_NumCells + 1> calcNoiseNormals(Octree::Node* node, const ArrayRect<Terrain::CompoundSurfaceData, blockIndex_t, 0, c_NumCells + 1>& noiseValues)
   {
     length_t cellLength = node->length() / c_NumCells;
     Vec2 LODAnchorXY = Chunk::Length() * static_cast<Vec2>(node->anchor);
 
     // Calculate normals using central differences
-    ArrayRect<Vec3, 0, c_NumCells + 1> noiseNormals{};
+    ArrayRect<Vec3, blockIndex_t, 0, c_NumCells + 1> noiseNormals{};
     for (int i = 0; i < c_NumCells + 1; ++i)
       for (int j = 0; j < c_NumCells + 1; ++j)
       {
@@ -352,7 +352,7 @@ namespace LOD
     return noiseNormals;
   }
 
-  static NoiseData interpolateNoiseData(Octree::Node* node, const ArrayRect<Terrain::CompoundSurfaceData, 0, c_NumCells + 1>& noiseValues, const ArrayRect<Vec3, 0, c_NumCells + 1>& noiseNormals, const BlockIndex& cornerA, const BlockIndex& cornerB, float s)
+  static NoiseData interpolateNoiseData(Octree::Node* node, const ArrayRect<Terrain::CompoundSurfaceData, blockIndex_t, 0, c_NumCells + 1>& noiseValues, const ArrayRect<Vec3, blockIndex_t, 0, c_NumCells + 1>& noiseNormals, const BlockIndex& cornerA, const BlockIndex& cornerB, float s)
   {
     length_t LODFloor = node->anchor.k * Chunk::Length();
     length_t cellLength = node->length() / c_NumCells;
@@ -386,7 +386,7 @@ namespace LOD
   }
 
   // Generate primary LOD mesh using Marching Cubes algorithm
-  static void generatePrimaryMesh(Octree::Node* node, const ArrayRect<Terrain::CompoundSurfaceData, 0, c_NumCells + 1>& noiseValues, const ArrayRect<Vec3, 0, c_NumCells + 1>& noiseNormals)
+  static void generatePrimaryMesh(Octree::Node* node, const ArrayRect<Terrain::CompoundSurfaceData, blockIndex_t, 0, c_NumCells + 1>& noiseValues, const ArrayRect<Vec3, blockIndex_t, 0, c_NumCells + 1>& noiseNormals)
   {
     EN_PROFILE_FUNCTION();
 
@@ -403,10 +403,10 @@ namespace LOD
     int vertexCount = 0;
     std::vector<uint32_t> primaryMeshIndices{};
     std::vector<Vertex> primaryMeshVertices{};
-    ArrayRect<VertexReuseData, 0, c_NumCells> prevLayer{};
+    ArrayRect<VertexReuseData, blockIndex_t, 0, c_NumCells> prevLayer{};
     for (int i = 0; i < c_NumCells; ++i)
     {
-      ArrayRect<VertexReuseData, 0, c_NumCells> currLayer{};
+      ArrayRect<VertexReuseData, blockIndex_t, 0, c_NumCells> currLayer{};
 
       for (int j = 0; j < c_NumCells; ++j)
         for (int k = 0; k < c_NumCells; ++k)
@@ -510,7 +510,7 @@ namespace LOD
   }
 
   // Generate transition meshes using Transvoxel algorithm
-  static void generateTransitionMeshes(Octree::Node* node, const ArrayRect<Terrain::CompoundSurfaceData, 0, c_NumCells + 1>& noiseValues, const ArrayRect<Vec3, 0, c_NumCells + 1>& noiseNormals)
+  static void generateTransitionMeshes(Octree::Node* node, const ArrayRect<Terrain::CompoundSurfaceData, blockIndex_t, 0, c_NumCells + 1>& noiseValues, const ArrayRect<Vec3, blockIndex_t, 0, c_NumCells + 1>& noiseNormals)
   {
     EN_PROFILE_FUNCTION();
 
@@ -532,9 +532,9 @@ namespace LOD
       int faceID = static_cast<int>(face);
 
       // Relabel coordinates, u being the coordinate normal to face
-      int u = faceID / 2;
-      int v = (u + 1) % 3;
-      int w = (u + 2) % 3;
+      Axis u = AxisOf(face);
+      Axis v = Cycle(u);
+      Axis w = Cycle(v);
       int uIndex = IsUpstream(face) ? c_NumCells : 0;
 
       // Generate transition mesh using Transvoxel algorithm
@@ -688,13 +688,13 @@ namespace LOD
     EN_PROFILE_FUNCTION();
 
     // Generate voxel data using heightmap
-    ArrayRect<Terrain::CompoundSurfaceData, 0, c_NumCells + 1> noiseValues = generateNoise(node);
+    ArrayRect<Terrain::CompoundSurfaceData, blockIndex_t, 0, c_NumCells + 1> noiseValues = generateNoise(node);
 
     if (!needsMesh(node, noiseValues))
       return;
 
     // Generate normal data from heightmap
-    ArrayRect<Vec3, 0, c_NumCells + 1> noiseNormals = calcNoiseNormals(node, noiseValues);
+    ArrayRect<Vec3, blockIndex_t, 0, c_NumCells + 1> noiseNormals = calcNoiseNormals(node, noiseValues);
 
     generatePrimaryMesh(node, noiseValues, noiseNormals);
     generateTransitionMeshes(node, noiseValues, noiseNormals);
@@ -849,9 +849,9 @@ namespace LOD
       int directionID = static_cast<int>(direction);
 
       // Relabel coordinates, u being the coordinate normal to face
-      int u = directionID / 2;
-      int v = (u + 1) % 3;
-      int w = (u + 2) % 3;
+      Axis u = AxisOf(direction);
+      Axis v = Cycle(u);
+      Axis w = Cycle(v);
 
       globalIndex_t neighborSize = node->size();
       GlobalIndex neighborIndexBase = node->anchor + offsets[directionID];

@@ -9,22 +9,22 @@ Chunk::Chunk(const GlobalIndex& chunkIndex)
     m_Lighting(),
     m_NonOpaqueFaces(0x3F) {}
 
-ArrayBox<Block::Type, 0, Chunk::Size()>& Chunk::composition()
+Chunk::ArrayBox<Block::Type>& Chunk::composition()
 {
-  return const_cast<ArrayBox<Block::Type, 0, Chunk::Size()>&>(static_cast<const Chunk*>(this)->composition());
+  return const_cast<ArrayBox<Block::Type>&>(static_cast<const Chunk*>(this)->composition());
 }
 
-const ArrayBox<Block::Type, 0, Chunk::Size()>& Chunk::composition() const
+const Chunk::ArrayBox<Block::Type>& Chunk::composition() const
 {
   return m_Composition;
 }
 
-ArrayBox<Block::Light, 0, Chunk::Size()>& Chunk::lighting()
+Chunk::ArrayBox<Block::Light>& Chunk::lighting()
 {
-  return const_cast<ArrayBox<Block::Light, 0, Chunk::Size()>&>(static_cast<const Chunk*>(this)->lighting());
+  return const_cast<ArrayBox<Block::Light>&>(static_cast<const Chunk*>(this)->lighting());
 }
 
-const ArrayBox<Block::Light, 0, Chunk::Size()>& Chunk::lighting() const
+const Chunk::ArrayBox<Block::Light>& Chunk::lighting() const
 {
   return m_Lighting;
 }
@@ -52,7 +52,7 @@ void Chunk::setBlockType(const BlockIndex& blockIndex, Block::Type blockType)
     if (blockType == Block::Type::Air)
       return;
 
-    m_Composition = ArrayBox<Block::Type, 0, c_ChunkSize>(Block::Type::Air);
+    m_Composition = ArrayBox<Block::Type>(Block::Type::Air);
   }
   m_Composition(blockIndex) = blockType;
 }
@@ -64,12 +64,12 @@ void Chunk::setBlockLight(const BlockIndex& blockIndex, Block::Light blockLight)
     if (blockLight.sunlight() == Block::Light::MaxValue())
       return;
 
-    m_Lighting = ArrayBox<Block::Light, 0, c_ChunkSize>(Block::Light::MaxValue());
+    m_Lighting = ArrayBox<Block::Light>(Block::Light::MaxValue());
   }
   m_Lighting(blockIndex) = blockLight;
 }
 
-void Chunk::setComposition(ArrayBox<Block::Type, 0, c_ChunkSize>&& composition)
+void Chunk::setComposition(ArrayBox<Block::Type>&& composition)
 {
   if (m_Composition)
     EN_WARN("Calling setComposition on a non-empty chunk!  Deleting previous allocation...");
@@ -77,7 +77,7 @@ void Chunk::setComposition(ArrayBox<Block::Type, 0, c_ChunkSize>&& composition)
   determineOpacity();
 }
 
-void Chunk::setLighting(ArrayBox<Block::Light, 0, c_ChunkSize>&& lighting)
+void Chunk::setLighting(ArrayBox<Block::Light>&& lighting)
 {
   m_Lighting = std::move(lighting);
 }

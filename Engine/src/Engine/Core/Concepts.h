@@ -29,3 +29,6 @@ concept DecaysTo = std::same_as<std::decay_t<T>, DecayedType>;
 
 template<typename Func, typename ReturnType, typename... Args>
 concept InvocableWithReturnType = std::is_invocable_r_v<ReturnType, Func, Args...>;
+
+template <typename T, typename ReturnType, typename IndexType>
+concept Indexable = requires(T t) { { t(IndexType()) } -> DecaysTo<ReturnType>; };

@@ -62,14 +62,14 @@ static constexpr int c_BiomeRegionSize = 8;
 static constexpr int c_RegionRadius = 1;
 static constexpr int c_RegionWidth = 2 * c_RegionRadius + 1;
 
-using NoiseSamples = ArrayRect<Noise::OctaveNoiseData<Biome::LocalElevationOctaves()>, 0, Chunk::Size()>;
+using NoiseSamples = ArrayRect<Noise::OctaveNoiseData<Biome::LocalElevationOctaves()>, blockIndex_t, 0, Chunk::Size()>;
 using CompoundBiome = CompoundType<Biome::Type, c_MaxCompoundBiomes, Biome::Type::Null>;
-using BiomeData = ArrayRect<CompoundBiome, 0, Chunk::Size()>;
+using BiomeData = ArrayRect<CompoundBiome, blockIndex_t, 0, Chunk::Size()>;
 
 struct SurfaceData
 {
-  NoiseSamples noiseSamples = ArrayRect<Noise::OctaveNoiseData<Biome::LocalElevationOctaves()>, 0, Chunk::Size()>(AllocationPolicy::ForOverWrite);
-  BiomeData biomeData = ArrayRect<CompoundBiome, 0, Chunk::Size()>(AllocationPolicy::ForOverWrite);
+  NoiseSamples noiseSamples = ArrayRect<Noise::OctaveNoiseData<Biome::LocalElevationOctaves()>, blockIndex_t, 0, Chunk::Size()>(AllocationPolicy::ForOverWrite);
+  BiomeData biomeData = ArrayRect<CompoundBiome, blockIndex_t, 0, Chunk::Size()>(AllocationPolicy::ForOverWrite);
 };
 
 static constexpr int c_CacheSize = (2 * c_UnloadDistance + 5) * (2 * c_UnloadDistance + 5);
@@ -173,7 +173,7 @@ static std::shared_ptr<SurfaceData> getSurfaceData(const GlobalIndex& chunkIndex
 
 
 
-static void heightMapStage(ArrayRect<length_t, 0, Chunk::Size()>& heightMap, const GlobalIndex& chunkIndex)
+static void heightMapStage(ArrayRect<length_t, blockIndex_t, 0, Chunk::Size()>& heightMap, const GlobalIndex& chunkIndex)
 {
   std::shared_ptr<SurfaceData> surfaceData = getSurfaceData(chunkIndex);
   const auto& [noiseSamples, biomeMap] = *surfaceData;
@@ -195,7 +195,7 @@ static void heightMapStage(ArrayRect<length_t, 0, Chunk::Size()>& heightMap, con
     }
 }
 
-static void soilStage(ArrayBox<Block::Type, 0, Chunk::Size()>& composition, const ArrayRect<length_t, 0, Chunk::Size()>& heightMap, const GlobalIndex& chunkIndex)
+static void soilStage(ArrayBox<Block::Type, blockIndex_t, 0, Chunk::Size()>& composition, const ArrayRect<length_t, blockIndex_t, 0, Chunk::Size()>& heightMap, const GlobalIndex& chunkIndex)
 {
   std::shared_ptr<SurfaceData> surfaceData = getSurfaceData(chunkIndex);
   const auto& [noiseSamples, biomeMap] = *surfaceData;
@@ -210,9 +210,9 @@ static void soilStage(ArrayBox<Block::Type, 0, Chunk::Size()>& composition, cons
     }
 }
 
-static void foliageStage(ArrayBox<Block::Type, 0, Chunk::Size()>& composition, const ArrayRect<length_t, 0, Chunk::Size()>& heightMap, const GlobalIndex& chunkIndex)
+static void foliageStage(ArrayBox<Block::Type, blockIndex_t, 0, Chunk::Size()>& composition, const ArrayRect<length_t, blockIndex_t, 0, Chunk::Size()>& heightMap, const GlobalIndex& chunkIndex)
 {
-  const auto createTree = [](ArrayBox<Block::Type, 0, Chunk::Size()>& composition, const BlockIndex& treeIndex, Block::Type leafType)
+  const auto createTree = [](ArrayBox<Block::Type, blockIndex_t, 0, Chunk::Size()>& composition, const BlockIndex& treeIndex, Block::Type leafType)
   {
     int i = treeIndex.i;
     int j = treeIndex.j;
@@ -257,7 +257,7 @@ static void foliageStage(ArrayBox<Block::Type, 0, Chunk::Size()>& composition, c
     }
 }
 
-static void lightingStage(ArrayBox<Block::Light, 0, Chunk::Size()>& lighting, const ArrayBox<Block::Type, 0, Chunk::Size()>& composition)
+static void lightingStage(ArrayBox<Block::Light, blockIndex_t, 0, Chunk::Size()>& lighting, const ArrayBox<Block::Type, blockIndex_t, 0, Chunk::Size()>& composition)
 {
   for (blockIndex_t i = 0; i < Chunk::Size(); ++i)
     for (blockIndex_t j = 0; j < Chunk::Size(); ++j)
@@ -275,8 +275,8 @@ static void lightingStage(ArrayBox<Block::Light, 0, Chunk::Size()>& lighting, co
 
 std::shared_ptr<Chunk> Terrain::GenerateNew(const GlobalIndex& chunkIndex)
 {
-  ArrayRect heightMap = ArrayRect<length_t, 0, Chunk::Size()>(AllocationPolicy::ForOverWrite);
-  ArrayBox composition = ArrayBox<Block::Type, 0, Chunk::Size()>(AllocationPolicy::ForOverWrite);
+  ArrayRect heightMap = ArrayRect<length_t, blockIndex_t, 0, Chunk::Size()>(AllocationPolicy::ForOverWrite);
+  ArrayBox composition = ArrayBox<Block::Type, blockIndex_t, 0, Chunk::Size()>(AllocationPolicy::ForOverWrite);
 
   heightMapStage(heightMap, chunkIndex);
   soilStage(composition, heightMap, chunkIndex);
@@ -288,7 +288,7 @@ std::shared_ptr<Chunk> Terrain::GenerateNew(const GlobalIndex& chunkIndex)
   std::shared_ptr newChunk = std::make_shared<Chunk>(chunkIndex);
   if (composition)
   {
-    ArrayBox lighting = ArrayBox<Block::Light, 0, Chunk::Size()>(AllocationPolicy::ForOverWrite);
+    ArrayBox lighting = ArrayBox<Block::Light, blockIndex_t, 0, Chunk::Size()>(AllocationPolicy::ForOverWrite);
     lightingStage(lighting, composition);
 
     newChunk->setComposition(std::move(composition));

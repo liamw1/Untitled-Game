@@ -64,27 +64,28 @@ RayIntersection World::castRaySegment(const Vec3& pointA, const Vec3& pointB) co
   // Look for solid block face intersections in the x,y,z directions
   length_t tmin = 2.0;
   RayIntersection firstIntersection{};
-  for (int i = 0; i < 3; ++i)
+  for (Axis axis : Axes())
   {
-    const bool pointedUpstream = rayDirection[i] > 0.0;
+    int axisID = static_cast<int>(axis);
+    bool pointedUpstream = rayDirection[axisID] > 0.0;
 
     // Global indices of first and last planes that segment will intersect in direction i
     globalIndex_t n0, nf;
     if (pointedUpstream)
     {
-      n0 = static_cast<globalIndex_t>(ceil(pointA[i] / Block::Length()));
-      nf = static_cast<globalIndex_t>(ceil(pointB[i] / Block::Length()));
+      n0 = static_cast<globalIndex_t>(ceil(pointA[axisID] / Block::Length()));
+      nf = static_cast<globalIndex_t>(ceil(pointB[axisID] / Block::Length()));
     }
     else
     {
-      n0 = static_cast<globalIndex_t>(floor(pointA[i] / Block::Length()));
-      nf = static_cast<globalIndex_t>(floor(pointB[i] / Block::Length()));
+      n0 = static_cast<globalIndex_t>(floor(pointA[axisID] / Block::Length()));
+      nf = static_cast<globalIndex_t>(floor(pointB[axisID] / Block::Length()));
     }
 
     // n increases to nf if ray is aligned with positive i-axis and decreases to nf otherwise
     for (globalIndex_t n = n0; pointedUpstream ? n <= nf : n >= nf; pointedUpstream ? ++n : --n)
     {
-      const length_t t = (n * Block::Length() - pointA[i]) / rayDirection[i];
+      const length_t t = (n * Block::Length() - pointA[axisID]) / rayDirection[axisID];
 
       if (t > 1.0 || !isfinite(t))
         break;
@@ -92,9 +93,9 @@ RayIntersection World::castRaySegment(const Vec3& pointA, const Vec3& pointB) co
       if (t < tmin)
       {
         // Relabeling coordinate indices
-        const int u = i;
-        const int v = (i + 1) % 3;
-        const int w = (i + 2) % 3;
+        int u = axisID;
+        int v = (u + 1) % 3;
+        int w = (u + 2) % 3;
 
         // Intersection point between ray and plane
         Vec3 intersection = pointA + t * rayDirection;
@@ -107,14 +108,14 @@ RayIntersection World::castRaySegment(const Vec3& pointA, const Vec3& pointB) co
         // Get index of chunk in which intersection took place
         LocalIndex chunkIndex = LocalIndex::CreatePermuted(static_cast<localIndex_t>(N / Chunk::Size()),
                                                            static_cast<localIndex_t>(floor(intersection[v] / Chunk::Length())),
-                                                           static_cast<localIndex_t>(floor(intersection[w] / Chunk::Length())), i);
+                                                           static_cast<localIndex_t>(floor(intersection[w] / Chunk::Length())), axis);
         if (N < 0 && N % Chunk::Size() != 0)
-          chunkIndex[u]--;
+          chunkIndex[static_cast<Axis>(u)]--;
 
         // Get local index of block that was hit by ray
         BlockIndex blockIndex = BlockIndex::CreatePermuted(modulo(N, Chunk::Size()),
                                                            modulo(static_cast<globalIndex_t>(floor(intersection[v] / Block::Length())), Chunk::Size()),
-                                                           modulo(static_cast<globalIndex_t>(floor(intersection[w] / Block::Length())), Chunk::Size()), i);
+                                                           modulo(static_cast<globalIndex_t>(floor(intersection[w] / Block::Length())), Chunk::Size()), axis);
 
         // Search to see if chunk is loaded
         auto [chunk, lock] = m_ChunkManager.acquireChunk(chunkIndex);

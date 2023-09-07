@@ -5,8 +5,7 @@ enum class Axis : int
 {
   X, Y, Z,
 
-  Null,
-  Begin = 0, End = Null
+  Begin = 0, End = Z
 };
 using Axes = Engine::EnumIterator<Axis, Axis::Begin, Axis::End>;
 
@@ -30,8 +29,7 @@ enum class Direction : int
 {
   West, East, South, North, Bottom, Top,
 
-  Null,
-  Begin = 0, End = Null
+  Begin = 0, End = Top
 };
 using Directions = Engine::EnumIterator<Direction, Direction::Begin, Direction::End>;
 
