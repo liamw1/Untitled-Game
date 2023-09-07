@@ -6,6 +6,9 @@ template<typename T, std::integral IntType, IntType MinX, IntType MaxX, IntType 
 class ArrayRect : private Engine::NonCopyable
 {
 public:
+  using Strip = ArrayBoxStrip<T, IntType, MinY, MaxY>;
+
+public:
   ArrayRect()
     : m_Data(nullptr) {}
   ArrayRect(AllocationPolicy policy)
@@ -41,15 +44,15 @@ public:
     return m_Data[c_Stride * indexRelativeToBase.i + indexRelativeToBase.j];
   }
 
-  ArrayBoxStrip<T, IntType, MinY, MaxY> operator[](IntType index)
+  Strip operator[](IntType index)
   {
     return static_cast<const ArrayRect&>(*this).operator[](index);
   }
-  const ArrayBoxStrip<T, IntType, MinY, MaxY> operator[](IntType index) const
+  const Strip operator[](IntType index) const
   {
     EN_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
     EN_CORE_ASSERT(Engine::Debug::BoundsCheck(index, MinX, MaxX), "Index is out of bounds!");
-    return ArrayBoxStrip<T, IntType, MinY, MaxY>(m_Data + c_Stride * (index - MinX));
+    return Strip(m_Data + c_Stride * (index - MinX));
   }
 
   T* get() const { return m_Data; }

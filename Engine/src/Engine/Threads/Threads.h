@@ -14,4 +14,11 @@ namespace Engine::Threads
 
   void SetAsMainThread();
   bool IsMainThread();
+
+  template<typename R>
+  bool IsReady(const std::future<R>& future)
+  {
+    using namespace std::chrono_literals;
+    return future.wait_for(0s) == std::future_status::ready;
+  }
 }

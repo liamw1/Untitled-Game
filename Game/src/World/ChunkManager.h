@@ -21,17 +21,14 @@ public:
   */
   void update();
 
+  void loadNewChunks();
+
   /*
     Unloads boundary chunks that are out of unload range.
   */
   void clean();
 
-  void loadNewChunks();
-
-  /*
-    \returns The chunk along with a lock on its mutex. Chunk will be nullptr is no chunk is found.
-  */
-  [[nodiscard]] ChunkWithLock acquireChunk(const LocalIndex& chunkIndex) const;
+  std::shared_ptr<Chunk> getChunk(const LocalIndex& chunkIndex) const;
 
   void placeBlock(GlobalIndex chunkIndex, BlockIndex blockIndex, Direction face, Block::Type blockType);
   void removeBlock(const GlobalIndex& chunkIndex, const BlockIndex& blockIndex);
@@ -42,8 +39,11 @@ public:
 private:
   struct BlockData
   {
-    ArrayBox<Block::Type, blockIndex_t, -1, Chunk::Size() + 1> composition;
-    ArrayBox<Block::Light, blockIndex_t, -1, Chunk::Size() + 1> lighting;
+    template<typename T>
+    using ArrayBox = ArrayBox<T, blockIndex_t, -1, Chunk::Size() + 1>;
+
+    ArrayBox<Block::Type> composition;
+    ArrayBox<Block::Light> lighting;
 
     BlockData();
 
@@ -80,6 +80,7 @@ private:
   ChunkContainer m_ChunkContainer;
   std::shared_ptr<Engine::Threads::ThreadPool> m_ThreadPool;
   Engine::Threads::WorkSet<GlobalIndex, void> m_LoadWork;
+  Engine::Threads::WorkSet<GlobalIndex, void> m_CleanWork;
   Engine::Threads::WorkSet<GlobalIndex, void> m_LightingWork;
   Engine::Threads::WorkSet<GlobalIndex, void> m_LazyMeshingWork;
   Engine::Threads::WorkSet<GlobalIndex, void> m_ForceMeshingWork;
@@ -91,6 +92,7 @@ private:
   void addToForceMeshUpdateQueue(const GlobalIndex& chunkIndex);
 
   void generateNewChunk(const GlobalIndex& chunkIndex);
+  void eraseChunk(const GlobalIndex& chunkIndex);
 
   /*
     Queues chunk where the block update occured for updating. If specified block is on chunk border,

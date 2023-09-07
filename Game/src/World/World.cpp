@@ -118,7 +118,7 @@ RayIntersection World::castRaySegment(const Vec3& pointA, const Vec3& pointB) co
                                                            modulo(static_cast<globalIndex_t>(floor(intersection[w] / Block::Length())), Chunk::Size()), axis);
 
         // Search to see if chunk is loaded
-        auto [chunk, lock] = m_ChunkManager.acquireChunk(chunkIndex);
+        std::shared_ptr<Chunk> chunk = m_ChunkManager.getChunk(chunkIndex);
         if (!chunk)
           continue;
 

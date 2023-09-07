@@ -10,22 +10,22 @@ namespace Engine::Threads
   class ProtectedArrayBox : private NonCopyable, NonMovable
   {
   public:
-    ProtectedArrayBox() = default;
-    ProtectedArrayBox(AllocationPolicy policy)
-      : m_ArrayBox(policy) {}
-    ProtectedArrayBox(const T& initialValue)
-      : m_ArrayBox(initialValue) {}
+    using Underlying = ArrayBox<T, IntType, MinX, MaxX, MinY, MaxY, MinZ, MaxZ>;
+
+  public:
+    ProtectedArrayBox(const T& defaultValue)
+      : m_DefaultValue(defaultValue) {}
     ~ProtectedArrayBox() = default;
 
     operator bool() const
     {
-      std::lock_guard lock(m_Mutex);
+      std::shared_lock lock(m_Mutex);
       return m_ArrayBox;
     }
 
     T operator()(const IVec3<IntType>& index) const
     {
-      std::lock_guard lock(m_Mutex);
+      std::shared_lock lock(m_Mutex);
 
       if (!m_ArrayBox)
         return m_DefaultValue;
@@ -35,7 +35,7 @@ namespace Engine::Threads
 
     bool contains(const T& value) const
     {
-      std::lock_guard lock(m_Mutex);
+      std::shared_lock lock(m_Mutex);
 
       if (!m_ArrayBox)
         return value == m_DefaultValue;
@@ -45,7 +45,7 @@ namespace Engine::Threads
 
     bool filledWith(const T& value) const
     {
-      std::lock_guard lock(m_Mutex);
+      std::shared_lock lock(m_Mutex);
 
       if (!m_ArrayBox)
         return value == m_DefaultValue;
@@ -57,14 +57,14 @@ namespace Engine::Threads
     bool contentsEqual(const IBox3<IntType>& compareSection, const ArrayBox<T, IntType, Args...>& container, const IBox3<IntType>& containerSection) const
     {
       EN_CORE_ASSERT(compareSection.extents() == containerSection.extents(), "Compared sections are not the same dimensions!");
-      std::lock_guard lock(m_Mutex);
+      std::shared_lock lock(m_Mutex);
 
       if (!m_ArrayBox && !container)
         return true;
       if (!m_ArrayBox)
-        return container.allOf(containerSection, [](const T& value) { return value == m_DefaultValue; });
+        return container.allOf(containerSection, [this](const T& value) { return value == m_DefaultValue; });
       if (!container)
-        return m_ArrayBox.allOf(compareSection, [](const T& value) { return value == m_DefaultValue; });
+        return m_ArrayBox.allOf(compareSection, [this](const T& value) { return value == m_DefaultValue; });
 
       return m_ArrayBox.contentsEqual(compareSection, container, containerSection);
     }
@@ -72,7 +72,7 @@ namespace Engine::Threads
     template<InvocableWithReturnType<bool, T> F>
     bool allOf(const IBox3<IntType>& section, const F& condition) const
     {
-      std::lock_guard lock(m_Mutex);
+      std::shared_lock lock(m_Mutex);
 
       if (!m_ArrayBox)
         return condition(m_DefaultValue);
@@ -83,7 +83,7 @@ namespace Engine::Threads
     template<InvocableWithReturnType<bool, T> F>
     bool anyOf(const IBox3<IntType>& section, const F& condition) const
     {
-      std::lock_guard lock(m_Mutex);
+      std::shared_lock lock(m_Mutex);
 
       if (!m_ArrayBox)
         return condition(m_DefaultValue);
@@ -94,7 +94,7 @@ namespace Engine::Threads
     template<InvocableWithReturnType<bool, T> F>
     bool noneOf(const IBox3<IntType>& section, const F& condition) const
     {
-      std::lock_guard lock(m_Mutex);
+      std::shared_lock lock(m_Mutex);
 
       if (!m_ArrayBox)
         return !condition(m_DefaultValue);
@@ -102,16 +102,55 @@ namespace Engine::Threads
       return m_ArrayBox.noneOf(section, condition);
     }
 
+    template<IntType... Args>
+    void useToFill(const IBox3<IntType>& readSection, ArrayBox<T, IntType, Args...>& container, const IBox3<IntType>& fillSection) const
+    {
+      EN_CORE_ASSERT(container, "Container data has not yet been allocated!");
+      std::shared_lock lock(m_Mutex);
+
+      if (!m_ArrayBox)
+        container.fill(fillSection, m_DefaultValue);
+      else
+        container.fill(fillSection, m_ArrayBox, readSection);
+    }
+
+    template<InvocableWithReturnType<void, const Underlying&> F>
+    void readOperation(const F& operation) const
+    {
+      std::shared_lock lock(m_Mutex);
+      operation(m_ArrayBox);
+    }
+
     void set(const IVec3<IntType>& index, const T& value)
     {
       std::lock_guard lock(m_Mutex);
-
-      if (!m_ArrayBox)
-        allocateAndFillWithDefaultValue();
-
-      m_ArrayBox(index) = value;
+      setIfNecessary(index, value);
     }
 
+    template<InvocableWithReturnType<bool, T> F>
+    bool setIf(const IVec3<IntType>& index, const T& value, const F& condition)
+    {
+      std::lock_guard lock(m_Mutex);
+
+      const T& containedValue = m_ArrayBox ? m_ArrayBox(index) : m_DefaultValue;
+      if (!condition(containedValue))
+        return false;
+
+      setIfNecessary(index, value);
+      return true;
+    }
+
+    [[nodiscard]] T getAndSet(const IVec3<IntType>& index, const T& value)
+    {
+      std::lock_guard lock(m_Mutex);
+
+      T containedValue = m_ArrayBox ? m_ArrayBox(index) : m_DefaultValue;
+      setIfNecessary(index, value);
+
+      return containedValue;
+    }
+
+    // Methods disabled until proven useful. May remove otherwise as they may be difficult to debug and maintain.
 #if 0
     void fill(const T& value)
     {
@@ -157,7 +196,7 @@ namespace Engine::Threads
     }
 #endif
 
-    void setData(ArrayBox<T, IntType, MinX, MaxX, MinY, MaxY, MinZ, MaxZ>&& newArrayBox)
+    void setData(Underlying&& newArrayBox)
     {
       std::lock_guard lock(m_Mutex);
       m_ArrayBox = std::move(newArrayBox);
@@ -173,16 +212,29 @@ namespace Engine::Threads
       if (m_ArrayBox.filledWith(m_DefaultValue))
         m_ArrayBox.reset();
     }
-  
+
   private:
     mutable std::shared_mutex m_Mutex;
-    ArrayBox<T, IntType, MinX, MaxX, MinY, MaxY, MinZ, MaxZ> m_ArrayBox;
+    Underlying m_ArrayBox;
     T m_DefaultValue;
 
     void allocateAndFillWithDefaultValue()
     {
       m_ArrayBox.allocate();
       m_ArrayBox.fill(m_DefaultValue);
+    }
+
+    void setIfNecessary(const IVec3<IntType>& index, const T& value)
+    {
+      if (!m_ArrayBox)
+      {
+        if (value == m_DefaultValue)
+          return;
+
+        allocateAndFillWithDefaultValue();
+      }
+
+      m_ArrayBox(index) = value;
     }
   };
 }

@@ -41,10 +41,7 @@ public:
 
   bool hasBoundaryNeighbors(const GlobalIndex& chunkIndex);
 
-  /*
-    \returns The chunk along with a lock on its mutex. Will return nullptr is no chunk is found.
-  */
-  [[nodiscard]] ChunkWithLock acquireChunk(const GlobalIndex& chunkIndex) const;
+  std::shared_ptr<Chunk> getChunk(const GlobalIndex& chunkIndex) const;
 
 private:
   Engine::Threads::UnorderedMap<GlobalIndex, Chunk> m_Chunks;

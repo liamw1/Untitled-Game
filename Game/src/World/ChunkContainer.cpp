@@ -53,15 +53,9 @@ bool ChunkContainer::hasBoundaryNeighbors(const GlobalIndex& chunkIndex)
     });
 }
 
-ChunkWithLock ChunkContainer::acquireChunk(const GlobalIndex& chunkIndex) const
+std::shared_ptr<Chunk> ChunkContainer::getChunk(const GlobalIndex& chunkIndex) const
 {
-  std::unique_lock<std::mutex> chunkLock;
-
-  std::shared_ptr<Chunk> chunk = m_Chunks.get(chunkIndex);
-  if (chunk)
-    chunkLock = chunk->acquireLock();
-
-  return { chunk, std::move(chunkLock) };
+  return m_Chunks.get(chunkIndex);
 }
 
 

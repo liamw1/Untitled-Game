@@ -34,17 +34,20 @@ template<typename T, std::integral IntType, IntType MinY, IntType MaxY, IntType 
 class ArrayBoxLayer
 {
 public:
+  using Strip = ArrayBoxStrip<T, IntType, MinZ, MaxZ>;
+
+public:
   ArrayBoxLayer(T* begin)
     : m_Begin(begin) {}
 
-  ArrayBoxStrip<T, IntType, MinZ, MaxZ> operator[](IntType index)
+  Strip operator[](IntType index)
   {
     return static_cast<const ArrayBoxLayer&>(*this).operator[](index);
   }
-  const ArrayBoxStrip<T, IntType, MinZ, MaxZ> operator[](IntType index) const
+  const Strip operator[](IntType index) const
   {
     EN_CORE_ASSERT(Engine::Debug::BoundsCheck(index, MinY, MaxY), "Index is out of bounds!");
-    return ArrayBoxStrip<T, IntType, MinZ, MaxZ>(m_Begin + (MaxZ - MinZ) * (index - MinY));
+    return Strip(m_Begin + (MaxZ - MinZ) * (index - MinY));
   }
 
 private:
@@ -65,6 +68,10 @@ private:
 template<typename T, std::integral IntType, IntType MinX, IntType MaxX, IntType MinY = MinX, IntType MaxY = MaxX, IntType MinZ = MinX, IntType MaxZ = MaxX>
 class ArrayBox : private Engine::NonCopyable
 {
+public:
+  using Layer = ArrayBoxLayer<T, IntType, MinY, MaxY, MinZ, MaxZ>;
+  using Strip = ArrayBoxStrip<T, IntType, MinZ, MaxZ>;
+
 public:
   ArrayBox()
     : m_Data(nullptr) {}
@@ -104,17 +111,17 @@ public:
     return m_Data[strides.i * indexRelativeToBase.i + strides.j * indexRelativeToBase.j + strides.k * indexRelativeToBase.k];
   }
 
-  ArrayBoxLayer<T, IntType, MinY, MaxY, MinZ, MaxZ> operator[](IntType index)
+  Layer operator[](IntType index)
   {
     return static_cast<const ArrayBox*>(this)->operator[](index);
   }
-  const ArrayBoxLayer<T, IntType, MinY, MaxY, MinZ, MaxZ> operator[](IntType index) const
+  const Layer operator[](IntType index) const
   {
     EN_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
     EN_CORE_ASSERT(Engine::Debug::BoundsCheck(index, MinX, MaxX), "Index is out of bounds!");
 
     static constexpr size_t stride = static_cast<size_t>(MaxY - MinY) * static_cast<size_t>(MaxZ - MinZ);
-    return ArrayBoxLayer<T, IntType, MinY, MaxY, MinZ, MaxZ>(m_Data + stride * index);
+    return Layer(m_Data + stride * index);
   }
 
   T* get() const { return m_Data; }

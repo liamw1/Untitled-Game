@@ -11,16 +11,23 @@ class Chunk : private Engine::NonCopyable, Engine::NonMovable
 
 public:
   template<typename T>
+  using ArrayRect = ArrayRect<T, blockIndex_t, 0, c_ChunkSize>;
+
+  template<typename T>
   using ArrayBox = ArrayBox<T, blockIndex_t, 0, c_ChunkSize>;
 
-  Chunk();
+  template<typename T>
+  using ProtectedArrayBox = Engine::Threads::ProtectedArrayBox<T, blockIndex_t, 0, c_ChunkSize>;
+
+public:
+  Chunk() = delete;
   Chunk(const GlobalIndex& chunkIndex);
 
-  ArrayBox<Block::Type>& composition();
-  const ArrayBox<Block::Type>& composition() const;
+  ProtectedArrayBox<Block::Type>& composition();
+  const ProtectedArrayBox<Block::Type>& composition() const;
 
-  ArrayBox<Block::Light>& lighting();
-  const ArrayBox<Block::Light>& lighting() const;
+  ProtectedArrayBox<Block::Light>& lighting();
+  const ProtectedArrayBox<Block::Light>& lighting() const;
 
   /*
     \return Whether or not a given chunk face has transparent blocks. Useful for deciding which chunks should be loaded
@@ -45,8 +52,6 @@ public:
 
   void update();
 
-  _Acquires_lock_(return) std::unique_lock<std::mutex> acquireLock() const;
-
   /*
     \returns The chunk's geometric center relative to origin chunk.
   */
@@ -68,9 +73,8 @@ public:
   static constexpr GlobalBox Stencil(const GlobalIndex& chunkIndex) { return GlobalBox(-1, 2) + chunkIndex; }
 
 private:
-  mutable std::mutex m_Mutex;
-  ArrayBox<Block::Type> m_Composition;
-  ArrayBox<Block::Light> m_Lighting;
+  ProtectedArrayBox<Block::Type> m_Composition;
+  ProtectedArrayBox<Block::Light> m_Lighting;
   std::atomic<uint16_t> m_NonOpaqueFaces;
 };
 

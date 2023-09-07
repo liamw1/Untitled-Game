@@ -6,6 +6,9 @@ namespace Engine::Threads
   template<Hashable Identifier, typename ReturnType>
   class WorkSet
   {
+  private:
+    using FuturesIterator = std::unordered_map<Identifier, std::future<ReturnType>>::iterator;
+
   public:
     WorkSet() = default;
     WorkSet(const std::shared_ptr<ThreadPool>& threadPool, Priority priority)
@@ -53,6 +56,25 @@ namespace Engine::Threads
 
       for (auto& [id, future] : futures)
         future.wait();
+    }
+
+    std::vector<Identifier> discardFinished()
+    {
+      std::vector<Identifier> finishedTasks;
+
+      std::lock_guard lock(m_Mutex);
+      for (FuturesIterator it = m_Futures.begin(); it != m_Futures.end();)
+      {
+        if (!IsReady(it->second))
+        {
+          ++it;
+          continue;
+        }
+
+        finishedTasks.push_back(it->first);
+        it = m_Futures.erase(it);
+      }
+      return finishedTasks;
     }
 
     bool contains(const Identifier& id) const
