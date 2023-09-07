@@ -148,14 +148,16 @@ public:
   }
 
   template<IntType... Args>
-  bool contentsEqual(const IBox3<IntType>& compareSection, const ArrayBox<T, IntType, Args...>& container, const IBox3<IntType>& containerSection) const
+  bool contentsEqual(const IBox3<IntType>& compareSection, const ArrayBox<T, IntType, Args...>& container, const IBox3<IntType>& containerSection, const T& defaultValue) const
   {
     EN_CORE_ASSERT(compareSection.extents() == containerSection.extents(), "Compared sections are not the same dimensions!");
 
     if (!m_Data && !container)
       return true;
-    if (!m_Data || !container)
-      return false;
+    if (!m_Data)
+      return container.allOf(containerSection, [&defaultValue](const T& value) { return value == defaultValue; });
+    if (!container)
+      return this->allOf(compareSection, [&defaultValue](const T& value) { return value == defaultValue; });
 
     IVec3<IntType> offset = containerSection.min - compareSection.min;
     return compareSection.allOf([this, &container, &offset](const IVec3<IntType>& index)
@@ -210,11 +212,16 @@ public:
   }
 
   template<IntType... Args>
-  void fill(const IBox3<IntType>& fillSection, const ArrayBox<T, IntType, Args...>& container, const IBox3<IntType>& containerSection)
+  void fill(const IBox3<IntType>& fillSection, const ArrayBox<T, IntType, Args...>& container, const IBox3<IntType>& containerSection, const T& defaultValue)
   {
     EN_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
-    EN_CORE_ASSERT(container, "Container data has not yet been allocated!");
     EN_CORE_ASSERT(fillSection.extents() == containerSection.extents(), "Read and write sections are not the same dimensions!");
+
+    if (!container)
+    {
+      fill(fillSection, defaultValue);
+      return;
+    }
 
     IVec3<IntType> offset = containerSection.min - fillSection.min;
     fillSection.forEach([this, &container, &offset](const IVec3<IntType>& index)

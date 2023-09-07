@@ -36,15 +36,9 @@ public:
     WARNING: This function only reflects the opacity state of the chunk when determineOpacity() was last called. If any
     changes to chunk composition occured since then, this function may not be accurate. This is because determineOpacity
     is a costly operation (at least relative to the cost of changing a single block), so we prefer to only compute opacity
-    when the chunk is updated via setData or internalUpdate. Use with caution.
+    when the chunk is updated via setComposition or update. Use with caution.
   */
   bool isFaceOpaque(Direction face) const;
-
-  Block::Type getBlockType(const BlockIndex& blockIndex) const;
-  Block::Light getBlockLight(const BlockIndex& blockIndex) const;
-
-  void setBlockType(const BlockIndex& blockIndex, Block::Type blockType);
-  void setBlockLight(const BlockIndex& blockIndex, Block::Light blockLight);
 
   void setComposition(ArrayBox<Block::Type>&& composition);
   void setLighting(ArrayBox<Block::Light>&& lighting);
@@ -76,10 +70,4 @@ private:
   ProtectedArrayBox<Block::Type> m_Composition;
   ProtectedArrayBox<Block::Light> m_Lighting;
   std::atomic<uint16_t> m_NonOpaqueFaces;
-};
-
-struct ChunkWithLock
-{
-  std::shared_ptr<Chunk> chunk;
-  std::unique_lock<std::mutex> lock;
 };

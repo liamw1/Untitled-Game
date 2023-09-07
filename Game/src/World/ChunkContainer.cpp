@@ -3,8 +3,6 @@
 #include "Player/Player.h"
 #include "Util/Util.h"
 
-static constexpr int c_MaxChunks = (2 * c_UnloadDistance + 1) * (2 * c_UnloadDistance + 1) * (2 * c_UnloadDistance + 1);
-
 ChunkContainer::ChunkContainer() = default;
 
 bool ChunkContainer::insert(const GlobalIndex& chunkIndex, const std::shared_ptr<Chunk>& newChunk)
@@ -51,11 +49,6 @@ bool ChunkContainer::hasBoundaryNeighbors(const GlobalIndex& chunkIndex)
     {
       return m_BoundaryIndices.contains(stencilIndex);
     });
-}
-
-std::shared_ptr<Chunk> ChunkContainer::getChunk(const GlobalIndex& chunkIndex) const
-{
-  return m_Chunks.get(chunkIndex);
 }
 
 

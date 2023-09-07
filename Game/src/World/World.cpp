@@ -118,12 +118,12 @@ RayIntersection World::castRaySegment(const Vec3& pointA, const Vec3& pointB) co
                                                            modulo(static_cast<globalIndex_t>(floor(intersection[w] / Block::Length())), Chunk::Size()), axis);
 
         // Search to see if chunk is loaded
-        std::shared_ptr<Chunk> chunk = m_ChunkManager.getChunk(chunkIndex);
+        std::shared_ptr<const Chunk> chunk = m_ChunkManager.getChunk(chunkIndex);
         if (!chunk)
           continue;
 
         // If block has collision, note the intersection and move to next spatial direction
-        if (Block::HasCollision(chunk->getBlockType(blockIndex)))
+        if (Block::HasCollision(chunk->composition().get(blockIndex)))
         {
           int faceID = 2 * u + !pointedUpstream;
           tmin = t;

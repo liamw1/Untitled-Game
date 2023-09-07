@@ -1,7 +1,7 @@
 #pragma once
 #include "Engine/Utilities/Constraints.h"
 
-#define EN_PROFILE 1
+#define EN_PROFILE 0
 #if EN_PROFILE
 #define EN_PROFILE_BEGIN_SESSION(name, filepath)  ::Engine::Debug::Instrumentor::Get().beginSession(name, filepath)
 #define EN_PROFILE_END_SESSION()                  ::Engine::Debug::Instrumentor::Get().endSession()

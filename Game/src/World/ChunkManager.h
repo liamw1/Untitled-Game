@@ -28,7 +28,7 @@ public:
   */
   void clean();
 
-  std::shared_ptr<Chunk> getChunk(const LocalIndex& chunkIndex) const;
+  std::shared_ptr<const Chunk> getChunk(const LocalIndex& chunkIndex) const;
 
   void placeBlock(GlobalIndex chunkIndex, BlockIndex blockIndex, Direction face, Block::Type blockType);
   void removeBlock(const GlobalIndex& chunkIndex, const BlockIndex& blockIndex);
@@ -47,7 +47,7 @@ private:
 
     BlockData();
 
-    void fill(const BlockBox& fillSection, std::shared_ptr<Chunk> chunk, const BlockBox& chunkSection, bool fillLighting);
+    void fill(const BlockBox& fillSection, std::shared_ptr<const Chunk> chunk, const BlockBox& chunkSection, bool fillLighting);
 
     static constexpr BlockBox Bounds() { return BlockBox(-1, Chunk::Size() + 1); }
   };

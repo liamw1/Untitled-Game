@@ -41,19 +41,14 @@ public:
 
   bool hasBoundaryNeighbors(const GlobalIndex& chunkIndex);
 
-  std::shared_ptr<Chunk> getChunk(const GlobalIndex& chunkIndex) const;
-
 private:
   Engine::Threads::UnorderedMap<GlobalIndex, Chunk> m_Chunks;
   Engine::Threads::UnorderedSet<GlobalIndex> m_BoundaryIndices;
 
-// Helper functions for chunk container access. These assume the map mutex has already been locked by one of the public functions
 private:
   /*
     \returns True if the given chunk meets the requirements to be a boundary chunk.
              Does not check if the chunk is in the boundary map.
-
-    Requires at minimum a shared lock to be owned on the container mutex.
   */
   bool isOnBoundary(const GlobalIndex& chunkIndex) const;
 

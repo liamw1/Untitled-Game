@@ -48,9 +48,9 @@ namespace Engine
   };
 
   /*
-    A CRTP class that represents a single multi-draw command.
-    Derived classes can store arbitrary amounts of extra data
-    as long as the layout of the first 20 bytes is preserved.
+    A CRTP class that represents a single indexed multi-draw command.
+    Derived classes can store arbitrary amounts of extra data as long
+    as the layout of the first 20 bytes is preserved.
   */
   template<Hashable Identifier, typename Derived>
   class MultiDrawIndexedCommand

@@ -80,14 +80,16 @@ public:
   }
 
   template<IntType... Args>
-  bool contentsEqual(const IBox2<IntType>& compareSection, const ArrayBox<T, IntType, Args...>& container, const IBox2<IntType>& containerSection) const
+  bool contentsEqual(const IBox2<IntType>& compareSection, const ArrayBox<T, IntType, Args...>& container, const IBox2<IntType>& containerSection, const T& defaultValue) const
   {
     EN_CORE_ASSERT(compareSection.extents() == containerSection.extents(), "Compared sections are not the same dimensions!");
 
     if (!m_Data && !container)
       return true;
-    if (!m_Data || !container)
-      return false;
+    if (!m_Data)
+      return container.allOf(containerSection, [&defaultValue](const T& value) { return value == defaultValue; });
+    if (!container)
+      return this->allOf(compareSection, [&defaultValue](const T& value) { return value == defaultValue; });
 
     IVec2<IntType> offset = containerSection.min - compareSection.min;
     return compareSection.allOf([this, &container, &offset](const IVec2<IntType>& index)

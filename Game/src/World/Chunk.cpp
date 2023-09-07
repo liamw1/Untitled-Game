@@ -9,7 +9,7 @@ Chunk::Chunk(const GlobalIndex& chunkIndex)
 
 Chunk::ProtectedArrayBox<Block::Type>& Chunk::composition()
 {
-  return const_cast<ProtectedArrayBox<Block::Type>&>(static_cast<const Chunk*>(this)->composition());
+  return m_Composition;
 }
 
 const Chunk::ProtectedArrayBox<Block::Type>& Chunk::composition() const
@@ -19,7 +19,7 @@ const Chunk::ProtectedArrayBox<Block::Type>& Chunk::composition() const
 
 Chunk::ProtectedArrayBox<Block::Light>& Chunk::lighting()
 {
-  return const_cast<ProtectedArrayBox<Block::Light>&>(static_cast<const Chunk*>(this)->lighting());
+  return m_Lighting;
 }
 
 const Chunk::ProtectedArrayBox<Block::Light>& Chunk::lighting() const
@@ -31,26 +31,6 @@ bool Chunk::isFaceOpaque(Direction face) const
 {
   uint16_t nonOpaqueFaces = m_NonOpaqueFaces.load();
   return !(nonOpaqueFaces & Engine::Bit(static_cast<int>(face)));
-}
-
-Block::Type Chunk::getBlockType(const BlockIndex& blockIndex) const
-{
-  return m_Composition ? m_Composition(blockIndex) : Block::Type::Air;
-}
-
-Block::Light Chunk::getBlockLight(const BlockIndex& blockIndex) const
-{
-  return m_Lighting ? m_Lighting(blockIndex) : Block::Light::MaxValue();
-}
-
-void Chunk::setBlockType(const BlockIndex& blockIndex, Block::Type blockType)
-{
-  m_Composition.set(blockIndex, blockType);
-}
-
-void Chunk::setBlockLight(const BlockIndex& blockIndex, Block::Light blockLight)
-{
-  m_Lighting.set(blockIndex, blockLight);
 }
 
 void Chunk::setComposition(ArrayBox<Block::Type>&& composition)
