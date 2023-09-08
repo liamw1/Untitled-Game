@@ -37,21 +37,6 @@ public:
   void loadChunk(const GlobalIndex& chunkIndex, Block::Type blockType);
 
 private:
-  struct BlockData
-  {
-    template<typename T>
-    using ArrayBox = ArrayBox<T, blockIndex_t, -1, Chunk::Size() + 1>;
-
-    ArrayBox<Block::Type> composition;
-    ArrayBox<Block::Light> lighting;
-
-    BlockData();
-
-    void fill(const BlockBox& fillSection, std::shared_ptr<const Chunk> chunk, const BlockBox& chunkSection, bool fillLighting);
-
-    static constexpr BlockBox Bounds() { return BlockBox(-1, Chunk::Size() + 1); }
-  };
-
   struct LightUniforms
   {
     const float maxSunlight = static_cast<float>(Block::Light::MaxValue());
@@ -75,12 +60,9 @@ private:
   std::unique_ptr<Engine::MultiDrawIndexedArray<ChunkDrawCommand>> m_TransparentMultiDrawArray;
 
   // Multi-threading
-  static inline thread_local BlockData tl_BlockData;
-
   ChunkContainer m_ChunkContainer;
   std::shared_ptr<Engine::Threads::ThreadPool> m_ThreadPool;
-  Engine::Threads::WorkSet<GlobalIndex, void> m_LoadWork;
-  Engine::Threads::WorkSet<GlobalIndex, void> m_CleanWork;
+  Engine::Threads::WorkSet<GlobalIndex, std::shared_ptr<Chunk>> m_LoadWork;
   Engine::Threads::WorkSet<GlobalIndex, void> m_LightingWork;
   Engine::Threads::WorkSet<GlobalIndex, void> m_LazyMeshingWork;
   Engine::Threads::WorkSet<GlobalIndex, void> m_ForceMeshingWork;
@@ -91,8 +73,7 @@ private:
   void addToLazyMeshUpdateQueue(const GlobalIndex& chunkIndex);
   void addToForceMeshUpdateQueue(const GlobalIndex& chunkIndex);
 
-  void generateNewChunk(const GlobalIndex& chunkIndex);
-  void eraseChunk(const GlobalIndex& chunkIndex);
+  std::shared_ptr<Chunk> generateNewChunk(const GlobalIndex& chunkIndex);
 
   /*
     Queues chunk where the block update occured for updating. If specified block is on chunk border,
@@ -105,11 +86,6 @@ private:
 
   // Meshing
 private:
-  std::pair<bool, bool> getOnChunkBlockData(BlockData& blockData, const GlobalIndex& chunkIndex, bool getLighting = true) const;
-  void getCardinalNeighborBlockData(BlockData& blockData, const GlobalIndex& chunkIndex, bool getLighting = true) const;
-  void getEdgeNeighborBlockData(BlockData& blockData, const GlobalIndex& chunkIndex, bool getLighting = true) const;
-  void getCornerNeighborBlockData(BlockData& blockData, const GlobalIndex& chunkIndex, bool getLighting = true) const;
-
   /*
     Generates simplistic mesh in a compressed format based on chunk compostion.
     Block faces covered by opaque blocks will not be added to mesh.
@@ -120,9 +96,9 @@ private:
      bits 22-31: Texure ID
      Uses AO algorithm outlined in https://0fps.net/2013/07/03/ambient-occlusion-for-minecraft-like-worlds/
   */
-  void meshChunk(const GlobalIndex& chunkIndex);
+  void meshChunk(const std::shared_ptr<Chunk>& chunk, const GlobalIndex& chunkIndex);
 
-  void updateLighting(const GlobalIndex& chunkIndex);
+  void updateLighting(const std::shared_ptr<Chunk>& chunk, const GlobalIndex& chunkIndex);
 
   void lightingPacket(const GlobalIndex& chunkIndex);
   void lazyMeshingPacket(const GlobalIndex& chunkIndex);

@@ -1,6 +1,6 @@
 #pragma once
 #include "IVec3.h"
-#include "Engine/Core/Concepts.h"
+#include "Engine/Core/Concepts.h" 
 
 template<std::integral IntType>
 struct IBox3

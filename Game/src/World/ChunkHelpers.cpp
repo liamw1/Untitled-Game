@@ -197,25 +197,24 @@ void ChunkDrawCommand::setIndices(const GlobalIndex& originIndex, const Vec3& vi
     int quadVertexOffset = 0;
     std::array<int, 6> quadVertexOffsets{ -1, -1, -1, -1, -1, -1 };
     for (Direction face : Directions())
-    {
-      int faceID = static_cast<int>(face);
       if (voxel.faceEnabled(face))
       {
-        quadVertexOffsets[faceID] = quadVertexOffset;
+        quadVertexOffsets[static_cast<int>(face)] = quadVertexOffset;
         quadVertexOffset += 4;
       }
-    }
 
-    for (int coordID = 0; coordID < 3; ++coordID)
+    for (Axis axis : Axes())
     {
-      int faceID = 2 * coordID + (toBlock[coordID] < 0 ? 0 : 1);
+      int axisID = static_cast<int>(axis);
+      int faceID = 2 * axisID + (toBlock[axisID] < 0 ? 0 : 1);
       if (quadVertexOffsets[faceID] >= 0)
         addQuadIndices(voxel.baseVertex() + quadVertexOffsets[faceID]);
     }
 
-    for (int coordID = 0; coordID < 3; ++coordID)
+    for (Axis axis : Axes())
     {
-      int faceID = 2 * coordID + (toBlock[coordID] < 0 ? 1 : 0);
+      int axisID = static_cast<int>(axis);
+      int faceID = 2 * axisID + (toBlock[axisID] < 0 ? 1 : 0);
       if (quadVertexOffsets[faceID] >= 0)
         addQuadIndices(voxel.baseVertex() + quadVertexOffsets[faceID]);
     }

@@ -247,6 +247,8 @@ public:
     m_Data = nullptr;
   }
 
+  static constexpr const IBox3<IntType>& Bounds() { return c_Bounds; }
+
 private:
   static constexpr IBox3<IntType> c_Bounds = IBox3<IntType>(MinX, MinY, MinZ, MaxX, MaxY, MaxZ);
 

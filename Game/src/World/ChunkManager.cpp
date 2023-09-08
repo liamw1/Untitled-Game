@@ -5,11 +5,10 @@
 #include "Util/Util.h"
 
 ChunkManager::ChunkManager()
-  : m_ThreadPool(std::make_shared<Engine::Threads::ThreadPool>(8)),
+  : m_ThreadPool(std::make_shared<Engine::Threads::ThreadPool>(1)),
     m_LoadWork(m_ThreadPool, Engine::Threads::Priority::Normal),
-    m_CleanWork(m_ThreadPool, Engine::Threads::Priority::Normal),
     m_LightingWork(m_ThreadPool, Engine::Threads::Priority::Normal),
-    m_LazyMeshingWork(m_ThreadPool, Engine::Threads::Priority::Normal),
+    m_LazyMeshingWork(m_ThreadPool, Engine::Threads::Priority::Low),
     m_ForceMeshingWork(m_ThreadPool, Engine::Threads::Priority::High),
     m_PrevPlayerOriginIndex(Player::OriginIndex()) {}
 
@@ -178,15 +177,8 @@ void ChunkManager::loadNewChunks()
 
 void ChunkManager::clean()
 {
-  std::vector<GlobalIndex> deletedChunks = m_CleanWork.discardFinished();
-  for (const GlobalIndex& deletionIndex : deletedChunks)
-  {
-    m_OpaqueMultiDrawArray->remove(deletionIndex);
-    m_TransparentMultiDrawArray->remove(deletionIndex);
-  }
-
   GlobalIndex originIndex = Player::OriginIndex();
-  if (m_PrevPlayerOriginIndex == originIndex || m_CleanWork.queuedTasks() > 0)
+  if (m_PrevPlayerOriginIndex == originIndex)
     return;
 
   EN_PROFILE_FUNCTION();
@@ -197,8 +189,15 @@ void ChunkManager::clean()
     });
 
   if (!chunksMarkedForDeletion.empty())
+  {
     for (const GlobalIndex& chunkIndex : chunksMarkedForDeletion)
-      m_CleanWork.submitAndSaveResult(chunkIndex, &ChunkManager::eraseChunk, this, chunkIndex);
+      if (!Util::IsInRange(chunkIndex, originIndex, c_UnloadDistance))
+      {
+        m_ChunkContainer.erase(chunkIndex);
+        m_OpaqueMultiDrawArray->remove(chunkIndex);
+        m_TransparentMultiDrawArray->remove(chunkIndex);
+      }
+  }
 
   m_PrevPlayerOriginIndex = originIndex;
 }
@@ -277,26 +276,6 @@ void ChunkManager::loadChunk(const GlobalIndex& chunkIndex, Block::Type blockTyp
 
 
 
-ChunkManager::BlockData::BlockData()
-  : composition(ArrayBox<Block::Type>(AllocationPolicy::ForOverWrite)),
-    lighting(ArrayBox<Block::Light>(AllocationPolicy::ForOverWrite)) {}
-
-void ChunkManager::BlockData::fill(const BlockBox& fillSection, std::shared_ptr<const Chunk> chunk, const BlockBox& chunkSection, bool fillLighting)
-{
-  chunk->composition().readOperation([this, &fillSection, &chunkSection](const Chunk::ArrayBox<Block::Type>& chunkComposition, const Block::Type& defaultValue)
-    {
-      composition.fill(fillSection, chunkComposition, chunkSection, defaultValue);
-    });
-
-  if (fillLighting)
-    chunk->lighting().readOperation([this, &fillSection, &chunkSection](const Chunk::ArrayBox<Block::Light>& chunkLighting, const Block::Light& defaultValue)
-      {
-        lighting.fill(fillSection, chunkLighting, chunkSection, defaultValue);
-      });
-}
-
-
-
 void ChunkManager::addToLightingUpdateQueue(const GlobalIndex& chunkIndex)
 {
   m_LightingWork.submit(chunkIndex, &ChunkManager::lightingPacket, this, chunkIndex);
@@ -315,7 +294,7 @@ void ChunkManager::addToForceMeshUpdateQueue(const GlobalIndex& chunkIndex)
   m_ForceMeshingWork.submitAndSaveResult(chunkIndex, &ChunkManager::forceMeshingPacket, this, chunkIndex);
 }
 
-void ChunkManager::generateNewChunk(const GlobalIndex& chunkIndex)
+std::shared_ptr<Chunk> ChunkManager::generateNewChunk(const GlobalIndex& chunkIndex)
 {
   EN_PROFILE_FUNCTION();
 
@@ -327,12 +306,7 @@ void ChunkManager::generateNewChunk(const GlobalIndex& chunkIndex)
       {
         addToLazyMeshUpdateQueue(stencilIndex);
       });
-}
-
-void ChunkManager::eraseChunk(const GlobalIndex& chunkIndex)
-{
-  if (!Util::IsInRange(chunkIndex, Player::OriginIndex(), c_UnloadDistance))
-    m_ChunkContainer.erase(chunkIndex);
+  return chunk;
 }
 
 void ChunkManager::sendBlockUpdate(const GlobalIndex& chunkIndex, const BlockIndex& blockIndex)
@@ -390,75 +364,128 @@ void ChunkManager::uploadMeshes(Engine::Threads::UnorderedSet<ChunkDrawCommand>&
   }
 }
 
-std::pair<bool, bool> ChunkManager::getOnChunkBlockData(BlockData& blockData, const GlobalIndex& chunkIndex, bool getLighting) const
-{
-  std::shared_ptr<const Chunk> chunk = m_ChunkContainer.chunks().get(chunkIndex);
-  if (!chunk)
-    return { true, false };
 
-  BlockBox fillSection(0, Chunk::Size());
-  blockData.fill(fillSection, chunk, Chunk::Bounds(), getLighting);
-  return { false, !chunk->composition() };
+
+enum class Neighbors : uint8_t
+{
+  None    = 0,
+  Face    = Engine::BitUi8(0),
+  Edge    = Engine::BitUi8(1),
+  Corner  = Engine::BitUi8(2),
+
+  All = Face | Edge | Corner
+};
+EN_ENABLE_BITMASK_OPERATORS(Neighbors);
+
+template<typename T>
+using BlockDataArrayBox = ArrayBox<T, blockIndex_t, -1, Chunk::Size() + 1>;
+
+struct BlockData
+{
+  BlockDataArrayBox<Block::Type> composition;
+  BlockDataArrayBox<Block::Light> lighting;
+
+  BlockData()
+    : composition(AllocationPolicy::ForOverWrite), lighting(AllocationPolicy::ForOverWrite) {}
+
+  static constexpr const BlockBox& Bounds() { return BlockDataArrayBox<Block::Type>::Bounds(); }
+};
+
+template<typename T>
+static const Chunk::ProtectedArrayBox<T>& selectChunkData(const std::shared_ptr<const Chunk>& chunk)
+{
+  if constexpr (std::is_same_v<T, Block::Type>)
+    return chunk->composition();
+  if constexpr (std::is_same_v<T, Block::Light>)
+    return chunk->lighting();
 }
 
-void ChunkManager::getCardinalNeighborBlockData(BlockData& blockData, const GlobalIndex& chunkIndex, bool getLighting) const
+template<typename T>
+static void copyChunkData(BlockDataArrayBox<T>& blockData, const BlockBox& fillSection, const std::shared_ptr<const Chunk>& chunk, const BlockBox& chunkSection)
 {
-  for (const auto& [side, faceInterior] : FaceInteriors(BlockData::Bounds()))
-  {
-    std::shared_ptr<const Chunk> neighbor = m_ChunkContainer.chunks().get(chunkIndex + GlobalIndex::Dir(side));
-    if (!neighbor)
-      continue;
-
-    BlockBox neighborFace = Chunk::Bounds().face(!side);
-    blockData.fill(faceInterior, neighbor, neighborFace, getLighting);
-  }
+  const Chunk::ProtectedArrayBox<T>& chunkData = selectChunkData<T>(chunk);
+  chunkData.readOperation([&blockData, &fillSection, &chunkSection](const Chunk::ArrayBox<T>& chunkArrayBox, const T& defaultValue)
+    {
+      blockData.fill(fillSection, chunkArrayBox, chunkSection, defaultValue);
+    });
 }
 
-void ChunkManager::getEdgeNeighborBlockData(BlockData& blockData, const GlobalIndex& chunkIndex, bool getLighting) const
+template<typename T>
+static bool fillWithChunkData(BlockDataArrayBox<T>& blockData, const std::shared_ptr<const Chunk>& chunk)
 {
-  for (const auto& [sideA, sideB, edgeInterior] : EdgeInteriors(BlockData::Bounds()))
-  {
-    std::shared_ptr<const Chunk> neighbor = m_ChunkContainer.chunks().get(chunkIndex + GlobalIndex::Dir(sideA) + GlobalIndex::Dir(sideB));
-    if (!neighbor)
-      continue;
-
-    BlockBox neighborEdge = Chunk::Bounds().edge(!sideA, !sideB);
-    blockData.fill(edgeInterior, neighbor, neighborEdge, getLighting);
-  }
+  const Chunk::ProtectedArrayBox<T>& chunkData = selectChunkData<T>(chunk);
+  return chunkData.readOperation([&blockData](const Chunk::ArrayBox<T>& chunkArrayBox, const T& defaultValue)
+    {
+      blockData.fill(Chunk::Bounds(), chunkArrayBox, Chunk::Bounds(), defaultValue);
+      return static_cast<bool>(chunkArrayBox);
+    });
 }
 
-void ChunkManager::getCornerNeighborBlockData(BlockData& blockData, const GlobalIndex& chunkIndex, bool getLighting) const
+template<typename T>
+static bool fillWithNeighborData(BlockDataArrayBox<T>& blockData, const ChunkContainer& chunkContainer, const GlobalIndex& chunkIndex, Neighbors neighborTypes)
 {
-  for (const auto& [offset, corner] : Corners(BlockData::Bounds()))
-  {
-    std::shared_ptr<const Chunk> neighbor = m_ChunkContainer.chunks().get(chunkIndex + static_cast<GlobalIndex>(offset));
-    if (!neighbor)
-      continue;
+  if (static_cast<bool>(neighborTypes & Neighbors::Face))
+    for (const auto& [side, faceInterior] : FaceInteriors(BlockData::Bounds()))
+    {
+      std::shared_ptr<const Chunk> neighbor = chunkContainer.chunks().get(chunkIndex + GlobalIndex::Dir(side));
+      if (!neighbor)
+        continue;
 
-    BlockBox neighborCorner = Chunk::Bounds().corner(-offset);
-    blockData.fill(corner, neighbor, neighborCorner, getLighting);
-  }
+      BlockBox neighborFace = Chunk::Bounds().face(!side);
+      copyChunkData(blockData, faceInterior, neighbor, neighborFace);
+    }
+
+  if (static_cast<bool>(neighborTypes & Neighbors::Edge))
+    for (const auto& [sideA, sideB, edgeInterior] : EdgeInteriors(BlockData::Bounds()))
+    {
+      std::shared_ptr<const Chunk> neighbor = chunkContainer.chunks().get(chunkIndex + GlobalIndex::Dir(sideA) + GlobalIndex::Dir(sideB));
+      if (!neighbor)
+        continue;
+
+      BlockBox neighborEdge = Chunk::Bounds().edge(!sideA, !sideB);
+      copyChunkData(blockData, edgeInterior, neighbor, neighborEdge);
+    }
+
+  if (static_cast<bool>(neighborTypes & Neighbors::Corner))
+    for (const auto& [offset, corner] : Corners(BlockData::Bounds()))
+    {
+      std::shared_ptr<const Chunk> neighbor = chunkContainer.chunks().get(chunkIndex + static_cast<GlobalIndex>(offset));
+      if (!neighbor)
+        continue;
+
+      BlockBox neighborCorner = Chunk::Bounds().corner(-offset);
+      copyChunkData(blockData, corner, neighbor, neighborCorner);
+    }
+
+  return true;
 }
 
-void ChunkManager::meshChunk(const GlobalIndex& chunkIndex)
+static BlockData& getThreadLocalWorkspace()
 {
-  BlockData& blockData = tl_BlockData;
+  thread_local BlockData blockData;
   blockData.composition.fill(Block::Type::Null);
   blockData.lighting.fill(Block::Light());
+  return blockData;
+}
 
-  auto [chunkWasUnloaded, chunkWasEmpty] = getOnChunkBlockData(blockData, chunkIndex);
-  if (chunkWasUnloaded || chunkWasEmpty)
+void ChunkManager::meshChunk(const std::shared_ptr<Chunk>& chunk, const GlobalIndex& chunkIndex)
+{
+  EN_ASSERT(chunk, "Chunk does not exist!");
+
+  BlockData& blockData = getThreadLocalWorkspace();
+
+  bool chunkHadComposition = fillWithChunkData(blockData.composition, chunk);
+  if (!chunkHadComposition)
   {
     m_OpaqueCommandQueue.emplace(chunkIndex, false);
     m_TransparentCommandQueue.emplace(chunkIndex, false);
     return;
   }
-
   EN_PROFILE_FUNCTION();
 
-  getCardinalNeighborBlockData(blockData, chunkIndex);
-  getEdgeNeighborBlockData(blockData, chunkIndex);
-  getCornerNeighborBlockData(blockData, chunkIndex);
+  fillWithChunkData(blockData.lighting, chunk);
+  fillWithNeighborData(blockData.composition, m_ChunkContainer, chunkIndex, Neighbors::All);
+  fillWithNeighborData(blockData.lighting, m_ChunkContainer, chunkIndex, Neighbors::All);
 
   ChunkDrawCommand opaqueDraw(chunkIndex, true);
   ChunkDrawCommand transparentDraw(chunkIndex, false);
@@ -533,26 +560,23 @@ void ChunkManager::meshChunk(const GlobalIndex& chunkIndex)
     });
   opaqueDraw.setIndices();
 
-  m_OpaqueCommandQueue.insert(std::move(opaqueDraw));
-  m_TransparentCommandQueue.insert(std::move(transparentDraw));
+  m_OpaqueCommandQueue.insertOrReplace(std::move(opaqueDraw));
+  m_TransparentCommandQueue.insertOrReplace(std::move(transparentDraw));
 }
 
-void ChunkManager::updateLighting(const GlobalIndex& chunkIndex)
+void ChunkManager::updateLighting(const std::shared_ptr<Chunk>& chunk, const GlobalIndex& chunkIndex)
 {
+  EN_PROFILE_FUNCTION();
+  EN_ASSERT(chunk, "Chunk does not exist!");
+
   static constexpr int8_t attenuation = 1;
 
-  BlockData& blockData = tl_BlockData;
-  blockData.composition.fill(Block::Type::Null);
-  blockData.lighting.fill(Block::Light());
-
-  auto [chunkWasUnloaded, chunkWasEmpty] = getOnChunkBlockData(blockData, chunkIndex, false);
-  if (chunkWasUnloaded)
-    return;
-
-  EN_PROFILE_FUNCTION();
+  BlockData& blockData = getThreadLocalWorkspace();
+  fillWithChunkData(blockData.composition, chunk);
 
   // Only need data from cardinal neighbors for lighting updates
-  getCardinalNeighborBlockData(blockData, chunkIndex);
+  fillWithNeighborData(blockData.composition, m_ChunkContainer, chunkIndex, Neighbors::Face);
+  fillWithNeighborData(blockData.lighting, m_ChunkContainer, chunkIndex, Neighbors::Face);
 
   // Perform initial propogation of sunlight downward until light hits opaque block
   Chunk::ArrayRect<blockIndex_t> attenuatedSunlightExtents(Chunk::Size());
@@ -640,10 +664,6 @@ void ChunkManager::updateLighting(const GlobalIndex& chunkIndex)
     newLighting.fill(Chunk::Bounds(), blockData.lighting, Chunk::Bounds(), Block::Light::MaxValue());
   }
 
-  std::shared_ptr<Chunk> chunk = m_ChunkContainer.chunks().get(chunkIndex);
-  if (!chunk)
-    return;
-
   std::unordered_set<GlobalIndex> additionalLightingUpdates;
   chunk->lighting().readOperation([&chunkIndex, &newLighting, &additionalLightingUpdates](const Chunk::ArrayBox<Block::Light>& lighting, const Block::Light& defaultValue)
     {
@@ -689,7 +709,9 @@ void ChunkManager::lightingPacket(const GlobalIndex& chunkIndex)
   if (m_ChunkContainer.hasBoundaryNeighbors(chunkIndex))
     return;
 
-  updateLighting(chunkIndex);
+  std::shared_ptr<Chunk> chunk = m_ChunkContainer.chunks().get(chunkIndex);
+  if (chunk)
+    updateLighting(chunk, chunkIndex);
 }
 
 void ChunkManager::lazyMeshingPacket(const GlobalIndex& chunkIndex)
@@ -697,21 +719,22 @@ void ChunkManager::lazyMeshingPacket(const GlobalIndex& chunkIndex)
   if (m_ChunkContainer.hasBoundaryNeighbors(chunkIndex))
     return;
 
-  meshChunk(chunkIndex);
   std::shared_ptr<Chunk> chunk = m_ChunkContainer.chunks().get(chunkIndex);
   if (chunk)
+  {
+    meshChunk(chunk, chunkIndex);
     chunk->update();
+  }
 }
 
 void ChunkManager::forceMeshingPacket(const GlobalIndex& chunkIndex)
 {
   EN_PROFILE_FUNCTION();
 
-  if (!m_ChunkContainer.chunks().contains(chunkIndex))
-    generateNewChunk(chunkIndex);
-
-  meshChunk(chunkIndex);
   std::shared_ptr<Chunk> chunk = m_ChunkContainer.chunks().get(chunkIndex);
-  if (chunk)
-    chunk->update();
+  if (!chunk)
+    chunk = generateNewChunk(chunkIndex);
+
+  meshChunk(chunk, chunkIndex);
+  chunk->update();
 }

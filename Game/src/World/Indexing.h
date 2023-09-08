@@ -3,7 +3,6 @@
 #include <Engine/Utilities/BitUtilities.h>
 
 // =========== Precision selection for Indices ============= //
-
 template <bool isDoublePrecision> struct GlobalIndexSelector;
 
 template<> struct GlobalIndexSelector<true> { using type = typename int64_t; };
@@ -24,8 +23,7 @@ using GlobalBox = IBox3<globalIndex_t>;
 
 
 
-// ================= Hashes for indices =================== //
-
+// ================== Hashes for indices =================== //
 namespace std
 {
   template<>

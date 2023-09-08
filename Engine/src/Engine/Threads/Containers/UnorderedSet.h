@@ -18,6 +18,15 @@ namespace Engine::Threads
       return insertionSuccess;
     }
 
+    template<DecaysTo<V> T>
+    void insertOrReplace(T&& value)
+    {
+      std::lock_guard lock(m_Mutex);
+
+      m_Data.erase(value);
+      m_Data.insert(std::forward<T>(value));
+    }
+
     void insertAll(const std::vector<V>& values)
     {
       std::lock_guard lock(m_Mutex);
