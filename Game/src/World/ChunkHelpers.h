@@ -41,7 +41,7 @@ private:
 class ChunkDrawCommand : public Engine::MultiDrawIndexedCommand<GlobalIndex, ChunkDrawCommand>, private Engine::NonCopyable
 {
 public:
-  ChunkDrawCommand(const GlobalIndex& chunkIndex, bool canPruneIndices);
+  ChunkDrawCommand(const GlobalIndex& chunkIndex, bool needsSorting);
 
   ChunkDrawCommand(ChunkDrawCommand&& other) noexcept;
   ChunkDrawCommand& operator=(ChunkDrawCommand&& other) noexcept;
@@ -57,7 +57,6 @@ public:
   void addQuad(const BlockIndex& blockIndex, Direction face, Block::Texture texture, const std::array<int, 4>& sunlight, const std::array<int, 4>& ambientOcclusion);
   void addVoxel(const BlockIndex& blockIndex, uint8_t enabledFaces);
 
-  void setIndices();
   bool sort(const GlobalIndex& originIndex, const Vec3& viewPosition);
 
 private:
@@ -65,12 +64,12 @@ private:
   std::vector<ChunkVoxel> m_Voxels;
   std::vector<uint32_t> m_Indices;
   BlockIndex m_SortState;
-  bool m_CanPruneIndices;
+  bool m_NeedsSorting;
 
   int m_VoxelBaseVertex;
 
   void addQuadIndices(int baseVertex);
-  void setIndices(const GlobalIndex& originIndex, const Vec3& viewPosition);
+  void reorderIndices(const GlobalIndex& originIndex, const Vec3& viewPosition);
 };
 
 namespace std

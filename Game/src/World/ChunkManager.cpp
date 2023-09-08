@@ -5,7 +5,7 @@
 #include "Util/Util.h"
 
 ChunkManager::ChunkManager()
-  : m_ThreadPool(std::make_shared<Engine::Threads::ThreadPool>(1)),
+  : m_ThreadPool(std::make_shared<Engine::Threads::ThreadPool>(8)),
     m_LoadWork(m_ThreadPool, Engine::Threads::Priority::Normal),
     m_LightingWork(m_ThreadPool, Engine::Threads::Priority::Normal),
     m_LazyMeshingWork(m_ThreadPool, Engine::Threads::Priority::Low),
@@ -242,6 +242,8 @@ void ChunkManager::placeBlock(GlobalIndex chunkIndex, BlockIndex blockIndex, Dir
 void ChunkManager::removeBlock(const GlobalIndex& chunkIndex, const BlockIndex& blockIndex)
 {
   std::shared_ptr<Chunk> chunk = m_ChunkContainer.chunks().get(chunkIndex);
+  if (!chunk)
+    return;
   Block::Type removedBlock = chunk->composition().replace(blockIndex, Block::Type::Air);
 
   // Get estimate of light value of effected block for immediate meshing
@@ -487,8 +489,8 @@ void ChunkManager::meshChunk(const std::shared_ptr<Chunk>& chunk, const GlobalIn
   fillWithNeighborData(blockData.composition, m_ChunkContainer, chunkIndex, Neighbors::All);
   fillWithNeighborData(blockData.lighting, m_ChunkContainer, chunkIndex, Neighbors::All);
 
-  ChunkDrawCommand opaqueDraw(chunkIndex, true);
-  ChunkDrawCommand transparentDraw(chunkIndex, false);
+  ChunkDrawCommand opaqueDraw(chunkIndex, false);
+  ChunkDrawCommand transparentDraw(chunkIndex, true);
   Chunk::Bounds().forEach([&blockData, &opaqueDraw, &transparentDraw](const BlockIndex& blockIndex)
     {
       Block::Type blockType = blockData.composition(blockIndex);
@@ -558,7 +560,6 @@ void ChunkManager::meshChunk(const std::shared_ptr<Chunk>& chunk, const GlobalIn
       if (enabledFaces != 0)
         draw.addVoxel(blockIndex, enabledFaces);
     });
-  opaqueDraw.setIndices();
 
   m_OpaqueCommandQueue.insertOrReplace(std::move(opaqueDraw));
   m_TransparentCommandQueue.insertOrReplace(std::move(transparentDraw));

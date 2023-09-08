@@ -74,10 +74,10 @@ int ChunkVoxel::baseVertex() const
 
 
 
-ChunkDrawCommand::ChunkDrawCommand(const GlobalIndex& chunkIndex, bool canPruneIndices)
+ChunkDrawCommand::ChunkDrawCommand(const GlobalIndex& chunkIndex, bool needsSorting)
   : Engine::MultiDrawIndexedCommand<GlobalIndex, ChunkDrawCommand>(chunkIndex, 0),
     m_SortState(-1, -1, -1),
-    m_CanPruneIndices(canPruneIndices),
+    m_NeedsSorting(needsSorting),
     m_VoxelBaseVertex(0) {}
 
 ChunkDrawCommand::ChunkDrawCommand(ChunkDrawCommand&& other) noexcept = default;
@@ -107,25 +107,24 @@ void ChunkDrawCommand::prune()
 {
   m_Quads.clear();
   m_Quads.shrink_to_fit();
-  if (m_CanPruneIndices)
+  if (!m_NeedsSorting)
   {
-    m_Voxels.clear();
-    m_Voxels.shrink_to_fit();
-    m_Indices.clear();
-    m_Indices.shrink_to_fit();
+    m_Voxels = {};
+    m_Indices = {};
   }
 }
 
 void ChunkDrawCommand::addQuad(const BlockIndex& blockIndex, Direction face, Block::Texture texture, const std::array<int, 4>& sunlight, const std::array<int, 4>& ambientOcclusion)
 {
-  m_Quads.emplace_back(blockIndex, face, texture, sunlight, ambientOcclusion);
+  addQuadIndices(vertexCount());
   m_IndexCount += 6;
+  m_Quads.emplace_back(blockIndex, face, texture, sunlight, ambientOcclusion);
 }
 
 void ChunkDrawCommand::addVoxel(const BlockIndex& blockIndex, uint8_t enabledFaces)
 {
   m_Voxels.emplace_back(blockIndex, enabledFaces, m_VoxelBaseVertex);
-  m_VoxelBaseVertex = static_cast<int>(4 * m_Quads.size());
+  m_VoxelBaseVertex = vertexCount();
 }
 
 bool ChunkDrawCommand::sort(const GlobalIndex& originIndex, const Vec3& viewPosition)
@@ -158,7 +157,7 @@ bool ChunkDrawCommand::sort(const GlobalIndex& originIndex, const Vec3& viewPosi
     });
   m_SortState = originBlock;
 
-  setIndices(originIndex, viewPosition);
+  reorderIndices(originIndex, viewPosition);
   return true;
 }
 
@@ -173,16 +172,7 @@ void ChunkDrawCommand::addQuadIndices(int baseVertex)
   m_Indices.push_back(baseVertex + 2);
 }
 
-void ChunkDrawCommand::setIndices()
-{
-  m_Indices.clear();
-  m_Indices.reserve(m_IndexCount);
-
-  for (int i = 0; i < m_Quads.size(); ++i)
-    addQuadIndices(4 * i);
-}
-
-void ChunkDrawCommand::setIndices(const GlobalIndex& originIndex, const Vec3& viewPosition)
+void ChunkDrawCommand::reorderIndices(const GlobalIndex& originIndex, const Vec3& viewPosition)
 {
   m_Indices.clear();
   m_Indices.reserve(m_IndexCount);
