@@ -1,18 +1,21 @@
 #pragma once
+#include "IBox2.h"
 #include "IBox3.h"
 #include "Engine/Utilities/Constraints.h"
 
 enum class AllocationPolicy
 {
-  ForOverWrite
+  Deferred,
+  ForOverwrite,
+  DefaultInitialize
 };
 
-template<typename T, std::integral IntType, IntType MinZ, IntType MaxZ>
+template<typename T, std::integral IntType>
 class ArrayBoxStrip
 {
 public:
-  ArrayBoxStrip(T* begin)
-    : m_Begin(begin) {}
+  ArrayBoxStrip(T* begin, int offset)
+    : m_Begin(begin), m_Offset(offset) {}
 
   T& operator[](IntType index)
   {
@@ -20,38 +23,36 @@ public:
   }
   const T& operator[](IntType index) const
   {
-    EN_CORE_ASSERT(Engine::Debug::BoundsCheck(index, MinZ, MaxZ), "Index is out of bounds!");
-    return m_Begin[index - MinZ];
+    return m_Begin[index - m_Offset];
   }
 
 private:
   T* m_Begin;
+  int m_Offset;
 
   ~ArrayBoxStrip() = default;
 };
 
-template<typename T, std::integral IntType, IntType MinY, IntType MaxY, IntType MinZ, IntType MaxZ>
+template<typename T, std::integral IntType>
 class ArrayBoxLayer
 {
 public:
-  using Strip = ArrayBoxStrip<T, IntType, MinZ, MaxZ>;
+  ArrayBoxLayer(T* begin, const IBox2<IntType>& bounds)
+    : m_Begin(begin), m_Bounds(bounds) {}
 
-public:
-  ArrayBoxLayer(T* begin)
-    : m_Begin(begin) {}
-
-  Strip operator[](IntType index)
+  ArrayBoxStrip<T, IntType> operator[](IntType index)
   {
     return static_cast<const ArrayBoxLayer&>(*this).operator[](index);
   }
-  const Strip operator[](IntType index) const
+  const ArrayBoxStrip<T, IntType> operator[](IntType index) const
   {
-    EN_CORE_ASSERT(Engine::Debug::BoundsCheck(index, MinY, MaxY), "Index is out of bounds!");
-    return Strip(m_Begin + (MaxZ - MinZ) * (index - MinY));
+    EN_CORE_ASSERT(Engine::Debug::BoundsCheck(index, m_Bounds.min.i, m_Bounds.max.i), "Index is out of bounds!");
+    return ArrayBoxStrip<T, IntType>(m_Begin + (m_Bounds.max.j - m_Bounds.min.j) * (index - m_Bounds.min.i), m_Bounds.min.j);
   }
 
 private:
   T* m_Begin;
+  IBox2<IntType> m_Bounds;
 
   ~ArrayBoxLayer() = default;
 };
@@ -65,20 +66,25 @@ private:
   Elements can be accessed with brackets:
   arr[i][j][k]
 */
-template<typename T, std::integral IntType, IntType MinX, IntType MaxX, IntType MinY = MinX, IntType MaxY = MaxX, IntType MinZ = MinX, IntType MaxZ = MaxX>
+template<typename T, std::integral IntType>
 class ArrayBox : private Engine::NonCopyable
 {
 public:
-  using Layer = ArrayBoxLayer<T, IntType, MinY, MaxY, MinZ, MaxZ>;
-  using Strip = ArrayBoxStrip<T, IntType, MinZ, MaxZ>;
+  using Layer = ArrayBoxLayer<T, IntType>;
+  using Strip = ArrayBoxStrip<T, IntType>;
 
 public:
-  ArrayBox()
-    : m_Data(nullptr) {}
-  ArrayBox(AllocationPolicy policy)
-    : m_Data(new T[size()]) {}
-  ArrayBox(const T& initialValue)
-    : ArrayBox(AllocationPolicy::ForOverWrite) { fill(initialValue); }
+  ArrayBox(const IBox3<IntType>& bounds, AllocationPolicy policy)
+    : m_Data(nullptr)
+  {
+    setBounds(bounds);
+    if (policy != AllocationPolicy::Deferred)
+      allocate();
+    if (policy == AllocationPolicy::DefaultInitialize)
+      fill(T());
+  }
+  ArrayBox(const IBox3<IntType>& bounds, const T& initialValue)
+    : ArrayBox(bounds, AllocationPolicy::ForOverwrite) { fill(initialValue); }
   ~ArrayBox() { delete[] m_Data; }
 
   ArrayBox(ArrayBox&& other) noexcept = default;
@@ -86,6 +92,10 @@ public:
   {
     if (&other != this)
     {
+      m_Bounds = other.m_Bounds;
+      m_Strides = other.m_Strides;
+      m_Offset = other.m_Offset;
+
       delete[] m_Data;
       m_Data = other.m_Data;
       other.m_Data = nullptr;
@@ -103,12 +113,8 @@ public:
   const T& operator()(const IVec3<IntType>& index) const
   {
     EN_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
-
-    static constexpr IVec3<int> extents = static_cast<IVec3<int>>(c_Bounds.extents());
-    static constexpr IVec3<size_t> strides(extents.j * extents.k, extents.k, 1);
-
-    IVec3<IntType> indexRelativeToBase = index - c_Bounds.min;
-    return m_Data[strides.i * indexRelativeToBase.i + strides.j * indexRelativeToBase.j + strides.k * indexRelativeToBase.k];
+    EN_CORE_ASSERT(m_Bounds.encloses(index), "Index is out of bounds!");
+    return m_Data[m_Strides.i * index.i + m_Strides.j * index.j + index.k - m_Offset];
   }
 
   Layer operator[](IntType index)
@@ -118,16 +124,13 @@ public:
   const Layer operator[](IntType index) const
   {
     EN_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
-    EN_CORE_ASSERT(Engine::Debug::BoundsCheck(index, MinX, MaxX), "Index is out of bounds!");
-
-    static constexpr size_t stride = static_cast<size_t>(MaxY - MinY) * static_cast<size_t>(MaxZ - MinZ);
-    return Layer(m_Data + stride * index);
+    EN_CORE_ASSERT(Engine::Debug::BoundsCheck(index, m_Bounds.min.i, m_Bounds.max.i), "Index is out of bounds!");
+    IBox2<IntType> layerBounds(m_Bounds.min.j, m_Bounds.min.k, m_Bounds.max.j, m_Bounds.max.k);
+    return Layer(m_Data + m_Strides.i * (index - m_Bounds.min.i), layerBounds);
   }
 
-  T* get() const { return m_Data; }
-
-  constexpr size_t size() const { return c_Bounds.volume(); }
-  constexpr IBox3<IntType> bounds() const { return c_Bounds; }
+  size_t size() const { return m_Bounds.volume(); }
+  const IBox3<IntType>& bounds() const { return m_Bounds; }
 
   bool contains(const T& value) const
   {
@@ -147,8 +150,7 @@ public:
       });
   }
 
-  template<IntType... Args>
-  bool contentsEqual(const IBox3<IntType>& compareSection, const ArrayBox<T, IntType, Args...>& container, const IBox3<IntType>& containerSection, const T& defaultValue) const
+  bool contentsEqual(const IBox3<IntType>& compareSection, const ArrayBox<T, IntType>& container, const IBox3<IntType>& containerSection, const T& defaultValue) const
   {
     EN_CORE_ASSERT(compareSection.extents() == containerSection.extents(), "Compared sections are not the same dimensions!");
 
@@ -211,8 +213,7 @@ public:
       });
   }
 
-  template<IntType... Args>
-  void fill(const IBox3<IntType>& fillSection, const ArrayBox<T, IntType, Args...>& container, const IBox3<IntType>& containerSection, const T& defaultValue)
+  void fill(const IBox3<IntType>& fillSection, const ArrayBox<T, IntType>& container, const IBox3<IntType>& containerSection, const T& defaultValue)
   {
     EN_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
     EN_CORE_ASSERT(fillSection.extents() == containerSection.extents(), "Read and write sections are not the same dimensions!");
@@ -230,27 +231,31 @@ public:
       });
   }
 
+  void setBounds(const IBox3<IntType>& bounds)
+  {
+    m_Bounds = bounds;
+    IVec3<int> extents = static_cast<IVec3<int>>(m_Bounds.extents());
+    m_Strides = IVec2<int>(extents.j * extents.k, extents.k);
+    m_Offset = m_Strides.i * m_Bounds.min.i + m_Strides.j * m_Bounds.min.j + m_Bounds.min.k;
+  }
+
   void allocate()
   {
     if (m_Data)
-    {
       EN_CORE_WARN("Data already allocated to ArrayBox. Ignoring...");
-      return;
-    }
-
-    m_Data = new T[size()];
+    else
+      m_Data = new T[size()];
   }
 
-  void reset()
+  void clear()
   {
     delete[] m_Data;
     m_Data = nullptr;
   }
 
-  static constexpr const IBox3<IntType>& Bounds() { return c_Bounds; }
-
 private:
-  static constexpr IBox3<IntType> c_Bounds = IBox3<IntType>(MinX, MinY, MinZ, MaxX, MaxY, MaxZ);
-
+  IBox3<IntType> m_Bounds;
+  IVec2<int> m_Strides;
+  int m_Offset;
   T* m_Data;
 };

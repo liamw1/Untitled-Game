@@ -269,8 +269,8 @@ void ChunkManager::loadChunk(const GlobalIndex& chunkIndex, Block::Type blockTyp
   std::shared_ptr<Chunk> chunk = std::make_shared<Chunk>(chunkIndex);
   if (blockType != Block::Type::Air)
   {
-    chunk->setComposition(Chunk::ArrayBox<Block::Type>(blockType));
-    chunk->setLighting(Chunk::ArrayBox<Block::Light>(AllocationPolicy::ForOverWrite));
+    chunk->setComposition(BlockArrayBox<Block::Type>(Chunk::Bounds(), blockType));
+    chunk->setLighting(BlockArrayBox<Block::Light>(Chunk::Bounds(), AllocationPolicy::DefaultInitialize));
   }
 
   m_ChunkContainer.insert(chunkIndex, std::move(chunk));
@@ -379,22 +379,19 @@ enum class Neighbors : uint8_t
 };
 EN_ENABLE_BITMASK_OPERATORS(Neighbors);
 
-template<typename T>
-using BlockDataArrayBox = ArrayBox<T, blockIndex_t, -1, Chunk::Size() + 1>;
-
 struct BlockData
 {
-  BlockDataArrayBox<Block::Type> composition;
-  BlockDataArrayBox<Block::Light> lighting;
+  BlockArrayBox<Block::Type> composition;
+  BlockArrayBox<Block::Light> lighting;
 
   BlockData()
-    : composition(AllocationPolicy::ForOverWrite), lighting(AllocationPolicy::ForOverWrite) {}
+    : composition(Bounds(), AllocationPolicy::ForOverwrite), lighting(Bounds(), AllocationPolicy::ForOverwrite) {}
 
-  static constexpr const BlockBox& Bounds() { return BlockDataArrayBox<Block::Type>::Bounds(); }
+  static constexpr BlockBox Bounds() { return BlockBox(-1, Chunk::Size() + 1); }
 };
 
 template<typename T>
-static const Chunk::ProtectedArrayBox<T>& selectChunkData(const std::shared_ptr<const Chunk>& chunk)
+static const ProtectedBlockArrayBox<T>& selectChunkData(const std::shared_ptr<const Chunk>& chunk)
 {
   if constexpr (std::is_same_v<T, Block::Type>)
     return chunk->composition();
@@ -403,20 +400,20 @@ static const Chunk::ProtectedArrayBox<T>& selectChunkData(const std::shared_ptr<
 }
 
 template<typename T>
-static void copyChunkData(BlockDataArrayBox<T>& blockData, const BlockBox& fillSection, const std::shared_ptr<const Chunk>& chunk, const BlockBox& chunkSection)
+static void copyChunkData(BlockArrayBox<T>& blockData, const BlockBox& fillSection, const std::shared_ptr<const Chunk>& chunk, const BlockBox& chunkSection)
 {
-  const Chunk::ProtectedArrayBox<T>& chunkData = selectChunkData<T>(chunk);
-  chunkData.readOperation([&blockData, &fillSection, &chunkSection](const Chunk::ArrayBox<T>& chunkArrayBox, const T& defaultValue)
+  const ProtectedBlockArrayBox<T>& chunkData = selectChunkData<T>(chunk);
+  chunkData.readOperation([&blockData, &fillSection, &chunkSection](const BlockArrayBox<T>& chunkArrayBox, const T& defaultValue)
     {
       blockData.fill(fillSection, chunkArrayBox, chunkSection, defaultValue);
     });
 }
 
 template<typename T>
-static bool fillWithChunkData(BlockDataArrayBox<T>& blockData, const std::shared_ptr<const Chunk>& chunk)
+static bool fillWithChunkData(BlockArrayBox<T>& blockData, const std::shared_ptr<const Chunk>& chunk)
 {
-  const Chunk::ProtectedArrayBox<T>& chunkData = selectChunkData<T>(chunk);
-  return chunkData.readOperation([&blockData](const Chunk::ArrayBox<T>& chunkArrayBox, const T& defaultValue)
+  const ProtectedBlockArrayBox<T>& chunkData = selectChunkData<T>(chunk);
+  return chunkData.readOperation([&blockData](const BlockArrayBox<T>& chunkArrayBox, const T& defaultValue)
     {
       blockData.fill(Chunk::Bounds(), chunkArrayBox, Chunk::Bounds(), defaultValue);
       return static_cast<bool>(chunkArrayBox);
@@ -424,7 +421,7 @@ static bool fillWithChunkData(BlockDataArrayBox<T>& blockData, const std::shared
 }
 
 template<typename T>
-static bool fillWithNeighborData(BlockDataArrayBox<T>& blockData, const ChunkContainer& chunkContainer, const GlobalIndex& chunkIndex, Neighbors neighborTypes)
+static bool fillWithNeighborData(BlockArrayBox<T>& blockData, const ChunkContainer& chunkContainer, const GlobalIndex& chunkIndex, Neighbors neighborTypes)
 {
   if (static_cast<bool>(neighborTypes & Neighbors::Face))
     for (const auto& [side, faceInterior] : FaceInteriors(BlockData::Bounds()))
@@ -580,7 +577,7 @@ void ChunkManager::updateLighting(const std::shared_ptr<Chunk>& chunk, const Glo
   fillWithNeighborData(blockData.lighting, m_ChunkContainer, chunkIndex, Neighbors::Face);
 
   // Perform initial propogation of sunlight downward until light hits opaque block
-  Chunk::ArrayRect<blockIndex_t> attenuatedSunlightExtents(Chunk::Size());
+  BlockArrayRect<blockIndex_t> attenuatedSunlightExtents(Chunk::Bounds2D(), Chunk::Size());
   BlockData::Bounds().faceInterior(Direction::Top).forEach([&blockData, &attenuatedSunlightExtents](const BlockIndex& blockIndex)
     {
       BlockIndex propogationIndex = blockIndex;
@@ -658,15 +655,15 @@ void ChunkManager::updateLighting(const std::shared_ptr<Chunk>& chunk, const Glo
       }
     }
 
-  Chunk::ArrayBox<Block::Light> newLighting;
+  BlockArrayBox<Block::Light> newLighting(Chunk::Bounds(), AllocationPolicy::Deferred);
   if (blockData.lighting.anyOf(Chunk::Bounds(), [](Block::Light blockLight) { return blockLight != Block::Light::MaxValue(); }))
   {
-    newLighting = Chunk::ArrayBox<Block::Light>(AllocationPolicy::ForOverWrite);
+    newLighting.allocate();
     newLighting.fill(Chunk::Bounds(), blockData.lighting, Chunk::Bounds(), Block::Light::MaxValue());
   }
 
   std::unordered_set<GlobalIndex> additionalLightingUpdates;
-  chunk->lighting().readOperation([&chunkIndex, &newLighting, &additionalLightingUpdates](const Chunk::ArrayBox<Block::Light>& lighting, const Block::Light& defaultValue)
+  chunk->lighting().readOperation([&chunkIndex, &newLighting, &additionalLightingUpdates](const BlockArrayBox<Block::Light>& lighting, const Block::Light& defaultValue)
     {
       for (const auto& [side, faceInterior] : FaceInteriors(lighting.bounds()))
         if (!lighting.contentsEqual(faceInterior, newLighting, faceInterior, defaultValue))

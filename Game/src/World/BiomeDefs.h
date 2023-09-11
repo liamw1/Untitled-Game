@@ -13,7 +13,7 @@ public:
     return std::sqrt(10 + h*h);
   }
 
-  void fillColumn(Chunk::ArrayBox<Block::Type>::Strip column, length_t chunkFloor, length_t elevation) const override
+  void fillColumn(BlockArrayBox<Block::Type>::Strip column, length_t chunkFloor, length_t elevation) const override
   {
     StandardColumnFill(column, chunkFloor, elevation, Block::Type::Snow, 3, Block::Type::Dirt, 3);
   }
@@ -29,7 +29,7 @@ public:
     return CalculateOctaveNoise(noiseSamples, largestElevationAmplitude, elevationPersistence);
   }
 
-  void fillColumn(Chunk::ArrayBox<Block::Type>::Strip column, length_t chunkFloor, length_t elevation) const override
+  void fillColumn(BlockArrayBox<Block::Type>::Strip column, length_t chunkFloor, length_t elevation) const override
   {
     StandardColumnFill(column, chunkFloor, elevation, Block::Type::Grass, 1, Block::Type::Dirt, 4);
   }
@@ -45,7 +45,7 @@ public:
     return CalculateOctaveNoise(noiseSamples, largestElevationAmplitude, elevationPersistence);
   }
 
-  void fillColumn(Chunk::ArrayBox<Block::Type>::Strip column, length_t chunkFloor, length_t elevation) const override
+  void fillColumn(BlockArrayBox<Block::Type>::Strip column, length_t chunkFloor, length_t elevation) const override
   {
     StandardColumnFill(column, chunkFloor, elevation, Block::Type::Sand, 1, Block::Type::Dirt, 3);
   }
@@ -59,7 +59,7 @@ public:
     return Block::Length() / 2;
   }
 
-  void fillColumn(Chunk::ArrayBox<Block::Type>::Strip column, length_t chunkFloor, length_t elevation) const override
+  void fillColumn(BlockArrayBox<Block::Type>::Strip column, length_t chunkFloor, length_t elevation) const override
   {
     StandardColumnFill(column, chunkFloor, elevation, Block::Type::Grass, 1, Block::Type::Dirt, 5);
   }

@@ -10,10 +10,10 @@ namespace LOD
   static constexpr int c_NumCells = Chunk::Size();
 
   // Width of a transition cell as a fraction of regular cell width
-  static constexpr length_t s_TCFractionalWidth = 0.5f;
+  static constexpr length_t c_TCFractionalWidth = 0.5f;
 
-  template<typename T>
-  using LODArrayRect = ArrayRect<T, blockIndex_t, 0, c_NumCells + 1>;
+  static constexpr BlockBox c_LODBounds(0, c_NumCells + 1);
+  static constexpr IBox2<blockIndex_t> c_LODBounds2D(0, c_NumCells + 1);
 
   struct NoiseData
   {
@@ -254,14 +254,14 @@ namespace LOD
     return ((1 - s) / 2 + s * (1 - t)) * q0 + ((1 - s) / 2 + s * t) * q1;
   }
 
-  static LODArrayRect<Terrain::CompoundSurfaceData> generateNoise(Octree::Node* node)
+  static BlockArrayRect<Terrain::CompoundSurfaceData> generateNoise(Octree::Node* node)
   {
     EN_PROFILE_FUNCTION();
 
     length_t cellLength = node->length() / c_NumCells;
     Vec2 LODAnchorXY = Chunk::Length() * static_cast<Vec2>(node->anchor);
 
-    LODArrayRect<Terrain::CompoundSurfaceData> noiseValues{};
+    BlockArrayRect<Terrain::CompoundSurfaceData> noiseValues(c_LODBounds2D, AllocationPolicy::ForOverwrite);
     for (int i = 0; i < c_NumCells + 1; ++i)
       for (int j = 0; j < c_NumCells + 1; ++j)
       {
@@ -276,7 +276,7 @@ namespace LOD
     return noiseValues;
   }
 
-  static bool needsMesh(Octree::Node* node, const LODArrayRect<Terrain::CompoundSurfaceData>& noiseValues)
+  static bool needsMesh(Octree::Node* node, const BlockArrayRect<Terrain::CompoundSurfaceData>& noiseValues)
   {
     length_t LODFloor = node->anchor.k * Chunk::Length();
     length_t LODCeiling = LODFloor + node->length();
@@ -299,13 +299,13 @@ namespace LOD
     return needsMesh;
   }
 
-  static LODArrayRect<Vec3> calcNoiseNormals(Octree::Node* node, const LODArrayRect<Terrain::CompoundSurfaceData>& noiseValues)
+  static BlockArrayRect<Vec3> calcNoiseNormals(Octree::Node* node, const BlockArrayRect<Terrain::CompoundSurfaceData>& noiseValues)
   {
     length_t cellLength = node->length() / c_NumCells;
     Vec2 LODAnchorXY = Chunk::Length() * static_cast<Vec2>(node->anchor);
 
     // Calculate normals using central differences
-    LODArrayRect<Vec3> noiseNormals{};
+    BlockArrayRect<Vec3> noiseNormals(c_LODBounds2D, AllocationPolicy::ForOverwrite);
     for (int i = 0; i < c_NumCells + 1; ++i)
       for (int j = 0; j < c_NumCells + 1; ++j)
       {
@@ -355,7 +355,7 @@ namespace LOD
     return noiseNormals;
   }
 
-  static NoiseData interpolateNoiseData(Octree::Node* node, const LODArrayRect<Terrain::CompoundSurfaceData>& noiseValues, const LODArrayRect<Vec3>& noiseNormals, const BlockIndex& cornerA, const BlockIndex& cornerB, float s)
+  static NoiseData interpolateNoiseData(Octree::Node* node, const BlockArrayRect<Terrain::CompoundSurfaceData>& noiseValues, const BlockArrayRect<Vec3>& noiseNormals, const BlockIndex& cornerA, const BlockIndex& cornerB, float s)
   {
     length_t LODFloor = node->anchor.k * Chunk::Length();
     length_t cellLength = node->length() / c_NumCells;
@@ -389,7 +389,7 @@ namespace LOD
   }
 
   // Generate primary LOD mesh using Marching Cubes algorithm
-  static void generatePrimaryMesh(Octree::Node* node, const LODArrayRect<Terrain::CompoundSurfaceData>& noiseValues, const LODArrayRect<Vec3>& noiseNormals)
+  static void generatePrimaryMesh(Octree::Node* node, const BlockArrayRect<Terrain::CompoundSurfaceData>& noiseValues, const BlockArrayRect<Vec3>& noiseNormals)
   {
     EN_PROFILE_FUNCTION();
 
@@ -398,7 +398,7 @@ namespace LOD
       uint32_t baseMeshIndex = 0;
       int8_t vertexOrder[4] = { -1, -1, -1, -1 };
     };
-    using VertexLayer = ArrayRect<VertexReuseData, blockIndex_t, 0, c_NumCells>;
+    using VertexLayer = ArrayRect<VertexReuseData, blockIndex_t>;
 
     length_t LODFloor = node->anchor.k * Chunk::Length();
     length_t cellLength = node->length() / c_NumCells;
@@ -407,10 +407,10 @@ namespace LOD
     int vertexCount = 0;
     std::vector<uint32_t> primaryMeshIndices{};
     std::vector<Vertex> primaryMeshVertices{};
-    VertexLayer prevLayer{};
+    VertexLayer prevLayer(Chunk::Bounds2D(), AllocationPolicy::DefaultInitialize);
     for (int i = 0; i < c_NumCells; ++i)
     {
-      VertexLayer currLayer{};
+      VertexLayer currLayer(Chunk::Bounds2D(), AllocationPolicy::DefaultInitialize);
 
       for (int j = 0; j < c_NumCells; ++j)
         for (int k = 0; k < c_NumCells; ++k)
@@ -514,7 +514,7 @@ namespace LOD
   }
 
   // Generate transition meshes using Transvoxel algorithm
-  static void generateTransitionMeshes(Octree::Node* node, const LODArrayRect<Terrain::CompoundSurfaceData>& noiseValues, const LODArrayRect<Vec3>& noiseNormals)
+  static void generateTransitionMeshes(Octree::Node* node, const BlockArrayRect<Terrain::CompoundSurfaceData>& noiseValues, const BlockArrayRect<Vec3>& noiseNormals)
   {
     EN_PROFILE_FUNCTION();
 
@@ -529,7 +529,7 @@ namespace LOD
 
     length_t LODFloor = node->anchor.k * Chunk::Length();
     length_t cellLength = node->length() / c_NumCells;
-    length_t transitionCellWidth = s_TCFractionalWidth * cellLength;
+    length_t transitionCellWidth = c_TCFractionalWidth * cellLength;
 
     for (Direction face : Directions())
     {
@@ -692,13 +692,13 @@ namespace LOD
     EN_PROFILE_FUNCTION();
 
     // Generate voxel data using heightmap
-    LODArrayRect<Terrain::CompoundSurfaceData> noiseValues = generateNoise(node);
+    BlockArrayRect<Terrain::CompoundSurfaceData> noiseValues = generateNoise(node);
 
     if (!needsMesh(node, noiseValues))
       return;
 
     // Generate normal data from heightmap
-    LODArrayRect<Vec3> noiseNormals = calcNoiseNormals(node, noiseValues);
+    BlockArrayRect<Vec3> noiseNormals = calcNoiseNormals(node, noiseValues);
 
     generatePrimaryMesh(node, noiseValues, noiseNormals);
     generateTransitionMeshes(node, noiseValues, noiseNormals);
@@ -713,7 +713,7 @@ namespace LOD
   }
   static length_t vertexAdjustment1D(bool facingPositiveDir, length_t u, length_t cellLength)
   {
-    return s_TCFractionalWidth * (facingPositiveDir ? ((c_NumCells - 1) * cellLength - u) : (cellLength - u));
+    return c_TCFractionalWidth * (facingPositiveDir ? ((c_NumCells - 1) * cellLength - u) : (cellLength - u));
   }
   static Mat3 calcVertexTransform(const Vec3& n)
   {

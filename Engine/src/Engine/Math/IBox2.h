@@ -61,10 +61,7 @@ struct IBox2
 
   constexpr bool encloses(const IVec2<IntType>& iVec2) const
   {
-    for (int i = 0; i < 2; ++i)
-      if (iVec2[i] < min[i] || iVec2[i] >= max[i])
-        return false;
-    return true;
+    return iVec2.i >= min.i && iVec2.i < max.i && iVec2.j >= min.j && iVec2.j < max.j;
   }
 
   constexpr IVec2<IntType> extents() const

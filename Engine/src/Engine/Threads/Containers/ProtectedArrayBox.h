@@ -6,15 +6,12 @@ namespace Engine::Threads
   /*
     Thread-safe version of the ArrayBox.
   */
-  template<typename T, std::integral IntType, IntType MinX, IntType MaxX, IntType MinY = MinX, IntType MaxY = MaxX, IntType MinZ = MinX, IntType MaxZ = MaxX>
+  template<typename T, std::integral IntType>
   class ProtectedArrayBox : private NonCopyable, NonMovable
   {
   public:
-    using Underlying = ArrayBox<T, IntType, MinX, MaxX, MinY, MaxY, MinZ, MaxZ>;
-
-  public:
-    ProtectedArrayBox(const T& defaultValue)
-      : m_DefaultValue(defaultValue) {}
+    ProtectedArrayBox(const IBox3<IntType>& bounds, const T& defaultValue)
+      : m_ArrayBox(bounds, AllocationPolicy::Deferred), m_DefaultValue(defaultValue) {}
     ~ProtectedArrayBox() = default;
 
     operator bool() const
@@ -33,15 +30,15 @@ namespace Engine::Threads
       return m_ArrayBox(index);
     }
 
-    template<std::invocable<const Underlying&> F>
-    std::invoke_result_t<F, const Underlying&> readOperation(const F& operation) const
+    template<std::invocable<const ArrayBox<T, IntType>&> F>
+    std::invoke_result_t<F, const ArrayBox<T, IntType>&> readOperation(const F& operation) const
     {
       std::shared_lock lock(m_Mutex);
       return operation(m_ArrayBox);
     }
 
-    template<std::invocable<const Underlying&, const T&> F>
-    std::invoke_result_t<F, const Underlying&, const T&> readOperation(const F& operation) const
+    template<std::invocable<const ArrayBox<T, IntType>&, const T&> F>
+    std::invoke_result_t<F, const ArrayBox<T, IntType>&, const T&> readOperation(const F& operation) const
     {
       std::shared_lock lock(m_Mutex);
       return operation(m_ArrayBox, m_DefaultValue);
@@ -76,13 +73,13 @@ namespace Engine::Threads
       return containedValue;
     }
 
-    void setData(Underlying&& newArrayBox)
+    void setData(ArrayBox<T, IntType>&& newArrayBox)
     {
       std::lock_guard lock(m_Mutex);
       m_ArrayBox = std::move(newArrayBox);
     }
 
-    void resetIfFilledWithDefault()
+    void clearIfFilledWithDefault()
     {
       std::lock_guard lock(m_Mutex);
 
@@ -90,18 +87,18 @@ namespace Engine::Threads
         return;
 
       if (m_ArrayBox.filledWith(m_DefaultValue))
-        m_ArrayBox.reset();
+        m_ArrayBox.clear();
     }
 
-    template<std::invocable<Underlying&> F>
-    std::invoke_result_t<F, Underlying&> modifyingOperation(const F& operation)
+    template<std::invocable<ArrayBox<T, IntType>&> F>
+    std::invoke_result_t<F, ArrayBox<T, IntType>&> modifyingOperation(const F& operation)
     {
       std::lock_guard lock(m_Mutex);
       return operation(m_ArrayBox);
     }
 
-    template<std::invocable<Underlying&, const T&> F>
-    std::invoke_result_t<F, Underlying&, const T&> modifyingOperation(const F& operation)
+    template<std::invocable<ArrayBox<T, IntType>&, const T&> F>
+    std::invoke_result_t<F, ArrayBox<T, IntType>&, const T&> modifyingOperation(const F& operation)
     {
       std::lock_guard lock(m_Mutex);
       return operation(m_ArrayBox, m_DefaultValue);
@@ -109,7 +106,7 @@ namespace Engine::Threads
 
   private:
     mutable std::shared_mutex m_Mutex;
-    Underlying m_ArrayBox;
+    ArrayBox<T, IntType> m_ArrayBox;
     T m_DefaultValue;
 
     void allocateAndFillWithDefaultValue()

@@ -55,3 +55,26 @@ constexpr Direction operator!(const Direction& direction)
 constexpr bool IsUpstream(Direction direction) { return static_cast<int>(direction) % 2; }
 constexpr Axis AxisOf(Direction direction) { return static_cast<Axis>(static_cast<int>(direction) / 2); }
 constexpr Direction ToDirection(Axis axis, bool isUpstream) { return static_cast<Direction>(2 * static_cast<int>(axis) + isUpstream); }
+
+template<typename T>
+class DirectionArray
+{
+public:
+  DirectionArray() = default;
+  DirectionArray(const std::array<T, 6>& elements)
+    : m_Data(elements) {}
+  DirectionArray(const T& west, const T& east, const T& south, const T& north, const T& bottom, const T& top)
+    : DirectionArray(std::array<T, 6>{ west, east, south, north, bottom, top }) {}
+
+  T& operator[](Direction direction)
+  {
+    return const_cast<T&>(static_cast<const DirectionArray*>(this)->operator[](direction));
+  }
+  const T& operator[](Direction direction) const
+  {
+    return m_Data[static_cast<int>(direction)];
+  }
+
+private:
+  std::array<T, 6> m_Data;
+};

@@ -1,5 +1,6 @@
 #pragma once
-#include <Engine/Math/IBox3.h>
+#include <Engine/Math/ArrayRect.h>
+#include <Engine/Threads/Containers/ProtectedArrayBox.h>
 #include <Engine/Utilities/BitUtilities.h>
 
 // =========== Precision selection for Indices ============= //
@@ -20,6 +21,10 @@ using GlobalIndex = IVec3<globalIndex_t>;
 using BlockBox = IBox3<blockIndex_t>;
 using LocalBox = IBox3<localIndex_t>;
 using GlobalBox = IBox3<globalIndex_t>;
+
+template<typename T> using BlockArrayRect = ArrayRect<T, blockIndex_t>;
+template<typename T> using BlockArrayBox = ArrayBox<T, blockIndex_t>;
+template<typename T> using ProtectedBlockArrayBox = Engine::Threads::ProtectedArrayBox<T, blockIndex_t>;
 
 
 

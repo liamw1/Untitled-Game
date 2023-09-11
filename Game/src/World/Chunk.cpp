@@ -3,26 +3,26 @@
 #include "Player/Player.h"
 
 Chunk::Chunk(const GlobalIndex& chunkIndex)
-  : m_Composition(Block::Type::Air),
-    m_Lighting(Block::Light::MaxValue()),
+  : m_Composition(Bounds(), Block::Type::Air),
+    m_Lighting(Bounds(), Block::Light::MaxValue()),
     m_NonOpaqueFaces(0x3F) {}
 
-Chunk::ProtectedArrayBox<Block::Type>& Chunk::composition()
+ProtectedBlockArrayBox<Block::Type>& Chunk::composition()
 {
   return m_Composition;
 }
 
-const Chunk::ProtectedArrayBox<Block::Type>& Chunk::composition() const
+const ProtectedBlockArrayBox<Block::Type>& Chunk::composition() const
 {
   return m_Composition;
 }
 
-Chunk::ProtectedArrayBox<Block::Light>& Chunk::lighting()
+ProtectedBlockArrayBox<Block::Light>& Chunk::lighting()
 {
   return m_Lighting;
 }
 
-const Chunk::ProtectedArrayBox<Block::Light>& Chunk::lighting() const
+const ProtectedBlockArrayBox<Block::Light>& Chunk::lighting() const
 {
   return m_Lighting;
 }
@@ -33,20 +33,20 @@ bool Chunk::isFaceOpaque(Direction face) const
   return !(nonOpaqueFaces & Engine::Bit(static_cast<int>(face)));
 }
 
-void Chunk::setComposition(ArrayBox<Block::Type>&& composition)
+void Chunk::setComposition(BlockArrayBox<Block::Type>&& composition)
 {
   m_Composition.setData(std::move(composition));
   determineOpacity();
 }
 
-void Chunk::setLighting(ArrayBox<Block::Light>&& lighting)
+void Chunk::setLighting(BlockArrayBox<Block::Light>&& lighting)
 {
   m_Lighting.setData(std::move(lighting));
 }
 
 void Chunk::determineOpacity()
 {
-  m_Composition.readOperation([this](const ArrayBox<Block::Type>& arrayBox)
+  m_Composition.readOperation([this](const BlockArrayBox<Block::Type>& arrayBox)
     {
       if (!arrayBox)
       {
@@ -67,8 +67,8 @@ void Chunk::determineOpacity()
 
 void Chunk::update()
 {
-  m_Composition.resetIfFilledWithDefault();
-  m_Lighting.resetIfFilledWithDefault();
+  m_Composition.clearIfFilledWithDefault();
+  m_Lighting.clearIfFilledWithDefault();
 
   determineOpacity();
 }

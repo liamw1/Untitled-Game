@@ -39,7 +39,7 @@ length_t Biome::CalculateOctaveNoise(const NoiseSamples& noiseSamples, length_t 
   return sum;
 }
 
-void Biome::StandardColumnFill(Chunk::ArrayBox<Block::Type>::Strip column, length_t chunkFloor, length_t elevation, Block::Type surfaceType, int surfaceDepth, Block::Type soilType, int soilDepth)
+void Biome::StandardColumnFill(BlockArrayBox<Block::Type>::Strip column, length_t chunkFloor, length_t elevation, Block::Type surfaceType, int surfaceDepth, Block::Type soilType, int soilDepth)
 {
   int terrainElevationIndex = static_cast<int>(std::ceil((elevation - chunkFloor) / Block::Length()));
   int waterLevelIndex = static_cast<int>(std::ceil((0 - chunkFloor) / Block::Length()));

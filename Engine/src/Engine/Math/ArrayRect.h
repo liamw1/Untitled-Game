@@ -2,19 +2,24 @@
 #include "ArrayBox.h"
 #include "IBox2.h"
 
-template<typename T, std::integral IntType, IntType MinX, IntType MaxX, IntType MinY = MinX, IntType MaxY = MaxX>
+template<typename T, std::integral IntType>
 class ArrayRect : private Engine::NonCopyable
 {
 public:
-  using Strip = ArrayBoxStrip<T, IntType, MinY, MaxY>;
+  using Strip = ArrayBoxStrip<T, IntType>;
 
 public:
-  ArrayRect()
-    : m_Data(nullptr) {}
-  ArrayRect(AllocationPolicy policy)
-    : m_Data(new T[size()]) {}
-  ArrayRect(const T& initialValue)
-    : ArrayRect(AllocationPolicy::ForOverWrite) { fill(initialValue); }
+  ArrayRect(const IBox2<IntType>& bounds, AllocationPolicy policy)
+    : m_Data(nullptr)
+  {
+    setBounds(bounds);
+    if (policy != AllocationPolicy::Deferred)
+      allocate();
+    if (policy == AllocationPolicy::DefaultInitialize)
+      fill(T());
+  }
+  ArrayRect(const IBox2<IntType>& bounds, const T& initialValue)
+    : ArrayRect(bounds, AllocationPolicy::ForOverwrite) { fill(initialValue); }
   ~ArrayRect() { delete[] m_Data; }
 
   ArrayRect(ArrayRect&& other) noexcept = default;
@@ -22,6 +27,10 @@ public:
   {
     if (&other != this)
     {
+      m_Bounds = other.m_Bounds;
+      m_Stride = other.m_Stride;
+      m_Offset = other.m_Offset;
+
       delete[] m_Data;
       m_Data = other.m_Data;
       other.m_Data = nullptr;
@@ -39,9 +48,8 @@ public:
   const T& operator()(const IVec2<IntType>& index) const
   {
     EN_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
-
-    IVec2<IntType> indexRelativeToBase = index - c_Bounds.min;
-    return m_Data[c_Stride * indexRelativeToBase.i + indexRelativeToBase.j];
+    EN_CORE_ASSERT(m_Bounds.encloses(index), "Index is out of bounds!");
+    return m_Data[m_Stride * index.i + index.j - m_Offset];
   }
 
   Strip operator[](IntType index)
@@ -51,15 +59,13 @@ public:
   const Strip operator[](IntType index) const
   {
     EN_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
-    EN_CORE_ASSERT(Engine::Debug::BoundsCheck(index, MinX, MaxX), "Index is out of bounds!");
-    return Strip(m_Data + c_Stride * (index - MinX));
+    EN_CORE_ASSERT(Engine::Debug::BoundsCheck(index, m_Bounds.min.i, m_Bounds.max.i), "Index is out of bounds!");
+    return Strip(m_Data + m_Stride * (index - m_Bounds.min.i), m_Bounds.min.j);
   }
 
-  T* get() const { return m_Data; }
+  size_t size() const { return m_Bounds.volume(); }
 
-  constexpr size_t size() const { return c_Bounds.volume(); }
-
-  constexpr IBox2<IntType> bounds() const { return c_Bounds; }
+  const IBox2<IntType>& bounds() const { return m_Bounds; }
 
   bool contains(const T& value) const
   {
@@ -79,8 +85,7 @@ public:
       });
   }
 
-  template<IntType... Args>
-  bool contentsEqual(const IBox2<IntType>& compareSection, const ArrayBox<T, IntType, Args...>& container, const IBox2<IntType>& containerSection, const T& defaultValue) const
+  bool contentsEqual(const IBox2<IntType>& compareSection, const ArrayBox<T, IntType>& container, const IBox2<IntType>& containerSection, const T& defaultValue) const
   {
     EN_CORE_ASSERT(compareSection.extents() == containerSection.extents(), "Compared sections are not the same dimensions!");
 
@@ -143,8 +148,7 @@ public:
       });
   }
 
-  template<IntType... Args>
-  void fill(const IBox2<IntType>& fillSection, const ArrayBox<T, IntType, Args...>& container, const IBox2<IntType>& containerSection)
+  void fill(const IBox2<IntType>& fillSection, const ArrayBox<T, IntType>& container, const IBox2<IntType>& containerSection)
   {
     EN_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
     EN_CORE_ASSERT(fillSection.extents() == containerSection.extents(), "Read and write sections are not the same dimensions!");
@@ -156,15 +160,19 @@ public:
       });
   }
 
+  void setBounds(const IBox2<IntType>& bounds)
+  {
+    m_Bounds = bounds;
+    m_Stride = m_Bounds.max.j - m_Bounds.min.j;
+    m_Offset = m_Stride * m_Bounds.min.i + m_Bounds.min.j;
+  }
+
   void allocate()
   {
     if (m_Data)
-    {
       EN_CORE_WARN("Data already allocated to ArrayRect. Ignoring...");
-      return;
-    }
-
-    m_Data = new T[size()];
+    else
+      m_Data = new T[size()];
   }
 
   void reset()
@@ -174,8 +182,8 @@ public:
   }
 
 private:
-  static constexpr IBox2<IntType> c_Bounds = IBox2<IntType>(MinX, MinY, MaxX, MaxY);
-  static constexpr size_t c_Stride = MaxY - MinY;
-
+  IBox2<IntType> m_Bounds;
+  int m_Stride;
+  int m_Offset;
   T* m_Data;
 };

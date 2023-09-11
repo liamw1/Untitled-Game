@@ -10,24 +10,14 @@ class Chunk : private Engine::NonCopyable, Engine::NonMovable
   static constexpr blockIndex_t c_ChunkSize = 32;
 
 public:
-  template<typename T>
-  using ArrayRect = ArrayRect<T, blockIndex_t, 0, c_ChunkSize>;
-
-  template<typename T>
-  using ArrayBox = ArrayBox<T, blockIndex_t, 0, c_ChunkSize>;
-
-  template<typename T>
-  using ProtectedArrayBox = Engine::Threads::ProtectedArrayBox<T, blockIndex_t, 0, c_ChunkSize>;
-
-public:
   Chunk() = delete;
   Chunk(const GlobalIndex& chunkIndex);
 
-  ProtectedArrayBox<Block::Type>& composition();
-  const ProtectedArrayBox<Block::Type>& composition() const;
+  ProtectedBlockArrayBox<Block::Type>& composition();
+  const ProtectedBlockArrayBox<Block::Type>& composition() const;
 
-  ProtectedArrayBox<Block::Light>& lighting();
-  const ProtectedArrayBox<Block::Light>& lighting() const;
+  ProtectedBlockArrayBox<Block::Light>& lighting();
+  const ProtectedBlockArrayBox<Block::Light>& lighting() const;
 
   /*
     \return Whether or not a given chunk face has transparent blocks. Useful for deciding which chunks should be loaded
@@ -40,8 +30,8 @@ public:
   */
   bool isFaceOpaque(Direction face) const;
 
-  void setComposition(ArrayBox<Block::Type>&& composition);
-  void setLighting(ArrayBox<Block::Light>&& lighting);
+  void setComposition(BlockArrayBox<Block::Type>&& composition);
+  void setLighting(BlockArrayBox<Block::Light>&& lighting);
   void determineOpacity();
 
   void update();
@@ -64,10 +54,11 @@ public:
   static constexpr length_t Length() { return Block::Length() * Size(); }
   static constexpr int TotalBlocks() { return Size() * Size() * Size(); }
   static constexpr BlockBox Bounds() { return BlockBox(0, Chunk::Size()); }
+  static constexpr IBox2<blockIndex_t> Bounds2D() { return IBox2<blockIndex_t>(0, Chunk::Size()); }
   static constexpr GlobalBox Stencil(const GlobalIndex& chunkIndex) { return GlobalBox(-1, 2) + chunkIndex; }
 
 private:
-  ProtectedArrayBox<Block::Type> m_Composition;
-  ProtectedArrayBox<Block::Light> m_Lighting;
+  ProtectedBlockArrayBox<Block::Type> m_Composition;
+  ProtectedBlockArrayBox<Block::Light> m_Lighting;
   std::atomic<uint16_t> m_NonOpaqueFaces;
 };

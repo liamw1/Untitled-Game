@@ -1,4 +1,5 @@
 #pragma once
+#include "Direction.h"
 #include "Engine/Utilities/Helpers.h"
 
 template<std::integral IntType>
