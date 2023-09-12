@@ -4,11 +4,12 @@ namespace Engine::Threads
 {
   enum class Priority
   {
+    Immediate,
     High,
     Normal,
     Low,
 
-    Begin = High, End = Low
+    Begin = 0, End = Low
   };
   static constexpr int c_PriorityCount = 1 + static_cast<int>(Priority::End) - static_cast<int>(Priority::Begin);
 

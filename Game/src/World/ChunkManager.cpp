@@ -7,10 +7,10 @@
 ChunkManager::ChunkManager()
   : m_ThreadPool(std::make_shared<Engine::Threads::ThreadPool>(4)),
     m_LoadWork(m_ThreadPool, Engine::Threads::Priority::Normal),
-    m_CleanWork(m_ThreadPool, Engine::Threads::Priority::Low),
+    m_CleanWork(m_ThreadPool, Engine::Threads::Priority::High),
     m_LightingWork(m_ThreadPool, Engine::Threads::Priority::Normal),
-    m_LazyMeshingWork(m_ThreadPool, Engine::Threads::Priority::Low),
-    m_ForceMeshingWork(m_ThreadPool, Engine::Threads::Priority::High),
+    m_LazyMeshingWork(m_ThreadPool, Engine::Threads::Priority::Normal),
+    m_ForceMeshingWork(m_ThreadPool, Engine::Threads::Priority::Immediate),
     m_PrevPlayerOriginIndex(Player::OriginIndex()) {}
 
 ChunkManager::~ChunkManager()
@@ -163,7 +163,7 @@ void ChunkManager::loadNewChunks()
   if (m_LoadWork.savedResults() > 0)
     m_LoadWork.waitAndDiscardSaved();
 
-  m_ThreadPool->submit(Engine::Threads::Priority::Normal, [this]()
+  m_ThreadPool->submit(Engine::Threads::Priority::High, [this]()
     {
       std::unordered_set<GlobalIndex> newChunkIndices = m_ChunkContainer.findAllLoadableIndices();
 
@@ -189,7 +189,7 @@ void ChunkManager::clean()
     m_CleanWork.waitAndDiscardSaved();
   m_PrevPlayerOriginIndex = originIndex;
 
-  m_ThreadPool->submit(Engine::Threads::Priority::Normal, [this]()
+  m_ThreadPool->submit(Engine::Threads::Priority::High, [this]()
     {
       GlobalIndex originIndex = Player::OriginIndex();
       std::vector<GlobalIndex> chunksMarkedForDeletion = m_ChunkContainer.chunks().getKeys([&originIndex](const GlobalIndex& chunkIndex)
@@ -246,21 +246,25 @@ void ChunkManager::removeBlock(const GlobalIndex& chunkIndex, const BlockIndex& 
     return;
   Block::Type removedBlock = chunk->composition().replace(blockIndex, Block::Type::Air);
 
-  // Get estimate of light value of effected block for immediate meshing
-  int8_t lightEstimate = 0;
-  for (Direction direction : Directions())
-  {
-    BlockIndex blockNeighbor = blockIndex + BlockIndex::Dir(direction);
-    if (!Chunk::Bounds().encloses(blockNeighbor) || !Block::HasTransparency(chunk->composition().get(blockNeighbor)))
-      continue;
-
-    lightEstimate = chunk->lighting().get(blockNeighbor).sunlight();
-    break;
-  }
-  chunk->lighting().set(blockIndex, lightEstimate);
-
   if (!Block::HasTransparency(removedBlock))
+  {
+    // Get estimate of light value of effected block for immediate meshing
+    int8_t lightEstimate = 0;
+    for (Direction direction : Directions())
+    {
+      BlockIndex blockNeighbor = blockIndex + BlockIndex::Dir(direction);
+      if (!Chunk::Bounds().encloses(blockNeighbor) || !Block::HasTransparency(chunk->composition().get(blockNeighbor)))
+        continue;
+
+      lightEstimate = std::max(lightEstimate, chunk->lighting().get(blockNeighbor).sunlight());
+    }
+
+    // This is necessary to ensure non-identical diffs of chunk boundary so that lighting updates get propogate to neighboring chunks
+    lightEstimate = std::max(0, lightEstimate - 2);
+
+    chunk->lighting().set(blockIndex, lightEstimate);
     addToLightingUpdateQueue(chunkIndex);
+  }
   sendBlockUpdate(chunkIndex, blockIndex);
 }
 
@@ -319,8 +323,6 @@ std::shared_ptr<Chunk> ChunkManager::generateNewChunk(const GlobalIndex& chunkIn
 
 void ChunkManager::eraseChunk(const GlobalIndex& chunkIndex)
 {
-  EN_PROFILE_FUNCTION();
-
   if (!Util::IsInRange(chunkIndex, Player::OriginIndex(), c_UnloadDistance))
   {
     // Order is important here to prevent memory leaks
@@ -712,8 +714,6 @@ void ChunkManager::lazyMeshingPacket(const GlobalIndex& chunkIndex)
 
 void ChunkManager::forceMeshingPacket(const GlobalIndex& chunkIndex)
 {
-  EN_PROFILE_FUNCTION();
-
   std::shared_ptr<Chunk> chunk = m_ChunkContainer.chunks().get(chunkIndex);
   if (!chunk)
     chunk = generateNewChunk(chunkIndex);
