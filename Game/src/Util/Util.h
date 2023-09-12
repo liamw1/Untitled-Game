@@ -1,5 +1,5 @@
 #pragma once
-#include "World/Indexing.h"
+#include "World/Chunk.h"
 
 namespace Util
 {
@@ -22,4 +22,19 @@ namespace Util
              Could be any frustum, not necessarily the view frustum.
   */
   bool IsInFrustum(const Vec3& point, const std::array<Vec4, 6>& frustumPlanes);
+
+  std::unordered_map<GlobalIndex, BlockBox> PartitionBlockBox(const BlockBox& box, const GlobalIndex& origin);
+
+  constexpr LocalBox BlockBoxToLocalBox(const BlockBox& box)
+  {
+    LocalBox chunkBox = static_cast<LocalBox>(box) / Chunk::Size();
+    for (Axis axis : Axes())
+    {
+      if (box.min[axis] < 0)
+        chunkBox.min[axis]--;
+      if (box.max[axis] < 0)
+        chunkBox.max[axis]--;
+    }
+    return chunkBox;
+  }
 }

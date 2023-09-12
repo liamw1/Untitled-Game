@@ -1,6 +1,5 @@
 #include "GMpch.h"
 #include "Util.h"
-#include "Player/Player.h"
 #include <glm/gtc/matrix_access.hpp>
 
 bool Util::IsInRange(const GlobalIndex& chunkIndex, const GlobalIndex& originIndex, globalIndex_t range)
@@ -40,4 +39,19 @@ bool Util::IsInFrustum(const Vec3& point, const std::array<Vec4, 6>& frustumPlan
       return false;
 
   return true;
+}
+
+std::unordered_map<GlobalIndex, BlockBox> Util::PartitionBlockBox(const BlockBox& box, const GlobalIndex& origin)
+{
+  std::unordered_map<GlobalIndex, BlockBox> boxDecomposition;
+
+  LocalBox localBox = BlockBoxToLocalBox(box);
+  localBox.forEach([&box, &origin, &boxDecomposition](const LocalIndex& localIndex)
+    {
+      GlobalIndex chunkIndex = origin + static_cast<GlobalIndex>(localIndex);
+      BlockBox localIntersection = BlockBox::Intersection(Chunk::Bounds(), box - Chunk::Size() * static_cast<BlockIndex>(localIndex));
+      boxDecomposition[chunkIndex] = localIntersection;
+    });
+
+  return boxDecomposition;
 }

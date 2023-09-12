@@ -13,6 +13,8 @@ public:
   Chunk() = delete;
   Chunk(const GlobalIndex& chunkIndex);
 
+  const GlobalIndex& globalIndex() const;
+
   ProtectedBlockArrayBox<Block::Type>& composition();
   const ProtectedBlockArrayBox<Block::Type>& composition() const;
 
@@ -53,12 +55,13 @@ public:
   static constexpr blockIndex_t Size() { return c_ChunkSize; }
   static constexpr length_t Length() { return Block::Length() * Size(); }
   static constexpr int TotalBlocks() { return Size() * Size() * Size(); }
-  static constexpr BlockBox Bounds() { return BlockBox(0, Chunk::Size()); }
-  static constexpr IBox2<blockIndex_t> Bounds2D() { return IBox2<blockIndex_t>(0, Chunk::Size()); }
-  static constexpr GlobalBox Stencil(const GlobalIndex& chunkIndex) { return GlobalBox(-1, 2) + chunkIndex; }
+  static constexpr BlockBox Bounds() { return BlockBox(0, Chunk::Size() - 1); }
+  static constexpr IBox2<blockIndex_t> Bounds2D() { return IBox2<blockIndex_t>(0, Chunk::Size() - 1); }
+  static constexpr GlobalBox Stencil(const GlobalIndex& chunkIndex) { return GlobalBox(-1, 1) + chunkIndex; }
 
 private:
   ProtectedBlockArrayBox<Block::Type> m_Composition;
   ProtectedBlockArrayBox<Block::Light> m_Lighting;
   std::atomic<uint16_t> m_NonOpaqueFaces;
+  const GlobalIndex m_GlobalIndex;
 };

@@ -62,7 +62,7 @@ struct IBox3
   constexpr bool encloses(const IVec3<IntType>& iVec3) const
   {
     for (Axis axis : Axes())
-      if (iVec3[axis] < min[axis] || iVec3[axis] >= max[axis])
+      if (iVec3[axis] < min[axis] || iVec3[axis] > max[axis])
         return false;
     return true;
   }
@@ -70,7 +70,7 @@ struct IBox3
   constexpr IVec3<IntType> extents() const
   {
     EN_CORE_ASSERT(valid(), "Box is not valid!");
-    return IVec3<IntType>(max.i - min.i, max.j - min.j, max.k - min.k);
+    return IVec3<IntType>(max.i - min.i + 1, max.j - min.j + 1, max.k - min.k + 1);
   }
 
   constexpr size_t volume() const
@@ -106,7 +106,7 @@ struct IBox3
   constexpr IntType limitAlongDirection(Direction direction) const
   {
     Axis axis = AxisOf(direction);
-    return IsUpstream(direction) ? max[axis] - 1 : min[axis];
+    return IsUpstream(direction) ? max[axis] : min[axis];
   }
 
   constexpr IBox3 face(Direction side) const
@@ -118,7 +118,7 @@ struct IBox3
     faceLower[axis] = faceNormalLimit;
 
     IVec3<IntType> faceUpper = max;
-    faceUpper[axis] = faceNormalLimit + 1;
+    faceUpper[axis] = faceNormalLimit;
 
     return IBox3(faceLower, faceUpper);
   }
@@ -152,8 +152,8 @@ struct IBox3
                 && Engine::Debug::EqualsOneOf(offset.j, -1, 1)
                 && Engine::Debug::EqualsOneOf(offset.k, -1, 1), "Offset IVec3 must contains values of -1 or 1!");
 
-    IVec3<IntType> cornerIndex(offset.i > 0 ? max.i - 1 : min.i, offset.j > 0 ? max.j - 1 : min.j, offset.k > 0 ? max.k - 1 : min.k);
-    return { cornerIndex, cornerIndex + 1 };
+    IVec3<IntType> cornerIndex(offset.i > 0 ? max.i : min.i, offset.j > 0 ? max.j : min.j, offset.k > 0 ? max.k : min.k);
+    return { cornerIndex, cornerIndex };
   }
 
   template<InvocableWithReturnType<bool, const IVec3<IntType>&> F>
@@ -168,9 +168,9 @@ struct IBox3
     EN_CORE_ASSERT(valid(), "Box is not valid!");
 
     IVec3<IntType> index;
-    for (index.i = min.i; index.i < max.i; ++index.i)
-      for (index.j = min.j; index.j < max.j; ++index.j)
-        for (index.k = min.k; index.k < max.k; ++index.k)
+    for (index.i = min.i; index.i <= max.i; ++index.i)
+      for (index.j = min.j; index.j <= max.j; ++index.j)
+        for (index.k = min.k; index.k <= max.k; ++index.k)
           if (condition(index))
             return true;
     return false;
@@ -182,9 +182,9 @@ struct IBox3
     EN_CORE_ASSERT(valid(), "Box is not valid!");
 
     IVec3<IntType> index;
-    for (index.i = min.i; index.i < max.i; ++index.i)
-      for (index.j = min.j; index.j < max.j; ++index.j)
-        for (index.k = min.k; index.k < max.k; ++index.k)
+    for (index.i = min.i; index.i <= max.i; ++index.i)
+      for (index.j = min.j; index.j <= max.j; ++index.j)
+        for (index.k = min.k; index.k <= max.k; ++index.k)
           if (condition(index))
             return false;
     return true;
@@ -196,15 +196,10 @@ struct IBox3
     EN_CORE_ASSERT(valid(), "Box is not valid!");
 
     IVec3<IntType> index;
-    for (index.i = min.i; index.i < max.i; ++index.i)
-      for (index.j = min.j; index.j < max.j; ++index.j)
-        for (index.k = min.k; index.k < max.k; ++index.k)
+    for (index.i = min.i; index.i <= max.i; ++index.i)
+      for (index.j = min.j; index.j <= max.j; ++index.j)
+        for (index.k = min.k; index.k <= max.k; ++index.k)
           function(index);  
-  }
-
-  static constexpr IBox3 Union(const IBox3& boxA, const IBox3& boxB)
-  {
-    return { ComponentWiseMin(boxA.min, boxB.min), ComponentWiseMax(boxA.max, boxB.max) };
   }
 
   static constexpr IBox3 Intersection(const IBox3& boxA, const IBox3& boxB)

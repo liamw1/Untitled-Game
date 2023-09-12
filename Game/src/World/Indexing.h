@@ -1,7 +1,6 @@
 #pragma once
 #include <Engine/Math/ArrayRect.h>
 #include <Engine/Threads/Containers/ProtectedArrayBox.h>
-#include <Engine/Utilities/BitUtilities.h>
 
 // =========== Precision selection for Indices ============= //
 template <bool isDoublePrecision> struct GlobalIndexSelector;
@@ -25,30 +24,3 @@ using GlobalBox = IBox3<globalIndex_t>;
 template<typename T> using BlockArrayRect = ArrayRect<T, blockIndex_t>;
 template<typename T> using BlockArrayBox = ArrayBox<T, blockIndex_t>;
 template<typename T> using ProtectedBlockArrayBox = Engine::Threads::ProtectedArrayBox<T, blockIndex_t>;
-
-
-
-// ================== Hashes for indices =================== //
-namespace std
-{
-  template<>
-  struct hash<SurfaceMapIndex>
-  {
-    int operator()(const SurfaceMapIndex& index) const
-    {
-      return Engine::BitUi32( 0) * (index.i % Engine::BitUi32(16)) +
-             Engine::BitUi32(16) * (index.j % Engine::BitUi32(16));
-    }
-  };
-
-  template<>
-  struct hash<GlobalIndex>
-  {
-    int operator()(const GlobalIndex& index) const
-    {
-      return Engine::BitUi32( 0) * (index.i % Engine::BitUi32(10)) +
-             Engine::BitUi32(10) * (index.j % Engine::BitUi32(10)) +
-             Engine::BitUi32(20) * (index.k % Engine::BitUi32(10));
-    }
-  };
-}

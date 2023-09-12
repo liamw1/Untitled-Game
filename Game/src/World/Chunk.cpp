@@ -5,7 +5,13 @@
 Chunk::Chunk(const GlobalIndex& chunkIndex)
   : m_Composition(Bounds(), Block::Type::Air),
     m_Lighting(Bounds(), Block::Light::MaxValue()),
-    m_NonOpaqueFaces(0x3F) {}
+    m_NonOpaqueFaces(0x3F),
+    m_GlobalIndex(chunkIndex) {}
+
+const GlobalIndex& Chunk::globalIndex() const
+{
+  return m_GlobalIndex;
+}
 
 ProtectedBlockArrayBox<Block::Type>& Chunk::composition()
 {

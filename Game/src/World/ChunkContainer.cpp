@@ -5,6 +5,24 @@
 
 ChunkContainer::ChunkContainer() = default;
 
+const Engine::Threads::UnorderedMap<GlobalIndex, Chunk>& ChunkContainer::chunks() const
+{
+  return m_Chunks;
+}
+
+std::unordered_set<GlobalIndex> ChunkContainer::findAllLoadableIndices() const
+{
+  std::unordered_set<GlobalIndex> boundaryIndices = m_BoundaryIndices.getCurrentState();
+
+  GlobalIndex originIndex = Player::OriginIndex();
+  std::unordered_set<GlobalIndex> newChunkIndices;
+  for (const GlobalIndex& boundaryIndex : boundaryIndices)
+    if (Util::IsInRange(boundaryIndex, originIndex, c_LoadDistance))
+      newChunkIndices.insert(boundaryIndex);
+
+  return newChunkIndices;
+}
+
 bool ChunkContainer::insert(const GlobalIndex& chunkIndex, const std::shared_ptr<Chunk>& newChunk)
 {
   EN_ASSERT(newChunk, "Chunk does not exist!");
@@ -23,24 +41,6 @@ bool ChunkContainer::erase(const GlobalIndex& chunkIndex)
     boundaryUpdate(chunkIndex);
 
   return chunkErased;
-}
-
-const Engine::Threads::UnorderedMap<GlobalIndex, Chunk>& ChunkContainer::chunks() const
-{
-  return m_Chunks;
-}
-
-std::unordered_set<GlobalIndex> ChunkContainer::findAllLoadableIndices() const
-{
-  std::unordered_set<GlobalIndex> boundaryIndices = m_BoundaryIndices.getCurrentState();
-
-  GlobalIndex originIndex = Player::OriginIndex();
-  std::unordered_set<GlobalIndex> newChunkIndices;
-  for (const GlobalIndex& boundaryIndex : boundaryIndices)
-    if (Util::IsInRange(boundaryIndex, originIndex, c_LoadDistance))
-      newChunkIndices.insert(boundaryIndex);
-
-  return newChunkIndices;
 }
 
 bool ChunkContainer::hasBoundaryNeighbors(const GlobalIndex& chunkIndex)

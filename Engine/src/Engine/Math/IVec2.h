@@ -1,6 +1,7 @@
 #pragma once
 #include "Direction.h"
 #include "Engine/Utilities/Helpers.h"
+#include "Engine/Utilities/BitUtilities.h"
 
 template<std::integral IntType>
 struct IVec2
@@ -72,6 +73,8 @@ struct IVec2
   constexpr IVec2 operator*(IntType n) const { return Engine::Clone(*this) *= n; }
   constexpr IVec2 operator/(IntType n) const { return Engine::Clone(*this) /= n; }
 
+  constexpr int l1Norm() const { return std::abs(i) + std::abs(j); }
+
   static constexpr IVec2 ToIndex(const Vec2& vec)
   {
     return IVec2(static_cast<IntType>(std::floor(vec.x)), static_cast<IntType>(std::floor(vec.y)));
@@ -105,4 +108,14 @@ namespace std
   {
     return os << '[' << static_cast<int64_t>(index.i) << ", " << static_cast<int64_t>(index.j) << ']';
   }
+
+  template<std::integral IntType>
+  struct hash<IVec2<IntType>>
+  {
+    constexpr int operator()(const IVec2<IntType>& index) const
+    {
+      return Engine::BitUi32( 0) * (index.i % Engine::BitUi32(16)) +
+             Engine::BitUi32(16) * (index.j % Engine::BitUi32(16));
+    }
+  };
 }

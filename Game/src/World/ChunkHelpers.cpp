@@ -147,12 +147,8 @@ bool ChunkDrawCommand::sort(const GlobalIndex& originIndex, const Vec3& viewPosi
   // Sort based on L1 distance to originBlock
   std::sort(m_Voxels.begin(), m_Voxels.end(), [&originBlock](const ChunkVoxel& voxelA, const ChunkVoxel& voxelB)
     {
-      BlockIndex diffA = voxelA.index() - originBlock;
-      int distA = std::abs(diffA.i) + std::abs(diffA.j) + std::abs(diffA.k);
-
-      BlockIndex diffB = voxelB.index() - originBlock;
-      int distB = std::abs(diffB.i) + std::abs(diffB.j) + std::abs(diffB.k);
-
+      int distA = (voxelA.index() - originBlock).l1Norm();
+      int distB = (voxelB.index() - originBlock).l1Norm();
       return distA > distB;
     });
   m_SortState = originBlock;

@@ -61,13 +61,13 @@ struct IBox2
 
   constexpr bool encloses(const IVec2<IntType>& iVec2) const
   {
-    return iVec2.i >= min.i && iVec2.i < max.i && iVec2.j >= min.j && iVec2.j < max.j;
+    return iVec2.i >= min.i && iVec2.i <= max.i && iVec2.j >= min.j && iVec2.j <= max.j;
   }
 
   constexpr IVec2<IntType> extents() const
   {
     EN_CORE_ASSERT(valid(), "Box is not valid!");
-    return IVec2<IntType>(max.i - min.i, max.j - min.j);
+    return IVec2<IntType>(max.i - min.i + 1, max.j - min.j + 1);
   }
 
   constexpr int volume() const
@@ -99,8 +99,8 @@ struct IBox2
     EN_CORE_ASSERT(valid(), "Box is not valid!");
 
     IVec2<IntType> index;
-    for (index.i = min.i; index.i < max.i; ++index.i)
-      for (index.j = min.j; index.j < max.j; ++index.j)
+    for (index.i = min.i; index.i <= max.i; ++index.i)
+      for (index.j = min.j; index.j <= max.j; ++index.j)
         if (condition(index))
           return true;
     return false;
@@ -112,8 +112,8 @@ struct IBox2
     EN_CORE_ASSERT(valid(), "Box is not valid!");
 
     IVec2<IntType> index;
-    for (index.i = min.i; index.i < max.i; ++index.i)
-      for (index.j = min.j; index.j < max.j; ++index.j)
+    for (index.i = min.i; index.i <= max.i; ++index.i)
+      for (index.j = min.j; index.j <= max.j; ++index.j)
         if (condition(index))
           return false;
     return true;
@@ -125,14 +125,9 @@ struct IBox2
     EN_CORE_ASSERT(valid(), "Box is not valid!");
 
     IVec2<IntType> index;
-    for (index.i = min.i; index.i < max.i; ++index.i)
-      for (index.j = min.j; index.j < max.j; ++index.j)
+    for (index.i = min.i; index.i <= max.i; ++index.i)
+      for (index.j = min.j; index.j <= max.j; ++index.j)
         function(index);  
-  }
-
-  static constexpr IBox2 Union(const IBox2& boxA, const IBox2& boxB)
-  {
-    return { ComponentWiseMin(boxA.min, boxB.min), ComponentWiseMax(boxA.max, boxB.max) };
   }
 
   static constexpr IBox2 Intersection(const IBox2& boxA, const IBox2& boxB)

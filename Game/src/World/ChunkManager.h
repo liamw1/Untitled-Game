@@ -63,6 +63,7 @@ private:
   ChunkContainer m_ChunkContainer;
   std::shared_ptr<Engine::Threads::ThreadPool> m_ThreadPool;
   Engine::Threads::WorkSet<GlobalIndex, std::shared_ptr<Chunk>> m_LoadWork;
+  Engine::Threads::WorkSet<GlobalIndex, void> m_CleanWork;
   Engine::Threads::WorkSet<GlobalIndex, void> m_LightingWork;
   Engine::Threads::WorkSet<GlobalIndex, void> m_LazyMeshingWork;
   Engine::Threads::WorkSet<GlobalIndex, void> m_ForceMeshingWork;
@@ -72,8 +73,10 @@ private:
   void addToLightingUpdateQueue(const GlobalIndex& chunkIndex);
   void addToLazyMeshUpdateQueue(const GlobalIndex& chunkIndex);
   void addToForceMeshUpdateQueue(const GlobalIndex& chunkIndex);
+  void addToMeshRemovalQueue(const GlobalIndex& chunkIndex);
 
   std::shared_ptr<Chunk> generateNewChunk(const GlobalIndex& chunkIndex);
+  void eraseChunk(const GlobalIndex& chunkIndex);
 
   /*
     Queues chunk where the block update occured for updating. If specified block is on chunk border,
@@ -96,9 +99,9 @@ private:
      bits 22-31: Texure ID
      Uses AO algorithm outlined in https://0fps.net/2013/07/03/ambient-occlusion-for-minecraft-like-worlds/
   */
-  void meshChunk(const std::shared_ptr<Chunk>& chunk, const GlobalIndex& chunkIndex);
+  void meshChunk(const std::shared_ptr<Chunk>& chunk);
 
-  void updateLighting(const std::shared_ptr<Chunk>& chunk, const GlobalIndex& chunkIndex);
+  void updateLighting(const std::shared_ptr<Chunk>& chunk);
 
   void lightingPacket(const GlobalIndex& chunkIndex);
   void lazyMeshingPacket(const GlobalIndex& chunkIndex);

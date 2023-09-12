@@ -15,6 +15,14 @@ class ChunkContainer
 public:
   ChunkContainer();
 
+  const Engine::Threads::UnorderedMap<GlobalIndex, Chunk>& chunks() const;
+
+  /*
+    Scans boundary for places where new chunks can be loaded and returns possible locations
+    as an unordered set.
+  */
+  std::unordered_set<GlobalIndex> findAllLoadableIndices() const;
+
   /*
     Inserts chunk and adds it to boundary map. Its neighbors are moved from boundary map
     if they are no longer on the boundary.
@@ -31,21 +39,12 @@ public:
   */
   bool erase(const GlobalIndex& chunkIndex);
 
-  const Engine::Threads::UnorderedMap<GlobalIndex, Chunk>& chunks() const;
-
-  /*
-    Scans boundary for places where new chunks can be loaded and returns possible locations
-    as an unordered set.
-  */
-  std::unordered_set<GlobalIndex> findAllLoadableIndices() const;
-
   bool hasBoundaryNeighbors(const GlobalIndex& chunkIndex);
 
 private:
   Engine::Threads::UnorderedMap<GlobalIndex, Chunk> m_Chunks;
   Engine::Threads::UnorderedSet<GlobalIndex> m_BoundaryIndices;
 
-private:
   /*
     \returns True if the given chunk meets the requirements to be a boundary chunk.
              Does not check if the chunk is in the boundary map.

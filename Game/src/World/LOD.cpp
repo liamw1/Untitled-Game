@@ -12,8 +12,8 @@ namespace LOD
   // Width of a transition cell as a fraction of regular cell width
   static constexpr length_t c_TCFractionalWidth = 0.5f;
 
-  static constexpr BlockBox c_LODBounds(0, c_NumCells + 1);
-  static constexpr IBox2<blockIndex_t> c_LODBounds2D(0, c_NumCells + 1);
+  static constexpr BlockBox c_LODBounds(0, c_NumCells);
+  static constexpr IBox2<blockIndex_t> c_LODBounds2D(0, c_NumCells);
 
   struct NoiseData
   {

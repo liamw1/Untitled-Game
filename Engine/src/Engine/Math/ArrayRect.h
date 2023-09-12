@@ -59,7 +59,7 @@ public:
   const Strip operator[](IntType index) const
   {
     EN_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
-    EN_CORE_ASSERT(Engine::Debug::BoundsCheck(index, m_Bounds.min.i, m_Bounds.max.i), "Index is out of bounds!");
+    EN_CORE_ASSERT(Engine::Debug::BoundsCheck(index, m_Bounds.min.i, m_Bounds.max.i + 1), "Index is out of bounds!");
     return Strip(m_Data + m_Stride * (index - m_Bounds.min.i), m_Bounds.min.j);
   }
 
@@ -163,7 +163,7 @@ public:
   void setBounds(const IBox2<IntType>& bounds)
   {
     m_Bounds = bounds;
-    m_Stride = m_Bounds.max.j - m_Bounds.min.j;
+    m_Stride = m_Bounds.extents().j;
     m_Offset = m_Stride * m_Bounds.min.i + m_Bounds.min.j;
   }
 

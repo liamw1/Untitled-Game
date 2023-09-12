@@ -46,8 +46,8 @@ public:
   }
   const ArrayBoxStrip<T, IntType> operator[](IntType index) const
   {
-    EN_CORE_ASSERT(Engine::Debug::BoundsCheck(index, m_Bounds.min.i, m_Bounds.max.i), "Index is out of bounds!");
-    return ArrayBoxStrip<T, IntType>(m_Begin + (m_Bounds.max.j - m_Bounds.min.j) * (index - m_Bounds.min.i), m_Bounds.min.j);
+    EN_CORE_ASSERT(Engine::Debug::BoundsCheck(index, m_Bounds.min.i, m_Bounds.max.i + 1), "Index is out of bounds!");
+    return ArrayBoxStrip<T, IntType>(m_Begin + m_Bounds.extents().j * (index - m_Bounds.min.i), m_Bounds.min.j);
   }
 
 private:
@@ -124,7 +124,7 @@ public:
   const Layer operator[](IntType index) const
   {
     EN_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
-    EN_CORE_ASSERT(Engine::Debug::BoundsCheck(index, m_Bounds.min.i, m_Bounds.max.i), "Index is out of bounds!");
+    EN_CORE_ASSERT(Engine::Debug::BoundsCheck(index, m_Bounds.min.i, m_Bounds.max.i + 1), "Index is out of bounds!");
     IBox2<IntType> layerBounds(m_Bounds.min.j, m_Bounds.min.k, m_Bounds.max.j, m_Bounds.max.k);
     return Layer(m_Data + m_Strides.i * (index - m_Bounds.min.i), layerBounds);
   }
