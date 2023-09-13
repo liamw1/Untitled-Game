@@ -19,6 +19,7 @@ private:
   std::list<float> m_FrameTimeWindow;
   bool m_PrintFrameRate;
   bool m_PrintMinFrameRate;
+  bool m_PrintPlayerPosition;
 
   bool onKeyPressEvent(Engine::KeyPressEvent& event);
 };

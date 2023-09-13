@@ -10,8 +10,7 @@ ChunkManager::ChunkManager()
     m_CleanWork(m_ThreadPool, Engine::Threads::Priority::High),
     m_LightingWork(m_ThreadPool, Engine::Threads::Priority::Normal),
     m_LazyMeshingWork(m_ThreadPool, Engine::Threads::Priority::Normal),
-    m_ForceMeshingWork(m_ThreadPool, Engine::Threads::Priority::Immediate),
-    m_PrevPlayerOriginIndex(Player::OriginIndex()) {}
+    m_ForceMeshingWork(m_ThreadPool, Engine::Threads::Priority::Immediate) {}
 
 ChunkManager::~ChunkManager()
 {
@@ -157,13 +156,23 @@ void ChunkManager::update()
 
 void ChunkManager::loadNewChunks()
 {
+  using namespace std::chrono_literals;
+
+  static std::future<void> future;
+  static std::chrono::steady_clock::time_point lastSearchTimePoint;
+  static constexpr std::chrono::duration<seconds> searchInterval = 25ms;
+
   if (m_LoadWork.queuedTasks() > 0)
     return;
 
   if (m_LoadWork.savedResults() > 0)
     m_LoadWork.waitAndDiscardSaved();
 
-  m_ThreadPool->submit(Engine::Threads::Priority::High, [this]()
+  std::chrono::duration<seconds> timeSinceLastSearch = std::chrono::steady_clock::now() - lastSearchTimePoint;
+  if (timeSinceLastSearch < searchInterval || (future.valid() && !Engine::Threads::IsReady(future)))
+    return;
+
+  future = m_ThreadPool->submit(Engine::Threads::Priority::High, [this]()
     {
       std::unordered_set<GlobalIndex> newChunkIndices = m_ChunkContainer.findAllLoadableIndices();
 
@@ -174,22 +183,30 @@ void ChunkManager::loadNewChunks()
       for (const GlobalIndex& newChunkIndex : newChunkIndices)
         m_LoadWork.submitAndSaveResult(newChunkIndex, &ChunkManager::generateNewChunk, this, newChunkIndex);
     });
+
+  lastSearchTimePoint = std::chrono::steady_clock::now();
 }
 
 void ChunkManager::clean()
 {
-  GlobalIndex originIndex = Player::OriginIndex();
-  if (m_PrevPlayerOriginIndex == originIndex)
-    return;
+  using namespace std::chrono_literals;
+
+  static std::future<void> future;
+  static GlobalIndex previousPlayerOriginIndex;
+  static std::chrono::steady_clock::time_point lastSearchTimePoint;
+  static constexpr std::chrono::duration<seconds> searchInterval = 50ms;
 
   if (m_CleanWork.queuedTasks() > 0)
     return;
 
   if (m_CleanWork.savedResults() > 0)
     m_CleanWork.waitAndDiscardSaved();
-  m_PrevPlayerOriginIndex = originIndex;
 
-  m_ThreadPool->submit(Engine::Threads::Priority::High, [this]()
+  std::chrono::duration<seconds> timeSinceLastSearch = std::chrono::steady_clock::now() - lastSearchTimePoint;
+  if (timeSinceLastSearch < searchInterval || previousPlayerOriginIndex == Player::OriginIndex() || (future.valid() && !Engine::Threads::IsReady(future)))
+    return;
+
+  future = m_ThreadPool->submit(Engine::Threads::Priority::High, [this]()
     {
       GlobalIndex originIndex = Player::OriginIndex();
       std::vector<GlobalIndex> chunksMarkedForDeletion = m_ChunkContainer.chunks().getKeys([&originIndex](const GlobalIndex& chunkIndex)
@@ -200,6 +217,9 @@ void ChunkManager::clean()
       for (const GlobalIndex& chunkIndex : chunksMarkedForDeletion)
         m_CleanWork.submitAndSaveResult(chunkIndex, &ChunkManager::eraseChunk, this, chunkIndex);
     });
+
+  previousPlayerOriginIndex = Player::OriginIndex();
+  lastSearchTimePoint = std::chrono::steady_clock::now();
 }
 
 std::shared_ptr<const Chunk> ChunkManager::getChunk(const LocalIndex& chunkIndex) const

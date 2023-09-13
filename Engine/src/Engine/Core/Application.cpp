@@ -48,7 +48,7 @@ namespace Engine
     {
       EN_PROFILE_SCOPE("Run Loop");
 
-      auto time = std::chrono::steady_clock::now();
+      std::chrono::steady_clock::time_point time = std::chrono::steady_clock::now();
       Timestep timestep = Timestep(time - m_LastFrameTime);
       m_LastFrameTime = time;
 

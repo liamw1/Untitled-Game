@@ -7,7 +7,8 @@
 GameSandbox::GameSandbox()
   : Layer("GameSandbox"),
     m_PrintFrameRate(false),
-    m_PrintMinFrameRate(false)
+    m_PrintMinFrameRate(false),
+    m_PrintPlayerPosition(false)
 {
   Player::Initialize(GlobalIndex(0, 0, 2), Block::Length() * Vec3(16.0));
   Engine::RenderCommand::Initialize();
@@ -54,6 +55,11 @@ void GameSandbox::onUpdate(Engine::Timestep timestep)
       EN_TRACE("Min FPS: {0}", static_cast<int>(1.0f / maxFrameTime));
     }
   }
+  else if (m_PrintPlayerPosition)
+  {
+    GlobalIndex position = static_cast<globalIndex_t>(Chunk::Size()) * Player::OriginIndex() + GlobalIndex::ToIndex(Player::Position());
+    EN_TRACE("Position: {0}", position);
+  }
 
   Engine::RenderCommand::SetDepthWriting(true);
   Engine::RenderCommand::SetUseDepthOffset(false);
@@ -96,6 +102,8 @@ bool GameSandbox::onKeyPressEvent(Engine::KeyPressEvent& event)
     m_PrintFrameRate = !m_PrintFrameRate;
   if (event.keyCode() == Key::F3)
     m_PrintMinFrameRate = !m_PrintMinFrameRate;
+  if (event.keyCode() == Key::F4)
+    m_PrintPlayerPosition = !m_PrintPlayerPosition;
 
   return false;
 }

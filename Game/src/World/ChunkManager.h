@@ -68,8 +68,6 @@ private:
   Engine::Threads::WorkSet<GlobalIndex, void> m_LazyMeshingWork;
   Engine::Threads::WorkSet<GlobalIndex, void> m_ForceMeshingWork;
 
-  GlobalIndex m_PrevPlayerOriginIndex;
-
   void addToLightingUpdateQueue(const GlobalIndex& chunkIndex);
   void addToLazyMeshUpdateQueue(const GlobalIndex& chunkIndex);
   void addToForceMeshUpdateQueue(const GlobalIndex& chunkIndex);
