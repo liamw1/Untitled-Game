@@ -4,9 +4,6 @@
 
 namespace Engine
 {
-  // TODO: Replace macro with function.
-  #define EN_BIND_EVENT_FN(fn) [this](auto&&... args) -> decltype(auto) { return this->fn(std::forward<decltype(args)>(args)...); }
-
   /*
     NOTE:
     Events in Engine are currently blocking, meaning when an event occurs it
@@ -56,17 +53,17 @@ namespace Engine
     EventDispatcher(Event& event)
       : m_Event(event) {}
 
-    // F will be deduced by the compiler
-    template<typename T, typename F>
-    bool dispatch(const F& func)
+    // T must be specified by caller.
+    template<typename T, typename F, typename... Args>
+      requires InvocableWithReturnType<F, bool, Args..., T&>
+    bool dispatch(F&& eventFunction, Args&&... args)
     {
-      if (m_Event.type() == T::Type())
-      {
-        if (!m_Event.handled)
-          m_Event.handled = func(static_cast<T&>(m_Event));
-        return true;
-      }
-      return false;
+      if (m_Event.type() != T::Type())
+        return false;
+
+      if (!m_Event.handled)
+        m_Event.handled = std::invoke(std::forward<F>(eventFunction), std::forward<Args>(args)..., static_cast<T&>(m_Event));
+      return true;
     }
 
   private:

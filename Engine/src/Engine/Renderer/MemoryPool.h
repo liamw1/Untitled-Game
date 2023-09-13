@@ -10,7 +10,7 @@ namespace Engine
     dynamically-resizing buffer on the GPU. The class tries to place memory into the buffer in a way
     that minimizes gaps between allocations, without dislocating existing allocations.
 
-    Note: This class could be modified to remove the 'm' from the insertion/removal time complexity,
+    NOTE: This class could be modified to remove the 'm' from the insertion/removal time complexity,
           but it's more trouble than it's worth at the moment as it hasn't been a problem yet.
   */
   class MemoryPool

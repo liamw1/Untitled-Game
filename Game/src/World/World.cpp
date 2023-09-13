@@ -241,7 +241,7 @@ void World::playerWorldInteraction()
 void World::onEvent(Engine::Event& event)
 {
   Engine::EventDispatcher dispatcher(event);
-  dispatcher.dispatch<Engine::KeyPressEvent>(EN_BIND_EVENT_FN(onKeyPressEvent));
+  dispatcher.dispatch<Engine::KeyPressEvent>(&World::onKeyPressEvent, this);
 }
 
 bool World::onKeyPressEvent(Engine::KeyPressEvent& event)

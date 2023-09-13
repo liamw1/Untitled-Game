@@ -56,7 +56,7 @@ public:
   static constexpr length_t Length() { return Block::Length() * Size(); }
   static constexpr int TotalBlocks() { return Size() * Size() * Size(); }
   static constexpr BlockBox Bounds() { return BlockBox(0, Chunk::Size() - 1); }
-  static constexpr IBox2<blockIndex_t> Bounds2D() { return IBox2<blockIndex_t>(0, Chunk::Size() - 1); }
+  static constexpr BlockRect Bounds2D() { return BlockRect(0, Chunk::Size() - 1); }
   static constexpr GlobalBox Stencil(const GlobalIndex& chunkIndex) { return GlobalBox(-1, 1) + chunkIndex; }
 
 private:

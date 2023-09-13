@@ -40,27 +40,24 @@ namespace Engine
 
     int width, height, channels;
     stbi_set_flip_vertically_on_load(true);
-    stbi_uc* data = nullptr;
-    {
-      EN_PROFILE_SCOPE("stbi_load --> OpenGLTexture2D::OpenGLTexture2D(const std::string&)");
-      data = stbi_load(path.c_str(), &width, &height, &channels, 0);
-    }
+    stbi_uc* data = stbi_load(path.c_str(), &width, &height, &channels, 0);
     EN_CORE_ASSERT(data, "Failed to load image!");
     m_Width = width;
     m_Height = height;
 
     GLenum internalFormat = 0, dataFormat = 0;
-    if (channels == 4)
+    switch (channels)
     {
-      internalFormat = GL_RGBA8;
-      dataFormat = GL_RGBA;
+      case 3:
+        internalFormat = GL_RGB8;
+        dataFormat = GL_RGB;
+        break;
+      case 4:
+        internalFormat = GL_RGBA8;
+        dataFormat = GL_RGBA;
+        break;
+      default: EN_CORE_ERROR("Format not supported!");
     }
-    else if (channels == 3)
-    {
-      internalFormat = GL_RGB8;
-      dataFormat = GL_RGB;
-    }
-    EN_CORE_ASSERT(internalFormat * dataFormat != 0, "Format not supported!");
 
     m_InternalFormat = internalFormat;
     m_DataFormat = dataFormat;
@@ -150,26 +147,23 @@ namespace Engine
 
     int width, height, channels;
     stbi_set_flip_vertically_on_load(true);
-    stbi_uc* data = nullptr;
-    {
-      EN_PROFILE_SCOPE("stbi_load --> OpenGLTexture2D::OpenGLTexture2D(const std::string&)");
-      data = stbi_load(path.c_str(), &width, &height, &channels, 0);
-    }
+    stbi_uc* data = stbi_load(path.c_str(), &width, &height, &channels, 0);
     EN_CORE_ASSERT(data, "Failed to load image for texture at {0}.", path);
     EN_CORE_ASSERT(width == m_TextureSize && height == m_TextureSize, "Texture has incorrect size!");
 
     GLenum internalFormat = 0, dataFormat = 0;
-    if (channels == 4)
+    switch (channels)
     {
-      internalFormat = GL_RGBA8;
-      dataFormat = GL_RGBA;
+      case 3:
+        internalFormat = GL_RGB8;
+        dataFormat = GL_RGB;
+        break;
+      case 4:
+        internalFormat = GL_RGBA8;
+        dataFormat = GL_RGBA;
+        break;
+      default: EN_CORE_ERROR("Format not supported!");
     }
-    else if (channels == 3)
-    {
-      internalFormat = GL_RGB8;
-      dataFormat = GL_RGB;
-    }
-    EN_CORE_ASSERT(internalFormat * dataFormat != 0, "Format not supported!");
     EN_CORE_ASSERT(internalFormat == m_InternalFormat && dataFormat == m_DataFormat, "Texture has incorrect format!");
     EN_CORE_ASSERT(m_TextureCount < m_MaxTextures, "Textures added has exceeded maximum textures!");
 

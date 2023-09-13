@@ -13,7 +13,6 @@ static constexpr int c_UniformBinding = 1;
 static int s_BlocksInitialized = 0;
 static bool s_Initialized = false;
 
-// TODO: Replace with DirectionArray
 static std::array<DirectionArray<Block::Texture>, c_MaxBlockTextures> s_TexIDs;
 static std::array<std::filesystem::path, c_MaxBlockTextures> s_TexturePaths{};
 static std::shared_ptr<Engine::TextureArray> s_TextureArray;

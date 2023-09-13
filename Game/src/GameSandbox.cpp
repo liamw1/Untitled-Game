@@ -76,7 +76,7 @@ void GameSandbox::onImGuiRender()
 void GameSandbox::onEvent(Engine::Event& event)
 {
   Engine::EventDispatcher dispatcher(event);
-  dispatcher.dispatch<Engine::KeyPressEvent>(EN_BIND_EVENT_FN(onKeyPressEvent));
+  dispatcher.dispatch<Engine::KeyPressEvent>(&GameSandbox::onKeyPressEvent, this);
 
   Engine::Scene::OnEvent(event);
   m_World.onEvent(event);

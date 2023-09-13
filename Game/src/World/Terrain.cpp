@@ -73,7 +73,7 @@ struct SurfaceData
 };
 
 static constexpr int c_CacheSize = (2 * c_UnloadDistance + 5) * (2 * c_UnloadDistance + 5);
-static Engine::Threads::LRUCache<SurfaceMapIndex, SurfaceData> s_SurfaceDataCache(c_CacheSize);
+static Engine::Threads::LRUCache<GlobalIndex2D, SurfaceData> s_SurfaceDataCache(c_CacheSize);
 static std::mutex s_Mutex;
 
 // From https://stackoverflow.com/questions/664014/what-integer-hash-function-are-good-that-accepts-an-integer-hash-key
@@ -96,9 +96,9 @@ static Biome::Type randomBiome(uint32_t n)
   return static_cast<Biome::Type>(hash(n) % Biome::Count());
 }
 
-static std::pair<Biome::Type, Float2> getRegionVoronoiPoint(const SurfaceMapIndex& regionIndex)
+static std::pair<Biome::Type, Float2> getRegionVoronoiPoint(const GlobalIndex2D& regionIndex)
 {
-  uint32_t key = std::hash<SurfaceMapIndex>{}(regionIndex);
+  uint32_t key = std::hash<GlobalIndex2D>{}(regionIndex);
   float r = 0.5f * random(key);
   float theta = 2 * std::numbers::pi_v<float> * random(hash(key));
 
@@ -111,14 +111,14 @@ static CompoundBiome getBiomeData(const Vec2& surfaceLocation)
 {
   using WeightedBiome = CompoundBiome::Component;
 
-  SurfaceMapIndex queryRegionIndex = SurfaceMapIndex::ToIndex(surfaceLocation / Chunk::Size() / c_BiomeRegionSize);
+  GlobalIndex2D queryRegionIndex = GlobalIndex2D::ToIndex(surfaceLocation / Chunk::Size() / c_BiomeRegionSize);
   Float2 queryLocationRelativeToQueryRegion = surfaceLocation / Chunk::Size() / c_BiomeRegionSize - static_cast<Vec2>(queryRegionIndex);
 
   std::array<WeightedBiome, c_RegionWidth* c_RegionWidth> nearbyBiomes;
   for (globalIndex_t i = -c_RegionRadius; i <= c_RegionRadius; ++i)
     for (globalIndex_t j = -c_RegionRadius; j <= c_RegionRadius; ++j)
     {
-      SurfaceMapIndex regionIndex = queryRegionIndex + SurfaceMapIndex(i, j);
+      GlobalIndex2D regionIndex = queryRegionIndex + GlobalIndex2D(i, j);
       Float2 regionCenterRelativeToQueryRegion(i + 0.5f, j + 0.5f);
 
       auto [biomeType, voronoiPointPerturbation] = getRegionVoronoiPoint(regionIndex);
@@ -151,7 +151,7 @@ static CompoundBiome getBiomeData(const Vec2& surfaceLocation)
 
 static std::shared_ptr<SurfaceData> getSurfaceData(const GlobalIndex& chunkIndex)
 {
-  SurfaceMapIndex mapIndex = static_cast<SurfaceMapIndex>(chunkIndex);
+  GlobalIndex2D mapIndex = static_cast<GlobalIndex2D>(chunkIndex);
   std::shared_ptr<SurfaceData> cachedSurfaceData = s_SurfaceDataCache.get(mapIndex);
   if (cachedSurfaceData)
     return cachedSurfaceData;

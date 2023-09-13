@@ -25,7 +25,7 @@ namespace Engine
     s_Instance = this;
 
     m_Window = Window::Create(WindowProps(name));
-    m_Window->setEventCallback(EN_BIND_EVENT_FN(onEvent));
+    m_Window->setEventCallback(BindMemberFunction(&Application::onEvent, this));
     m_Window->setVSync(false);
 
     m_LayerStack = std::make_unique<LayerStack>();
@@ -70,8 +70,8 @@ namespace Engine
   void Application::onEvent(Event& event)
   {
     EventDispatcher dispatcher(event);
-    dispatcher.dispatch<WindowCloseEvent>(EN_BIND_EVENT_FN(onWindowClose));
-    dispatcher.dispatch<WindowResizeEvent>(EN_BIND_EVENT_FN(onWindowResize));
+    dispatcher.dispatch<WindowCloseEvent>(&Application::onWindowClose, this);
+    dispatcher.dispatch<WindowResizeEvent>(&Application::onWindowResize, this);
 
     for (auto it = m_LayerStack->rbegin(); it != m_LayerStack->rend(); ++it)
     {

@@ -12,12 +12,6 @@
 */
 namespace LOD
 {
-  struct AABB
-  {
-    GlobalIndex min;
-    GlobalIndex max;
-  };
-
   struct Vertex
   {
     Float3 position;
@@ -125,7 +119,7 @@ namespace LOD
         \returns The LOD's axis-aligned bounding box (AABB), 
         given in units of chunks.
       */
-      AABB boundingBox() const;
+      GlobalBox boundingBox() const;
     };
 
   public:
@@ -173,12 +167,6 @@ namespace LOD
   };
 
   void Draw(const Octree::Node* leaf);
-
-  /*
-    \returns True if the given AABBs intersect.  Two AABBs sharing
-             a border does not count as an intersection.
-  */
-  bool Intersection(AABB boxA, AABB boxB);
 
   /*
     Generates primary and transition meshes for the given node

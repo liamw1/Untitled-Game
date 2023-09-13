@@ -268,7 +268,7 @@ namespace Engine
     DevCamera::OnEvent(event);
 
     EventDispatcher dispatcher(event);
-    dispatcher.dispatch<MouseButtonPressEvent>(EN_BIND_EVENT_FN(onMouseButtonPress));
+    dispatcher.dispatch<MouseButtonPressEvent>(&EditorLayer::onMouseButtonPress, this);
   }
 
   void EditorLayer::onScenePlay()

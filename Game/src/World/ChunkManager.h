@@ -85,8 +85,6 @@ private:
 
   void uploadMeshes(Engine::Threads::UnorderedSet<ChunkDrawCommand>& commandQueue, std::unique_ptr<Engine::MultiDrawIndexedArray<ChunkDrawCommand>>& multiDrawArray);
 
-  // Meshing
-private:
   /*
     Generates simplistic mesh in a compressed format based on chunk compostion.
     Block faces covered by opaque blocks will not be added to mesh.

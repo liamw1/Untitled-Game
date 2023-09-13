@@ -13,7 +13,7 @@ namespace LOD
   static constexpr length_t c_TCFractionalWidth = 0.5f;
 
   static constexpr BlockBox c_LODBounds(0, c_NumCells);
-  static constexpr IBox2<blockIndex_t> c_LODBounds2D(0, c_NumCells);
+  static constexpr BlockRect c_LODBounds2D(0, c_NumCells);
 
   struct NoiseData
   {
@@ -72,7 +72,7 @@ namespace LOD
     return anchorPosition() + length() / 2;
   }
 
-  AABB Octree::Node::boundingBox() const
+  GlobalBox Octree::Node::boundingBox() const
   {
     return { anchor, anchor + size() };
   }
@@ -225,13 +225,6 @@ namespace LOD
 
       Engine::RenderCommand::DrawIndexed(leaf->data->transitionMeshes[faceID].vertexArray.get(), transitionMeshIndexCount);
     }
-  }
-
-  bool Intersection(AABB boxA, AABB boxB)
-  {
-    return boxA.min.i < boxB.max.i && boxA.max.i > boxB.min.i &&
-      boxA.min.j < boxB.max.j && boxA.max.j > boxB.min.j &&
-      boxA.min.k < boxB.max.k && boxA.max.k > boxB.min.k;
   }
 
 

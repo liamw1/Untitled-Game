@@ -48,7 +48,7 @@ namespace Engine::Debug
     void writeHeader();
     void writeFooter();
 
-    // Note: you must already own lock on m_Mutex before calling internalEndSession()
+    // NOTE: you must already own lock on m_Mutex before calling internalEndSession()
     void internalEndSession();
   };
 

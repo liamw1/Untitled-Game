@@ -12,10 +12,17 @@ using blockIndex_t = int8_t;
 using localIndex_t = int16_t;
 using globalIndex_t = typename GlobalIndexSelector<std::is_same<double, length_t>::value>::type;
 
-using SurfaceMapIndex = IVec2<globalIndex_t>;
+using BlockIndex2D = IVec2<blockIndex_t>;
+using LocalIndex2D = IVec2<localIndex_t>;
+using GlobalIndex2D = IVec2<globalIndex_t>;
+
 using BlockIndex = IVec3<blockIndex_t>;
 using LocalIndex = IVec3<localIndex_t>;
 using GlobalIndex = IVec3<globalIndex_t>;
+
+using BlockRect = IBox2<blockIndex_t>;
+using LocalRect = IBox2<localIndex_t>;
+using GlobalRect = IBox2<globalIndex_t>;
 
 using BlockBox = IBox3<blockIndex_t>;
 using LocalBox = IBox3<localIndex_t>;
