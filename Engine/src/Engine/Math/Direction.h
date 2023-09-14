@@ -61,10 +61,12 @@ class DirectionArray
 {
 public:
   DirectionArray() = default;
-  DirectionArray(const std::array<T, 6>& elements)
-    : m_Data(elements) {}
+  DirectionArray(const T& initialValue)
+    : DirectionArray(initialValue, initialValue, initialValue, initialValue, initialValue, initialValue) {}
   DirectionArray(const T& west, const T& east, const T& south, const T& north, const T& bottom, const T& top)
     : DirectionArray(std::array<T, 6>{ west, east, south, north, bottom, top }) {}
+  DirectionArray(const std::array<T, 6>& elements)
+    : m_Data(elements) {}
 
   T& operator[](Direction direction)
   {

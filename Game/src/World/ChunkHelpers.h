@@ -57,6 +57,11 @@ public:
   void addQuad(const BlockIndex& blockIndex, Direction face, Block::Texture texture, const std::array<int, 4>& sunlight, const std::array<int, 4>& ambientOcclusion);
   void addVoxel(const BlockIndex& blockIndex, uint8_t enabledFaces);
 
+  /*
+    Sorts indices so that triangles will be rendered from back to front.
+    The sorting algorithm used is O(n + k), where n is the number of voxels
+    and k is the maximum L1 distance that two blocks can be within a chunk.
+  */
   bool sort(const GlobalIndex& originIndex, const Vec3& viewPosition);
 
 private:

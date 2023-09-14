@@ -129,9 +129,11 @@ void ChunkDrawCommand::addVoxel(const BlockIndex& blockIndex, uint8_t enabledFac
 
 bool ChunkDrawCommand::sort(const GlobalIndex& originIndex, const Vec3& viewPosition)
 {
+  static constexpr int c_MaxL1Distance = 3 * (Chunk::Size() - 1);
+
   // Find block index that is closest to the specified position
-  BlockIndex playerBlock = BlockIndex::ToIndex(viewPosition / Block::Length());
-  BlockIndex originBlock = playerBlock;
+  BlockIndex originBlock = BlockIndex::ToIndex(viewPosition / Block::Length());
+  EN_ASSERT(Chunk::Bounds().encloses(originBlock), "Given view position is not inside the origin chunk!");
   for (Axis axis : Axes())
   {
     if (originIndex[axis] > id()[axis])
@@ -144,16 +146,34 @@ bool ChunkDrawCommand::sort(const GlobalIndex& originIndex, const Vec3& viewPosi
   if (originBlock == m_SortState)
     return false;
 
-  // Sort based on L1 distance to originBlock
-  std::sort(m_Voxels.begin(), m_Voxels.end(), [&originBlock](const ChunkVoxel& voxelA, const ChunkVoxel& voxelB)
-    {
-      int distA = (voxelA.index() - originBlock).l1Norm();
-      int distB = (voxelB.index() - originBlock).l1Norm();
-      return distA > distB;
-    });
-  m_SortState = originBlock;
+  // Perform an in-place counting sort on L1 distance to originBlock, from highest to lowest
+  std::array<int, c_MaxL1Distance + 1> counts{};
+  for (ChunkVoxel voxel : m_Voxels)
+  {
+    int key = c_MaxL1Distance - (voxel.index() - originBlock).l1Norm();
+    counts[key]++;
+  }
+  std::partial_sum(counts.begin(), counts.end(), counts.begin());
 
+  std::array<int, c_MaxL1Distance + 1> placements = counts;
+  for (size_t i = 0; i < m_Voxels.size();)
+  {
+    int key = c_MaxL1Distance - (m_Voxels[i].index() - originBlock).l1Norm();
+    int prevCount = key > 0 ? counts[key - 1] : 0;
+
+    if (prevCount <= i && i < counts[key])
+      i++;
+    else
+    {
+      placements[key]--;
+      std::swap(m_Voxels[i], m_Voxels[placements[key]]);
+    }
+  }
+
+  // Update sort state and indices
+  m_SortState = originBlock;
   reorderIndices(originIndex, viewPosition);
+
   return true;
 }
 
@@ -171,38 +191,36 @@ void ChunkDrawCommand::addQuadIndices(int baseVertex)
 void ChunkDrawCommand::reorderIndices(const GlobalIndex& originIndex, const Vec3& viewPosition)
 {
   m_Indices.clear();
-  m_Indices.reserve(m_IndexCount);
 
   Vec3 chunkAnchor = Chunk::AnchorPosition(m_ID, originIndex);
-
-  for (const ChunkVoxel& voxel : m_Voxels)
+  for (ChunkVoxel voxel : m_Voxels)
   {
     Vec3 blockCenter = chunkAnchor + Block::Length() * Vec3(voxel.index()) + Vec3(Block::Length()) / 2;
     Vec3 toBlock = blockCenter - viewPosition;
 
     int quadVertexOffset = 0;
-    std::array<int, 6> quadVertexOffsets{ -1, -1, -1, -1, -1, -1 };
+    DirectionArray<int> quadVertexOffsets(-1);
     for (Direction face : Directions())
       if (voxel.faceEnabled(face))
       {
-        quadVertexOffsets[static_cast<int>(face)] = quadVertexOffset;
+        quadVertexOffsets[face] = quadVertexOffset;
         quadVertexOffset += 4;
       }
 
+    // Add back-facing quads
     for (Axis axis : Axes())
     {
-      int axisID = static_cast<int>(axis);
-      int faceID = 2 * axisID + (toBlock[axisID] < 0 ? 0 : 1);
-      if (quadVertexOffsets[faceID] >= 0)
-        addQuadIndices(voxel.baseVertex() + quadVertexOffsets[faceID]);
+      Direction face = ToDirection(axis, toBlock[static_cast<int>(axis)] > 0);
+      if (quadVertexOffsets[face] >= 0)
+        addQuadIndices(voxel.baseVertex() + quadVertexOffsets[face]);
     }
 
+    // Add front-facing quads
     for (Axis axis : Axes())
     {
-      int axisID = static_cast<int>(axis);
-      int faceID = 2 * axisID + (toBlock[axisID] < 0 ? 1 : 0);
-      if (quadVertexOffsets[faceID] >= 0)
-        addQuadIndices(voxel.baseVertex() + quadVertexOffsets[faceID]);
+      Direction face = ToDirection(axis, toBlock[static_cast<int>(axis)] <= 0);
+      if (quadVertexOffsets[face] >= 0)
+        addQuadIndices(voxel.baseVertex() + quadVertexOffsets[face]);
     }
   }
 }

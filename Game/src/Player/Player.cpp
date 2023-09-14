@@ -63,24 +63,26 @@ void Player::HandleDirectionalInput()
 
 void Player::UpdatePosition(Engine::Timestep timestep)
 {
+  std::lock_guard lock(s_Mutex);
   const seconds dt = timestep.sec();
-  Vec3 lastPosition = s_PlayerEntity.get<Component::Transform>().position;
 
   // Calculate new player position based on velocity
-  Vec3 newPosition = lastPosition + s_Velocity * dt;
+  Vec3 previousPosition = s_PlayerEntity.get<Component::Transform>().position;
+  Vec3 newPosition = previousPosition + s_Velocity * dt;
 
-  // If player enters new chunk, set that chunk as the new origin and recalculate position relative to new origin
-  GlobalIndex chunkIndexOffset = GlobalIndex::ToIndex(lastPosition / Chunk::Length());
-  s_OriginIndex += chunkIndexOffset;
-  newPosition -= Chunk::Length() * static_cast<Vec3>(chunkIndexOffset);
-
-  // Update player position
-  s_PlayerEntity.get<Component::Transform>().position = newPosition;
-
-  // Update camera position
+  // Calculate new camera position
   const Vec3& viewDirection = s_CameraEntity.get<Component::Transform>().orientationDirection();
   Vec2 planarViewDirection = glm::normalize(Vec2(viewDirection));
   Vec3 eyesPosition = Vec3(0.125 * c_Width * planarViewDirection + Vec2(newPosition), newPosition.z + 0.4 * c_Height);
+
+  // If player camera enters new chunk, set that chunk as the new origin and recalculate positions relative to new origin
+  GlobalIndex chunkIndexOffset = GlobalIndex::ToIndex(eyesPosition / Chunk::Length());
+  s_OriginIndex += chunkIndexOffset;
+  newPosition -= Chunk::Length() * static_cast<Vec3>(chunkIndexOffset);
+  eyesPosition -= Chunk::Length() * static_cast<Vec3>(chunkIndexOffset);
+
+  // Update player and camera positions
+  s_PlayerEntity.get<Component::Transform>().position = newPosition;
   s_CameraEntity.get<Component::Transform>().position = eyesPosition;
 }
 
