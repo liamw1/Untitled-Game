@@ -11,10 +11,9 @@ namespace Engine
   {
     switch (RendererAPI::GetAPI())
     {
-      case RendererAPI::API::None:          EN_CORE_ASSERT(false, "RendererAPI::None is currently not supported!"); return nullptr;
       case RendererAPI::API::OpenGL:        return std::make_unique<OpenGLTexture2D>(width, height);
       case RendererAPI::API::OpenGL_Legacy: return std::make_unique<OpenGLTexture2D>(width, height);
-      default:                              EN_CORE_ASSERT(false, "Unknown RendererAPI!"); return nullptr;
+      default:                              throw  std::invalid_argument("Unknown RendererAPI!");
     }
   }
 
@@ -22,10 +21,9 @@ namespace Engine
   {
     switch (RendererAPI::GetAPI())
     {
-      case RendererAPI::API::None:          EN_CORE_ASSERT(false, "RendererAPI::None is currently not supported!"); return nullptr;
       case RendererAPI::API::OpenGL:        return std::make_unique<OpenGLTexture2D>(path);
       case RendererAPI::API::OpenGL_Legacy: return std::make_unique<OpenGLTexture2D>(path);
-      default:                              EN_CORE_ASSERT(false, "Unknown RendererAPI!"); return nullptr;
+      default:                              throw  std::invalid_argument("Unknown RendererAPI!");
     }
   }
 
@@ -37,10 +35,9 @@ namespace Engine
   {
     switch (RendererAPI::GetAPI())
     {
-      case RendererAPI::API::None:          EN_CORE_ASSERT(false, "RendererAPI::None is currently not supported!"); return nullptr;
       case RendererAPI::API::OpenGL:        return std::make_unique<OpenGLTextureArray>(textureCount, textureSize);
       case RendererAPI::API::OpenGL_Legacy: return std::make_unique<OpenGLTextureArray>(textureCount, textureSize);
-      default:                              EN_CORE_ASSERT(false, "Unknown RendererAPI!"); return nullptr;
+      default:                              throw  std::invalid_argument("Unknown RendererAPI!");
     }
   }
 }

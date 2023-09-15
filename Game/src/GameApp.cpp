@@ -6,14 +6,9 @@ class GameApp : public Engine::Application
 {
 public:
   GameApp(Engine::ApplicationCommandLineArgs args)
-    : Application("Game", args)
-  {
-    pushLayer(new GameSandbox());
-  }
+    : Application("Game", args) { pushLayer(new GameSandbox()); }
 
-  ~GameApp()
-  {
-  }
+  ~GameApp() = default;
 };
 
 Engine::Application* Engine::CreateApplication(ApplicationCommandLineArgs args)

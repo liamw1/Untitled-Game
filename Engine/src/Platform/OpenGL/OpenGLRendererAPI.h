@@ -12,6 +12,7 @@ namespace Engine
 
     void clear(const Float4& color = { 0.0f, 0.0f, 0.0f, 1.0f }) override;
 
+    void setBlendFunc() override;
     void setBlending(bool enableBlending) override;
     void setUseDepthOffset(bool enableDepthOffset) override;
     void setDepthOffset(float factor, float units) override;

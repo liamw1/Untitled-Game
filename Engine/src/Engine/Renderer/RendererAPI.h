@@ -13,7 +13,6 @@ namespace Engine
   public:
     enum class API
     {
-      None,
       OpenGL,
       OpenGL_Legacy
     };
@@ -24,6 +23,7 @@ namespace Engine
 
     virtual void clear(const Float4& color = { 0.0f, 0.0f, 0.0f, 1.0f }) = 0;
 
+    virtual void setBlendFunc() = 0;
     virtual void setBlending(bool enableBlending) = 0;
     virtual void setUseDepthOffset(bool enableDepthOffset) = 0;
     virtual void setDepthOffset(float factor, float units) = 0;

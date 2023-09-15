@@ -11,10 +11,9 @@ namespace Engine
   {
     switch (RendererAPI::GetAPI())
     {
-      case RendererAPI::API::None:            EN_CORE_ASSERT(false, "RendererAPI::None is currently not supported!"); return nullptr;
       case RendererAPI::API::OpenGL:          return std::make_unique<OpenGLStorageBuffer>(type, binding);
       case RendererAPI::API::OpenGL_Legacy:   return std::make_unique<OpenGLStorageBuffer>(type, binding);
-      default:                                EN_CORE_ASSERT(false, "Unknown RendererAPI!"); return nullptr;
+      default:                                throw  std::invalid_argument("Unknown RendererAPI!");
     }
   }
 }

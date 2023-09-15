@@ -23,17 +23,7 @@ namespace Engine
       m_FaceCullingEnabled(false),
       m_WireFrameEnabled(false),
       m_DepthOffsetFactor(0.0f),
-      m_DepthOffsetUnits(0.0f)
-  {
-    EN_PROFILE_FUNCTION();
-    EN_CORE_ASSERT(Threads::IsMainThread(), "OpenGL calls must be made on the main thread!");
-
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    setBlending(true);
-    setDepthTesting(true);
-
-    // glEnable(GL_MULTISAMPLE);
-  }
+      m_DepthOffsetUnits(0.0f) {}
 
   void OpenGLRendererAPI::setViewport(uint32_t x, uint32_t y, uint32_t width, uint32_t height)
   {
@@ -47,6 +37,11 @@ namespace Engine
 
     glClearColor(color.r, color.g, color.b, color.a);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  }
+
+  void OpenGLRendererAPI::setBlendFunc()
+  {
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   }
 
   void OpenGLRendererAPI::setBlending(bool enableBlending)

@@ -126,6 +126,8 @@ namespace Engine
   {
     EN_PROFILE_FUNCTION();
 
+    Engine::RenderCommand::SetBlendFunc();
+
     s_CameraUniform = Uniform::Create(0, sizeof(CameraUniformData));
     
     /* Wire Frame Initialization */
@@ -171,6 +173,9 @@ namespace Engine
 
   void Renderer::BeginScene(Entity viewer)
   {
+    RenderCommand::SetBlending(true);
+    RenderCommand::SetDepthTesting(true);
+
     s_CameraUniformData.viewProjection = Scene::CalculateViewProjection(viewer);
     s_CameraUniformData.cameraPosition = viewer.get<Component::Transform>().position;
     s_CameraUniform->set(&s_CameraUniformData, sizeof(CameraUniformData));

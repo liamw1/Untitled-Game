@@ -5,18 +5,17 @@
 
 namespace Engine
 {
-  static std::unique_ptr<RendererAPI> s_RendererAPI = nullptr;
-
-  void RenderCommand::Initialize()
+  static std::unique_ptr<RendererAPI> createAPI()
   {
     switch (RendererAPI::GetAPI())
     {
-      case RendererAPI::API::None:          EN_CORE_ASSERT(false, "RendererAPI::None is currently not supported!"); return;
-      case RendererAPI::API::OpenGL:        s_RendererAPI = std::make_unique<OpenGLRendererAPI>();  break;
-      case RendererAPI::API::OpenGL_Legacy: s_RendererAPI = std::make_unique<OpenGLRendererAPI>();  break;
-      default:                              EN_CORE_ASSERT(false, "Unknown RendererAPI!");      return;
+      case RendererAPI::API::OpenGL:        return std::make_unique<OpenGLRendererAPI>();
+      case RendererAPI::API::OpenGL_Legacy: return std::make_unique<OpenGLRendererAPI>();
+      default:                              throw  std::invalid_argument("Unknown RendererAPI!");
     }
   }
+
+  static std::unique_ptr<RendererAPI> s_RendererAPI = createAPI();
 
   void RenderCommand::SetViewport(uint32_t x, uint32_t y, uint32_t width, uint32_t height)
   {
@@ -26,6 +25,11 @@ namespace Engine
   void RenderCommand::Clear(const Float4& color)
   {
     s_RendererAPI->clear(color);
+  }
+
+  void RenderCommand::SetBlendFunc()
+  {
+    s_RendererAPI->setBlendFunc();
   }
 
   void RenderCommand::SetBlending(bool enableBlending)

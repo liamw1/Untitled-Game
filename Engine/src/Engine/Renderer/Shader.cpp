@@ -13,10 +13,9 @@ namespace Engine
   {
     switch (RendererAPI::GetAPI())
     {
-      case RendererAPI::API::None:            EN_CORE_ASSERT(false, "RendererAPI::None is currently not supported!"); return nullptr;
       case RendererAPI::API::OpenGL:          return std::make_unique<OpenGLShader>(filepath, preprocessorDefinitions);
       case RendererAPI::API::OpenGL_Legacy:   return std::make_unique<OpenGL_LegacyShader>(filepath, preprocessorDefinitions);
-      default:                                EN_CORE_ASSERT(false, "Unknown RendererAPI!"); return nullptr;
+      default:                                throw  std::invalid_argument("Unknown RendererAPI!");
     }
   }
 
