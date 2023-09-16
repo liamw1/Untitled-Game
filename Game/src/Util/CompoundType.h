@@ -1,6 +1,6 @@
 #pragma once
 
-template<typename ComponentType, int ComponentCount, ComponentType NullType = ComponentType()>
+template<typename ComponentType, int ComponentCount>
 class CompoundType
 {
 public:
@@ -13,13 +13,13 @@ public:
   constexpr CompoundType()
   {
     for (Component& component : m_Components)
-      component = { NullType, 0.0f };
+      component = { ComponentType(), 0.0f};
   }
   constexpr CompoundType(ComponentType initialValue)
   {
     m_Components.front() = { initialValue, 1.0f };
     for (int i = 1; i < ComponentCount; ++i)
-      m_Components[i] = { NullType, 0.0f };
+      m_Components[i] = { ComponentType(), 0.0f};
   }
 
   template<int N>

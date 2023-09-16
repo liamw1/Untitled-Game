@@ -15,7 +15,7 @@ public:
 
   void fillColumn(BlockArrayBox<Block::Type>::Strip column, length_t chunkFloor, length_t elevation) const override
   {
-    StandardColumnFill(column, chunkFloor, elevation, Block::Type::Snow, 3, Block::Type::Dirt, 3);
+    StandardColumnFill(column, chunkFloor, elevation, Block::ID::Snow, 3, Block::ID::Dirt, 3);
   }
 };
 
@@ -31,7 +31,7 @@ public:
 
   void fillColumn(BlockArrayBox<Block::Type>::Strip column, length_t chunkFloor, length_t elevation) const override
   {
-    StandardColumnFill(column, chunkFloor, elevation, Block::Type::Grass, 1, Block::Type::Dirt, 4);
+    StandardColumnFill(column, chunkFloor, elevation, Block::ID::Grass, 1, Block::ID::Dirt, 4);
   }
 };
 
@@ -47,7 +47,7 @@ public:
 
   void fillColumn(BlockArrayBox<Block::Type>::Strip column, length_t chunkFloor, length_t elevation) const override
   {
-    StandardColumnFill(column, chunkFloor, elevation, Block::Type::Sand, 1, Block::Type::Dirt, 3);
+    StandardColumnFill(column, chunkFloor, elevation, Block::ID::Sand, 1, Block::ID::Dirt, 3);
   }
 };
 
@@ -61,6 +61,6 @@ public:
 
   void fillColumn(BlockArrayBox<Block::Type>::Strip column, length_t chunkFloor, length_t elevation) const override
   {
-    StandardColumnFill(column, chunkFloor, elevation, Block::Type::Grass, 1, Block::Type::Dirt, 5);
+    StandardColumnFill(column, chunkFloor, elevation, Block::ID::Grass, 1, Block::ID::Dirt, 5);
   }
 };

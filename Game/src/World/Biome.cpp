@@ -47,7 +47,7 @@ void Biome::StandardColumnFill(BlockArrayBox<Block::Type>::Strip column, length_
   blockIndex_t k = 0;
   while (k < terrainElevationIndex - soilDepth - surfaceDepth && k < Chunk::Size())
   {
-    column[k] = Block::Type::Stone;
+    column[k] = Block::ID::Stone;
     k++;
   }
   while (k < terrainElevationIndex - surfaceDepth && k < Chunk::Size())
@@ -62,12 +62,12 @@ void Biome::StandardColumnFill(BlockArrayBox<Block::Type>::Strip column, length_
   }
   while (k < waterLevelIndex && k < Chunk::Size())
   {
-    column[k] = Block::Type::Water;
+    column[k] = Block::ID::Water;
     k++;
   }
   while (k < Chunk::Size())
   {
-    column[k] = Block::Type::Air;
+    column[k] = Block::ID::Air;
     k++;
   }
 }

@@ -3,7 +3,7 @@
 #include "Player/Player.h"
 
 Chunk::Chunk(const GlobalIndex& chunkIndex)
-  : m_Composition(Bounds(), Block::Type::Air),
+  : m_Composition(Bounds(), Block::ID::Air),
     m_Lighting(Bounds(), Block::Light::MaxValue()),
     m_NonOpaqueFaces(0x3F),
     m_GlobalIndex(chunkIndex) {}
@@ -64,7 +64,7 @@ void Chunk::determineOpacity()
       for (Direction direction : Directions())
       {
         BlockBox face = Bounds().face(direction);
-        if (arrayBox.anyOf(face, [](Block::Type blockType) { return Block::HasTransparency(blockType); }))
+        if (arrayBox.anyOf(face, [](Block::Type blockType) { return blockType.hasTransparency(); }))
           nonOpaqueFaces |= Engine::Bit(static_cast<int>(direction));
       }
       m_NonOpaqueFaces.store(nonOpaqueFaces);

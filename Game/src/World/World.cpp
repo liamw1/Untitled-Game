@@ -2,10 +2,6 @@
 #include "World.h"
 #include "Player/Player.h"
 
-#define USE_LODS false
-
-static constexpr bool createLODs = false;
-
 static constexpr blockIndex_t modulo(globalIndex_t a, blockIndex_t b)
 {
   const int result = a % b;
@@ -14,15 +10,8 @@ static constexpr blockIndex_t modulo(globalIndex_t a, blockIndex_t b)
 
 void World::initialize()
 {
+  Player::Initialize(GlobalIndex(0, 0, 2), Block::Length() * Vec3(16.0));
   m_ChunkManager.initialize();
-
-  // m_ChunkManager.loadChunk({ 0, -1, 2 }, Block::Type::Air);
-  // m_ChunkManager.loadChunk({ 0, -1, 1 }, Block::Type::Sand);
-
-#if USE_LODS
-  if (createLODs)
-    m_ChunkManager.initializeLODs();
-#endif
 }
 
 void World::onUpdate(Engine::Timestep timestep)
@@ -39,17 +28,7 @@ void World::onUpdate(Engine::Timestep timestep)
 
   playerWorldInteraction();
   m_ChunkManager.update();
-
   m_ChunkManager.render();
-
-#if USE_LODS
-  if (createLODs)
-  {
-    m_ChunkManager.manageLODs();
-    m_ChunkManager.renderLODs();
-    Engine::RenderCommand::ClearDepthBuffer();
-  }
-#endif
 
   Engine::Renderer::EndScene();
 
@@ -123,7 +102,7 @@ RayIntersection World::castRaySegment(const Vec3& pointA, const Vec3& pointB) co
           continue;
 
         // If block has collision, note the intersection and move to next spatial direction
-        if (Block::HasCollision(chunk->composition().get(blockIndex)))
+        if (chunk->composition().get(blockIndex).hasCollision())
         {
           int faceID = 2 * u + !pointedUpstream;
           tmin = t;
@@ -234,7 +213,7 @@ void World::playerWorldInteraction()
     if (Engine::Input::IsMouseButtonPressed(Mouse::ButtonLeft))
       m_ChunkManager.removeBlock(chunkIndex, blockIndex);
     else if (Engine::Input::IsMouseButtonPressed(Mouse::ButtonRight) && m_PlayerRayCast.distance > 2.5 * Block::Length())
-      m_ChunkManager.placeBlock(chunkIndex, blockIndex, rayCastFace, Block::Type::Clay);
+      m_ChunkManager.placeBlock(chunkIndex, blockIndex, rayCastFace, Block::ID::Clay);
   }
 }
 

@@ -5,7 +5,7 @@ class ChunkVertex
 {
 public:
   ChunkVertex();
-  ChunkVertex(const BlockIndex& vertexPlacement, int quadIndex, Block::Texture texture, int sunlight, int ambientOcclusion);
+  ChunkVertex(const BlockIndex& vertexPlacement, int quadIndex, Block::TextureID texture, int sunlight, int ambientOcclusion);
 
   static const BlockIndex& GetOffset(Direction face, int quadIndex);
 
@@ -17,7 +17,7 @@ private:
 class ChunkQuad
 {
 public:
-  ChunkQuad(const BlockIndex& blockIndex, Direction face, Block::Texture texture, const std::array<int, 4>& sunlight, const std::array<int, 4>& ambientOcclusion);
+  ChunkQuad(const BlockIndex& blockIndex, Direction face, Block::TextureID texture, const std::array<int, 4>& sunlight, const std::array<int, 4>& ambientOcclusion);
 
 private:
   std::array<ChunkVertex, 4> m_Vertices;
@@ -54,7 +54,7 @@ public:
   const void* vertexData();
   void prune();
 
-  void addQuad(const BlockIndex& blockIndex, Direction face, Block::Texture texture, const std::array<int, 4>& sunlight, const std::array<int, 4>& ambientOcclusion);
+  void addQuad(const BlockIndex& blockIndex, Direction face, Block::TextureID texture, const std::array<int, 4>& sunlight, const std::array<int, 4>& ambientOcclusion);
   void addVoxel(const BlockIndex& blockIndex, uint8_t enabledFaces);
 
   /*

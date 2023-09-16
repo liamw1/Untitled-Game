@@ -1,6 +1,7 @@
 #pragma once
 #include "Chunk.h"
 #include "Biome.h"
+#include "Util/CompoundType.h"
 
 namespace Terrain
 {
@@ -8,7 +9,7 @@ namespace Terrain
   {
   public:
     CompoundSurfaceData();
-    CompoundSurfaceData(length_t surfaceElevation, Block::Type blockType);
+    CompoundSurfaceData(length_t surfaceElevation, Block::ID blockType);
 
     CompoundSurfaceData operator+(const CompoundSurfaceData& other) const;
     CompoundSurfaceData operator*(float x) const;
@@ -21,7 +22,7 @@ namespace Terrain
 
   private:
     length_t m_Elevation;
-    Block::CompoundType m_Components;
+    CompoundType<Block::Type, 4> m_Components;
   };
 
   inline CompoundSurfaceData operator*(length_t x, const CompoundSurfaceData& other) { return other * static_cast<float>(x); }
@@ -29,7 +30,7 @@ namespace Terrain
   struct SurfaceInfo
   {
     length_t elevation;
-    Block::Type blockType;
+    Block::ID blockType;
 
     operator CompoundSurfaceData() const { return CompoundSurfaceData(elevation, blockType); }
   };

@@ -1,12 +1,9 @@
 #pragma once
 #include <Engine.h>
 
-using blockID = uint8_t;
-using blockTexID = uint32_t;
-
 namespace Block
 {
-  enum class Type : blockID
+  enum class ID : uint8_t
   {
     Air,
     Grass,
@@ -25,8 +22,9 @@ namespace Block
     Null,
     Begin = 0, End = Null
   };
+  using IDs = Engine::EnumIterator<ID>;
 
-  enum class Texture : blockTexID
+  enum class TextureID : uint32_t
   {
     GrassTop,
     GrassSide,
@@ -48,5 +46,5 @@ namespace Block
 
     Begin = 0, End = ErrorTexture
   };
-  using TextureIterator = Engine::EnumIterator<Texture, Texture::Begin, Texture::End>;
+  using Textures = Engine::EnumIterator<TextureID>;
 }

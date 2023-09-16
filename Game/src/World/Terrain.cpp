@@ -6,7 +6,7 @@
 #include "Player/Player.h"
 
 Terrain::CompoundSurfaceData::CompoundSurfaceData() = default;
-Terrain::CompoundSurfaceData::CompoundSurfaceData(length_t surfaceElevation, Block::Type blockType)
+Terrain::CompoundSurfaceData::CompoundSurfaceData(length_t surfaceElevation, Block::ID blockType)
   : m_Elevation(surfaceElevation), m_Components(blockType) {}
 
 Terrain::CompoundSurfaceData Terrain::CompoundSurfaceData::operator+(const CompoundSurfaceData& other) const
@@ -41,8 +41,8 @@ std::array<int, 2> Terrain::CompoundSurfaceData::getTextureIndices() const
 {
   std::array<int, 2> textureIndices{};
 
-  textureIndices[0] = static_cast<int>(Block::GetTexture(m_Components[0].type, Direction::Top));
-  textureIndices[1] = static_cast<int>(Block::GetTexture(m_Components[1].type, Direction::Top));
+  textureIndices[0] = static_cast<int>(m_Components[0].type.texture(Direction::Top));
+  textureIndices[1] = static_cast<int>(m_Components[1].type.texture(Direction::Top));
 
   return textureIndices;
 }
@@ -63,7 +63,7 @@ static constexpr int c_RegionRadius = 1;
 static constexpr int c_RegionWidth = 2 * c_RegionRadius + 1;
 
 using NoiseSamples = BlockArrayRect<Noise::OctaveNoiseData<Biome::LocalElevationOctaves()>>;
-using CompoundBiome = CompoundType<Biome::Type, c_MaxCompoundBiomes, Biome::Type::Null>;
+using CompoundBiome = CompoundType<Biome::Type, c_MaxCompoundBiomes>;
 using BiomeData = BlockArrayRect<CompoundBiome>;
 
 struct SurfaceData
@@ -219,7 +219,7 @@ static void foliageStage(BlockArrayBox<Block::Type>& composition, const BlockArr
     int k = treeIndex.k;
 
     for (int n = 0; n < 5; ++n)
-      composition[i][j][k + n] = Block::Type::OakLog;
+      composition[i][j][k + n] = Block::ID::OakLog;
 
     for (int I = -3; I < 3; ++I)
       for (int J = -3; J < 3; ++J)
@@ -248,7 +248,7 @@ static void foliageStage(BlockArrayBox<Block::Type>& composition, const BlockArr
           int random = rand();
           if (random % 101 == 0)
           {
-            Block::Type leafType = random % 2 == 0 ? Block::Type::OakLeaves : Block::Type::FallLeaves;
+            Block::ID leafType = random % 2 == 0 ? Block::ID::OakLeaves : Block::ID::FallLeaves;
             blockIndex_t k = static_cast<blockIndex_t>(std::ceil(heightInChunk / Block::Length()));
             createTree(composition, { i, j, k }, leafType);
           }
@@ -263,7 +263,7 @@ static void lightingStage(BlockArrayBox<Block::Light>& lighting, const BlockArra
     for (blockIndex_t j = 0; j < Chunk::Size(); ++j)
     {
       blockIndex_t k = 0;
-      while (k < Chunk::Size() && !Block::HasTransparency(composition[i][j][k]))
+      while (k < Chunk::Size() && !composition[i][j][k].hasTransparency())
       {
         lighting[i][j][k] = Block::Light(0);
         k++;
@@ -282,7 +282,7 @@ std::shared_ptr<Chunk> Terrain::GenerateNew(const GlobalIndex& chunkIndex)
   soilStage(composition, heightMap, chunkIndex);
   foliageStage(composition, heightMap, chunkIndex);
 
-  if (composition.filledWith(Block::Type::Air))
+  if (composition.filledWith(Block::ID::Air))
     composition.clear();
 
   std::shared_ptr newChunk = std::make_shared<Chunk>(chunkIndex);

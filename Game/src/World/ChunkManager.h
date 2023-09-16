@@ -34,7 +34,7 @@ public:
   void removeBlock(const GlobalIndex& chunkIndex, const BlockIndex& blockIndex);
 
   // Debug
-  void loadChunk(const GlobalIndex& chunkIndex, Block::Type blockType);
+  void loadChunk(const GlobalIndex& chunkIndex, Block::ID blockType);
 
 private:
   struct LightUniforms

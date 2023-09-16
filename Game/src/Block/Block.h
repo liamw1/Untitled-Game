@@ -1,25 +1,34 @@
 #pragma once
 #include "BlockIDs.h"
 #include "World/Indexing.h"
-#include "Util/CompoundType.h"
 
 namespace Block
 {
-  using CompoundType = ::CompoundType<Type, 4, Block::Type::Null>;
+  constexpr length_t Length() { return 0.5_m; }
+  constexpr float LengthF() { return static_cast<float>(Length()); }
 
   void Initialize();
   std::shared_ptr<Engine::TextureArray> GetTextureArray();
 
-  Texture GetTexture(Type block, Direction face);
-
-  bool HasTransparency(Texture texture);
-  bool HasTransparency(Type block);
-  bool HasCollision(Type block);
-
-  constexpr length_t Length() { return 0.5_m; }
-  constexpr float LengthF() { return static_cast<float>(Length()); }
-
-
+  class Type
+  {
+  public:
+    constexpr Type()
+      : Type(Block::ID::Null) {}
+    constexpr Type(Block::ID blockType)
+      : m_TypeID(blockType) {}
+  
+    constexpr bool operator==(Type other) const { return m_TypeID == other.m_TypeID; }
+    constexpr bool operator==(Block::ID blockType) const { return m_TypeID == blockType; }
+  
+    Block::TextureID texture(Direction face) const;
+  
+    bool hasTransparency() const;
+    bool hasCollision() const;
+  
+  private:
+    Block::ID m_TypeID;
+  };
 
   class Light
   {

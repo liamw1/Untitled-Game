@@ -4,11 +4,11 @@
 
 ChunkVertex::ChunkVertex()
   : m_VertexData(0), m_Lighting(0) {}
-ChunkVertex::ChunkVertex(const BlockIndex& vertexPlacement, int quadIndex, Block::Texture texture, int sunlight, int ambientOcclusion)
+ChunkVertex::ChunkVertex(const BlockIndex& vertexPlacement, int quadIndex, Block::TextureID texture, int sunlight, int ambientOcclusion)
 {
   m_VertexData =  vertexPlacement.i + (vertexPlacement.j << 6) + (vertexPlacement.k << 12);
   m_VertexData |= quadIndex << 18;
-  m_VertexData |= static_cast<blockTexID>(texture) << 20;
+  m_VertexData |= std::underlying_type_t<Block::TextureID>(texture) << 20;
 
   m_Lighting =  sunlight << 16;
   m_Lighting |= ambientOcclusion << 20;
@@ -29,7 +29,7 @@ const BlockIndex& ChunkVertex::GetOffset(Direction face, int quadIndex)
 
 
 
-ChunkQuad::ChunkQuad(const BlockIndex& blockIndex, Direction face, Block::Texture texture, const std::array<int, 4>& sunlight, const std::array<int, 4>& ambientOcclusion)
+ChunkQuad::ChunkQuad(const BlockIndex& blockIndex, Direction face, Block::TextureID texture, const std::array<int, 4>& sunlight, const std::array<int, 4>& ambientOcclusion)
 {
   static constexpr std::array<int, 4> standardOrder = { 0, 1, 2, 3 };
   static constexpr std::array<int, 4> reversedOrder = { 1, 3, 0, 2 };
@@ -114,7 +114,7 @@ void ChunkDrawCommand::prune()
   }
 }
 
-void ChunkDrawCommand::addQuad(const BlockIndex& blockIndex, Direction face, Block::Texture texture, const std::array<int, 4>& sunlight, const std::array<int, 4>& ambientOcclusion)
+void ChunkDrawCommand::addQuad(const BlockIndex& blockIndex, Direction face, Block::TextureID texture, const std::array<int, 4>& sunlight, const std::array<int, 4>& ambientOcclusion)
 {
   addQuadIndices(vertexCount());
   m_IndexCount += 6;

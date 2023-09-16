@@ -5,7 +5,7 @@
 #include "Util/Util.h"
 
 ChunkManager::ChunkManager()
-  : m_ThreadPool(std::make_shared<Engine::Threads::ThreadPool>(4)),
+  : m_ThreadPool(std::make_shared<Engine::Threads::ThreadPool>(1)),
     m_LoadWork(m_ThreadPool, Engine::Threads::Priority::Normal),
     m_CleanWork(m_ThreadPool, Engine::Threads::Priority::High),
     m_LightingWork(m_ThreadPool, Engine::Threads::Priority::Normal),
@@ -244,7 +244,7 @@ void ChunkManager::placeBlock(GlobalIndex chunkIndex, BlockIndex blockIndex, Dir
 
   bool validBlockPlacement = chunk->composition().setIf(blockIndex, blockType, [](Block::Type containedBlockType)
     {
-      return !Block::HasCollision(containedBlockType);
+      return !containedBlockType.hasCollision();
     });
 
   // If trying to place a block in a space occupied by another block with collision, do nothing and warn
@@ -254,7 +254,7 @@ void ChunkManager::placeBlock(GlobalIndex chunkIndex, BlockIndex blockIndex, Dir
     return;
   }
 
-  if (!Block::HasTransparency(blockType))
+  if (!blockType.hasTransparency())
     addToLightingUpdateQueue(chunkIndex);
   sendBlockUpdate(chunkIndex, blockIndex);
 }
@@ -264,16 +264,16 @@ void ChunkManager::removeBlock(const GlobalIndex& chunkIndex, const BlockIndex& 
   std::shared_ptr<Chunk> chunk = m_ChunkContainer.chunks().get(chunkIndex);
   if (!chunk)
     return;
-  Block::Type removedBlock = chunk->composition().replace(blockIndex, Block::Type::Air);
+  Block::Type removedBlock = chunk->composition().replace(blockIndex, Block::ID::Air);
 
-  if (!Block::HasTransparency(removedBlock))
+  if (!removedBlock.hasTransparency())
   {
     // Get estimate of light value of effected block for immediate meshing
     int8_t lightEstimate = 0;
     for (Direction direction : Directions())
     {
       BlockIndex blockNeighbor = blockIndex + BlockIndex::Dir(direction);
-      if (!Chunk::Bounds().encloses(blockNeighbor) || !Block::HasTransparency(chunk->composition().get(blockNeighbor)))
+      if (!Chunk::Bounds().encloses(blockNeighbor) || !chunk->composition().get(blockNeighbor).hasTransparency())
         continue;
 
       lightEstimate = std::max(lightEstimate, chunk->lighting().get(blockNeighbor).sunlight());
@@ -288,10 +288,10 @@ void ChunkManager::removeBlock(const GlobalIndex& chunkIndex, const BlockIndex& 
   sendBlockUpdate(chunkIndex, blockIndex);
 }
 
-void ChunkManager::loadChunk(const GlobalIndex& chunkIndex, Block::Type blockType)
+void ChunkManager::loadChunk(const GlobalIndex& chunkIndex, Block::ID blockType)
 {
   std::shared_ptr<Chunk> chunk = std::make_shared<Chunk>(chunkIndex);
-  if (blockType != Block::Type::Air)
+  if (blockType != Block::ID::Air)
   {
     chunk->setComposition(BlockArrayBox<Block::Type>(Chunk::Bounds(), blockType));
     chunk->setLighting(BlockArrayBox<Block::Light>(Chunk::Bounds(), AllocationPolicy::DefaultInitialize));
@@ -464,7 +464,7 @@ static void retrieveNeighborData(BlockArrayBox<T>& blockData, const ChunkContain
 static BlockData& getThreadLocalWorkspace()
 {
   thread_local BlockData blockData;
-  blockData.composition.fill(Block::Type::Null);
+  blockData.composition.fill(Block::Type());
   blockData.lighting.fill(Block::Light());
   return blockData;
 }
@@ -497,17 +497,16 @@ void ChunkManager::meshChunk(const std::shared_ptr<Chunk>& chunk)
     {
       Block::Type blockType = blockData.composition(blockIndex);
 
-      if (blockType == Block::Type::Air)
+      if (blockType == Block::ID::Air)
         return;
 
       uint8_t enabledFaces = 0;
-      bool blockIsTransparent = Block::HasTransparency(blockType);
-      ChunkDrawCommand& draw = blockIsTransparent ? transparentDraw : opaqueDraw;
+      ChunkDrawCommand& draw = blockType.hasTransparency() ? transparentDraw : opaqueDraw;
       for (Direction face : Directions())
       {
         BlockIndex cardinalIndex = blockIndex + BlockIndex::Dir(face);
         Block::Type cardinalNeighbor = blockData.composition(cardinalIndex);
-        if (cardinalNeighbor == blockType || (!blockIsTransparent && !Block::HasTransparency(cardinalNeighbor)))
+        if (cardinalNeighbor == blockType || (!blockType.hasTransparency() && !cardinalNeighbor.hasTransparency()))
           continue;
 
         enabledFaces |= 1 << static_cast<int>(face);
@@ -523,7 +522,7 @@ void ChunkManager::meshChunk(const std::shared_ptr<Chunk>& chunk)
           BlockBox lightingStencil = BlockBox(-1, 0) + vertexPosition;
           lightingStencil.forEach([&blockData, &totalSunlight, &transparentNeighbors](const BlockIndex& lightIndex)
             {
-              if (!Block::HasTransparency(blockData.composition(lightIndex)))
+              if (!blockData.composition(lightIndex).hasTransparency())
                 return;
 
               totalSunlight += blockData.lighting(lightIndex).sunlight();
@@ -535,8 +534,7 @@ void ChunkManager::meshChunk(const std::shared_ptr<Chunk>& chunk)
 
         // Calculate ambient occlusion
         std::array<int, 4> quadAmbientOcclusion{};
-        Block::Texture quadTexture = Block::GetTexture(blockType, face);
-        if (!Block::HasTransparency(quadTexture))
+        if (!blockType.hasTransparency())
           for (int quadIndex = 0; quadIndex < 4; ++quadIndex)
           {
             Axis u = AxisOf(face);
@@ -550,13 +548,13 @@ void ChunkManager::meshChunk(const std::shared_ptr<Chunk>& chunk)
             BlockIndex edgeB = blockIndex + BlockIndex::Dir(face) + BlockIndex::Dir(edgeBDir);
             BlockIndex corner = blockIndex + BlockIndex::Dir(face) + BlockIndex::Dir(edgeADir) + BlockIndex::Dir(edgeBDir);
 
-            bool edgeAIsOpaque = !Block::HasTransparency(blockData.composition(edgeA));
-            bool edgeBIsOpaque = !Block::HasTransparency(blockData.composition(edgeB));
-            bool cornerIsOpaque = !Block::HasTransparency(blockData.composition(corner));
+            bool edgeAIsOpaque = !blockData.composition(edgeA).hasTransparency();
+            bool edgeBIsOpaque = !blockData.composition(edgeB).hasTransparency();
+            bool cornerIsOpaque = !blockData.composition(corner).hasTransparency();
             quadAmbientOcclusion[quadIndex] = edgeAIsOpaque && edgeBIsOpaque ? 3 : edgeAIsOpaque + edgeBIsOpaque + cornerIsOpaque;
           }
 
-        draw.addQuad(blockIndex, face, quadTexture, sunlight, quadAmbientOcclusion);
+        draw.addQuad(blockIndex, face, blockType.texture(face), sunlight, quadAmbientOcclusion);
       }
 
       if (enabledFaces != 0)
@@ -593,7 +591,7 @@ void ChunkManager::updateLighting(const std::shared_ptr<Chunk>& chunk)
 
       for (propogationIndex.k = blockIndex.k - 1; propogationIndex.k >= Chunk::Bounds().min.k; --propogationIndex.k)
       {
-        if (!Block::HasTransparency(blockData.composition(propogationIndex)))
+        if (!blockData.composition(propogationIndex).hasTransparency())
           break;
 
         blockData.lighting(propogationIndex) = Block::Light::MaxValue();
@@ -621,7 +619,7 @@ void ChunkManager::updateLighting(const std::shared_ptr<Chunk>& chunk)
 
       for (BlockIndex blockIndex(index, attenuatedSunlightExtents(index)); blockIndex.k < Chunk::Size(); ++blockIndex.k)
       {
-        if (!Block::HasTransparency(blockData.composition(blockIndex)) || blockData.lighting(blockIndex) == Block::Light::MaxValue())
+        if (!blockData.composition(blockIndex).hasTransparency() || blockData.lighting(blockIndex) == Block::Light::MaxValue())
           continue;
 
         blockData.lighting(blockIndex) = attenuatedIntensity;
@@ -635,7 +633,7 @@ void ChunkManager::updateLighting(const std::shared_ptr<Chunk>& chunk)
     BlockBox faceInterior = BlockData::Bounds().faceInterior(direction);
     faceInterior.forEach([&blockData, &sunlight](const BlockIndex& blockIndex)
       {
-        if (Block::HasTransparency(blockData.composition(blockIndex)))
+        if (blockData.composition(blockIndex).hasTransparency())
           sunlight[blockData.lighting(blockIndex).sunlight()].push(blockIndex);
       });
   }
@@ -650,7 +648,7 @@ void ChunkManager::updateLighting(const std::shared_ptr<Chunk>& chunk)
       for (Direction direction : Directions())
       {
         BlockIndex lightNeighbor = lightIndex + BlockIndex::Dir(direction);
-        if (!Chunk::Bounds().encloses(lightNeighbor) || !Block::HasTransparency(blockData.composition(lightNeighbor)))
+        if (!Chunk::Bounds().encloses(lightNeighbor) || !blockData.composition(lightNeighbor).hasTransparency())
           continue;
 
         int8_t neighborIntensity = intensity - attenuation;
