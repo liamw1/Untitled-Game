@@ -10,7 +10,6 @@ GameSandbox::GameSandbox()
     m_PrintMinFrameRate(false),
     m_PrintPlayerPosition(false)
 {
-  Engine::Renderer2D::Initialize();
   Engine::Renderer::Initialize();
 
   Block::Initialize();

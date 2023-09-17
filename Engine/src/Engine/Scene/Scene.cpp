@@ -2,7 +2,6 @@
 #include "Scene.h"
 #include "Components.h"
 #include "DevCamera.h"
-#include "Engine/Renderer/Renderer2D.h"
 #include <glm/gtc/matrix_transform.hpp>
 
 namespace Engine
@@ -52,35 +51,6 @@ namespace Engine
     return ECS::GetEntity(entityID);
   }
 
-  static void render2D(Entity viewer)
-  {
-    auto spriteView = ECS::Registry().view<Component::SpriteRenderer>();
-    auto circleView = ECS::Registry().view<Component::CircleRenderer>();
-
-    if (spriteView.size() == 0 && circleView.size() == 0)
-      return;
-
-    Renderer2D::BeginScene(viewer);
-
-    for (entt::entity entityID : spriteView)
-    {
-      Mat4 transform = ECS::Registry().get<Component::Transform>(entityID).calculateTransform();
-      const Component::SpriteRenderer& sprite = spriteView.get<Component::SpriteRenderer>(entityID);
-
-      Renderer2D::DrawSprite(transform, sprite, static_cast<int>(entityID));
-    }
-
-    for (entt::entity entityID : circleView)
-    {
-      Mat4 transform = ECS::Registry().get<Component::Transform>(entityID).calculateTransform();
-      const Component::CircleRenderer& circle = circleView.get<Component::CircleRenderer>(entityID);
-
-      Renderer2D::DrawCircle(transform, circle.color, circle.thickness, circle.fade, static_cast<int>(entityID));
-    }
-
-    Renderer2D::EndScene();
-  }
-
   void Scene::OnUpdate(Timestep timestep)
   {
     // Update scripts
@@ -92,8 +62,6 @@ namespace Engine
 
         nsc.instance->onUpdate(timestep);
       });
-
-    render2D(ActiveCamera());
   }
 
   void Scene::OnEvent(Event& event)

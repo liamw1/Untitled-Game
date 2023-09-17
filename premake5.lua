@@ -33,5 +33,4 @@ group "Dependencies"
 group ""
 
 include "Engine"
-include "GameDev"
 include "Game"
