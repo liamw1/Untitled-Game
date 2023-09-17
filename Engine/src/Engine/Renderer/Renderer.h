@@ -14,7 +14,7 @@ namespace Engine::Renderer
   void BeginScene(Entity viewer);
   void EndScene();
 
-  void DrawCube(const Vec3& position, const Vec3& size, const Texture2D* texture = nullptr);
+  void DrawCube(const Vec3& position, const Vec3& size, const Texture* texture = nullptr);
   void DrawCubeFrame(const Vec3& position, const Vec3& size, const Float4& color = Float4(0.0f, 0.0f, 0.0f, 1.0f));
 
   void OnWindowResize(uint32_t width, uint32_t height);

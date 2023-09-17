@@ -59,7 +59,7 @@ namespace Engine
 
   static std::unique_ptr<Shader> s_QuadShader;
   static std::unique_ptr<Uniform> s_CameraUniform;
-  static std::shared_ptr<Texture2D> s_WhiteTexture;
+  static std::shared_ptr<Texture> s_WhiteTexture;
   static std::unique_ptr<VertexArray> s_QuadVertexArray;
 
   static uint32_t s_QuadIndexCount = 0;
@@ -73,7 +73,7 @@ namespace Engine
   static CircleVertex* s_CircleVertexBufferBase = nullptr;
   static CircleVertex* s_CircleVertexBufferPtr = nullptr;
 
-  static std::array<std::shared_ptr<Texture2D>, c_MaxTextureSlots> s_TextureSlots;
+  static std::array<std::shared_ptr<Texture>, c_MaxTextureSlots> s_TextureSlots;
   static uint32_t s_TextureSlotIndex = 1;   // 0 = white texture
 
   static Renderer2D::Statistics s_Stats;
@@ -99,7 +99,7 @@ namespace Engine
     startBatch();
   }
 
-  static int getTextureIndex(const std::shared_ptr<Texture2D>& texture)
+  static int getTextureIndex(const std::shared_ptr<Texture>& texture)
   {
     uint32_t textureIndex = 0;  // White texture index by default
     if (texture != nullptr)
@@ -178,7 +178,7 @@ namespace Engine
     s_CircleShader = Shader::Create("../Engine/assets/shaders/Circle.glsl");
     s_CircleVertexBufferBase = new CircleVertex[c_MaxCircleVertices];
 
-    s_WhiteTexture = Texture2D::Create(1, 1);
+    s_WhiteTexture = Texture::Create(1, 1);
     uint32_t s_WhiteTextureData = 0xFFFFFFFF;
     s_WhiteTexture->setData(&s_WhiteTextureData, sizeof(uint32_t));
     s_TextureSlots[0] = s_WhiteTexture;
@@ -230,7 +230,7 @@ namespace Engine
     }
   }
 
-  void Renderer2D::DrawQuad(const Mat4& transform, const Float4& tintColor, float textureScalingFactor, const std::shared_ptr<Texture2D>& texture, int entityID)
+  void Renderer2D::DrawQuad(const Mat4& transform, const Float4& tintColor, float textureScalingFactor, const std::shared_ptr<Texture>& texture, int entityID)
   {
     static constexpr Float2 textureCoordinates[4] = { {0.0f, 0.0f},
                                                       {1.0f, 0.0f},
@@ -255,7 +255,7 @@ namespace Engine
     s_Stats.quadCount++;
   }
 
-  void Renderer2D::DrawQuad(const Vec3& position, const Vec2& size, Angle rotation, const Float4& tintColor, float textureScalingFactor, const std::shared_ptr<Texture2D>& texture, int entityID)
+  void Renderer2D::DrawQuad(const Vec3& position, const Vec2& size, Angle rotation, const Float4& tintColor, float textureScalingFactor, const std::shared_ptr<Texture>& texture, int entityID)
   {
     Mat4 transform = glm::translate(Mat4(1.0), position)
                    * glm::rotate(Mat4(1.0), rotation.radl(), Vec3(0.0, 0.0, 1.0))

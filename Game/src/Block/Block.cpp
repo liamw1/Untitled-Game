@@ -9,16 +9,17 @@ namespace Block
   };
   
   static constexpr int c_UniformBinding = 1;
-  static inline int s_BlocksInitialized = 0;
-  static inline bool s_Initialized = false;
+  static int s_BlocksInitialized = 0;
+  static bool s_Initialized = false;
 
-  static inline Engine::EnumArray<bool, Block::ID> s_HasTransparency;
-  static inline Engine::EnumArray<bool, Block::ID> s_HasCollision;
-  static inline Engine::EnumArray<DirectionArray<TextureID>, Block::ID> s_TextureIDs;
-  static inline Engine::EnumArray<std::filesystem::path, Block::TextureID> s_TexturePaths;
-  static inline std::shared_ptr<Engine::TextureArray> s_TextureArray;
-  static inline std::unique_ptr<Engine::Uniform> s_Uniform;
-  static inline const BlockUniformData s_BlockUniformData{};
+  static Engine::EnumArray<bool, Block::ID> s_HasTransparency;
+  static Engine::EnumArray<bool, Block::ID> s_HasCollision;
+  static Engine::EnumArray<Float4, Block::TextureID> s_TextureAverageColors;
+  static Engine::EnumArray<DirectionArray<TextureID>, Block::ID> s_TextureIDs;
+  static Engine::EnumArray<std::filesystem::path, Block::TextureID> s_TexturePaths;
+  static std::shared_ptr<Engine::TextureArray> s_TextureArray;
+  static std::unique_ptr<Engine::Uniform> s_Uniform;
+  static const BlockUniformData s_BlockUniformData{};
   
   static void assignTextures(ID block, const DirectionArray<TextureID>& faceTextures)
   {
@@ -86,7 +87,13 @@ namespace Block
         EN_ERROR("Block texture {0} has not been assign a path!", std::underlying_type_t<Block::TextureID>(texture));
         texture = TextureID::ErrorTexture;
       }
-      s_TextureArray->addTexture(s_TexturePaths[texture].string());
+
+      Engine::Image textureImage(s_TexturePaths[texture]);
+      s_TextureArray->addTexture(textureImage);
+
+      Float4 textureAverageColor = textureImage.averageColor();
+      textureAverageColor.a = 1.0f;
+      s_TextureAverageColors[texture] = textureAverageColor;
     }
 
     static constexpr int numBlockTypes = Engine::EnumRange<Block::ID>();

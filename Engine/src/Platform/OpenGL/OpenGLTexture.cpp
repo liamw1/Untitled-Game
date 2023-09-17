@@ -3,7 +3,6 @@
 #include "Engine/Threads/Threads.h"
 #include "Engine/Debug/Instrumentor.h"
 
-#include <stb_image.h>
 #include <glad/glad.h>
 
 static constexpr uint32_t c_MipmapLevels = 8;
@@ -11,7 +10,29 @@ static constexpr float c_AnistropicFilteringAmount = 16.0f;
 
 namespace Engine
 {
-  OpenGLTexture2D::OpenGLTexture2D(uint32_t width, uint32_t height)
+  static GLenum internalFormatOf(const Image& image)
+  {
+    switch (image.channels())
+    {
+      case 3:   return GL_RGB8;
+      case 4:   return GL_RGBA8;
+      default:  throw std::invalid_argument("Format not supported!");
+    }
+  }
+
+  static GLenum dataFormatOf(const Image& image)
+  {
+    switch (image.channels())
+    {
+      case 3:   return GL_RGB;
+      case 4:   return GL_RGBA;
+      default:  throw std::invalid_argument("Format not supported!");
+    }
+  }
+
+
+
+  OpenGLTexture::OpenGLTexture(uint32_t width, uint32_t height)
     : m_Width(width),
       m_Height(height),
       m_RendererID(0),
@@ -30,7 +51,7 @@ namespace Engine
     glTextureParameteri(m_RendererID, GL_TEXTURE_WRAP_T, GL_REPEAT);
   }
 
-  OpenGLTexture2D::OpenGLTexture2D(const std::string& path)
+  OpenGLTexture::OpenGLTexture(const std::filesystem::path& path)
     : m_Width(0),
       m_Height(0),
       m_RendererID(0)
@@ -38,44 +59,24 @@ namespace Engine
     EN_PROFILE_FUNCTION();
     EN_CORE_ASSERT(Threads::IsMainThread(), "OpenGL calls must be made on the main thread!");
 
-    int width, height, channels;
-    stbi_set_flip_vertically_on_load(true);
-    stbi_uc* data = stbi_load(path.c_str(), &width, &height, &channels, 0);
-    EN_CORE_ASSERT(data, "Failed to load image!");
-    m_Width = width;
-    m_Height = height;
-
-    GLenum internalFormat = 0, dataFormat = 0;
-    switch (channels)
-    {
-      case 3:
-        internalFormat = GL_RGB8;
-        dataFormat = GL_RGB;
-        break;
-      case 4:
-        internalFormat = GL_RGBA8;
-        dataFormat = GL_RGBA;
-        break;
-      default: EN_CORE_ERROR("Format not supported!");
-    }
-
-    m_InternalFormat = internalFormat;
-    m_DataFormat = dataFormat;
+    Image image(path);
+    m_Width = image.width();
+    m_Height = image.height();
+    m_InternalFormat = internalFormatOf(image);
+    m_DataFormat = dataFormatOf(image);
 
     glCreateTextures(GL_TEXTURE_2D, 1, &m_RendererID);
-    glTextureStorage2D(m_RendererID, 1, internalFormat, m_Width, m_Height);
+    glTextureStorage2D(m_RendererID, 1, m_InternalFormat, m_Width, m_Height);
 
     glTextureParameteri(m_RendererID, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTextureParameteri(m_RendererID, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTextureParameteri(m_RendererID, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTextureParameteri(m_RendererID, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
-    glTextureSubImage2D(m_RendererID, 0, 0, 0, m_Width, m_Height, dataFormat, GL_UNSIGNED_BYTE, data);
-
-    stbi_image_free(data);
+    glTextureSubImage2D(m_RendererID, 0, 0, 0, m_Width, m_Height, m_DataFormat, GL_UNSIGNED_BYTE, image.data());
   }
 
-  OpenGLTexture2D::~OpenGLTexture2D()
+  OpenGLTexture::~OpenGLTexture()
   {
     EN_PROFILE_FUNCTION();
     EN_CORE_ASSERT(Threads::IsMainThread(), "OpenGL calls must be made on the main thread!");
@@ -83,11 +84,11 @@ namespace Engine
     glDeleteTextures(1, &m_RendererID);
   }
 
-  uint32_t OpenGLTexture2D::getWidth() const { return m_Width; }
-  uint32_t OpenGLTexture2D::getHeight() const { return m_Height; }
-  uint32_t OpenGLTexture2D::getRendererID() const { return m_RendererID; }
+  uint32_t OpenGLTexture::getWidth() const { return m_Width; }
+  uint32_t OpenGLTexture::getHeight() const { return m_Height; }
+  uint32_t OpenGLTexture::getRendererID() const { return m_RendererID; }
 
-  void OpenGLTexture2D::setData(void* data, uint32_t size)
+  void OpenGLTexture::setData(void* data, uint32_t size)
   {
     EN_PROFILE_FUNCTION();
     EN_CORE_ASSERT(Threads::IsMainThread(), "OpenGL calls must be made on the main thread!");
@@ -96,13 +97,13 @@ namespace Engine
     glTextureSubImage2D(m_RendererID, 0, 0, 0, m_Width, m_Height, m_DataFormat, GL_UNSIGNED_BYTE, data);
   }
 
-  void OpenGLTexture2D::bind(uint32_t slot) const
+  void OpenGLTexture::bind(uint32_t slot) const
   {
     EN_CORE_ASSERT(Threads::IsMainThread(), "OpenGL calls must be made on the main thread!");
     glBindTextureUnit(slot, m_RendererID);
   }
 
-  bool OpenGLTexture2D::operator==(const Texture& other) const
+  bool OpenGLTexture::operator==(const Texture& other) const
   {
     return m_RendererID == other.getRendererID();
   }
@@ -138,37 +139,21 @@ namespace Engine
     glBindTextureUnit(slot, m_RendererID);
   }
 
-  void OpenGLTextureArray::addTexture(const std::string& path)
+  void OpenGLTextureArray::addTexture(const std::filesystem::path& path)
   {
-    EN_PROFILE_FUNCTION();
+    EN_CORE_ASSERT(path.string().size() > 0, "Filepath is an empty string!");
+    addTexture(Image(path));
+  }
+
+  void OpenGLTextureArray::addTexture(const Image& image)
+  {
     EN_CORE_ASSERT(Threads::IsMainThread(), "OpenGL calls must be made on the main thread!");
-
-    EN_CORE_ASSERT(path.size() > 0, "Filepath is an empty string!");
-
-    int width, height, channels;
-    stbi_set_flip_vertically_on_load(true);
-    stbi_uc* data = stbi_load(path.c_str(), &width, &height, &channels, 0);
-    EN_CORE_ASSERT(data, "Failed to load image for texture at {0}.", path);
-    EN_CORE_ASSERT(width == m_TextureSize && height == m_TextureSize, "Texture has incorrect size!");
-
-    GLenum internalFormat = 0, dataFormat = 0;
-    switch (channels)
-    {
-      case 3:
-        internalFormat = GL_RGB8;
-        dataFormat = GL_RGB;
-        break;
-      case 4:
-        internalFormat = GL_RGBA8;
-        dataFormat = GL_RGBA;
-        break;
-      default: EN_CORE_ERROR("Format not supported!");
-    }
-    EN_CORE_ASSERT(internalFormat == m_InternalFormat && dataFormat == m_DataFormat, "Texture has incorrect format!");
+    EN_CORE_ASSERT(image.width() == m_TextureSize && image.height() == m_TextureSize, "Texture has incorrect size!");
+    EN_CORE_ASSERT(internalFormatOf(image) == m_InternalFormat && dataFormatOf(image) == m_DataFormat, "Texture has incorrect format!");
     EN_CORE_ASSERT(m_TextureCount < m_MaxTextures, "Textures added has exceeded maximum textures!");
 
     glTextureSubImage3D(m_RendererID, 0, 0, 0, m_TextureCount, m_TextureSize,
-      m_TextureSize, 1, m_DataFormat, GL_UNSIGNED_BYTE, data);
+      m_TextureSize, 1, m_DataFormat, GL_UNSIGNED_BYTE, image.data());
 
     glGenerateTextureMipmap(m_RendererID);
 
@@ -179,7 +164,6 @@ namespace Engine
     glTextureParameteri(m_RendererID, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTextureParameteri(m_RendererID, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-    stbi_image_free(data);
     m_TextureCount++;
   }
 }

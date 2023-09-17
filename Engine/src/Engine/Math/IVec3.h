@@ -86,6 +86,7 @@ struct IVec3
   constexpr IVec3 operator/(IntType n) const { Engine::Clone(*this) /= n; }
 
   constexpr int l1Norm() const { return std::abs(i) + std::abs(j) + std::abs(k); }
+  constexpr int dot(const IVec3& other) const { return i * other.i + j * other.j + k * other.k; }
 
   static constexpr IVec3 ToIndex(const Vec3& vec)
   {

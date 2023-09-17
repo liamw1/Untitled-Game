@@ -3,12 +3,12 @@
 
 namespace Engine
 {
-  class OpenGLTexture2D : public Texture2D
+  class OpenGLTexture : public Texture
   {
   public:
-    OpenGLTexture2D(uint32_t width, uint32_t height);
-    OpenGLTexture2D(const std::string& path);
-    ~OpenGLTexture2D();
+    OpenGLTexture(uint32_t width, uint32_t height);
+    OpenGLTexture(const std::filesystem::path& path);
+    ~OpenGLTexture();
 
     uint32_t getWidth() const override;
     uint32_t getHeight() const override;
@@ -38,7 +38,8 @@ namespace Engine
 
     void bind(uint32_t slot = 0) const override;
 
-    void addTexture(const std::string& path) override;
+    void addTexture(const std::filesystem::path& path) override;
+    void addTexture(const Image& image) override;
 
   private:
     uint32_t m_MaxTextures;

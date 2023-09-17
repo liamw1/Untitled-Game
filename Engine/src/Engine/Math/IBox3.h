@@ -97,6 +97,15 @@ struct IBox3
     return boxExtents.i * boxExtents.j * boxExtents.k;
   }
 
+  constexpr int linearIndexOf(const IVec3<IntType>& index) const
+  {
+    EN_CORE_ASSERT(encloses(index), "Index is outside box!");
+    IVec3<IntType> boxExtents = extents();
+    IVec3<IntType> strides(boxExtents.j * boxExtents.k, boxExtents.k, 1);
+    IVec3<IntType> indexRelativeToBase = index - min;
+    return strides.dot(indexRelativeToBase);
+  }
+
   constexpr IBox3& expand(IntType n = 1)
   {
     for (Axis axis : Axes())

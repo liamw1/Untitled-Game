@@ -17,8 +17,8 @@ namespace Engine
     void Flush();
 
     // Primitives
-    void DrawQuad(const Mat4& transform, const Float4& tintColor = Float4(1.0), float textureScalingFactor = 1.0f, const std::shared_ptr<Texture2D>& texture = nullptr, int entityID = -1);
-    void DrawQuad(const Vec3& position, const Vec2& size, Angle rotation = 0_deg, const Float4& tintColor = Float4(1.0), float textureScalingFactor = 1.0f, const std::shared_ptr<Texture2D>& texture = nullptr, int entityID = -1);
+    void DrawQuad(const Mat4& transform, const Float4& tintColor = Float4(1.0), float textureScalingFactor = 1.0f, const std::shared_ptr<Texture>& texture = nullptr, int entityID = -1);
+    void DrawQuad(const Vec3& position, const Vec2& size, Angle rotation = 0_deg, const Float4& tintColor = Float4(1.0), float textureScalingFactor = 1.0f, const std::shared_ptr<Texture>& texture = nullptr, int entityID = -1);
 
     void DrawSprite(const Mat4& transform, const Component::SpriteRenderer& sprite, int entityID = -1);
     void DrawCircle(const Mat4& transform, const Float4& color, float thickness, float fade, int entityID = -1);

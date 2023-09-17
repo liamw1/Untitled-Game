@@ -43,7 +43,7 @@ namespace Engine
   static std::unique_ptr<Shader> s_TextureShader;
   static std::unique_ptr<Uniform> s_CameraUniform;
   static std::unique_ptr<Shader> s_WireFrameShader;
-  static std::unique_ptr<Texture2D> s_WhiteTexture;
+  static std::unique_ptr<Texture> s_WhiteTexture;
 
   static CameraUniformData s_CameraUniformData;
 
@@ -159,7 +159,7 @@ namespace Engine
     s_CubeVertexArray->setIndexBuffer(IndexBuffer(cubeIndices, 36));
 
     /* Texture Initialization */
-    s_WhiteTexture = Texture2D::Create(1, 1);
+    s_WhiteTexture = Texture::Create(1, 1);
     uint32_t whiteTextureData = 0xffffffff;
     s_WhiteTexture->setData(&whiteTextureData, sizeof(uint32_t));
 
@@ -185,7 +185,7 @@ namespace Engine
   {
   }
 
-  void Renderer::DrawCube(const Vec3& position, const Vec3& size, const Texture2D* texture)
+  void Renderer::DrawCube(const Vec3& position, const Vec3& size, const Texture* texture)
   {
     texture == nullptr ? s_WhiteTexture->bind() : texture->bind();
 

@@ -47,6 +47,7 @@ public:
   }
 
   operator bool() const { return m_Data; }
+  const T* data() const { return m_Data; }
 
   T& operator()(const IVec2<IntType>& index)
   {
@@ -144,7 +145,7 @@ public:
   void fill(const T& value)
   {
     EN_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
-    std::fill(m_Data, m_Data + size(), value);
+    std::fill_n(m_Data, size(), value);
   }
 
   void fill(const IBox2<IntType>& fillSection, const T& value)
