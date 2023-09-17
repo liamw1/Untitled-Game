@@ -2,6 +2,9 @@
 #include "IVec2.h"
 #include "Engine/Core/Concepts.h"
 
+/*
+  Represents a box on a 2D integer lattice. Min and max bounds are both inclusive.
+*/
 template<std::integral IntType>
 struct IBox2
 {
@@ -57,19 +60,31 @@ struct IBox2
   constexpr IBox2 operator*(IntType n) const { return Engine::Clone(*this) *= n; }
   constexpr IBox2 operator/(IntType n) const { return Engine::Clone(*this) /= n; }
 
+  /*
+    \returns True if the box dimensions are non-negative.
+  */
   constexpr bool valid() const { return min.i <= max.i && min.j <= max.j; }
 
+  /*
+    \returns True if the given point is contained within the box.
+  */
   constexpr bool encloses(const IVec2<IntType>& iVec2) const
   {
     return iVec2.i >= min.i && iVec2.i <= max.i && iVec2.j >= min.j && iVec2.j <= max.j;
   }
 
+  /*
+    \returns The box dimensions.
+  */
   constexpr IVec2<IntType> extents() const
   {
     EN_CORE_ASSERT(valid(), "Box is not valid!");
     return IVec2<IntType>(max.i - min.i + 1, max.j - min.j + 1);
   }
 
+  /*
+    \returns The number of integers contained within the box.
+  */
   constexpr int volume() const
   {
     if (!valid())

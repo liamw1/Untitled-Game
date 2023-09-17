@@ -63,7 +63,7 @@ void ChunkManager::render()
     Engine::RenderCommand::SetDepthWriting(true);
     Engine::RenderCommand::SetUseDepthOffset(false);
 
-    int commandCount = m_OpaqueMultiDrawArray->mask([&originIndex, &frustumPlanes](const GlobalIndex& chunkIndex)
+    int commandCount = m_OpaqueMultiDrawArray->partition([&originIndex, &frustumPlanes](const GlobalIndex& chunkIndex)
       {
         Vec3 anchorPosition = Chunk::AnchorPosition(chunkIndex, originIndex);
         Vec3 chunkCenter = Chunk::Center(anchorPosition);
@@ -96,7 +96,7 @@ void ChunkManager::render()
     Engine::RenderCommand::SetUseDepthOffset(true);
     Engine::RenderCommand::SetDepthOffset(-1.0f, -1.0f);
 
-    int commandCount = m_TransparentMultiDrawArray->mask([&originIndex, &frustumPlanes](const GlobalIndex& chunkIndex)
+    int commandCount = m_TransparentMultiDrawArray->partition([&originIndex, &frustumPlanes](const GlobalIndex& chunkIndex)
       {
         Vec3 anchorPosition = Chunk::AnchorPosition(chunkIndex, originIndex);
         Vec3 chunkCenter = Chunk::Center(anchorPosition);
@@ -500,7 +500,7 @@ void ChunkManager::meshChunk(const std::shared_ptr<Chunk>& chunk)
       if (blockType == Block::ID::Air)
         return;
 
-      uint8_t enabledFaces = 0;
+      DirectionBitMask enabledFaces;
       ChunkDrawCommand& draw = blockType.hasTransparency() ? transparentDraw : opaqueDraw;
       for (Direction face : Directions())
       {
@@ -509,7 +509,7 @@ void ChunkManager::meshChunk(const std::shared_ptr<Chunk>& chunk)
         if (cardinalNeighbor == blockType || (!blockType.hasTransparency() && !cardinalNeighbor.hasTransparency()))
           continue;
 
-        enabledFaces |= 1 << static_cast<int>(face);
+        enabledFaces.set(face);
 
         // Calculate lighting
         std::array<int, 4> sunlight{};
@@ -557,7 +557,7 @@ void ChunkManager::meshChunk(const std::shared_ptr<Chunk>& chunk)
         draw.addQuad(blockIndex, face, blockType.texture(face), sunlight, quadAmbientOcclusion);
       }
 
-      if (enabledFaces != 0)
+      if (!enabledFaces.empty())
         draw.addVoxel(blockIndex, enabledFaces);
     });
 

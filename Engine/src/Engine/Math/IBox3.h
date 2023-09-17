@@ -2,6 +2,9 @@
 #include "IVec3.h"
 #include "Engine/Core/Concepts.h" 
 
+/*
+  Represents a box on a 3D integer lattice. Min and max bounds are both inclusive.
+*/
 template<std::integral IntType>
 struct IBox3
 {
@@ -57,8 +60,14 @@ struct IBox3
   constexpr IBox3 operator*(IntType n) const { return Engine::Clone(*this) *= n; }
   constexpr IBox3 operator/(IntType n) const { return Engine::Clone(*this) /= n; }
 
+  /*
+    \returns True if the box dimensions are non-negative.
+  */
   constexpr bool valid() const { return min.i <= max.i && min.j <= max.j && min.k <= max.k; }
 
+  /*
+    \returns True if the given point is contained within the box.
+  */
   constexpr bool encloses(const IVec3<IntType>& iVec3) const
   {
     for (Axis axis : Axes())
@@ -67,12 +76,18 @@ struct IBox3
     return true;
   }
 
+  /*
+    \returns The box dimensions.
+  */
   constexpr IVec3<IntType> extents() const
   {
     EN_CORE_ASSERT(valid(), "Box is not valid!");
     return IVec3<IntType>(max.i - min.i + 1, max.j - min.j + 1, max.k - min.k + 1);
   }
 
+  /*
+    \returns The number of integers contained within the box.
+  */
   constexpr size_t volume() const
   {
     if (!valid())
@@ -105,8 +120,8 @@ struct IBox3
 
   constexpr IntType limitAlongDirection(Direction direction) const
   {
-    Axis axis = AxisOf(direction);
-    return IsUpstream(direction) ? max[axis] : min[axis];
+    const IVec3<IntType>& limit = IsUpstream(direction) ? max : min;
+    return limit[AxisOf(direction)];
   }
 
   constexpr IBox3 face(Direction side) const

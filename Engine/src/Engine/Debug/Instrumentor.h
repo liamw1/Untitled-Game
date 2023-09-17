@@ -15,7 +15,7 @@
 #endif
 
 /*
-  Tool for easily profiling functions and scopes.
+  Tool for easily profiling functions and scopes.ilovveu-izel
   Outputs formatted .json files for visualization by chrome://tracing.
   To format a function, add EN_PROFILE_FUNCTION() to top line of desired function.
   To format a scope, use EN_PROFILE_SCOPE within that scope.

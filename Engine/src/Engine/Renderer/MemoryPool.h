@@ -12,6 +12,7 @@ namespace Engine
 
     NOTE: This class could be modified to remove the 'm' from the insertion/removal time complexity,
           but it's more trouble than it's worth at the moment as it hasn't been a problem yet.
+    TODO: Maybe make this class safer?
   */
   class MemoryPool
   {
@@ -25,10 +26,22 @@ namespace Engine
 
     const std::shared_ptr<StorageBuffer>& buffer();
 
+    /*
+      Uploads data to GPU. May trigger a resize.
+      \returns If a resize was triggered and an address for the allocated memory.
+    */
     [[nodiscard]] std::pair<bool, address_t> add(const void* data, int size);
 
+    /*
+      Removes the memory at the specified address. Doesn't actually delete any memory.
+      Instead, the memory is just no longer indexed by the memory pool and may be overwritten.
+    */
     void remove(address_t address);
 
+    /*
+      Overwrites memory at the given address. Assumes data is the same size as the original
+      allocation. Horrifically unsafe.
+    */
     void amend(const void* data, address_t address);
 
   private:
@@ -47,8 +60,8 @@ namespace Engine
     static constexpr float c_CapacityIncreaseOnResize = 1.25f;
 
     std::shared_ptr<StorageBuffer> m_Buffer;
-    std::map<address_t, MemoryRegion> m_Regions;         // For fast access based on address
-    std::multimap<int, address_t> m_FreeRegions;         // For fast access based on free region size
+    std::map<address_t, MemoryRegion> m_Regions;  // For fast access based on address
+    std::multimap<int, address_t> m_FreeRegions;  // For fast access based on free region size
     int m_Capacity;
 
     bool isFree(RegionsIterator region) const;

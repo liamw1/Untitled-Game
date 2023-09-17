@@ -32,6 +32,7 @@ namespace Engine
     if (size <= 0)
       return { false, -1 };
 
+    // Find the smallest free region that can fit the data. If no such region can be found, resize.
     bool triggeredResize = false;
     FreeRegionsIterator bestFreeRegionPosition = m_FreeRegions.lower_bound(size);
     RegionsIterator bestRegionPosition = m_Regions.end();
@@ -70,12 +71,14 @@ namespace Engine
 
     auto& [allocationAddress, allocationRegion] = *bestRegionPosition;
 
+    // Add any leftover memory to free regions.
     int memoryLeftover = allocationRegion.size - size;
     if (memoryLeftover > 0)
       addFreeRegion(allocationAddress + size, memoryLeftover);
     allocationRegion.free = false;
     allocationRegion.size = size;
 
+    // Upload data to GPU
     m_Buffer->update(data, allocationAddress, size);
     return { triggeredResize, allocationAddress };
   }

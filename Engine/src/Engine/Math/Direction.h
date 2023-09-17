@@ -1,4 +1,5 @@
 #pragma once
+#include "Engine/Utilities/BitUtilities.h"
 #include "Engine/Utilities/EnumUtilities.h"
 
 enum class Axis : int
@@ -58,3 +59,17 @@ constexpr Direction operator!(const Direction& direction)
 constexpr bool IsUpstream(Direction direction) { return static_cast<int>(direction) % 2; }
 constexpr Axis AxisOf(Direction direction) { return static_cast<Axis>(static_cast<int>(direction) / 2); }
 constexpr Direction ToDirection(Axis axis, bool isUpstream) { return static_cast<Direction>(2 * static_cast<int>(axis) + isUpstream); }
+
+class DirectionBitMask
+{
+public:
+  constexpr DirectionBitMask()
+    : m_Data(0) {}
+
+  constexpr bool operator[](Direction direction) const { return (m_Data >> static_cast<int>(direction)) & 0x1; }
+  constexpr bool empty() const { return m_Data == 0; }
+  constexpr void set(Direction direction) { m_Data |= Engine::BitUi8(static_cast<int>(direction)); }
+
+private:
+  uint8_t m_Data;
+};

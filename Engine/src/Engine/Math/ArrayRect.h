@@ -2,6 +2,14 @@
 #include "ArrayBox.h"
 #include "IBox2.h"
 
+/*
+  A 2D-style array that stores data on an integer lattice. Under the hood,
+  the data is packed tightly in a single heap-allocated block of memory.
+  Provides functions for operating on portions of data.
+
+  Elements can be accessed with a 3D index. Alternatively, one can
+  strip off portions of the array using square brackets.
+*/
 template<typename T, std::integral IntType>
 class ArrayRect : private Engine::NonCopyable
 {

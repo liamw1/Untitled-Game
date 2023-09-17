@@ -2,6 +2,7 @@
 #include "VertexArray.h"
 #include "MemoryPool.h"
 #include "Engine/Core/Concepts.h"
+#include "Engine/Utilities/Constraints.h"
 
 namespace Engine
 {
@@ -11,7 +12,7 @@ namespace Engine
     as long as the layout of the first 16 bytes is preserved.
   */
   template<Hashable Identifier, typename Derived>
-  class MultiDrawCommand
+  class MultiDrawCommand : private Engine::NonCopyable
   {
   public:
     MultiDrawCommand(const Identifier& id, int vertexCount)
@@ -53,7 +54,7 @@ namespace Engine
     as the layout of the first 20 bytes is preserved.
   */
   template<Hashable Identifier, typename Derived>
-  class MultiDrawIndexedCommand
+  class MultiDrawIndexedCommand : private Engine::NonCopyable
   {
   public:
     MultiDrawIndexedCommand(const Identifier& id, uint32_t indexCount)
@@ -141,6 +142,7 @@ namespace Engine
 
       EN_CORE_ASSERT(m_DrawCommandIndices.find(drawCommand.id()) == m_DrawCommandIndices.end(), "Draw command with ID {0} has already been allocated!", drawCommand.id());
 
+      // Add draw command data to memory pool. If a resize is triggered, vertex array needs to have layout set again.
       auto [triggeredResize, allocationAddress] = m_MemoryPool.add(drawCommand.vertexData(), vertexCount * m_Stride);
       if (triggeredResize)
         m_VertexArray->setLayout(m_VertexArray->getLayout());
@@ -170,31 +172,23 @@ namespace Engine
     }
 
     template<InvocableWithReturnType<bool, Identifier> F>
-    int mask(F condition)
+    int partition(const F& condition)
     {
-      int leftIndex = 0;
-      int rightIndex = static_cast<int>(m_DrawCommands.size() - 1);
-
-      while (leftIndex < rightIndex)
-      {
-        while (condition(m_DrawCommands[leftIndex].id()) && leftIndex < rightIndex)
-          leftIndex++;
-        while (!condition(m_DrawCommands[rightIndex].id()) && leftIndex < rightIndex)
-          rightIndex--;
-
-        if (leftIndex != rightIndex)
+      DrawCommandIterator partitionEnd = std::partition(m_DrawCommands.begin(), m_DrawCommands.end(), [&condition](const DrawCommandType& draw)
         {
-          std::swap(m_DrawCommands[leftIndex], m_DrawCommands[rightIndex]);
-          std::swap(*m_DrawCommands[leftIndex].commandIndex(), *m_DrawCommands[rightIndex].commandIndex());
-        }
-      }
-      return leftIndex;
+          return condition(draw.id());
+        });
+
+      for (size_t i = 0; i < m_DrawCommands.size(); ++i)
+        *m_DrawCommands[i].commandIndex() = i;
+
+      return static_cast<int>(partitionEnd - m_DrawCommands.begin());
     }
 
     template<InvocableWithReturnType<bool, Identifier, Identifier> F>
-    void sort(int drawCount, F comparision)
+    void sort(int drawCount, const F& comparision)
     {
-      std::sort(m_DrawCommands.begin(), m_DrawCommands.begin() + drawCount, [&](const DrawCommandType& drawA, const DrawCommandType& drawB)
+      std::sort(m_DrawCommands.begin(), m_DrawCommands.begin() + drawCount, [&comparision](const DrawCommandType& drawA, const DrawCommandType& drawB)
         {
           return comparision(drawA.id(), drawB.id());
         });
@@ -204,26 +198,28 @@ namespace Engine
     }
 
     template<InvocableWithReturnType<bool, DrawCommandType&> F>
-    void amend(int drawCount, F function)
+    void amend(int drawCount, const F& function)
     {
-      for (auto it = m_DrawCommands.begin(); it != m_DrawCommands.begin() + drawCount; ++it)
-      {
-        int oldVertexCount = it->vertexCount();
-        if (function(*it))
+      std::for_each_n(m_DrawCommands.begin(), drawCount, [this, &function](DrawCommandType& draw)
         {
-          if (it->vertexCount() > oldVertexCount)
+          uint32_t oldVertexCount = draw.vertexCount();
+          if (!function(draw))
+            return;
+
+          if (draw.vertexCount() > oldVertexCount)
           {
             EN_CORE_ERROR("Ammended draw command added additional vertices! Discarding changes...");
-            continue;
+            return;
           }
-          m_MemoryPool.amend(it->vertexData(), getDrawCommandAddress(*it));
-        }
-      }
+
+          m_MemoryPool.amend(draw.vertexData(), getDrawCommandAddress(draw));
+        });
     }
 
     const std::vector<DrawCommandType>& getDrawCommandBuffer() const { return m_DrawCommands; }
 
   private:
+    using DrawCommandIterator = std::vector<DrawCommandType>::iterator;
     using DrawCommandIndicesIterator = std::unordered_map<Identifier, std::shared_ptr<size_t>>::iterator;
 
     int m_Stride;
@@ -273,6 +269,7 @@ namespace Engine
 
       EN_CORE_ASSERT(m_DrawCommandIndices.find(drawCommand.id()) == m_DrawCommandIndices.end(), "Draw command with ID {0} has already been allocated!", drawCommand.id());
 
+      // Add draw command data to memory pools. If a vertex buffer resize is triggered, vertex array needs to have layout set again.
       auto [indexBufferResized, indexAllocationAddress] = m_IndexMemory.add(drawCommand.indexData(), indexCount * sizeof(uint32_t));
       auto [vertexBufferResized, vertexAllocationAddress] = m_VertexMemory.add(drawCommand.vertexData(), vertexCount * m_Stride);
       if (vertexBufferResized)
@@ -305,31 +302,23 @@ namespace Engine
     }
 
     template<InvocableWithReturnType<bool, Identifier> F>
-    int mask(F condition)
+    int partition(const F& condition)
     {
-      int leftIndex = 0;
-      int rightIndex = static_cast<int>(m_DrawCommands.size() - 1);
-
-      while (leftIndex < rightIndex)
-      {
-        while (condition(m_DrawCommands[leftIndex].id()) && leftIndex < rightIndex)
-          leftIndex++;
-        while (!condition(m_DrawCommands[rightIndex].id()) && leftIndex < rightIndex)
-          rightIndex--;
-
-        if (leftIndex != rightIndex)
+      DrawCommandIterator partitionEnd = std::partition(m_DrawCommands.begin(), m_DrawCommands.end(), [&condition](const DrawCommandType& draw)
         {
-          std::swap(m_DrawCommands[leftIndex], m_DrawCommands[rightIndex]);
-          std::swap(*m_DrawCommands[leftIndex].commandIndex(), *m_DrawCommands[rightIndex].commandIndex());
-        }
-      }
-      return leftIndex;
+          return condition(draw.id());
+        });
+
+      for (size_t i = 0; i < m_DrawCommands.size(); ++i)
+        *m_DrawCommands[i].commandIndex() = i;
+
+      return static_cast<int>(partitionEnd - m_DrawCommands.begin());
     }
 
     template<InvocableWithReturnType<bool, Identifier, Identifier> F>
-    void sort(int drawCount, F comparision)
+    void sort(int drawCount, const F& comparision)
     {
-      std::sort(m_DrawCommands.begin(), m_DrawCommands.begin() + drawCount, [&](const DrawCommandType& drawA, const DrawCommandType& drawB)
+      std::sort(m_DrawCommands.begin(), m_DrawCommands.begin() + drawCount, [&comparision](const DrawCommandType& drawA, const DrawCommandType& drawB)
         {
           return comparision(drawA.id(), drawB.id());
         });
@@ -339,26 +328,28 @@ namespace Engine
     }
 
     template<InvocableWithReturnType<bool, DrawCommandType&> F>
-    void amend(int drawCount, F function)
+    void amend(int drawCount, const F& function)
     {
-      for (auto it = m_DrawCommands.begin(); it != m_DrawCommands.begin() + drawCount; ++it)
-      {
-        uint32_t oldIndexCount = it->indexCount();
-        if (function(*it))
+      std::for_each_n(m_DrawCommands.begin(), drawCount, [this, &function](DrawCommandType& draw)
         {
-          if (it->indexCount() > oldIndexCount)
+          uint32_t oldIndexCount = draw.indexCount();
+          if (!function(draw))
+            return;
+
+          if (draw.indexCount() > oldIndexCount)
           {
-            EN_CORE_ERROR("Ammended draw command added additional vertices! Discarding changes...");
-            continue;
+            EN_CORE_ERROR("Ammended draw command added additional indices! Discarding changes...");
+            return;
           }
-          m_IndexMemory.amend(it->indexData(), getDrawCommandIndicesAddress(*it));
-        }
-      }
+
+          m_IndexMemory.amend(draw.indexData(), getDrawCommandIndicesAddress(draw));
+        });
     }
 
     const std::vector<DrawCommandType>& getDrawCommandBuffer() const { return m_DrawCommands; }
 
   private:
+    using DrawCommandIterator = std::vector<DrawCommandType>::iterator;
     using DrawCommandIndicesIterator = std::unordered_map<Identifier, std::shared_ptr<size_t>>::iterator;
 
     int m_Stride;

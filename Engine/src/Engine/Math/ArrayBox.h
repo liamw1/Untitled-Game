@@ -60,11 +60,13 @@ private:
 
 
 /*
-  A 3D-style array that stores its members in a single
-  heap-allocated block in memory.
+  A 3D-style array that stores data on an integer lattice. Under the hood,
+  the data is packed tightly in a single heap-allocated block of memory.
+  Provides functions for operating on portions of data.
 
-  Elements can be accessed with brackets:
-  arr[i][j][k]
+  Elements can be accessed with a 3D index. Alternatively, one can strip off
+  portions of the array using square brackets. For instance, arr[i] gives a
+  2D layer and arr[i][j] gives a 1D strip.
 */
 template<typename T, std::integral IntType>
 class ArrayBox : private Engine::NonCopyable

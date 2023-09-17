@@ -1,6 +1,19 @@
 #pragma once
 #include "Block/Block.h"
 
+/*
+  Represents a block vertex and stores data in a compressed format.
+  Compresed format is follows,
+
+  Vertex Data:
+    bits 0-17:  Relative position of vertex within chunk (3-comps, 6 bits each)
+    bits 18-19: Quad index
+    bits 20-31: Texure ID
+
+  Lighting Data:
+    bits 16-19: Sunlight intensity
+    bits 20-22: Ambient occlusion level
+*/
 class ChunkVertex
 {
 public:
@@ -11,9 +24,13 @@ public:
 
 private:
   uint32_t m_VertexData;
-  uint32_t m_Lighting;
+  uint32_t m_LightingData;
 };
 
+/*
+  Represents a block quad. Upon construction, decides where to put quad seam
+  based on the lighting values at the vertices.
+*/
 class ChunkQuad
 {
 public:
@@ -23,10 +40,14 @@ private:
   std::array<ChunkVertex, 4> m_Vertices;
 };
 
+/*
+  Represents the renderable portions of a voxel. Stores as little information as
+  possible, as these need to be sorted quickly at runtime.
+*/
 class ChunkVoxel
 {
 public:
-  ChunkVoxel(const BlockIndex& blockIndex, uint8_t enabledFaces, int firstVertex);
+  ChunkVoxel(const BlockIndex& blockIndex, DirectionBitMask enabledFaces, int firstVertex);
 
   const BlockIndex& index() const;
   bool faceEnabled(Direction direction) const;
@@ -34,11 +55,11 @@ public:
 
 private:
   BlockIndex m_Index;
-  uint8_t m_EnabledFaces;
+  DirectionBitMask m_EnabledFaces;
   int m_BaseVertex;
 };
 
-class ChunkDrawCommand : public Engine::MultiDrawIndexedCommand<GlobalIndex, ChunkDrawCommand>, private Engine::NonCopyable
+class ChunkDrawCommand : public Engine::MultiDrawIndexedCommand<GlobalIndex, ChunkDrawCommand>
 {
 public:
   ChunkDrawCommand(const GlobalIndex& chunkIndex, bool needsSorting);
@@ -55,7 +76,7 @@ public:
   void prune();
 
   void addQuad(const BlockIndex& blockIndex, Direction face, Block::TextureID texture, const std::array<int, 4>& sunlight, const std::array<int, 4>& ambientOcclusion);
-  void addVoxel(const BlockIndex& blockIndex, uint8_t enabledFaces);
+  void addVoxel(const BlockIndex& blockIndex, DirectionBitMask enabledFaces);
 
   /*
     Sorts indices so that triangles will be rendered from back to front.

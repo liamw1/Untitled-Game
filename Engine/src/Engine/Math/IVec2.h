@@ -3,6 +3,9 @@
 #include "Engine/Utilities/Helpers.h"
 #include "Engine/Utilities/BitUtilities.h"
 
+/*
+  Represents a point on a 2D integer lattice.
+*/
 template<std::integral IntType>
 struct IVec2
 {

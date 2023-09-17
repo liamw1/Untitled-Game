@@ -78,7 +78,7 @@ private:
 
   /*
     Queues chunk where the block update occured for updating. If specified block is on chunk border,
-    will also update neighboring chunks. Chunk and its cardinal neighbors are queue for an immediate update,
+    will also update neighboring chunks. Chunk and its face neighbors are queue for an immediate update,
     while edge and corner neighbors are queued for later.
   */
   void sendBlockUpdate(const GlobalIndex& chunkIndex, const BlockIndex& blockIndex);
@@ -88,12 +88,7 @@ private:
   /*
     Generates simplistic mesh in a compressed format based on chunk compostion.
     Block faces covered by opaque blocks will not be added to mesh.
-    Compresed format is follows,
-     bits 0-17:  Relative position of vertex within chunk (3-comps, 6 bits each)
-     bits 18-19: Quad index
-     bits 20-21: Ambient Occlusion level (see link below)
-     bits 22-31: Texure ID
-     Uses AO algorithm outlined in https://0fps.net/2013/07/03/ambient-occlusion-for-minecraft-like-worlds/
+    Uses AO algorithm outlined in https://0fps.net/2013/07/03/ambient-occlusion-for-minecraft-like-worlds/
   */
   void meshChunk(const std::shared_ptr<Chunk>& chunk);
 

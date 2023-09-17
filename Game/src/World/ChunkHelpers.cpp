@@ -3,15 +3,15 @@
 #include "Chunk.h"
 
 ChunkVertex::ChunkVertex()
-  : m_VertexData(0), m_Lighting(0) {}
+  : m_VertexData(0), m_LightingData(0) {}
 ChunkVertex::ChunkVertex(const BlockIndex& vertexPlacement, int quadIndex, Block::TextureID texture, int sunlight, int ambientOcclusion)
 {
   m_VertexData =  vertexPlacement.i + (vertexPlacement.j << 6) + (vertexPlacement.k << 12);
   m_VertexData |= quadIndex << 18;
   m_VertexData |= std::underlying_type_t<Block::TextureID>(texture) << 20;
 
-  m_Lighting =  sunlight << 16;
-  m_Lighting |= ambientOcclusion << 20;
+  m_LightingData =  sunlight << 16;
+  m_LightingData |= ambientOcclusion << 20;
 }
 
 const BlockIndex& ChunkVertex::GetOffset(Direction face, int quadIndex)
@@ -52,7 +52,7 @@ ChunkQuad::ChunkQuad(const BlockIndex& blockIndex, Direction face, Block::Textur
 
 
 
-ChunkVoxel::ChunkVoxel(const BlockIndex& blockIndex, uint8_t enabledFaces, int firstVertex)
+ChunkVoxel::ChunkVoxel(const BlockIndex& blockIndex, DirectionBitMask enabledFaces, int firstVertex)
   : m_Index(blockIndex),
     m_EnabledFaces(enabledFaces),
     m_BaseVertex(firstVertex) {}
@@ -64,7 +64,7 @@ const BlockIndex& ChunkVoxel::index() const
 
 bool ChunkVoxel::faceEnabled(Direction direction) const
 {
-  return (m_EnabledFaces >> static_cast<int>(direction)) & 0x1;
+  return m_EnabledFaces[direction];
 }
 
 int ChunkVoxel::baseVertex() const
@@ -121,7 +121,7 @@ void ChunkDrawCommand::addQuad(const BlockIndex& blockIndex, Direction face, Blo
   m_Quads.emplace_back(blockIndex, face, texture, sunlight, ambientOcclusion);
 }
 
-void ChunkDrawCommand::addVoxel(const BlockIndex& blockIndex, uint8_t enabledFaces)
+void ChunkDrawCommand::addVoxel(const BlockIndex& blockIndex, DirectionBitMask enabledFaces)
 {
   m_Voxels.emplace_back(blockIndex, enabledFaces, m_VoxelBaseVertex);
   m_VoxelBaseVertex = vertexCount();
