@@ -3,7 +3,7 @@
 #include "RendererAPI.h"
 #include "Platform/OpenGL/OpenGLUniform.h"
 
-namespace Engine
+namespace eng
 {
   Uniform::~Uniform() = default;
 

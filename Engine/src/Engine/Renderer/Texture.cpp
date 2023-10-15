@@ -6,7 +6,7 @@
 
 #include <stb_image.h>
 
-namespace Engine
+namespace eng
 {
   Image::Image(const std::filesystem::path& path)
     : m_Data({}, AllocationPolicy::Deferred)
@@ -21,9 +21,9 @@ namespace Engine
     EN_CORE_ASSERT(imageData, "Failed to load image at {0}.", path);
 
     // Copy data into ArrayBox
-    IBox3<int> imageBounds(0, 0, 0, height - 1, width - 1, channels - 1);
-    m_Data = ArrayBox<uint8_t, int>(imageBounds, AllocationPolicy::ForOverwrite);
-    imageBounds.forEach([this, imageData](const IVec3<int>& index)
+    math::IBox3<int> imageBounds(0, 0, 0, height - 1, width - 1, channels - 1);
+    m_Data = math::ArrayBox<uint8_t, int>(imageBounds, AllocationPolicy::ForOverwrite);
+    imageBounds.forEach([this, imageData](const math::IVec3<int>& index)
       {
         m_Data(index) = imageData[m_Data.bounds().linearIndexOf(index)];
       });
@@ -38,17 +38,17 @@ namespace Engine
   int Image::pixelCount() const { return width() * height(); }
   const uint8_t* Image::data() const { return m_Data.data(); }
 
-  Float4 Image::averageColor() const
+  math::Float4 Image::averageColor() const
   {
     EN_CORE_ASSERT(channels() <= 4, "Image has more than four channels!");
 
-    Float4 totalColor(0);
-    m_Data.bounds().forEach([this, &totalColor](const IVec3<int>& index)
+    math::Float4 totalColor(0);
+    m_Data.bounds().forEach([this, &totalColor](const math::IVec3<int>& index)
       {
         totalColor[index.k] += m_Data(index) / 255.0f;
       });
 
-    Float4 averageColor = totalColor / pixelCount();
+    math::Float4 averageColor = totalColor / pixelCount();
     if (channels() < 4)
       averageColor.a = 1.0f;
 

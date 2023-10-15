@@ -4,7 +4,7 @@
   Abstract representation of a graphics context.
   Platform-specific implementation is determined by derived class.
 */
-namespace Engine
+namespace eng
 {
   class GraphicsContext
   {

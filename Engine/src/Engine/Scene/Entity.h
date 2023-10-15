@@ -1,7 +1,7 @@
 #pragma once
 #include <entt/entt.hpp>
 
-namespace Engine
+namespace eng
 {
   class Entity
   {

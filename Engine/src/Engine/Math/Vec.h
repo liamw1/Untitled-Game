@@ -1,29 +1,32 @@
 #pragma once
-#include "Engine/Core/Units.h"
+#include "Units.h"
 #include <glm/glm.hpp>
 
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/quaternion.hpp>
 
-using Vec2 = glm::vec<2, length_t, glm::defaultp>;
-using Vec3 = glm::vec<3, length_t, glm::defaultp>;
-using Vec4 = glm::vec<4, length_t, glm::defaultp>;
-using Mat3 = glm::mat<3, 3, length_t, glm::defaultp>;
-using Mat4 = glm::mat<4, 4, length_t, glm::defaultp>;
-using Quat = glm::qua<length_t, glm::defaultp>;
+namespace eng::math
+{
+  using Vec2 = glm::vec<2, length_t, glm::defaultp>;
+  using Vec3 = glm::vec<3, length_t, glm::defaultp>;
+  using Vec4 = glm::vec<4, length_t, glm::defaultp>;
+  using Mat3 = glm::mat<3, 3, length_t, glm::defaultp>;
+  using Mat4 = glm::mat<4, 4, length_t, glm::defaultp>;
+  using Quat = glm::qua<length_t, glm::defaultp>;
 
-using Float2 = glm::vec2;
-using Float3 = glm::vec3;
-using Float4 = glm::vec4;
-using FMat3 = glm::mat3;
-using FMat4 = glm::mat4;
-using FQuat = glm::quat;
-using Double2 = glm::dvec2;
-using Double3 = glm::dvec3;
-using Double4 = glm::dvec4;
-using DMat3 = glm::dmat3;
-using DMat4 = glm::dmat4;
-using DQuat = glm::dquat;
+  using Float2 = glm::vec2;
+  using Float3 = glm::vec3;
+  using Float4 = glm::vec4;
+  using FMat3 = glm::mat3;
+  using FMat4 = glm::mat4;
+  using FQuat = glm::quat;
+  using Double2 = glm::dvec2;
+  using Double3 = glm::dvec3;
+  using Double4 = glm::dvec4;
+  using DMat3 = glm::dmat3;
+  using DMat4 = glm::dmat4;
+  using DQuat = glm::dquat;
+}
 
 // Missing operators for glm vectors
 constexpr glm::vec2 operator*(double x, glm::vec2 v) { return v *= static_cast<float>(x); }

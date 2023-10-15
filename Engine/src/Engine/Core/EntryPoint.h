@@ -5,15 +5,14 @@
 
 #ifdef EN_PLATFORM_WINDOWS
 
-extern Engine::Application* Engine::CreateApplication(ApplicationCommandLineArgs args);
+extern eng::Application* eng::createApplication(ApplicationCommandLineArgs args);
 
 int main(int argc, char** argv)
 {
-  Engine::Threads::SetAsMainThread();
-  Engine::Log::Initialize();
+  eng::threads::setAsMainThread();
 
   EN_PROFILE_BEGIN_SESSION("Startup", "EngineProfile-Startup.json");
-  Engine::Application* app = Engine::CreateApplication({ argc, argv });
+  eng::Application* app = eng::createApplication({ argc, argv });
   EN_PROFILE_END_SESSION();
 
   EN_PROFILE_BEGIN_SESSION("Runtime", "EngineProfile-Runtime.json");

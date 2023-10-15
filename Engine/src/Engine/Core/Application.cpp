@@ -3,11 +3,11 @@
 #include "Engine/Renderer/Renderer.h"
 #include "Engine/Debug/Instrumentor.h"
 
-namespace Engine
+namespace eng
 {
   const char* ApplicationCommandLineArgs::operator[](int index) const
   {
-    EN_CORE_ASSERT(Debug::BoundsCheck(index, 0, count), "Index is out of bounds!");
+    EN_CORE_ASSERT(debug::BoundsCheck(index, 0, count), "Index is out of bounds!");
     return args[index];
   }
 
@@ -25,7 +25,7 @@ namespace Engine
     s_Instance = this;
 
     m_Window = Window::Create(WindowProps(name));
-    m_Window->setEventCallback(BindMemberFunction(&Application::onEvent, this));
+    m_Window->setEventCallback(bindMemberFunction(&Application::onEvent, this));
     m_Window->setVSync(false);
 
     m_LayerStack = std::make_unique<LayerStack>();
@@ -36,8 +36,7 @@ namespace Engine
   Application::~Application()
   {
     EN_PROFILE_FUNCTION();
-
-    Renderer::Shutdown();
+    renderer::shutdown();
   }
 
   void Application::run()
@@ -67,11 +66,11 @@ namespace Engine
     }
   }
 
-  void Application::onEvent(Event& event)
+  void Application::onEvent(event::Event& event)
   {
-    EventDispatcher dispatcher(event);
-    dispatcher.dispatch<WindowCloseEvent>(&Application::onWindowClose, this);
-    dispatcher.dispatch<WindowResizeEvent>(&Application::onWindowResize, this);
+    event::EventDispatcher dispatcher(event);
+    dispatcher.dispatch<event::WindowClose>(&Application::onWindowClose, this);
+    dispatcher.dispatch<event::WindowResize>(&Application::onWindowResize, this);
 
     for (auto it = m_LayerStack->rbegin(); it != m_LayerStack->rend(); ++it)
     {
@@ -103,13 +102,13 @@ namespace Engine
   const ApplicationCommandLineArgs& Application::GetCommandLineArgs() const { return m_CommandLineArgs; }
   Application& Application::Get() { return *s_Instance; }
 
-  bool Application::onWindowClose(WindowCloseEvent& /*event*/)
+  bool Application::onWindowClose(event::WindowClose& /*event*/)
   {
     m_Running = false;
     return true;
   }
 
-  bool Application::onWindowResize(WindowResizeEvent& event)
+  bool Application::onWindowResize(event::WindowResize& event)
   {
     if (event.width() == 0 || event.height() == 0)
     {
@@ -117,7 +116,7 @@ namespace Engine
       return false;
     }
     m_Minimized = false;
-    Renderer::OnWindowResize(event.width(), event.height());
+    renderer::onWindowResize(event.width(), event.height());
 
     return false;
   }

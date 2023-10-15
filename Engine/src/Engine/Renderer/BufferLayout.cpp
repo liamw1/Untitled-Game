@@ -1,7 +1,7 @@
 #include "ENpch.h"
 #include "BufferLayout.h"
 
-namespace Engine
+namespace eng
 {
   static uint32_t shaderDataTypeSize(ShaderDataType type)
   {

@@ -7,7 +7,7 @@
 #include "Platform/OpenGL/OpenGLContext.h"
 #include "Engine/Debug/Instrumentor.h"
 
-namespace Engine
+namespace eng
 {
   static int GLFWWindowCount = 0;
 
@@ -118,7 +118,7 @@ namespace Engine
       data.width = width;
       data.height = height;
 
-      WindowResizeEvent event(width, height);
+      event::WindowResize event(width, height);
       data.eventCallback(event);
     };
     glfwSetWindowSizeCallback(m_Window, windowSizeCallback);
@@ -126,7 +126,7 @@ namespace Engine
     auto windowCloseCallback = [](GLFWwindow* window)
     {
       WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
-      WindowCloseEvent event;
+      event::WindowClose event;
       data.eventCallback(event);
     };
     glfwSetWindowCloseCallback(m_Window, windowCloseCallback);
@@ -139,19 +139,19 @@ namespace Engine
       {
         case GLFW_PRESS:
         {
-          KeyPressEvent event(static_cast<Key>(keyCode), false);
+          event::KeyPress event(static_cast<input::Key>(keyCode), false);
           data.eventCallback(event);
           break;
         }
         case GLFW_RELEASE:
         {
-          KeyReleaseEvent event(static_cast<Key>(keyCode));
+          event::KeyRelease event(static_cast<input::Key>(keyCode));
           data.eventCallback(event);
           break;
         }
         case GLFW_REPEAT:
         {
-          KeyPressEvent event(static_cast<Key>(keyCode), true);
+          event::KeyPress event(static_cast<input::Key>(keyCode), true);
           data.eventCallback(event);
           break;
         }
@@ -162,7 +162,7 @@ namespace Engine
     auto charCallback = [](GLFWwindow* window, uint32_t keycode)
     {
       WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
-      KeyTypeEvent event((Key)keycode);
+      event::KeyType event(static_cast<input::Key>(keycode));
       data.eventCallback(event);
     };
     glfwSetCharCallback(m_Window, charCallback);
@@ -175,13 +175,13 @@ namespace Engine
       {
         case GLFW_PRESS:
         {
-          MouseButtonPressEvent event(static_cast<Mouse>(button));
+          event::MouseButtonPress event(static_cast<input::Mouse>(button));
           data.eventCallback(event);
           break;
         }
         case GLFW_RELEASE:
         {
-          MouseButtonReleaseEvent event(static_cast<Mouse>(button));
+          event::MouseButtonRelease event(static_cast<input::Mouse>(button));
           data.eventCallback(event);
           break;
         }
@@ -192,7 +192,7 @@ namespace Engine
     auto mouseScrollCallback = [](GLFWwindow* window, double xOffset, double yOffset)
     {
       WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
-      MouseScrollEvent event(static_cast<float>(xOffset), static_cast<float>(yOffset));
+      event::MouseScroll event(static_cast<float>(xOffset), static_cast<float>(yOffset));
       data.eventCallback(event);
     };
     glfwSetScrollCallback(m_Window, mouseScrollCallback);
@@ -200,7 +200,7 @@ namespace Engine
     auto cursorPosCallback = [](GLFWwindow* window, double xPos, double yPos)
     {
       WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
-      MouseMoveEvent event(static_cast<float>(xPos), static_cast<float>(yPos));
+      event::MouseMove event(static_cast<float>(xPos), static_cast<float>(yPos));
       data.eventCallback(event);
     };
     glfwSetCursorPosCallback(m_Window, cursorPosCallback);

@@ -1,7 +1,7 @@
 #include "ENpch.h"
 #include "TestClasses.h"
 
-namespace Engine::Debug
+namespace eng::debug
 {
   CopyMoveTest::CopyMoveTest()
     : m_Counters(std::make_shared<Counters>())

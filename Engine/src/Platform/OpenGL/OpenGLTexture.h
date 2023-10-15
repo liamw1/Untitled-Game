@@ -1,7 +1,7 @@
 #pragma once
 #include "Engine/Renderer/Texture.h"
 
-namespace Engine
+namespace eng
 {
   class OpenGLTexture : public Texture
   {

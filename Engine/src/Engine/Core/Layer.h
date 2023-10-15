@@ -1,7 +1,8 @@
 #pragma once
 #include "Time.h"
+#include "Engine/Events/Event.h"
 
-namespace Engine
+namespace eng
 {
   class Event;
 
@@ -16,7 +17,7 @@ namespace Engine
     virtual void onDetach() {}
     virtual void onUpdate(Timestep /*timestep*/) {}
     virtual void onImGuiRender() {}
-    virtual void onEvent(Event& /*event*/) {}
+    virtual void onEvent(event::Event& /*event*/) {}
 
     const std::string& getName() const { return m_DebugName; }
 

@@ -1,6 +1,6 @@
 #pragma once
 
-namespace Noise
+namespace noise
 {
   template<int N>
   class OctaveNoiseData
@@ -35,21 +35,21 @@ namespace Noise
           value of noise is desired.  This can be changed 
           with a more efficient hash function.
   */
-  length_t FastSimplex2D(const Vec2& v);
+  length_t fastSimplex2D(const eng::math::Vec2& v);
 
-  length_t FastTerrainNoise3D(const Vec3& position);
+  length_t fastTerrainNoise3D(const eng::math::Vec3& position);
 
-  length_t SimplexNoise2D(const Vec2& pointXY);
+  length_t simplexNoise2D(const eng::math::Vec2& pointXY);
 
   template<int N>
-  OctaveNoiseData<N> OctaveNoise2D(const Vec2& pointXY, length_t lowestFrequency, float lacunarity)
+  OctaveNoiseData<N> octaveNoise2D(const eng::math::Vec2& pointXY, length_t lowestFrequency, float lacunarity)
   {
     std::array<length_t, N> octaves{};
 
     length_t frequency = lowestFrequency;
     for (int i = 0; i < N; ++i)
     {
-      octaves[i] = SimplexNoise2D(frequency * pointXY);
+      octaves[i] = simplexNoise2D(frequency * pointXY);
       frequency *= lacunarity;
     }
 

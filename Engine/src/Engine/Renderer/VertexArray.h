@@ -2,7 +2,7 @@
 #include "BufferLayout.h"
 #include "StorageBuffer.h"
 
-namespace Engine
+namespace eng
 {
   /*
     Abstract representation of an index buffer.

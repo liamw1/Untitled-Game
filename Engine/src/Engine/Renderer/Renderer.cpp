@@ -9,25 +9,25 @@
 
 #include <glm/gtc/matrix_transform.hpp>
 
-namespace Engine
+namespace eng::renderer
 {
   struct CameraUniformData
   {
-    FMat4 viewProjection;
-    Float3 cameraPosition;
+    math::FMat4 viewProjection;
+    math::Float3 cameraPosition;
   };
 
   struct WireVertex
   {
-    Float3 position;
-    Float4 color;
+    math::Float3 position;
+    math::Float4 color;
   };
 
   struct QuadVertex
   {
-    Float3 position;
-    Float4 tintColor;
-    Float2 texCoord;
+    math::Float3 position;
+    math::Float4 tintColor;
+    math::Float2 texCoord;
     int textureIndex;
     float scalingFactor;
 
@@ -47,86 +47,86 @@ namespace Engine
 
   static CameraUniformData s_CameraUniformData;
 
-  static constexpr Vec3 c_UpDirection(0, 0, 1);
+  static constexpr math::Vec3 c_UpDirection(0, 0, 1);
   
-  static constexpr Float4 c_CubeFrameVertexPositions[8] = { { -0.5f, -0.5f, -0.5f, 1.0f },
-                                                            {  0.5f, -0.5f, -0.5f, 1.0f },
-                                                            {  0.5f, -0.5f,  0.5f, 1.0f },
-                                                            { -0.5f, -0.5f,  0.5f, 1.0f },
-                                                            {  0.5f,  0.5f, -0.5f, 1.0f },
-                                                            { -0.5f,  0.5f, -0.5f, 1.0f },
-                                                            { -0.5f,  0.5f,  0.5f, 1.0f },
-                                                            {  0.5f,  0.5f,  0.5f, 1.0f } };
+  static constexpr math::Float4 c_CubeFrameVertexPositions[8] = { { -0.5f, -0.5f, -0.5f, 1.0f },
+                                                                  {  0.5f, -0.5f, -0.5f, 1.0f },
+                                                                  {  0.5f, -0.5f,  0.5f, 1.0f },
+                                                                  { -0.5f, -0.5f,  0.5f, 1.0f },
+                                                                  {  0.5f,  0.5f, -0.5f, 1.0f },
+                                                                  { -0.5f,  0.5f, -0.5f, 1.0f },
+                                                                  { -0.5f,  0.5f,  0.5f, 1.0f },
+                                                                  {  0.5f,  0.5f,  0.5f, 1.0f } };
 
   static constexpr uint32_t c_CubeFrameIndices[24] = { 0, 1, 1, 2, 2, 3, 3, 0,
                                                        4, 5, 5, 6, 6, 7, 7, 4,
                                                        1, 4, 2, 7, 0, 5, 3, 6 };
 
-  static constexpr Float4 c_CubeVertexPositions[6][4] = { { { -0.5f, -0.5f, -0.5f, 1.0f },
-                                                            { -0.5f, -0.5f,  0.5f, 1.0f },
-                                                            { -0.5f,  0.5f,  0.5f, 1.0f },
-                                                            { -0.5f,  0.5f, -0.5f, 1.0f } },
+  static constexpr math::Float4 c_CubeVertexPositions[6][4] = { { { -0.5f, -0.5f, -0.5f, 1.0f },
+                                                                { -0.5f, -0.5f,  0.5f, 1.0f },
+                                                                { -0.5f,  0.5f,  0.5f, 1.0f },
+                                                                { -0.5f,  0.5f, -0.5f, 1.0f } },
 
-                                                          { {  0.5f, -0.5f,  0.5f, 1.0f },
-                                                            {  0.5f, -0.5f, -0.5f, 1.0f },
-                                                            {  0.5f,  0.5f, -0.5f, 1.0f },
-                                                            {  0.5f,  0.5f,  0.5f, 1.0f } },
+                                                              { {  0.5f, -0.5f,  0.5f, 1.0f },
+                                                                {  0.5f, -0.5f, -0.5f, 1.0f },
+                                                                {  0.5f,  0.5f, -0.5f, 1.0f },
+                                                                {  0.5f,  0.5f,  0.5f, 1.0f } },
 
-                                                          { { -0.5f, -0.5f, -0.5f, 1.0f },
-                                                            {  0.5f, -0.5f, -0.5f, 1.0f },
-                                                            {  0.5f, -0.5f,  0.5f, 1.0f },
-                                                            { -0.5f, -0.5f,  0.5f, 1.0f } },
-                                                          
-                                                          { { -0.5f,  0.5f,  0.5f, 1.0f },
-                                                            {  0.5f,  0.5f,  0.5f, 1.0f },
-                                                            {  0.5f,  0.5f, -0.5f, 1.0f },
-                                                            { -0.5f,  0.5f, -0.5f, 1.0f } },
+                                                              { { -0.5f, -0.5f, -0.5f, 1.0f },
+                                                                {  0.5f, -0.5f, -0.5f, 1.0f },
+                                                                {  0.5f, -0.5f,  0.5f, 1.0f },
+                                                                { -0.5f, -0.5f,  0.5f, 1.0f } },
+                                                              
+                                                              { { -0.5f,  0.5f,  0.5f, 1.0f },
+                                                                {  0.5f,  0.5f,  0.5f, 1.0f },
+                                                                {  0.5f,  0.5f, -0.5f, 1.0f },
+                                                                { -0.5f,  0.5f, -0.5f, 1.0f } },
 
-                                                          { {  0.5f, -0.5f, -0.5f, 1.0f },
-                                                            { -0.5f, -0.5f, -0.5f, 1.0f },
-                                                            { -0.5f,  0.5f, -0.5f, 1.0f },
-                                                            {  0.5f,  0.5f, -0.5f, 1.0f } },
+                                                              { {  0.5f, -0.5f, -0.5f, 1.0f },
+                                                                { -0.5f, -0.5f, -0.5f, 1.0f },
+                                                                { -0.5f,  0.5f, -0.5f, 1.0f },
+                                                                {  0.5f,  0.5f, -0.5f, 1.0f } },
 
-                                                          { { -0.5f, -0.5f,  0.5f, 1.0f },
-                                                            {  0.5f, -0.5f,  0.5f, 1.0f },
-                                                            {  0.5f,  0.5f,  0.5f, 1.0f },
-                                                            { -0.5f,  0.5f,  0.5f, 1.0f } } };
+                                                              { { -0.5f, -0.5f,  0.5f, 1.0f },
+                                                                {  0.5f, -0.5f,  0.5f, 1.0f },
+                                                                {  0.5f,  0.5f,  0.5f, 1.0f },
+                                                                { -0.5f,  0.5f,  0.5f, 1.0f } } };
 
-  static constexpr Float2 c_CubeTexCoords[6][4] = { { { 0.0f, 0.0f },
-                                                      { 1.0f, 0.0f },
-                                                      { 1.0f, 1.0f },
-                                                      { 0.0f, 1.0f } },
+  static constexpr math::Float2 c_CubeTexCoords[6][4] = { { { 0.0f, 0.0f },
+                                                          { 1.0f, 0.0f },
+                                                          { 1.0f, 1.0f },
+                                                          { 0.0f, 1.0f } },
 
-                                                    { { 0.0f, 0.0f },
-                                                      { 1.0f, 0.0f },
-                                                      { 1.0f, 1.0f },
-                                                      { 0.0f, 1.0f } },
+                                                        { { 0.0f, 0.0f },
+                                                          { 1.0f, 0.0f },
+                                                          { 1.0f, 1.0f },
+                                                          { 0.0f, 1.0f } },
 
-                                                    { { 0.0f, 0.0f },
-                                                      { 1.0f, 0.0f },
-                                                      { 1.0f, 1.0f },
-                                                      { 0.0f, 1.0f } },
+                                                        { { 0.0f, 0.0f },
+                                                          { 1.0f, 0.0f },
+                                                          { 1.0f, 1.0f },
+                                                          { 0.0f, 1.0f } },
 
-                                                    { { 0.0f, 0.0f },
-                                                      { 1.0f, 0.0f },
-                                                      { 1.0f, 1.0f },
-                                                      { 0.0f, 1.0f } },
+                                                        { { 0.0f, 0.0f },
+                                                          { 1.0f, 0.0f },
+                                                          { 1.0f, 1.0f },
+                                                          { 0.0f, 1.0f } },
 
-                                                    { { 0.0f, 0.0f },
-                                                      { 1.0f, 0.0f },
-                                                      { 1.0f, 1.0f },
-                                                      { 0.0f, 1.0f } },
+                                                        { { 0.0f, 0.0f },
+                                                          { 1.0f, 0.0f },
+                                                          { 1.0f, 1.0f },
+                                                          { 0.0f, 1.0f } },
 
-                                                    { { 0.0f, 0.0f },
-                                                      { 1.0f, 0.0f },
-                                                      { 1.0f, 1.0f },
-                                                      { 0.0f, 1.0f } } };
+                                                        { { 0.0f, 0.0f },
+                                                          { 1.0f, 0.0f },
+                                                          { 1.0f, 1.0f },
+                                                          { 0.0f, 1.0f } } };
 
-  void Renderer::Initialize()
+  void initialize()
   {
     EN_PROFILE_FUNCTION();
 
-    Engine::RenderCommand::SetBlendFunc();
+    command::setBlendFunc();
 
     s_CameraUniform = Uniform::Create(0, sizeof(CameraUniformData));
     
@@ -167,36 +167,36 @@ namespace Engine
     s_WireFrameShader = Shader::Create("../Engine/assets/shaders/WireFrame.glsl");
   }
 
-  void Renderer::Shutdown()
+  void shutdown()
   {
   }
 
-  void Renderer::BeginScene(Entity viewer)
+  void beginScene(Entity viewer)
   {
-    RenderCommand::SetBlending(true);
-    RenderCommand::SetDepthTesting(true);
+    command::setBlending(true);
+    command::setDepthTesting(true);
 
-    s_CameraUniformData.viewProjection = Scene::CalculateViewProjection(viewer);
-    s_CameraUniformData.cameraPosition = viewer.get<Component::Transform>().position;
+    s_CameraUniformData.viewProjection = scene::CalculateViewProjection(viewer);
+    s_CameraUniformData.cameraPosition = viewer.get<component::Transform>().position;
     s_CameraUniform->set(&s_CameraUniformData, sizeof(CameraUniformData));
   }
 
-  void Renderer::EndScene()
+  void endScene()
   {
   }
 
-  void Renderer::DrawCube(const Vec3& position, const Vec3& size, const Texture* texture)
+  void drawCube(const math::Vec3& position, const math::Vec3& size, const Texture* texture)
   {
     texture == nullptr ? s_WhiteTexture->bind() : texture->bind();
 
     std::array<QuadVertex, 24> vertices{};
-    Mat4 transform = glm::translate(Mat4(1.0), position) * glm::scale(Mat4(1.0), size);
+    math::Mat4 transform = glm::translate(math::Mat4(1.0), position) * glm::scale(math::Mat4(1.0), size);
     for (int faceID = 0; faceID < 6; ++faceID)
       for (int i = 0; i < 4; ++i)
       {
         int vertexIndex = 4 * faceID + i;
         vertices[vertexIndex].position = transform * c_CubeVertexPositions[faceID][i];
-        vertices[vertexIndex].tintColor = Float4(1.0f);
+        vertices[vertexIndex].tintColor = math::Float4(1.0f);
         vertices[vertexIndex].texCoord = c_CubeTexCoords[faceID][i];
         vertices[vertexIndex].textureIndex = 0;
         vertices[vertexIndex].scalingFactor = 1.0f;
@@ -205,13 +205,13 @@ namespace Engine
     s_CubeVertexArray->setVertexBuffer(vertices.data(), vertices.size() * sizeof(QuadVertex));
 
     s_TextureShader->bind();
-    RenderCommand::DrawIndexed(s_CubeVertexArray.get());
+    command::drawIndexed(s_CubeVertexArray.get());
   }
 
-  void Renderer::DrawCubeFrame(const Vec3& position, const Vec3& size, const Float4& color)
+  void drawCubeFrame(const math::Vec3& position, const math::Vec3& size, const math::Float4& color)
   {
     std::array<WireVertex, 8> vertices{};
-    Mat4 transform = glm::translate(Mat4(1.0), position) * glm::scale(Mat4(1.0), size);
+    math::Mat4 transform = glm::translate(math::Mat4(1.0), position) * glm::scale(math::Mat4(1.0), size);
     for (int i = 0; i < 8; ++i)
     {
       vertices[i].position = transform * c_CubeFrameVertexPositions[i];
@@ -220,11 +220,11 @@ namespace Engine
     s_WireFrameVertexArray->setVertexBuffer(vertices.data(), vertices.size() * sizeof(WireVertex));
 
     s_WireFrameShader->bind();
-    RenderCommand::DrawIndexedLines(s_WireFrameVertexArray.get());
+    command::drawIndexedLines(s_WireFrameVertexArray.get());
   }
 
-  void Renderer::OnWindowResize(uint32_t width, uint32_t height)
+  void onWindowResize(uint32_t width, uint32_t height)
   {
-    RenderCommand::SetViewport(0, 0, width, height);
+    command::setViewport(0, 0, width, height);
   }
 }

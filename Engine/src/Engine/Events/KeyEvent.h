@@ -1,13 +1,13 @@
 #pragma once
 #include "Event.h"
-#include "Engine/Core/KeyCodes.h"
+#include "Engine/Core/Input/KeyCodes.h"
 
-namespace Engine
+namespace eng::event
 {
-  class KeyPressEvent : public Event
+  class KeyPress : public Event
   {
   public:
-    KeyPressEvent(Key key, bool isRepeat = false);
+    KeyPress(input::Key key, bool isRepeat = false);
 
     EventType type() const override;
     static EventType Type();
@@ -15,19 +15,19 @@ namespace Engine
     const char* name() const override;
     std::string toString() const override;
 
-    Key keyCode() const;
+    input::Key keyCode() const;
     bool isRepeat() const;
 
 
   private:
-    Key m_Key;
+    input::Key m_Key;
     bool m_IsRepeat;
   };
 
-  class KeyReleaseEvent : public Event
+  class KeyRelease : public Event
   {
   public:
-    KeyReleaseEvent(Key key);
+    KeyRelease(input::Key key);
 
     EventType type() const override;
     static EventType Type();
@@ -35,16 +35,16 @@ namespace Engine
     const char* name() const override;
     std::string toString() const override;
 
-    Key keyCode() const;
+    input::Key keyCode() const;
 
   private:
-    Key m_Key;
+    input::Key m_Key;
   };
 
-  class KeyTypeEvent : public Event
+  class KeyType : public Event
   {
   public:
-    KeyTypeEvent(Key key);
+    KeyType(input::Key key);
 
     EventType type() const override;
     static EventType Type();
@@ -52,9 +52,9 @@ namespace Engine
     const char* name() const override;
     std::string toString() const override;
 
-    Key keyCode() const;
+    input::Key keyCode() const;
 
   private:
-    Key m_Key;
+    input::Key m_Key;
   };
 }

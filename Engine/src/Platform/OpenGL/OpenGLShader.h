@@ -1,7 +1,7 @@
 #pragma once
 #include "Engine/Renderer/Shader.h"
 
-namespace Engine
+namespace eng
 {
   /*
     NOTE: Currently, shader system caches shader compilation but does not

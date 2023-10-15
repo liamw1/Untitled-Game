@@ -4,7 +4,7 @@
 #include "Engine/Core/Concepts.h"
 #include "Engine/Utilities/Constraints.h"
 
-namespace Engine
+namespace eng
 {
   /*
     A CRTP class that represents a single multi-draw command.
@@ -12,7 +12,7 @@ namespace Engine
     as long as the layout of the first 16 bytes is preserved.
   */
   template<Hashable Identifier, typename Derived>
-  class MultiDrawCommand : private Engine::NonCopyable
+  class MultiDrawCommand : private NonCopyable
   {
   public:
     MultiDrawCommand(const Identifier& id, int vertexCount)
@@ -54,7 +54,7 @@ namespace Engine
     as the layout of the first 20 bytes is preserved.
   */
   template<Hashable Identifier, typename Derived>
-  class MultiDrawIndexedCommand : private Engine::NonCopyable
+  class MultiDrawIndexedCommand : private NonCopyable
   {
   public:
     MultiDrawIndexedCommand(const Identifier& id, uint32_t indexCount)

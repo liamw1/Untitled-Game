@@ -7,7 +7,7 @@
 // Entry point
 int main(int argc, char** argv);
 
-namespace Engine
+namespace eng
 {
   struct ApplicationCommandLineArgs
   {
@@ -24,7 +24,7 @@ namespace Engine
     virtual ~Application();
 
     // Handler for all player input
-    void onEvent(Event& event);
+    void onEvent(event::Event& event);
 
     void pushLayer(Layer* layer);
     void pushOverlay(Layer* layer);
@@ -48,12 +48,12 @@ namespace Engine
 
     void run();
 
-    bool onWindowClose(WindowCloseEvent& event);
-    bool onWindowResize(WindowResizeEvent& event);
+    bool onWindowClose(event::WindowClose& event);
+    bool onWindowResize(event::WindowResize& event);
 
     friend int ::main(int argc, char** argv);
   };
 
   // To be defined in CLIENT
-  Application* CreateApplication(ApplicationCommandLineArgs args);
+  Application* createApplication(ApplicationCommandLineArgs args);
 }

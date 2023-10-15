@@ -2,7 +2,7 @@
 #include "LayerStack.h"
 #include "Engine/Debug/Instrumentor.h"
 
-namespace Engine
+namespace eng
 {
   LayerStack::LayerStack()
     : m_Layers(), m_LayerInsertIndex(0) {}

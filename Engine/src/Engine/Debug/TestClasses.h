@@ -1,6 +1,6 @@
 #pragma once
 
-namespace Engine::Debug
+namespace eng::debug
 {
   class CopyMoveTest
   {

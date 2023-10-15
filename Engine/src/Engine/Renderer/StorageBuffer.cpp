@@ -3,7 +3,7 @@
 #include "RendererAPI.h"
 #include "Platform/OpenGL/OpenGLStorageBuffer.h"
 
-namespace Engine
+namespace eng
 {
   StorageBuffer::~StorageBuffer() = default;
 

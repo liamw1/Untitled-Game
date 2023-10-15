@@ -1,7 +1,7 @@
 #pragma once
 #include <Engine.h>
 
-namespace Block
+namespace block
 {
   enum class ID : uint8_t
   {
@@ -22,7 +22,7 @@ namespace Block
     Null,
     Begin = 0, End = Null
   };
-  using IDs = Engine::EnumIterator<ID>;
+  using IDs = eng::EnumIterator<ID>;
 
   enum class TextureID : uint32_t
   {
@@ -46,5 +46,5 @@ namespace Block
 
     Begin = 0, End = ErrorTexture
   };
-  using Textures = Engine::EnumIterator<TextureID>;
+  using Textures = eng::EnumIterator<TextureID>;
 }

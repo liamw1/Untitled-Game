@@ -1,7 +1,7 @@
 #pragma once
 #include "Layer.h"
 
-namespace Engine
+namespace eng
 {
   class LayerStack
   {

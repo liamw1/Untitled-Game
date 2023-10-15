@@ -10,32 +10,32 @@
   many polygons as chunks, while at high LOD levels individual polygons can
   span multiple chunks.
 */
-namespace LOD
+namespace lod
 {
   struct Vertex
   {
-    Float3 position;
-    Float3 isoNormal;
+    eng::math::Float3 position;
+    eng::math::Float3 isoNormal;
     std::array<int, 2> textureIndices;
-    Float2 textureWeights;
+    eng::math::Float2 textureWeights;
     int quadIndex;
 
-    Vertex(const Float3& position, const Float3& isoNormal, const std::array<int, 2>& textureIndices, const Float2& textureWeights, int quadIndex);
+    Vertex(const eng::math::Float3& position, const eng::math::Float3& isoNormal, const std::array<int, 2>& textureIndices, const eng::math::Float2& textureWeights, int quadIndex);
   };
 
   struct UniformData
   {
-    Float3 anchor;
+    eng::math::Float3 anchor;
     float textureScaling;
-    const float nearPlaneDistance = 10 * Block::LengthF();
-    const float farPlaneDistance = 1e10f * Block::LengthF();
+    const float nearPlaneDistance = 10 * block::lengthF();
+    const float farPlaneDistance = 1e10f * block::lengthF();
   };
 
   struct MeshData
   {
     std::vector<Vertex> vertices;
     std::vector<uint32_t> indices;
-    std::unique_ptr<Engine::VertexArray> vertexArray;
+    std::unique_ptr<eng::VertexArray> vertexArray;
 
     MeshData();
 
@@ -46,10 +46,10 @@ namespace LOD
   private:
     static constexpr int c_TextureSlot = 0;
     static constexpr int c_UniformBinding = 3;
-    static inline std::unique_ptr<Engine::Shader> s_Shader = nullptr;
-    static inline std::unique_ptr<Engine::Uniform> s_Uniform = nullptr;
-    static inline std::shared_ptr<Engine::TextureArray> s_TextureArray = nullptr;
-    static inline const Engine::BufferLayout s_VertexBufferLayout = { { ShaderDataType::Float3, "a_Position"        },
+    static inline std::unique_ptr<eng::Shader> s_Shader = nullptr;
+    static inline std::unique_ptr<eng::Uniform> s_Uniform = nullptr;
+    static inline std::shared_ptr<eng::TextureArray> s_TextureArray = nullptr;
+    static inline const eng::BufferLayout s_VertexBufferLayout = { { ShaderDataType::Float3, "a_Position"        },
                                                                       { ShaderDataType::Float3, "a_IsoNormal"       },
                                                                       { ShaderDataType::Int2,   "a_TextureIndices"  },
                                                                       { ShaderDataType::Float2, "a_TextureWeighs"   },
@@ -108,12 +108,12 @@ namespace LOD
         If the anchor point is denoted by A, then for any point
         X within the LOD, X_i >= A_i.
       */
-      Vec3 anchorPosition() const;
+      eng::math::Vec3 anchorPosition() const;
 
       /*
         \returns The LOD's geometric center relative to origin chunk.
       */
-      Vec3 center() const;
+      eng::math::Vec3 center() const;
 
       /*
         \returns The LOD's axis-aligned bounding box (AABB), 
@@ -153,7 +153,7 @@ namespace LOD
 
   private:
     static constexpr int c_MaxNodeDepth = 12;
-    static constexpr uint64_t c_RootNodeSize = Engine::Pow2(c_MaxNodeDepth);
+    static constexpr uint64_t c_RootNodeSize = eng::pow2(c_MaxNodeDepth);
     static constexpr GlobalIndex c_RootNodeAnchor = -static_cast<globalIndex_t>(c_RootNodeSize / 2) * GlobalIndex(1, 1, 1);
 
     // Root node of the tree
@@ -166,14 +166,14 @@ namespace LOD
     Node* findLeafPriv(Node* branch, const GlobalIndex& index);
   };
 
-  void Draw(const Octree::Node* leaf);
+  void draw(const Octree::Node* leaf);
 
   /*
     Generates primary and transition meshes for the given node
     using terrain noise.  LOD needs to be updated before these
     meshes are uploaded to the GPU.
   */
-  void GenerateMesh(Octree::Node* node);
+  void generateMesh(Octree::Node* node);
 
   /*
     Adjusts meshes based on surrounding LODs and uploads
@@ -181,7 +181,7 @@ namespace LOD
 
     NOTE: Needs to be made faster.
   */
-  void UpdateMesh(Octree& tree, Octree::Node* node);
+  void updateMesh(Octree& tree, Octree::Node* node);
 
-  void MessageNeighbors(Octree& tree, Octree::Node* node);
+  void messageNeighbors(Octree& tree, Octree::Node* node);
 }

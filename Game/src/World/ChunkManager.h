@@ -30,43 +30,43 @@ public:
 
   std::shared_ptr<const Chunk> getChunk(const LocalIndex& chunkIndex) const;
 
-  void placeBlock(GlobalIndex chunkIndex, BlockIndex blockIndex, Direction face, Block::Type blockType);
+  void placeBlock(GlobalIndex chunkIndex, BlockIndex blockIndex, eng::math::Direction face, block::Type blockType);
   void removeBlock(const GlobalIndex& chunkIndex, const BlockIndex& blockIndex);
 
   // Debug
-  void loadChunk(const GlobalIndex& chunkIndex, Block::ID blockType);
+  void loadChunk(const GlobalIndex& chunkIndex, block::ID blockType);
 
 private:
   struct LightUniforms
   {
-    const float maxSunlight = static_cast<float>(Block::Light::MaxValue());
+    const float maxSunlight = static_cast<float>(block::Light::MaxValue());
     float sunIntensity = 1.0f;
   };
 
   // Rendering
-  static inline std::unique_ptr<Engine::Shader> s_Shader;
-  static inline std::unique_ptr<Engine::Uniform> s_LightUniform;
-  static inline std::unique_ptr<Engine::StorageBuffer> s_SSBO;
-  static inline std::shared_ptr<Engine::TextureArray> s_TextureArray;
-  static inline const Engine::BufferLayout s_VertexBufferLayout = { { ShaderDataType::Uint32, "a_VertexData" },
+  static inline std::unique_ptr<eng::Shader> s_Shader;
+  static inline std::unique_ptr<eng::Uniform> s_LightUniform;
+  static inline std::unique_ptr<eng::StorageBuffer> s_SSBO;
+  static inline std::shared_ptr<eng::TextureArray> s_TextureArray;
+  static inline const eng::BufferLayout s_VertexBufferLayout = { { ShaderDataType::Uint32, "a_VertexData" },
                                                                     { ShaderDataType::Uint32, "a_Lighting"   } };
   static constexpr int c_TextureSlot = 0;
   static constexpr int c_StorageBufferBinding = 0;
-  static constexpr uint32_t c_StorageBufferSize = static_cast<uint32_t>(Engine::Pow2(20));
+  static constexpr uint32_t c_StorageBufferSize = static_cast<uint32_t>(eng::pow2(20));
 
-  Engine::Threads::UnorderedSet<ChunkDrawCommand> m_OpaqueCommandQueue;
-  Engine::Threads::UnorderedSet<ChunkDrawCommand> m_TransparentCommandQueue;
-  std::unique_ptr<Engine::MultiDrawIndexedArray<ChunkDrawCommand>> m_OpaqueMultiDrawArray;
-  std::unique_ptr<Engine::MultiDrawIndexedArray<ChunkDrawCommand>> m_TransparentMultiDrawArray;
+  eng::threads::UnorderedSet<ChunkDrawCommand> m_OpaqueCommandQueue;
+  eng::threads::UnorderedSet<ChunkDrawCommand> m_TransparentCommandQueue;
+  std::unique_ptr<eng::MultiDrawIndexedArray<ChunkDrawCommand>> m_OpaqueMultiDrawArray;
+  std::unique_ptr<eng::MultiDrawIndexedArray<ChunkDrawCommand>> m_TransparentMultiDrawArray;
 
   // Multi-threading
   ChunkContainer m_ChunkContainer;
-  std::shared_ptr<Engine::Threads::ThreadPool> m_ThreadPool;
-  Engine::Threads::WorkSet<GlobalIndex, std::shared_ptr<Chunk>> m_LoadWork;
-  Engine::Threads::WorkSet<GlobalIndex, void> m_CleanWork;
-  Engine::Threads::WorkSet<GlobalIndex, void> m_LightingWork;
-  Engine::Threads::WorkSet<GlobalIndex, void> m_LazyMeshingWork;
-  Engine::Threads::WorkSet<GlobalIndex, void> m_ForceMeshingWork;
+  std::shared_ptr<eng::threads::ThreadPool> m_ThreadPool;
+  eng::threads::WorkSet<GlobalIndex, std::shared_ptr<Chunk>> m_LoadWork;
+  eng::threads::WorkSet<GlobalIndex, void> m_CleanWork;
+  eng::threads::WorkSet<GlobalIndex, void> m_LightingWork;
+  eng::threads::WorkSet<GlobalIndex, void> m_LazyMeshingWork;
+  eng::threads::WorkSet<GlobalIndex, void> m_ForceMeshingWork;
 
   void addToLightingUpdateQueue(const GlobalIndex& chunkIndex);
   void addToLazyMeshUpdateQueue(const GlobalIndex& chunkIndex);
@@ -83,7 +83,7 @@ private:
   */
   void sendBlockUpdate(const GlobalIndex& chunkIndex, const BlockIndex& blockIndex);
 
-  void uploadMeshes(Engine::Threads::UnorderedSet<ChunkDrawCommand>& commandQueue, std::unique_ptr<Engine::MultiDrawIndexedArray<ChunkDrawCommand>>& multiDrawArray);
+  void uploadMeshes(eng::threads::UnorderedSet<ChunkDrawCommand>& commandQueue, std::unique_ptr<eng::MultiDrawIndexedArray<ChunkDrawCommand>>& multiDrawArray);
 
   /*
     Generates simplistic mesh in a compressed format based on chunk compostion.

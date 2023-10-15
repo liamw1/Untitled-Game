@@ -2,7 +2,7 @@
 #include "Threads.h"
 #include "Engine/Utilities/MoveOnlyFunction.h"
 
-namespace Engine::Threads
+namespace eng::threads
 {
   class ThreadPool
   {

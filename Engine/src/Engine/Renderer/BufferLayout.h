@@ -25,7 +25,7 @@ enum class ShaderDataType : int
   MatTypeBegin = Mat3,    MatTypeEnd = Mat4
 };
 
-namespace Engine
+namespace eng
 {
   struct BufferElement
   {

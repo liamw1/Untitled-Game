@@ -2,10 +2,10 @@
 #include "Camera.h"
 #include <glm/gtc/matrix_transform.hpp>
 
-namespace Engine
+namespace eng
 {
   Camera::Camera()
-    : m_Projection(Mat4(1)),
+    : m_Projection(math::Mat4(1)),
       m_ProjectionType(ProjectionType::Perspective),
       m_AspectRatio(1280.0f / 720),
       m_NearClip(-1.0f),
@@ -13,7 +13,7 @@ namespace Engine
       m_FOV(80_deg),
       m_OrthographicSize(1.0f) {}
 
-  const Mat4& Camera::projectionMatrix() const { return m_Projection; }
+  const math::Mat4& Camera::projectionMatrix() const { return m_Projection; }
   Camera::ProjectionType Camera::projectionType() const { return m_ProjectionType; }
 
   float Camera::nearClip() const { return m_NearClip; }
@@ -26,13 +26,13 @@ namespace Engine
     recalculatePerspectiveProjection();
   }
 
-  Angle Camera::fov() const
+  math::Angle Camera::fov() const
   {
     EN_ASSERT(m_ProjectionType == ProjectionType::Perspective, "An orthographic camera does not have a FOV!");
     return m_FOV;
   }
 
-  void Camera::setFov(Angle fov)
+  void Camera::setFov(math::Angle fov)
   {
     EN_ASSERT(m_ProjectionType == ProjectionType::Perspective, "An orthographic camera does not have a FOV!");
     m_FOV = fov;
@@ -56,7 +56,7 @@ namespace Engine
     recalculateOrthographicProjection();
   }
 
-  void Camera::setPerspectiveView(float aspectRatio, Angle fov, float nearClip, float farClip)
+  void Camera::setPerspectiveView(float aspectRatio, math::Angle fov, float nearClip, float farClip)
   {
     m_AspectRatio = aspectRatio;
     m_FOV = fov;

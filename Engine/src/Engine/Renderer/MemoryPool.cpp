@@ -1,7 +1,7 @@
 #include "ENpch.h"
 #include "MemoryPool.h"
 
-namespace Engine
+namespace eng
 {
   MemoryPool::MemoryPool(StorageBuffer::Type bufferType, int initialCapacity)
     : m_Capacity(initialCapacity)

@@ -1,7 +1,7 @@
 #pragma once
 #include "Engine/Renderer/RendererAPI.h"
 
-namespace Engine
+namespace eng
 {
   class OpenGLRendererAPI : public RendererAPI
   {
@@ -10,7 +10,8 @@ namespace Engine
 
     void setViewport(uint32_t x, uint32_t y, uint32_t width, uint32_t height) override;
 
-    void clear(const Float4& color = { 0.0f, 0.0f, 0.0f, 1.0f }) override;
+    void clear(const math::Float4& color = { 0.0f, 0.0f, 0.0f, 1.0f }) override;
+    void clearDepthBuffer() override;
 
     void setBlendFunc() override;
     void setBlending(bool enableBlending) override;
@@ -27,8 +28,6 @@ namespace Engine
 
     void multiDrawVertices(const void* drawCommands, int drawCount, int stride) override;
     void multiDrawIndexed(const void* drawCommands, int drawCount, int stride) override;
-
-    void clearDepthBuffer() override;
 
   private:
     bool m_BlendingEnabled;

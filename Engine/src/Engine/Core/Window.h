@@ -5,7 +5,7 @@
   Abstract representation of a window.
   Platform-specific implementation is determined by derived class.
 */
-namespace Engine
+namespace eng
 {
   struct WindowProps
   {
@@ -21,7 +21,7 @@ namespace Engine
   class Window
   {
   public:
-    using EventCallbackFn = std::function<void(Event&)>;
+    using EventCallbackFn = std::function<void(event::Event&)>;
 
     virtual ~Window() {}
 

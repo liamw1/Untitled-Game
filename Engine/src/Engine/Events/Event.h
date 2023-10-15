@@ -2,7 +2,7 @@
 #include "Engine/Utilities/BitUtilities.h"
 #include "Engine/Utilities/EnumUtilities.h"
 
-namespace Engine
+namespace eng::event
 {
   /*
     NOTE:
@@ -24,11 +24,11 @@ namespace Engine
   enum class EventCategory : uint8_t
   {
     None,
-    Application  = BitUi8(0),
-    Input        = BitUi8(1),
-    Keyboard     = BitUi8(2),
-    Mouse        = BitUi8(3),
-    MouseButton  = BitUi8(4)
+    Application  = u8Bit(0),
+    Input        = u8Bit(1),
+    Keyboard     = u8Bit(2),
+    Mouse        = u8Bit(3),
+    MouseButton  = u8Bit(4)
   };
   EN_ENABLE_BITMASK_OPERATORS(EventCategory);
 

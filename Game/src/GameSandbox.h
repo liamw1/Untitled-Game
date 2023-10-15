@@ -1,7 +1,7 @@
 #pragma once
 #include "World/World.h"
 
-class GameSandbox : public Engine::Layer
+class GameSandbox : public eng::Layer
 {
 public:
   GameSandbox();
@@ -10,9 +10,9 @@ public:
   void onAttach() override;
   void onDetach() override;
 
-  void onUpdate(Engine::Timestep timestep) override;
+  void onUpdate(eng::Timestep timestep) override;
   void onImGuiRender() override;
-  void onEvent(Engine::Event& event) override;
+  void onEvent(eng::event::Event& event) override;
 
 private:
   World m_World;
@@ -21,5 +21,5 @@ private:
   bool m_PrintMinFrameRate;
   bool m_PrintPlayerPosition;
 
-  bool onKeyPressEvent(Engine::KeyPressEvent& event);
+  bool onKeyPress(eng::event::KeyPress& event);
 };

@@ -5,11 +5,11 @@
 #include "Util/Util.h"
 #include "Player/Player.h"
 
-Terrain::CompoundSurfaceData::CompoundSurfaceData() = default;
-Terrain::CompoundSurfaceData::CompoundSurfaceData(length_t surfaceElevation, Block::ID blockType)
+terrain::CompoundSurfaceData::CompoundSurfaceData() = default;
+terrain::CompoundSurfaceData::CompoundSurfaceData(length_t surfaceElevation, block::ID blockType)
   : m_Elevation(surfaceElevation), m_Components(blockType) {}
 
-Terrain::CompoundSurfaceData Terrain::CompoundSurfaceData::operator+(const CompoundSurfaceData& other) const
+terrain::CompoundSurfaceData terrain::CompoundSurfaceData::operator+(const CompoundSurfaceData& other) const
 {
   CompoundSurfaceData sum = *this;
   sum.m_Elevation += other.m_Elevation;
@@ -18,7 +18,7 @@ Terrain::CompoundSurfaceData Terrain::CompoundSurfaceData::operator+(const Compo
   return sum;
 }
 
-Terrain::CompoundSurfaceData Terrain::CompoundSurfaceData::operator*(float x) const
+terrain::CompoundSurfaceData terrain::CompoundSurfaceData::operator*(float x) const
 {
   CompoundSurfaceData result = *this;
   result.m_Elevation *= x;
@@ -27,34 +27,34 @@ Terrain::CompoundSurfaceData Terrain::CompoundSurfaceData::operator*(float x) co
   return result;
 }
 
-length_t Terrain::CompoundSurfaceData::getElevation() const
+length_t terrain::CompoundSurfaceData::getElevation() const
 {
   return m_Elevation;
 }
 
-Block::Type Terrain::CompoundSurfaceData::getPrimaryBlockType() const
+block::Type terrain::CompoundSurfaceData::getPrimaryBlockType() const
 {
   return m_Components.getPrimary();
 }
 
-std::array<int, 2> Terrain::CompoundSurfaceData::getTextureIndices() const
+std::array<int, 2> terrain::CompoundSurfaceData::getTextureIndices() const
 {
   std::array<int, 2> textureIndices{};
 
-  textureIndices[0] = static_cast<int>(m_Components[0].type.texture(Direction::Top));
-  textureIndices[1] = static_cast<int>(m_Components[1].type.texture(Direction::Top));
+  textureIndices[0] = static_cast<int>(m_Components[0].type.texture(eng::math::Direction::Top));
+  textureIndices[1] = static_cast<int>(m_Components[1].type.texture(eng::math::Direction::Top));
 
   return textureIndices;
 }
 
-Float2 Terrain::CompoundSurfaceData::getTextureWeights() const
+eng::math::Float2 terrain::CompoundSurfaceData::getTextureWeights() const
 {
   return { m_Components[0].weight, m_Components[1].weight };
 }
 
 
 
-static constexpr length_t c_LargestNoiseScale = 1024 * Block::Length();
+static constexpr length_t c_LargestNoiseScale = 1024 * block::length();
 static constexpr float c_NoiseLacunarity = 2.0f;
 
 static constexpr int c_MaxCompoundBiomes = 4;
@@ -62,18 +62,18 @@ static constexpr int c_BiomeRegionSize = 8;
 static constexpr int c_RegionRadius = 1;
 static constexpr int c_RegionWidth = 2 * c_RegionRadius + 1;
 
-using NoiseSamples = BlockArrayRect<Noise::OctaveNoiseData<Biome::LocalElevationOctaves()>>;
+using NoiseSamples = BlockArrayRect<noise::OctaveNoiseData<Biome::LocalElevationOctaves()>>;
 using CompoundBiome = CompoundType<Biome::Type, c_MaxCompoundBiomes>;
 using BiomeData = BlockArrayRect<CompoundBiome>;
 
 struct SurfaceData
 {
-  NoiseSamples noiseSamples = BlockArrayRect<Noise::OctaveNoiseData<Biome::LocalElevationOctaves()>>(Chunk::Bounds2D(), AllocationPolicy::ForOverwrite);
-  BiomeData biomeData = BlockArrayRect<CompoundBiome>(Chunk::Bounds2D(), AllocationPolicy::ForOverwrite);
+  NoiseSamples noiseSamples = BlockArrayRect<noise::OctaveNoiseData<Biome::LocalElevationOctaves()>>(Chunk::Bounds2D(), eng::AllocationPolicy::ForOverwrite);
+  BiomeData biomeData = BlockArrayRect<CompoundBiome>(Chunk::Bounds2D(), eng::AllocationPolicy::ForOverwrite);
 };
 
 static constexpr int c_CacheSize = (2 * c_UnloadDistance + 5) * (2 * c_UnloadDistance + 5);
-static Engine::Threads::LRUCache<GlobalIndex2D, SurfaceData> s_SurfaceDataCache(c_CacheSize);
+static eng::threads::LRUCache<GlobalIndex2D, SurfaceData> s_SurfaceDataCache(c_CacheSize);
 static std::mutex s_Mutex;
 
 // From https://stackoverflow.com/questions/664014/what-integer-hash-function-are-good-that-accepts-an-integer-hash-key
@@ -96,33 +96,33 @@ static Biome::Type randomBiome(uint32_t n)
   return static_cast<Biome::Type>(hash(n) % Biome::Count());
 }
 
-static std::pair<Biome::Type, Float2> getRegionVoronoiPoint(const GlobalIndex2D& regionIndex)
+static std::pair<Biome::Type, eng::math::Float2> getRegionVoronoiPoint(const GlobalIndex2D& regionIndex)
 {
   uint32_t key = std::hash<GlobalIndex2D>{}(regionIndex);
   float r = 0.5f * random(key);
   float theta = 2 * std::numbers::pi_v<float> * random(hash(key));
 
   Biome::Type biomeType = randomBiome(key);
-  Float2 relativeLocation(r * std::cos(theta), r * std::sin(theta));
+  eng::math::Float2 relativeLocation(r * std::cos(theta), r * std::sin(theta));
   return { biomeType, relativeLocation };
 }
 
-static CompoundBiome getBiomeData(const Vec2& surfaceLocation)
+static CompoundBiome getBiomeData(const eng::math::Vec2& surfaceLocation)
 {
   using WeightedBiome = CompoundBiome::Component;
 
   GlobalIndex2D queryRegionIndex = GlobalIndex2D::ToIndex(surfaceLocation / Chunk::Size() / c_BiomeRegionSize);
-  Float2 queryLocationRelativeToQueryRegion = surfaceLocation / Chunk::Size() / c_BiomeRegionSize - static_cast<Vec2>(queryRegionIndex);
+  eng::math::Float2 queryLocationRelativeToQueryRegion = surfaceLocation / Chunk::Size() / c_BiomeRegionSize - static_cast<eng::math::Vec2>(queryRegionIndex);
 
   std::array<WeightedBiome, c_RegionWidth* c_RegionWidth> nearbyBiomes;
   for (globalIndex_t i = -c_RegionRadius; i <= c_RegionRadius; ++i)
     for (globalIndex_t j = -c_RegionRadius; j <= c_RegionRadius; ++j)
     {
       GlobalIndex2D regionIndex = queryRegionIndex + GlobalIndex2D(i, j);
-      Float2 regionCenterRelativeToQueryRegion(i + 0.5f, j + 0.5f);
+      eng::math::Float2 regionCenterRelativeToQueryRegion(i + 0.5f, j + 0.5f);
 
       auto [biomeType, voronoiPointPerturbation] = getRegionVoronoiPoint(regionIndex);
-      Float2 voronoiPointRelativeToQueryRegion = regionCenterRelativeToQueryRegion + voronoiPointPerturbation;
+      eng::math::Float2 voronoiPointRelativeToQueryRegion = regionCenterRelativeToQueryRegion + voronoiPointPerturbation;
       float distance = glm::distance(queryLocationRelativeToQueryRegion, voronoiPointRelativeToQueryRegion);
       float biomeWeight = std::expf(-32 * distance * distance);
 
@@ -161,9 +161,9 @@ static std::shared_ptr<SurfaceData> getSurfaceData(const GlobalIndex& chunkIndex
   for (blockIndex_t i = 0; i < Chunk::Size(); ++i)
     for (blockIndex_t j = 0; j < Chunk::Size(); ++j)
     {
-      Vec2 blockXY = Chunk::Length() * static_cast<Vec2>(mapIndex) + Block::Length() * (Vec2(i, j) + Vec2(0.5));
+      eng::math::Vec2 blockXY = Chunk::Length() * static_cast<eng::math::Vec2>(mapIndex) + block::length() * (eng::math::Vec2(i, j) + eng::math::Vec2(0.5));
 
-      surfaceData->noiseSamples[i][j] = Noise::OctaveNoise2D<Biome::LocalElevationOctaves()>(blockXY, 1_m / c_LargestNoiseScale, c_NoiseLacunarity);
+      surfaceData->noiseSamples[i][j] = noise::octaveNoise2D<Biome::LocalElevationOctaves()>(blockXY, 1_m / c_LargestNoiseScale, c_NoiseLacunarity);
       surfaceData->biomeData[i][j] = getBiomeData(blockXY);
     }
 
@@ -195,7 +195,7 @@ static void heightMapStage(BlockArrayRect<length_t>& heightMap, const GlobalInde
     }
 }
 
-static void soilStage(BlockArrayBox<Block::Type>& composition, const BlockArrayRect<length_t>& heightMap, const GlobalIndex& chunkIndex)
+static void soilStage(BlockArrayBox<block::Type>& composition, const BlockArrayRect<length_t>& heightMap, const GlobalIndex& chunkIndex)
 {
   std::shared_ptr<SurfaceData> surfaceData = getSurfaceData(chunkIndex);
   const auto& [noiseSamples, biomeMap] = *surfaceData;
@@ -210,16 +210,16 @@ static void soilStage(BlockArrayBox<Block::Type>& composition, const BlockArrayR
     }
 }
 
-static void foliageStage(BlockArrayBox<Block::Type>& composition, const BlockArrayRect<length_t>& heightMap, const GlobalIndex& chunkIndex)
+static void foliageStage(BlockArrayBox<block::Type>& composition, const BlockArrayRect<length_t>& heightMap, const GlobalIndex& chunkIndex)
 {
-  const auto createTree = [](BlockArrayBox<Block::Type>& composition, const BlockIndex& treeIndex, Block::Type leafType)
+  const auto createTree = [](BlockArrayBox<block::Type>& composition, const BlockIndex& treeIndex, block::Type leafType)
   {
     int i = treeIndex.i;
     int j = treeIndex.j;
     int k = treeIndex.k;
 
     for (int n = 0; n < 5; ++n)
-      composition[i][j][k + n] = Block::ID::OakLog;
+      composition[i][j][k + n] = block::ID::OakLog;
 
     for (int I = -3; I < 3; ++I)
       for (int J = -3; J < 3; ++J)
@@ -243,13 +243,13 @@ static void foliageStage(BlockArrayBox<Block::Type>& composition, const BlockArr
       {
         const length_t& elevation = heightMap[i][j];
         length_t heightInChunk = elevation - chunkFloor;
-        if (0 < heightInChunk && heightInChunk < Chunk::Length() - 8 * Block::Length() && 3 < i && i < Chunk::Size() - 4 && 3 < j && j < Chunk::Size() - 4)
+        if (0 < heightInChunk && heightInChunk < Chunk::Length() - 8 * block::length() && 3 < i && i < Chunk::Size() - 4 && 3 < j && j < Chunk::Size() - 4)
         {
           int random = rand();
           if (random % 101 == 0)
           {
-            Block::ID leafType = random % 2 == 0 ? Block::ID::OakLeaves : Block::ID::FallLeaves;
-            blockIndex_t k = static_cast<blockIndex_t>(std::ceil(heightInChunk / Block::Length()));
+            block::ID leafType = random % 2 == 0 ? block::ID::OakLeaves : block::ID::FallLeaves;
+            blockIndex_t k = static_cast<blockIndex_t>(std::ceil(heightInChunk / block::length()));
             createTree(composition, { i, j, k }, leafType);
           }
         }
@@ -257,7 +257,7 @@ static void foliageStage(BlockArrayBox<Block::Type>& composition, const BlockArr
     }
 }
 
-static void lightingStage(BlockArrayBox<Block::Light>& lighting, const BlockArrayBox<Block::Type>& composition)
+static void lightingStage(BlockArrayBox<block::Light>& lighting, const BlockArrayBox<block::Type>& composition)
 {
   for (blockIndex_t i = 0; i < Chunk::Size(); ++i)
     for (blockIndex_t j = 0; j < Chunk::Size(); ++j)
@@ -265,30 +265,30 @@ static void lightingStage(BlockArrayBox<Block::Light>& lighting, const BlockArra
       blockIndex_t k = 0;
       while (k < Chunk::Size() && !composition[i][j][k].hasTransparency())
       {
-        lighting[i][j][k] = Block::Light(0);
+        lighting[i][j][k] = block::Light(0);
         k++;
       }
       for (; k < Chunk::Size(); ++k)
-        lighting[i][j][k] = Block::Light(Block::Light::MaxValue());
+        lighting[i][j][k] = block::Light(block::Light::MaxValue());
     }
 }
 
-std::shared_ptr<Chunk> Terrain::GenerateNew(const GlobalIndex& chunkIndex)
+std::shared_ptr<Chunk> terrain::generateNew(const GlobalIndex& chunkIndex)
 {
-  BlockArrayRect<length_t> heightMap(Chunk::Bounds2D(), AllocationPolicy::ForOverwrite);
-  BlockArrayBox<Block::Type> composition(Chunk::Bounds(), AllocationPolicy::ForOverwrite);
+  BlockArrayRect<length_t> heightMap(Chunk::Bounds2D(), eng::AllocationPolicy::ForOverwrite);
+  BlockArrayBox<block::Type> composition(Chunk::Bounds(), eng::AllocationPolicy::ForOverwrite);
 
   heightMapStage(heightMap, chunkIndex);
   soilStage(composition, heightMap, chunkIndex);
   foliageStage(composition, heightMap, chunkIndex);
 
-  if (composition.filledWith(Block::ID::Air))
+  if (composition.filledWith(block::ID::Air))
     composition.clear();
 
   std::shared_ptr newChunk = std::make_shared<Chunk>(chunkIndex);
   if (composition)
   {
-    BlockArrayBox<Block::Light> lighting(Chunk::Bounds(), AllocationPolicy::ForOverwrite);
+    BlockArrayBox<block::Light> lighting(Chunk::Bounds(), eng::AllocationPolicy::ForOverwrite);
     lightingStage(lighting, composition);
 
     newChunk->setComposition(std::move(composition));
@@ -298,7 +298,7 @@ std::shared_ptr<Chunk> Terrain::GenerateNew(const GlobalIndex& chunkIndex)
   return newChunk;
 }
 
-std::shared_ptr<Chunk> Terrain::GenerateEmpty(const GlobalIndex& chunkIndex)
+std::shared_ptr<Chunk> terrain::generateEmpty(const GlobalIndex& chunkIndex)
 {
   return std::make_shared<Chunk>(chunkIndex);
 }

@@ -1,19 +1,19 @@
 Engine formatting guidelines:
   Classes should be PascalCase.
-  Static members should be PascalCase.
-  Namespace names should be PascalCase.
-    - There's one exception to this rule: the 'detail' namespace
+  Static member functions should be PascalCase.
+  Non-static member functions should be camelCase.
+  Namespaces should be camelCase.
+  Free-floating functions should be camelCase.
   Enums should be written in PascalCase.
   Macros should be written in UPPER_CASE.
-  Free-floating public-facing functions should be PascalCase.
 
+  Public member variables should be camelCase.
   Compile-time constant member variables should be preceeded with "c_".
     - This also applies to const shader variables
   Private/protected static variables should be preceeded with "s_", i.e. s_StaticVariable.
     - This also applies to globally inaccessible static variables in .cpp files
   Private/protected thread local variables should be preceeded with "tl_", i.e. tl_ThreadLocalVariable.
     - This also applies to globally inaccessible thread local variables in .cpp files
-  Public non-static members should be camelCase.
   Private/protected non-static variables should be preceeded with "m_", i.e m_Variable.
   Shader uniforms should be preceeded with "u_".
   Vertex buffer attributes should be preceeded with "a_".

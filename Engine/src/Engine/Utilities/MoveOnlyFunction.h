@@ -2,7 +2,7 @@
 #include "Constraints.h"
 #include "Engine/Core/Concepts.h"
 
-namespace Engine
+namespace eng
 {
   /*
     A class similar to std::function that performs type erasure on the given

@@ -1,6 +1,6 @@
 #pragma once
 
-namespace Engine
+namespace eng
 {
   /*
     A unique 128-bit identifier.
@@ -23,9 +23,9 @@ namespace Engine
 namespace std
 {
   template<>
-  struct hash<Engine::UID>
+  struct hash<eng::UID>
   {
-    size_t operator()(const Engine::UID& uuid) const
+    size_t operator()(const eng::UID& uuid) const
     {
       return uuid.hash();
     }

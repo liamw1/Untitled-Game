@@ -2,32 +2,32 @@
 #include "BlockIDs.h"
 #include "World/Indexing.h"
 
-namespace Block
+namespace block
 {
-  constexpr length_t Length() { return 0.5_m; }
-  constexpr float LengthF() { return static_cast<float>(Length()); }
+  constexpr length_t length() { return 0.5_m; }
+  constexpr float lengthF() { return static_cast<float>(length()); }
 
-  void Initialize();
-  std::shared_ptr<Engine::TextureArray> GetTextureArray();
+  void initialize();
+  std::shared_ptr<eng::TextureArray> getTextureArray();
 
   class Type
   {
   public:
     constexpr Type()
-      : Type(Block::ID::Null) {}
-    constexpr Type(Block::ID blockType)
+      : Type(block::ID::Null) {}
+    constexpr Type(block::ID blockType)
       : m_TypeID(blockType) {}
   
     constexpr bool operator==(Type other) const { return m_TypeID == other.m_TypeID; }
-    constexpr bool operator==(Block::ID blockType) const { return m_TypeID == blockType; }
+    constexpr bool operator==(block::ID blockType) const { return m_TypeID == blockType; }
   
-    Block::TextureID texture(Direction face) const;
+    block::TextureID texture(eng::math::Direction face) const;
   
     bool hasTransparency() const;
     bool hasCollision() const;
   
   private:
-    Block::ID m_TypeID;
+    block::ID m_TypeID;
   };
 
   class Light

@@ -1,7 +1,7 @@
 #pragma once
 #include "Engine/Renderer/StorageBuffer.h"
 
-namespace Engine
+namespace eng
 {
   class OpenGLStorageBuffer : public StorageBuffer
   {

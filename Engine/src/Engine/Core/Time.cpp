@@ -1,7 +1,7 @@
 #include "ENpch.h"
 #include "Time.h"
 
-namespace Engine
+namespace eng
 {
   Timestep::Timestep()
     : m_Timestep(std::chrono::duration<seconds>::zero()) {}

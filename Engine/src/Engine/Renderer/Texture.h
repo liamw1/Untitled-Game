@@ -6,7 +6,7 @@
   Abstract representation of a texture.
   Platform-specific implementation is determined by derived class.
 */
-namespace Engine
+namespace eng
 {
   class Image : private NonCopyable, NonMovable
   {
@@ -20,10 +20,10 @@ namespace Engine
 
     const uint8_t* data() const;
 
-    Float4 averageColor() const;
+    math::Float4 averageColor() const;
 
   private:
-    ArrayBox<uint8_t, int> m_Data;
+    math::ArrayBox<uint8_t, int> m_Data;
   };
 
 

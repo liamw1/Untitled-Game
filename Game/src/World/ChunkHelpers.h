@@ -18,9 +18,9 @@ class ChunkVertex
 {
 public:
   ChunkVertex();
-  ChunkVertex(const BlockIndex& vertexPlacement, int quadIndex, Block::TextureID texture, int sunlight, int ambientOcclusion);
+  ChunkVertex(const BlockIndex& vertexPlacement, int quadIndex, block::TextureID texture, int sunlight, int ambientOcclusion);
 
-  static const BlockIndex& GetOffset(Direction face, int quadIndex);
+  static const BlockIndex& GetOffset(eng::math::Direction face, int quadIndex);
 
 private:
   uint32_t m_VertexData;
@@ -34,7 +34,7 @@ private:
 class ChunkQuad
 {
 public:
-  ChunkQuad(const BlockIndex& blockIndex, Direction face, Block::TextureID texture, const std::array<int, 4>& sunlight, const std::array<int, 4>& ambientOcclusion);
+  ChunkQuad(const BlockIndex& blockIndex, eng::math::Direction face, block::TextureID texture, const std::array<int, 4>& sunlight, const std::array<int, 4>& ambientOcclusion);
 
 private:
   std::array<ChunkVertex, 4> m_Vertices;
@@ -47,19 +47,19 @@ private:
 class ChunkVoxel
 {
 public:
-  ChunkVoxel(const BlockIndex& blockIndex, DirectionBitMask enabledFaces, int firstVertex);
+  ChunkVoxel(const BlockIndex& blockIndex, eng::math::DirectionBitMask enabledFaces, int firstVertex);
 
   const BlockIndex& index() const;
-  bool faceEnabled(Direction direction) const;
+  bool faceEnabled(eng::math::Direction direction) const;
   int baseVertex() const;
 
 private:
   BlockIndex m_Index;
-  DirectionBitMask m_EnabledFaces;
+  eng::math::DirectionBitMask m_EnabledFaces;
   int m_BaseVertex;
 };
 
-class ChunkDrawCommand : public Engine::MultiDrawIndexedCommand<GlobalIndex, ChunkDrawCommand>
+class ChunkDrawCommand : public eng::MultiDrawIndexedCommand<GlobalIndex, ChunkDrawCommand>
 {
 public:
   ChunkDrawCommand(const GlobalIndex& chunkIndex, bool needsSorting);
@@ -75,15 +75,15 @@ public:
   const void* vertexData();
   void prune();
 
-  void addQuad(const BlockIndex& blockIndex, Direction face, Block::TextureID texture, const std::array<int, 4>& sunlight, const std::array<int, 4>& ambientOcclusion);
-  void addVoxel(const BlockIndex& blockIndex, DirectionBitMask enabledFaces);
+  void addQuad(const BlockIndex& blockIndex, eng::math::Direction face, block::TextureID texture, const std::array<int, 4>& sunlight, const std::array<int, 4>& ambientOcclusion);
+  void addVoxel(const BlockIndex& blockIndex, eng::math::DirectionBitMask enabledFaces);
 
   /*
     Sorts indices so that triangles will be rendered from back to front.
     The sorting algorithm used is O(n + k), where n is the number of voxels
     and k is the maximum L1 distance that two blocks can be within a chunk.
   */
-  bool sort(const GlobalIndex& originIndex, const Vec3& viewPosition);
+  bool sort(const GlobalIndex& originIndex, const eng::math::Vec3& viewPosition);
 
 private:
   std::vector<ChunkQuad> m_Quads;
@@ -95,7 +95,7 @@ private:
   int m_VoxelBaseVertex;
 
   void addQuadIndices(int baseVertex);
-  void reorderIndices(const GlobalIndex& originIndex, const Vec3& viewPosition);
+  void reorderIndices(const GlobalIndex& originIndex, const eng::math::Vec3& viewPosition);
 };
 
 namespace std

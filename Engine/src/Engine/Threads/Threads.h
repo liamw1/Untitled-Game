@@ -1,6 +1,6 @@
 #pragma once
 
-namespace Engine::Threads
+namespace eng::threads
 {
   enum class Priority
   {
@@ -13,11 +13,11 @@ namespace Engine::Threads
   };
   static constexpr int c_PriorityCount = 1 + static_cast<int>(Priority::End) - static_cast<int>(Priority::Begin);
 
-  void SetAsMainThread();
-  bool IsMainThread();
+  void setAsMainThread();
+  bool isMainThread();
 
   template<typename R>
-  bool IsReady(const std::future<R>& future)
+  bool isReady(const std::future<R>& future)
   {
     using namespace std::chrono_literals;
     return future.wait_for(0s) == std::future_status::ready;

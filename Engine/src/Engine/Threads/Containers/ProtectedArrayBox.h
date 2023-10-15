@@ -1,7 +1,7 @@
 #pragma once
 #include "Engine/Math/ArrayBox.h"
 
-namespace Engine::Threads
+namespace eng::threads
 {
   /*
     Thread-safe version of the ArrayBox.
@@ -10,7 +10,7 @@ namespace Engine::Threads
   class ProtectedArrayBox : private NonCopyable, NonMovable
   {
   public:
-    ProtectedArrayBox(const IBox3<IntType>& bounds, const T& defaultValue)
+    ProtectedArrayBox(const math::IBox3<IntType>& bounds, const T& defaultValue)
       : m_ArrayBox(bounds, AllocationPolicy::Deferred), m_DefaultValue(defaultValue) {}
     ~ProtectedArrayBox() = default;
 
@@ -20,7 +20,7 @@ namespace Engine::Threads
       return m_ArrayBox;
     }
 
-    T get(const IVec3<IntType>& index) const
+    T get(const math::IVec3<IntType>& index) const
     {
       std::shared_lock lock(m_Mutex);
 
@@ -30,28 +30,28 @@ namespace Engine::Threads
       return m_ArrayBox(index);
     }
 
-    template<std::invocable<const ArrayBox<T, IntType>&> F>
-    std::invoke_result_t<F, const ArrayBox<T, IntType>&> readOperation(const F& operation) const
+    template<std::invocable<const math::ArrayBox<T, IntType>&> F>
+    std::invoke_result_t<F, const math::ArrayBox<T, IntType>&> readOperation(const F& operation) const
     {
       std::shared_lock lock(m_Mutex);
       return operation(m_ArrayBox);
     }
 
-    template<std::invocable<const ArrayBox<T, IntType>&, const T&> F>
-    std::invoke_result_t<F, const ArrayBox<T, IntType>&, const T&> readOperation(const F& operation) const
+    template<std::invocable<const math::ArrayBox<T, IntType>&, const T&> F>
+    std::invoke_result_t<F, const math::ArrayBox<T, IntType>&, const T&> readOperation(const F& operation) const
     {
       std::shared_lock lock(m_Mutex);
       return operation(m_ArrayBox, m_DefaultValue);
     }
 
-    void set(const IVec3<IntType>& index, const T& value)
+    void set(const math::IVec3<IntType>& index, const T& value)
     {
       std::lock_guard lock(m_Mutex);
       setIfNecessary(index, value);
     }
 
     template<InvocableWithReturnType<bool, T> F>
-    bool setIf(const IVec3<IntType>& index, const T& value, const F& condition)
+    bool setIf(const math::IVec3<IntType>& index, const T& value, const F& condition)
     {
       std::lock_guard lock(m_Mutex);
 
@@ -63,7 +63,7 @@ namespace Engine::Threads
       return true;
     }
 
-    [[nodiscard]] T replace(const IVec3<IntType>& index, const T& value)
+    [[nodiscard]] T replace(const math::IVec3<IntType>& index, const T& value)
     {
       std::lock_guard lock(m_Mutex);
 
@@ -73,7 +73,7 @@ namespace Engine::Threads
       return containedValue;
     }
 
-    void setData(ArrayBox<T, IntType>&& newArrayBox)
+    void setData(math::ArrayBox<T, IntType>&& newArrayBox)
     {
       std::lock_guard lock(m_Mutex);
       m_ArrayBox = std::move(newArrayBox);
@@ -90,15 +90,15 @@ namespace Engine::Threads
         m_ArrayBox.clear();
     }
 
-    template<std::invocable<ArrayBox<T, IntType>&> F>
-    std::invoke_result_t<F, ArrayBox<T, IntType>&> modifyingOperation(const F& operation)
+    template<std::invocable<math::ArrayBox<T, IntType>&> F>
+    std::invoke_result_t<F, math::ArrayBox<T, IntType>&> modifyingOperation(const F& operation)
     {
       std::lock_guard lock(m_Mutex);
       return operation(m_ArrayBox);
     }
 
-    template<std::invocable<ArrayBox<T, IntType>&, const T&> F>
-    std::invoke_result_t<F, ArrayBox<T, IntType>&, const T&> modifyingOperation(const F& operation)
+    template<std::invocable<math::ArrayBox<T, IntType>&, const T&> F>
+    std::invoke_result_t<F, math::ArrayBox<T, IntType>&, const T&> modifyingOperation(const F& operation)
     {
       std::lock_guard lock(m_Mutex);
       return operation(m_ArrayBox, m_DefaultValue);
@@ -106,7 +106,7 @@ namespace Engine::Threads
 
   private:
     mutable std::shared_mutex m_Mutex;
-    ArrayBox<T, IntType> m_ArrayBox;
+    math::ArrayBox<T, IntType> m_ArrayBox;
     T m_DefaultValue;
 
     void allocateAndFillWithDefaultValue()
@@ -115,7 +115,7 @@ namespace Engine::Threads
       m_ArrayBox.fill(m_DefaultValue);
     }
 
-    void setIfNecessary(const IVec3<IntType>& index, const T& value)
+    void setIfNecessary(const math::IVec3<IntType>& index, const T& value)
     {
       if (!m_ArrayBox)
       {

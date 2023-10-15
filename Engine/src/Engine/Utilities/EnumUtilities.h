@@ -25,10 +25,10 @@ typename std::enable_if<EnableBitMaskOperators<Enum>::enable, Enum>::type
     static_cast<std::underlying_type<Enum>::type>(enumB));
 }
 
-namespace Engine
+namespace eng
 {
   template<IterableEnum E>
-  constexpr int EnumRange()
+  constexpr int enumRange()
   {
     EN_CORE_ASSERT(static_cast<int>(E::End) > static_cast<int>(E::Begin), "Begin and End enums are in incorrect order!");
     return 1 + static_cast<int>(E::End) - static_cast<int>(E::Begin);
@@ -54,7 +54,7 @@ namespace Engine
     constexpr bool operator!=(const EnumIterator& other) const { return m_Value != other.m_Value; }
 
     constexpr EnumIterator begin() const { return EnumIterator(E::Begin); }
-    constexpr EnumIterator next() const { return ++Engine::Clone(*this); }
+    constexpr EnumIterator next() const { return ++clone(*this); }
     constexpr EnumIterator end() const { return ++EnumIterator(E::End); }
 
   private:
@@ -86,7 +86,7 @@ namespace Engine
     }
 
   private:
-    static constexpr int c_Size = EnumRange<E>();
+    static constexpr int c_Size = enumRange<E>();
     std::array<T, c_Size> m_Data;
   };
 }

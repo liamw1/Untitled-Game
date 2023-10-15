@@ -3,7 +3,7 @@
 #include "Engine/Threads/Threads.h"
 #include <glad/glad.h>
 
-namespace Engine
+namespace eng
 {
   static GLenum convertToOpenGLBaseType(ShaderDataType type)
   {
@@ -27,7 +27,7 @@ namespace Engine
 
   OpenGLVertexArray::OpenGLVertexArray()
   {
-    EN_CORE_ASSERT(Threads::IsMainThread(), "OpenGL calls must be made on the main thread!");
+    EN_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
 
     glCreateVertexArrays(1, &m_RendererID);
     m_VertexBuffer = StorageBuffer::Create(StorageBuffer::Type::VertexBuffer);
@@ -35,13 +35,13 @@ namespace Engine
 
   OpenGLVertexArray::~OpenGLVertexArray()
   {
-    EN_CORE_ASSERT(Threads::IsMainThread(), "OpenGL calls must be made on the main thread!");
+    EN_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
     glDeleteVertexArrays(1, &m_RendererID);
   }
 
   void OpenGLVertexArray::bind() const
   {
-    EN_CORE_ASSERT(Threads::IsMainThread(), "OpenGL calls must be made on the main thread!");
+    EN_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
 
     glBindVertexArray(m_RendererID);
 
@@ -51,7 +51,7 @@ namespace Engine
 
   void OpenGLVertexArray::unBind() const
   {
-    EN_CORE_ASSERT(Threads::IsMainThread(), "OpenGL calls must be made on the main thread!");
+    EN_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
 
     glBindVertexArray(0);
 
@@ -63,7 +63,7 @@ namespace Engine
 
   void OpenGLVertexArray::setLayout(const BufferLayout& layout)
   {
-    EN_CORE_ASSERT(Threads::IsMainThread(), "OpenGL calls must be made on the main thread!");
+    EN_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
 
     m_VertexBufferLayout = layout;
 
@@ -157,7 +157,7 @@ namespace Engine
 
   void OpenGLVertexArray::setIndexBuffer(const IndexBuffer& indexBuffer)
   {
-    EN_CORE_ASSERT(Threads::IsMainThread(), "OpenGL calls must be made on the main thread!");
+    EN_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
 
     m_IndexBuffer = indexBuffer;
 
@@ -168,7 +168,7 @@ namespace Engine
 
   void OpenGLVertexArray::setIndexBuffer(const std::shared_ptr<StorageBuffer>& indexBufferStorage)
   {
-    EN_CORE_ASSERT(Threads::IsMainThread(), "OpenGL calls must be made on the main thread!");
+    EN_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
     EN_CORE_ASSERT(indexBufferStorage->type() == StorageBuffer::Type::IndexBuffer, "Submitted buffer is not an index buffer!");
 
     m_IndexBuffer = IndexBuffer(indexBufferStorage);

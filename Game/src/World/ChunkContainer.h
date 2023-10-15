@@ -15,7 +15,7 @@ class ChunkContainer
 public:
   ChunkContainer();
 
-  const Engine::Threads::UnorderedMap<GlobalIndex, Chunk>& chunks() const;
+  const eng::threads::UnorderedMap<GlobalIndex, Chunk>& chunks() const;
 
   /*
     Scans boundary for places where new chunks can be loaded and returns possible locations
@@ -42,8 +42,8 @@ public:
   bool hasBoundaryNeighbors(const GlobalIndex& chunkIndex);
 
 private:
-  Engine::Threads::UnorderedMap<GlobalIndex, Chunk> m_Chunks;
-  Engine::Threads::UnorderedSet<GlobalIndex> m_BoundaryIndices;
+  eng::threads::UnorderedMap<GlobalIndex, Chunk> m_Chunks;
+  eng::threads::UnorderedSet<GlobalIndex> m_BoundaryIndices;
 
   /*
     \returns True if the given chunk meets the requirements to be a boundary chunk.

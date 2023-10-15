@@ -1,7 +1,7 @@
 #pragma once
 #include "Engine/Renderer/Framebuffer.h"
 
-namespace Engine
+namespace eng
 {
   class OpenGLFramebuffer : public Framebuffer
   {

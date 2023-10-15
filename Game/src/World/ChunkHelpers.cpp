@@ -4,17 +4,17 @@
 
 ChunkVertex::ChunkVertex()
   : m_VertexData(0), m_LightingData(0) {}
-ChunkVertex::ChunkVertex(const BlockIndex& vertexPlacement, int quadIndex, Block::TextureID texture, int sunlight, int ambientOcclusion)
+ChunkVertex::ChunkVertex(const BlockIndex& vertexPlacement, int quadIndex, block::TextureID texture, int sunlight, int ambientOcclusion)
 {
   m_VertexData =  vertexPlacement.i + (vertexPlacement.j << 6) + (vertexPlacement.k << 12);
   m_VertexData |= quadIndex << 18;
-  m_VertexData |= std::underlying_type_t<Block::TextureID>(texture) << 20;
+  m_VertexData |= std::underlying_type_t<block::TextureID>(texture) << 20;
 
   m_LightingData =  sunlight << 16;
   m_LightingData |= ambientOcclusion << 20;
 }
 
-const BlockIndex& ChunkVertex::GetOffset(Direction face, int quadIndex)
+const BlockIndex& ChunkVertex::GetOffset(eng::math::Direction face, int quadIndex)
 {
   static constexpr BlockIndex offsets[6][4]
     = { { {0, 1, 0}, {0, 0, 0}, {0, 1, 1}, {0, 0, 1} },    /*  West Face   */
@@ -29,7 +29,7 @@ const BlockIndex& ChunkVertex::GetOffset(Direction face, int quadIndex)
 
 
 
-ChunkQuad::ChunkQuad(const BlockIndex& blockIndex, Direction face, Block::TextureID texture, const std::array<int, 4>& sunlight, const std::array<int, 4>& ambientOcclusion)
+ChunkQuad::ChunkQuad(const BlockIndex& blockIndex, eng::math::Direction face, block::TextureID texture, const std::array<int, 4>& sunlight, const std::array<int, 4>& ambientOcclusion)
 {
   static constexpr std::array<int, 4> standardOrder = { 0, 1, 2, 3 };
   static constexpr std::array<int, 4> reversedOrder = { 1, 3, 0, 2 };
@@ -52,7 +52,7 @@ ChunkQuad::ChunkQuad(const BlockIndex& blockIndex, Direction face, Block::Textur
 
 
 
-ChunkVoxel::ChunkVoxel(const BlockIndex& blockIndex, DirectionBitMask enabledFaces, int firstVertex)
+ChunkVoxel::ChunkVoxel(const BlockIndex& blockIndex, eng::math::DirectionBitMask enabledFaces, int firstVertex)
   : m_Index(blockIndex),
     m_EnabledFaces(enabledFaces),
     m_BaseVertex(firstVertex) {}
@@ -62,7 +62,7 @@ const BlockIndex& ChunkVoxel::index() const
   return m_Index;
 }
 
-bool ChunkVoxel::faceEnabled(Direction direction) const
+bool ChunkVoxel::faceEnabled(eng::math::Direction direction) const
 {
   return m_EnabledFaces[direction];
 }
@@ -75,7 +75,7 @@ int ChunkVoxel::baseVertex() const
 
 
 ChunkDrawCommand::ChunkDrawCommand(const GlobalIndex& chunkIndex, bool needsSorting)
-  : Engine::MultiDrawIndexedCommand<GlobalIndex, ChunkDrawCommand>(chunkIndex, 0),
+  : eng::MultiDrawIndexedCommand<GlobalIndex, ChunkDrawCommand>(chunkIndex, 0),
     m_SortState(-1, -1, -1),
     m_NeedsSorting(needsSorting),
     m_VoxelBaseVertex(0) {}
@@ -114,27 +114,27 @@ void ChunkDrawCommand::prune()
   }
 }
 
-void ChunkDrawCommand::addQuad(const BlockIndex& blockIndex, Direction face, Block::TextureID texture, const std::array<int, 4>& sunlight, const std::array<int, 4>& ambientOcclusion)
+void ChunkDrawCommand::addQuad(const BlockIndex& blockIndex, eng::math::Direction face, block::TextureID texture, const std::array<int, 4>& sunlight, const std::array<int, 4>& ambientOcclusion)
 {
   addQuadIndices(vertexCount());
   m_IndexCount += 6;
   m_Quads.emplace_back(blockIndex, face, texture, sunlight, ambientOcclusion);
 }
 
-void ChunkDrawCommand::addVoxel(const BlockIndex& blockIndex, DirectionBitMask enabledFaces)
+void ChunkDrawCommand::addVoxel(const BlockIndex& blockIndex, eng::math::DirectionBitMask enabledFaces)
 {
   m_Voxels.emplace_back(blockIndex, enabledFaces, m_VoxelBaseVertex);
   m_VoxelBaseVertex = vertexCount();
 }
 
-bool ChunkDrawCommand::sort(const GlobalIndex& originIndex, const Vec3& viewPosition)
+bool ChunkDrawCommand::sort(const GlobalIndex& originIndex, const eng::math::Vec3& viewPosition)
 {
   static constexpr int c_MaxL1Distance = 3 * (Chunk::Size() - 1);
 
   // Find block index that is closest to the specified position
-  BlockIndex originBlock = BlockIndex::ToIndex(viewPosition / Block::Length());
+  BlockIndex originBlock = BlockIndex::ToIndex(viewPosition / block::length());
   EN_ASSERT(Chunk::Bounds().encloses(originBlock), "Given view position is not inside the origin chunk!");
-  for (Axis axis : Axes())
+  for (eng::math::Axis axis : eng::math::Axes())
   {
     if (originIndex[axis] > id()[axis])
       originBlock[axis] = Chunk::Size() - 1;
@@ -188,19 +188,19 @@ void ChunkDrawCommand::addQuadIndices(int baseVertex)
   m_Indices.push_back(baseVertex + 2);
 }
 
-void ChunkDrawCommand::reorderIndices(const GlobalIndex& originIndex, const Vec3& viewPosition)
+void ChunkDrawCommand::reorderIndices(const GlobalIndex& originIndex, const eng::math::Vec3& viewPosition)
 {
   m_Indices.clear();
 
-  Vec3 chunkAnchor = Chunk::AnchorPosition(m_ID, originIndex);
+  eng::math::Vec3 chunkAnchor = Chunk::AnchorPosition(m_ID, originIndex);
   for (ChunkVoxel voxel : m_Voxels)
   {
-    Vec3 blockCenter = chunkAnchor + Block::Length() * Vec3(voxel.index()) + Vec3(Block::Length()) / 2;
-    Vec3 toBlock = blockCenter - viewPosition;
+    eng::math::Vec3 blockCenter = chunkAnchor + block::length() * eng::math::Vec3(voxel.index()) + eng::math::Vec3(block::length()) / 2;
+    eng::math::Vec3 toBlock = blockCenter - viewPosition;
 
     int quadVertexOffset = 0;
-    DirectionArray<int> quadVertexOffsets(-1);
-    for (Direction face : Directions())
+    eng::math::DirectionArray<int> quadVertexOffsets(-1);
+    for (eng::math::Direction face : eng::math::Directions())
       if (voxel.faceEnabled(face))
       {
         quadVertexOffsets[face] = quadVertexOffset;
@@ -208,17 +208,17 @@ void ChunkDrawCommand::reorderIndices(const GlobalIndex& originIndex, const Vec3
       }
 
     // Add back-facing quads
-    for (Axis axis : Axes())
+    for (eng::math::Axis axis : eng::math::Axes())
     {
-      Direction face = ToDirection(axis, toBlock[static_cast<int>(axis)] > 0);
+      eng::math::Direction face = ToDirection(axis, toBlock[static_cast<int>(axis)] > 0);
       if (quadVertexOffsets[face] >= 0)
         addQuadIndices(voxel.baseVertex() + quadVertexOffsets[face]);
     }
 
     // Add front-facing quads
-    for (Axis axis : Axes())
+    for (eng::math::Axis axis : eng::math::Axes())
     {
-      Direction face = ToDirection(axis, toBlock[static_cast<int>(axis)] <= 0);
+      eng::math::Direction face = ToDirection(axis, toBlock[static_cast<int>(axis)] <= 0);
       if (quadVertexOffsets[face] >= 0)
         addQuadIndices(voxel.baseVertex() + quadVertexOffsets[face]);
     }

@@ -1,6 +1,6 @@
 #pragma once
 
-namespace Engine
+namespace eng
 {
   class Camera
   {
@@ -10,7 +10,7 @@ namespace Engine
   public:
     Camera();
 
-    const Mat4& projectionMatrix() const;
+    const math::Mat4& projectionMatrix() const;
     ProjectionType projectionType() const;
 
     float nearClip() const;
@@ -19,18 +19,18 @@ namespace Engine
     float aspectRatio() const;
     void setAspectRatio(float aspectRatio);
 
-    Angle fov() const;
-    void setFov(Angle fov);
+    math::Angle fov() const;
+    void setFov(math::Angle fov);
 
     float orthographicSize() const;
 
     void setOrthographicView(float aspectRatio, float size, float nearClip, float farClip);
-    void setPerspectiveView(float aspectRatio, Angle fov, float nearClip, float farClip);
+    void setPerspectiveView(float aspectRatio, math::Angle fov, float nearClip, float farClip);
 
     void setViewportSize(uint32_t width, uint32_t height);
 
   private:
-    Mat4 m_Projection;
+    math::Mat4 m_Projection;
     ProjectionType m_ProjectionType;
 
     // Shared parameters
@@ -39,7 +39,7 @@ namespace Engine
     float m_FarClip;
 
     // Projection-specific parameters
-    Angle m_FOV;
+    math::Angle m_FOV;
     float m_OrthographicSize;
 
     void recalculateProjection();

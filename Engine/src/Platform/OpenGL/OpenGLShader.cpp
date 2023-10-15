@@ -10,7 +10,7 @@
 #include <spirv_cross/spirv_cross.hpp>
 #include <spirv_cross/spirv_glsl.hpp>
 
-namespace Engine
+namespace eng
 {
   static GLenum shaderTypeFromString(const std::string& type)
   {
@@ -59,7 +59,7 @@ namespace Engine
     std::string source = ReadFile(filepath);
     std::unordered_map<std::string, std::string> shaderSources = PreProcess(source, preprocessorDefinitions);
 
-    Debug::Timer timer("Shader creation");
+    debug::Timer timer("Shader creation");
     timer.timeStart();
     compileVulkanBinaries(shaderSources);
     compileOpenGLBinaries();
@@ -77,7 +77,7 @@ namespace Engine
   OpenGLShader::~OpenGLShader()
   {
     EN_PROFILE_FUNCTION();
-    EN_CORE_ASSERT(Threads::IsMainThread(), "OpenGL calls must be made on the main thread!");
+    EN_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
 
     glDeleteProgram(m_RendererID);
   }
@@ -89,19 +89,19 @@ namespace Engine
 
   void OpenGLShader::bind() const
   {
-    EN_CORE_ASSERT(Threads::IsMainThread(), "OpenGL calls must be made on the main thread!");
+    EN_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
     glUseProgram(m_RendererID);
   }
 
   void OpenGLShader::unBind() const
   {
-    EN_CORE_ASSERT(Threads::IsMainThread(), "OpenGL calls must be made on the main thread!");
+    EN_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
     glUseProgram(0);
   }
 
   void OpenGLShader::compileVulkanBinaries(const std::unordered_map<std::string, std::string>& shaderSources)
   {
-    EN_CORE_ASSERT(Threads::IsMainThread(), "OpenGL calls must be made on the main thread!");
+    EN_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
 
     static constexpr bool optimize = true;
 
@@ -160,7 +160,7 @@ namespace Engine
 
   void OpenGLShader::createProgram()
   {
-    EN_CORE_ASSERT(Threads::IsMainThread(), "OpenGL calls must be made on the main thread!");
+    EN_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
 
     GLuint program = glCreateProgram();
 

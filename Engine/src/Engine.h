@@ -5,13 +5,12 @@
 
 #include "Engine/Core/Application.h"
 #include "Engine/Core/Concepts.h"
-#include "Engine/Core/Input.h"
-#include "Engine/Core/KeyCodes.h"
 #include "Engine/Core/Layer.h"
-#include "Engine/Core/MouseButtonCodes.h"
 #include "Engine/Core/Time.h"
 #include "Engine/Core/UID.h"
-#include "Engine/Core/Units.h"
+#include "Engine/Core/Input/MouseButtonCodes.h"
+#include "Engine/Core/Input/KeyCodes.h"
+#include "Engine/Core/Input/Input.h"
 
 #include "Engine/Debug/Assert.h"
 #include "Engine/Debug/Instrumentor.h"
@@ -32,6 +31,7 @@
 #include "Engine/Math/IBox3.h"
 #include "Engine/Math/IVec2.h"
 #include "Engine/Math/IVec3.h"
+#include "Engine/Math/Units.h"
 #include "Engine/Math/Vec.h"
 
 #include "Engine/Renderer/BufferLayout.h"

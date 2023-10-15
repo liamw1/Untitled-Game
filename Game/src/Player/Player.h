@@ -6,25 +6,25 @@
   geometry) is stored relative to an "origin chunk", which is the chunk the player
   is currently inside.
 */
-namespace Player
+namespace player
 {
-  void Initialize(const GlobalIndex& chunkIndex, const Vec3& positionWithinChunk);
+  void initialize(const GlobalIndex& chunkIndex, const eng::math::Vec3& positionWithinChunk);
 
-  void HandleDirectionalInput();
+  void handleDirectionalInput();
 
-  void UpdatePosition(Engine::Timestep timestep);
+  void updatePosition(eng::Timestep timestep);
 
-  Vec3 Position();
-  void SetPosition(const Vec3& position);
+  eng::math::Vec3 position();
+  void setPosition(const eng::math::Vec3& position);
 
-  Vec3 Velocity();
-  void SetVelocity(const Vec3& velocity);
+  eng::math::Vec3 velocity();
+  void setVelocity(const eng::math::Vec3& velocity);
 
-  Vec3 CameraPosition();
-  Vec3 ViewDirection();
+  eng::math::Vec3 cameraPosition();
+  eng::math::Vec3 viewDirection();
 
-  GlobalIndex OriginIndex();
+  GlobalIndex originIndex();
 
-  length_t Width();
-  length_t Height();
+  length_t width();
+  length_t height();
 };

@@ -3,7 +3,7 @@
 #include "RendererAPI.h"
 #include "Platform/OpenGL/OpenGLRendererAPI.h"
 
-namespace Engine
+namespace eng::command
 {
   static std::unique_ptr<RendererAPI> createAPI()
   {
@@ -14,86 +14,26 @@ namespace Engine
       default:                              throw  std::invalid_argument("Unknown RendererAPI!");
     }
   }
-
   static std::unique_ptr<RendererAPI> s_RendererAPI = createAPI();
 
-  void RenderCommand::SetViewport(uint32_t x, uint32_t y, uint32_t width, uint32_t height)
-  {
-    s_RendererAPI->setViewport(x, y, width, height);
-  }
+  void setViewport(uint32_t x, uint32_t y, uint32_t width, uint32_t height) { s_RendererAPI->setViewport(x, y, width, height); }
 
-  void RenderCommand::Clear(const Float4& color)
-  {
-    s_RendererAPI->clear(color);
-  }
+  void clear(const math::Float4& color) { s_RendererAPI->clear(color); }
+  void clearDepthBuffer() { s_RendererAPI->clearDepthBuffer(); }
 
-  void RenderCommand::SetBlendFunc()
-  {
-    s_RendererAPI->setBlendFunc();
-  }
+  void setBlendFunc() { s_RendererAPI->setBlendFunc(); }
+  void setBlending(bool enableBlending) { s_RendererAPI->setBlending(enableBlending); }
+  void setUseDepthOffset(bool enableDepthOffset) { s_RendererAPI->setUseDepthOffset(enableDepthOffset); }
+  void setDepthOffset(float factor, float units) { s_RendererAPI->setDepthOffset(factor, units); }
+  void setDepthTesting(bool enableDepthTesting) { s_RendererAPI->setDepthTesting(enableDepthTesting); }
+  void setDepthWriting(bool enableDepthWriting) { s_RendererAPI->setDepthWriting(enableDepthWriting); }
+  void setFaceCulling(bool enableFaceCulling) { s_RendererAPI->setFaceCulling(enableFaceCulling); }
+  void setWireFrame(bool enableWireFrame) { s_RendererAPI->setWireFrame(enableWireFrame); }
 
-  void RenderCommand::SetBlending(bool enableBlending)
-  {
-    s_RendererAPI->setBlending(enableBlending);
-  }
+  void drawVertices(const VertexArray* vertexArray, uint32_t vertexCount) { s_RendererAPI->drawVertices(vertexArray, vertexCount); }
+  void drawIndexed(const VertexArray* vertexArray, uint32_t indexCount) { s_RendererAPI->drawIndexed(vertexArray, indexCount); }
+  void drawIndexedLines(const VertexArray* vertexArray, uint32_t indexCount) { s_RendererAPI->drawIndexedLines(vertexArray, indexCount); }
 
-  void RenderCommand::SetUseDepthOffset(bool enableDepthOffset)
-  {
-    s_RendererAPI->setUseDepthOffset(enableDepthOffset);
-  }
-
-  void RenderCommand::SetDepthOffset(float factor, float units)
-  {
-    s_RendererAPI->setDepthOffset(factor, units);
-  }
-
-  void RenderCommand::SetDepthTesting(bool enableDepthTesting)
-  {
-    s_RendererAPI->setDepthTesting(enableDepthTesting);
-  }
-
-  void RenderCommand::SetDepthWriting(bool enableDepthWriting)
-  {
-    s_RendererAPI->setDepthWriting(enableDepthWriting);
-  }
-
-  void RenderCommand::SetFaceCulling(bool enableFaceCulling)
-  {
-    s_RendererAPI->setFaceCulling(enableFaceCulling);
-  }
-
-  void RenderCommand::SetWireFrame(bool enableWireFrame)
-  {
-    s_RendererAPI->setWireFrame(enableWireFrame);
-  }
-
-  void RenderCommand::DrawVertices(const VertexArray* vertexArray, uint32_t vertexCount)
-  {
-    s_RendererAPI->drawVertices(vertexArray, vertexCount);
-  }
-
-  void RenderCommand::DrawIndexed(const VertexArray* vertexArray, uint32_t indexCount)
-  {
-    s_RendererAPI->drawIndexed(vertexArray, indexCount);
-  }
-
-  void RenderCommand::DrawIndexedLines(const VertexArray* vertexArray, uint32_t indexCount)
-  {
-    s_RendererAPI->drawIndexedLines(vertexArray, indexCount);
-  }
-
-  void RenderCommand::MultiDrawVertices(const void* drawCommands, int drawCount, int stride)
-  {
-    s_RendererAPI->multiDrawVertices(drawCommands, drawCount, stride);
-  }
-
-  void RenderCommand::MultiDrawIndexed(const void* drawCommands, int drawCount, int stride)
-  {
-    s_RendererAPI->multiDrawIndexed(drawCommands, drawCount, stride);
-  }
-
-  void RenderCommand::ClearDepthBuffer()
-  {
-    s_RendererAPI->clearDepthBuffer();
-  }
+  void multiDrawVertices(const void* drawCommands, int drawCount, int stride) { s_RendererAPI->multiDrawVertices(drawCommands, drawCount, stride); }
+  void multiDrawIndexed(const void* drawCommands, int drawCount, int stride) { s_RendererAPI->multiDrawIndexed(drawCommands, drawCount, stride); }
 }

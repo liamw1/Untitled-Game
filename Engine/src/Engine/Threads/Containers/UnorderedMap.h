@@ -1,7 +1,7 @@
 #pragma once
 #include "Engine/Core/Concepts.h"
 
-namespace Engine::Threads
+namespace eng::threads
 {
   template<Hashable K, typename V>
     requires std::is_default_constructible_v<K> && std::move_constructible<K>

@@ -1,24 +1,20 @@
 #include "ENpch.h"
 #include "Instrumentor.h"
 
-namespace Engine::Debug
+namespace eng::debug
 {
   void Instrumentor::beginSession(const std::string& name, const std::string& filepath)
   {
     std::lock_guard lock(m_Mutex);
-    if (m_CurrentSession)
-    {
-      /*
-        If there is already a current session, then close it before beginning new one.
-        Subsequent profiling output meant for the original session will end up in the
-        newly opened session instead.  That's better than having badly formatted
-        profiling output.
-      */
-      if (::Engine::Log::GetCoreLogger()) // Edge case: BeginSession() might be before Log::Init()
-        EN_CORE_ERROR("Instrumentor::BeginSession('{0}') when session '{1}' already open.", name, m_CurrentSession->name);
 
+    /*
+      If there is already a current session, then close it before beginning new one.
+      Subsequent profiling output meant for the original session will end up in the
+      newly opened session instead.  That's better than having badly formatted
+      profiling output.
+    */
+    if (m_CurrentSession)
       internalEndSession();
-    }
 
     m_OutputStream.open(filepath);
     if (m_OutputStream.is_open())
@@ -26,8 +22,6 @@ namespace Engine::Debug
       m_CurrentSession = new InstrumentationSession({ name });
       writeHeader();
     }
-    else if (::Engine::Log::GetCoreLogger()) // Edge case: BeginSession() might be before Log::Init()
-      EN_CORE_ERROR("Instrumentor could not open results file '{0}'.", filepath);
   }
 
   void Instrumentor::endSession()

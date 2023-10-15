@@ -12,7 +12,7 @@
 #include <GLFW/glfw3.h>
 
 
-namespace Engine
+namespace eng
 {
   ImGuiLayer::ImGuiLayer()
     : Layer("ImGuiLayer")
@@ -71,13 +71,13 @@ namespace Engine
     ImGui::DestroyContext();
   }
 
-  void ImGuiLayer::onEvent(Event& event)
+  void ImGuiLayer::onEvent(event::Event& event)
   {
     if (m_BlockEvents)
     {
       ImGuiIO& io = ImGui::GetIO();
-      event.handled |= event.isInCategory(EventCategory::Mouse) & io.WantCaptureMouse;
-      event.handled |= event.isInCategory(EventCategory::Keyboard) & io.WantCaptureKeyboard;
+      event.handled |= event.isInCategory(event::EventCategory::Mouse) & io.WantCaptureMouse;
+      event.handled |= event.isInCategory(event::EventCategory::Keyboard) & io.WantCaptureKeyboard;
     }
   }
 

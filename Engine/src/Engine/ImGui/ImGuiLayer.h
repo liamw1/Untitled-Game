@@ -1,7 +1,7 @@
 #pragma once
 #include "Engine/Core/Layer.h"
 
-namespace Engine
+namespace eng
 {
   class ImGuiLayer : public Layer
   {
@@ -11,7 +11,7 @@ namespace Engine
 
     void onAttach() override;
     void onDetach() override;
-    void onEvent(Event& event) override;
+    void onEvent(event::Event& event) override;
 
     void begin();
     void end();

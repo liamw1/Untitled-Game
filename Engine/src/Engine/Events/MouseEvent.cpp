@@ -1,73 +1,73 @@
 #include "ENpch.h"
 #include "MouseEvent.h"
 
-namespace Engine
+namespace eng::event
 {
-  MouseMoveEvent::MouseMoveEvent(float x, float y)
+  MouseMove::MouseMove(float x, float y)
     : m_MouseX(x), m_MouseY(y) {}
 
-  EventType MouseMoveEvent::type() const { return Type(); }
-  EventType MouseMoveEvent::Type() { return EventType::MouseMove; }
-  EventCategory MouseMoveEvent::categoryFlags() const { return EventCategory::Mouse | EventCategory::Input; }
-  const char* MouseMoveEvent::name() const { return "MouseMove"; }
-  std::string MouseMoveEvent::toString() const
+  EventType MouseMove::type() const { return Type(); }
+  EventType MouseMove::Type() { return EventType::MouseMove; }
+  EventCategory MouseMove::categoryFlags() const { return EventCategory::Mouse | EventCategory::Input; }
+  const char* MouseMove::name() const { return "MouseMove"; }
+  std::string MouseMove::toString() const
   {
     std::stringstream ss;
-    ss << "MouseMoveEvent: " << m_MouseX << ", " << m_MouseY;
+    ss << "MouseMove: " << m_MouseX << ", " << m_MouseY;
     return ss.str();
   }
 
-  float MouseMoveEvent::x() const { return m_MouseX; }
-  float MouseMoveEvent::y() const { return m_MouseY; }
+  float MouseMove::x() const { return m_MouseX; }
+  float MouseMove::y() const { return m_MouseY; }
 
 
 
-  MouseScrollEvent::MouseScrollEvent(float xOffset, float yOffset)
+  MouseScroll::MouseScroll(float xOffset, float yOffset)
     : m_XOffset(xOffset), m_YOffset(yOffset) {}
 
-  EventType MouseScrollEvent::type() const { return Type(); }
-  EventType MouseScrollEvent::Type() { return EventType::MouseScroll; }
-  EventCategory MouseScrollEvent::categoryFlags() const { return EventCategory::Mouse | EventCategory::Input; }
-  const char* MouseScrollEvent::name() const { return "MouseScroll"; }
-  std::string MouseScrollEvent::toString() const
+  EventType MouseScroll::type() const { return Type(); }
+  EventType MouseScroll::Type() { return EventType::MouseScroll; }
+  EventCategory MouseScroll::categoryFlags() const { return EventCategory::Mouse | EventCategory::Input; }
+  const char* MouseScroll::name() const { return "MouseScroll"; }
+  std::string MouseScroll::toString() const
   {
     std::stringstream ss;
-    ss << "MouseScrollEvent: " << xOffset() << ", " << yOffset();
+    ss << "MouseScroll: " << xOffset() << ", " << yOffset();
     return ss.str();
   }
 
-  float MouseScrollEvent::xOffset() const { return m_XOffset; }
-  float MouseScrollEvent::yOffset() const { return m_YOffset; }
+  float MouseScroll::xOffset() const { return m_XOffset; }
+  float MouseScroll::yOffset() const { return m_YOffset; }
 
 
 
-  MouseButtonPressEvent::MouseButtonPressEvent(Mouse button)
+  MouseButtonPress::MouseButtonPress(input::Mouse button)
     : m_Button(button) {}
 
-  EventType MouseButtonPressEvent::type() const { return Type(); }
-  EventType MouseButtonPressEvent::Type() { return EventType::MouseButtonPress; }
-  EventCategory MouseButtonPressEvent::categoryFlags() const { return EventCategory::Mouse | EventCategory::Input | EventCategory::MouseButton; }
-  const char* MouseButtonPressEvent::name() const { return "MouseButtonPress"; }
-  std::string MouseButtonPressEvent::toString() const
+  EventType MouseButtonPress::type() const { return Type(); }
+  EventType MouseButtonPress::Type() { return EventType::MouseButtonPress; }
+  EventCategory MouseButtonPress::categoryFlags() const { return EventCategory::Mouse | EventCategory::Input | EventCategory::MouseButton; }
+  const char* MouseButtonPress::name() const { return "MouseButtonPress"; }
+  std::string MouseButtonPress::toString() const
   {
     std::stringstream ss;
-    ss << "MouseButtonPressEvent: " << static_cast<mouseCode>(m_Button);
+    ss << "MouseButtonPress: " << static_cast<input::mouseCode>(m_Button);
     return ss.str();
   }
 
 
 
-  MouseButtonReleaseEvent::MouseButtonReleaseEvent(Mouse button)
+  MouseButtonRelease::MouseButtonRelease(input::Mouse button)
     : m_Button(button) {}
 
-  EventType MouseButtonReleaseEvent::type() const { return Type(); }
-  EventType MouseButtonReleaseEvent::Type() { return EventType::MouseButtonRelease; }
-  EventCategory MouseButtonReleaseEvent::categoryFlags() const { return EventCategory::Mouse | EventCategory::Input | EventCategory::MouseButton; }
-  const char* MouseButtonReleaseEvent::name() const { return "MouseButtonRelease"; }
-  std::string MouseButtonReleaseEvent::toString() const
+  EventType MouseButtonRelease::type() const { return Type(); }
+  EventType MouseButtonRelease::Type() { return EventType::MouseButtonRelease; }
+  EventCategory MouseButtonRelease::categoryFlags() const { return EventCategory::Mouse | EventCategory::Input | EventCategory::MouseButton; }
+  const char* MouseButtonRelease::name() const { return "MouseButtonRelease"; }
+  std::string MouseButtonRelease::toString() const
   {
     std::stringstream ss;
-    ss << "MouseButtonReleaseEvent: " << static_cast<mouseCode>(m_Button);
+    ss << "MouseButtonRelease: " << static_cast<input::mouseCode>(m_Button);
     return ss.str();
   }
 }

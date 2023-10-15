@@ -2,16 +2,16 @@
 #include "GameSandbox.h"
 #include <Engine/Core/EntryPoint.h>
 
-class GameApp : public Engine::Application
+class GameApp : public eng::Application
 {
 public:
-  GameApp(Engine::ApplicationCommandLineArgs args)
+  GameApp(eng::ApplicationCommandLineArgs args)
     : Application("Game", args) { pushLayer(new GameSandbox()); }
 
   ~GameApp() = default;
 };
 
-Engine::Application* Engine::CreateApplication(ApplicationCommandLineArgs args)
+eng::Application* eng::createApplication(ApplicationCommandLineArgs args)
 {
   return new GameApp(args);
 }

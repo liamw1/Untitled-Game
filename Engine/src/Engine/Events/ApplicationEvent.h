@@ -1,12 +1,12 @@
 #pragma once
 #include "Event.h"
 
-namespace Engine
+namespace eng::event
 {
-  class WindowResizeEvent : public Event
+  class WindowResize : public Event
   {
   public:
-    WindowResizeEvent(uint32_t width, uint32_t height);
+    WindowResize(uint32_t width, uint32_t height);
 
     EventType type() const override;
     static EventType Type();
@@ -21,7 +21,7 @@ namespace Engine
     uint32_t m_Width, m_Height;
   };
 
-  class WindowCloseEvent : public Event
+  class WindowClose : public Event
   {
   public:
     EventType type() const override;
@@ -30,7 +30,7 @@ namespace Engine
     const char* name() const override;
   };
 
-  class AppTickEvent : public Event
+  class AppTick : public Event
   {
   public:
     EventType type() const override;
@@ -39,7 +39,7 @@ namespace Engine
     const char* name() const override;
   };
 
-  class AppUpdateEvent : public Event
+  class AppUpdate : public Event
   {
   public:
     EventType type() const override;
@@ -48,7 +48,7 @@ namespace Engine
     const char* name() const override;
   };
 
-  class AppRenderEvent : public Event
+  class AppRender : public Event
   {
   public:
     EventType type() const override;

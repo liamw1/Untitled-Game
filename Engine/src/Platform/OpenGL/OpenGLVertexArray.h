@@ -2,7 +2,7 @@
 #include "Engine/Renderer/VertexArray.h"
 #include "Engine/Renderer/StorageBuffer.h"
 
-namespace Engine
+namespace eng
 {
   class OpenGLVertexArray : public VertexArray
   {

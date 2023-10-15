@@ -4,7 +4,7 @@
 #include "DevCamera.h"
 #include <glm/gtc/matrix_transform.hpp>
 
-namespace Engine
+namespace eng
 {
   class ECS
   {
@@ -14,49 +14,52 @@ namespace Engine
       EN_CORE_ASSERT(Entity::Registry().valid(entityID), "Entity ID does not refer to a valid entity!");
       return Entity(entityID);
     }
-    static Entity GetEntity(uint32_t entityID) { return (static_cast<entt::entity>(entityID)); }
+    static Entity GetEntity(uint32_t entityID) { return static_cast<entt::entity>(entityID); }
 
     static entt::registry& Registry() { return Entity::Registry(); }
     static Entity Create() { return Entity::Registry().create(); }
   };
+}
 
-  static constexpr Vec3 c_UpDirection(0, 0, 1);
+namespace eng::scene
+{
+  static constexpr math::Vec3 c_UpDirection(0, 0, 1);
   
-  Entity Scene::CreateEntity(const std::string& name)
+  Entity CreateEntity(const std::string& name)
   {
-    return CreateEntity(Vec3(0.0), name);
+    return CreateEntity(math::Vec3(0.0), name);
   }
 
-  Entity Scene::CreateEntity(const Vec3& initialPosition, const std::string& name)
+  Entity CreateEntity(const math::Vec3& initialPosition, const std::string& name)
   {
     Entity entity = ECS::Create();
-    entity.add<Component::ID>();
-    entity.add<Component::Tag>().name = name.empty() ? "Unnamed Entity" : name;
-    entity.add<Component::Transform>().position = initialPosition;
+    entity.add<component::ID>();
+    entity.add<component::Tag>().name = name.empty() ? "Unnamed Entity" : name;
+    entity.add<component::Transform>().position = initialPosition;
     return entity;
   }
 
-  Entity Scene::CreateEmptyEntity()
+  Entity CreateEmptyEntity()
   {
     return ECS::Create();
   }
 
-  void Scene::DestroyEntity(Entity entity)
+  void DestroyEntity(Entity entity)
   {
     ECS::Registry().destroy(entity);
   }
 
-  Entity Scene::GetEntity(uint32_t entityID)
+  Entity GetEntity(uint32_t entityID)
   {
     return ECS::GetEntity(entityID);
   }
 
-  void Scene::OnUpdate(Timestep timestep)
+  void OnUpdate(Timestep timestep)
   {
     // Update scripts
-    ECS::Registry().view<Component::NativeScript>().each([=](entt::entity entityID, Component::NativeScript& nsc)
+    ECS::Registry().view<component::NativeScript>().each([=](entt::entity entityID, component::NativeScript& nsc)
       {
-        // TODO: Move to Scene::OnScenePlay
+        // TODO: Move to scene::onScenePlay
         if (!nsc.instance)
           nsc.instance = nsc.instantiateScript(ECS::GetEntity(entityID));
 
@@ -64,11 +67,11 @@ namespace Engine
       });
   }
 
-  void Scene::OnEvent(Event& event)
+  void OnEvent(event::Event& event)
   {
-    ECS::Registry().view<Component::NativeScript>().each([&](entt::entity entityID, Component::NativeScript& nsc)
+    ECS::Registry().view<component::NativeScript>().each([&](entt::entity entityID, component::NativeScript& nsc)
       {
-        // TODO: Move to Scene::OnScenePlay
+        // TODO: Move to scene::onScenePlay
         if (!nsc.instance)
           nsc.instance = nsc.instantiateScript(ECS::GetEntity(entityID));
 
@@ -76,12 +79,12 @@ namespace Engine
       });
   }
 
-  Entity Scene::ActiveCamera()
+  Entity ActiveCamera()
   {
-    auto view = ECS::Registry().view<Component::Camera>();
+    auto view = ECS::Registry().view<component::Camera>();
     for (entt::entity entityID : view)
     {
-      const Component::Camera& cameraComponent = view.get<Component::Camera>(entityID);
+      const component::Camera& cameraComponent = view.get<component::Camera>(entityID);
 
       if (cameraComponent.isActive)
         return ECS::GetEntity(entityID);
@@ -91,39 +94,39 @@ namespace Engine
     return {};
   }
 
-  Mat4 Scene::CalculateViewProjection(Entity viewer)
+  math::Mat4 CalculateViewProjection(Entity viewer)
   {
-    const Camera& camera = viewer.get<Component::Camera>().camera;
-    const Mat4& projection = camera.projectionMatrix();
+    const Camera& camera = viewer.get<component::Camera>().camera;
+    const math::Mat4& projection = camera.projectionMatrix();
 
-    Mat4 viewMatrix{};
+    math::Mat4 viewMatrix{};
     if (camera.projectionType() == Camera::ProjectionType::Perspective)
     {
-      Vec3 viewDirection = viewer.get<Component::Transform>().orientationDirection();
-      const Vec3& position = viewer.get<Component::Transform>().position;
+      math::Vec3 viewDirection = viewer.get<component::Transform>().orientationDirection();
+      const math::Vec3& position = viewer.get<component::Transform>().position;
       viewMatrix = glm::lookAt(position, position + viewDirection, c_UpDirection);
     }
     else if (camera.projectionType() == Camera::ProjectionType::Orthographic)
-      viewMatrix = glm::inverse(viewer.get<Component::Transform>().calculateTransform());
+      viewMatrix = glm::inverse(viewer.get<component::Transform>().calculateTransform());
     else
       EN_CORE_ERROR("Unknown camera projection type!");
 
     return projection * viewMatrix;
   }
 
-  void Scene::OnViewportResize(uint32_t width, uint32_t height)
+  void OnViewportResize(uint32_t width, uint32_t height)
   {
     // Resize our non-fixed aspect ratio cameras
-    auto view = ECS::Registry().view<Component::Camera>();
+    auto view = ECS::Registry().view<component::Camera>();
     for (entt::entity entityID : view)
     {
-      Component::Camera& cameraComponent = view.get<Component::Camera>(entityID);
+      component::Camera& cameraComponent = view.get<component::Camera>(entityID);
       if (!cameraComponent.fixedAspectRatio)
         cameraComponent.camera.setViewportSize(width, height);
     }
   }
 
-  void Scene::ForEachEntity(void (*func)(const Entity))
+  void ForEachEntity(void (*func)(const Entity))
   {
     const size_t numEntities = ECS::Registry().size();
     const entt::entity* entityIDs = ECS::Registry().data();

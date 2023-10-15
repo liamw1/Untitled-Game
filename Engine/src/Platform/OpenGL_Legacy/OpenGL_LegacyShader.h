@@ -1,7 +1,7 @@
 #pragma once
 #include "Engine/Renderer/Shader.h"
 
-namespace Engine
+namespace eng
 {
   class OpenGL_LegacyShader : public Shader
   {

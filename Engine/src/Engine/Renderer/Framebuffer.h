@@ -15,7 +15,7 @@ enum class FramebufferTextureFormat
   Depth = DEPTH24STENCIL8
 };
 
-namespace Engine
+namespace eng
 {
   struct FramebufferTextureSpecification
   {

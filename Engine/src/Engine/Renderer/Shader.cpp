@@ -5,7 +5,7 @@
 #include "Platform/OpenGL/OpenGLShader.h"
 #include "Platform/OpenGL_Legacy/OpenGL_LegacyShader.h"
 
-namespace Engine
+namespace eng
 {
   Shader::~Shader() = default;
 

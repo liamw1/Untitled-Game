@@ -5,7 +5,7 @@
 /*
   A class representing a NxNxN cube of blocks.
 */
-class Chunk : private Engine::NonCopyable, Engine::NonMovable
+class Chunk : private eng::NonCopyable, eng::NonMovable
 {
   static constexpr blockIndex_t c_ChunkSize = 32;
 
@@ -15,11 +15,11 @@ public:
 
   const GlobalIndex& globalIndex() const;
 
-  ProtectedBlockArrayBox<Block::Type>& composition();
-  const ProtectedBlockArrayBox<Block::Type>& composition() const;
+  ProtectedBlockArrayBox<block::Type>& composition();
+  const ProtectedBlockArrayBox<block::Type>& composition() const;
 
-  ProtectedBlockArrayBox<Block::Light>& lighting();
-  const ProtectedBlockArrayBox<Block::Light>& lighting() const;
+  ProtectedBlockArrayBox<block::Light>& lighting();
+  const ProtectedBlockArrayBox<block::Light>& lighting() const;
 
   /*
     \return Whether or not a given chunk face has transparent blocks. Useful for deciding which chunks should be loaded
@@ -30,10 +30,10 @@ public:
     is a costly operation (at least relative to the cost of changing a single block), so we prefer to only compute opacity
     when the chunk is updated via setComposition or update. Use with caution.
   */
-  bool isFaceOpaque(Direction face) const;
+  bool isFaceOpaque(eng::math::Direction face) const;
 
-  void setComposition(BlockArrayBox<Block::Type>&& composition);
-  void setLighting(BlockArrayBox<Block::Light>&& lighting);
+  void setComposition(BlockArrayBox<block::Type>&& composition);
+  void setLighting(BlockArrayBox<block::Light>&& lighting);
   void determineOpacity();
 
   void update();
@@ -41,7 +41,7 @@ public:
   /*
     \returns The chunk's geometric center relative to origin chunk.
   */
-  static Vec3 Center(const Vec3& anchorPosition);
+  static eng::math::Vec3 Center(const eng::math::Vec3& anchorPosition);
 
   /*
     A chunk's anchor point is its bottom southeast vertex.
@@ -50,18 +50,18 @@ public:
     If the anchor point is denoted by A, then for any point
     X within the chunk, X_i >= A_i.
   */
-  static Vec3 AnchorPosition(const GlobalIndex& chunkIndex, const GlobalIndex& originIndex);
+  static eng::math::Vec3 AnchorPosition(const GlobalIndex& chunkIndex, const GlobalIndex& originIndex);
 
   static constexpr blockIndex_t Size() { return c_ChunkSize; }
-  static constexpr length_t Length() { return Block::Length() * Size(); }
+  static constexpr length_t Length() { return block::length() * Size(); }
   static constexpr int TotalBlocks() { return Size() * Size() * Size(); }
   static constexpr BlockBox Bounds() { return BlockBox(0, Chunk::Size() - 1); }
   static constexpr BlockRect Bounds2D() { return BlockRect(0, Chunk::Size() - 1); }
   static constexpr GlobalBox Stencil(const GlobalIndex& chunkIndex) { return GlobalBox(-1, 1) + chunkIndex; }
 
 private:
-  ProtectedBlockArrayBox<Block::Type> m_Composition;
-  ProtectedBlockArrayBox<Block::Light> m_Lighting;
+  ProtectedBlockArrayBox<block::Type> m_Composition;
+  ProtectedBlockArrayBox<block::Light> m_Lighting;
   std::atomic<uint16_t> m_NonOpaqueFaces;
   const GlobalIndex m_GlobalIndex;
 };

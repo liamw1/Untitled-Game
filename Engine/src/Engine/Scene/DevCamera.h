@@ -2,25 +2,25 @@
 #include "Engine/Core/Time.h"
 #include "Engine/Events/Event.h"
 
-namespace Engine::DevCamera
+namespace eng::DevCamera
 {
 	void OnUpdate(Timestep timestep);
-	void OnEvent(Event& event);
+	void OnEvent(event::Event& event);
 
 	length_t Distance();
 	void SetDistance(length_t distance);
 
 	void SetViewportSize(uint32_t width, uint32_t height);
 
-	const Mat4& ViewMatrix();
-	Mat4 ViewProjection();
+	const math::Mat4& ViewMatrix();
+  math::Mat4 ViewProjection();
 
-	Vec3 UpDirection();
-	Vec3 RightDirection();
-	Vec3 ForwardDirection();
-	const Vec3& Position();
-   Quat Orientation();
+	math::Vec3 UpDirection();
+	math::Vec3 RightDirection();
+	math::Vec3 ForwardDirection();
+	const math::Vec3& Position();
+  math::Quat Orientation();
 
-	Angle Pitch();
-  Angle Yaw();
+	math::Angle Pitch();
+  math::Angle Yaw();
 }

@@ -39,15 +39,15 @@ length_t Biome::CalculateOctaveNoise(const NoiseSamples& noiseSamples, length_t 
   return sum;
 }
 
-void Biome::StandardColumnFill(BlockArrayBox<Block::Type>::Strip column, length_t chunkFloor, length_t elevation, Block::Type surfaceType, int surfaceDepth, Block::Type soilType, int soilDepth)
+void Biome::StandardColumnFill(BlockArrayBox<block::Type>::Strip column, length_t chunkFloor, length_t elevation, block::Type surfaceType, int surfaceDepth, block::Type soilType, int soilDepth)
 {
-  int terrainElevationIndex = static_cast<int>(std::ceil((elevation - chunkFloor) / Block::Length()));
-  int waterLevelIndex = static_cast<int>(std::ceil((0 - chunkFloor) / Block::Length()));
+  int terrainElevationIndex = static_cast<int>(std::ceil((elevation - chunkFloor) / block::length()));
+  int waterLevelIndex = static_cast<int>(std::ceil((0 - chunkFloor) / block::length()));
 
   blockIndex_t k = 0;
   while (k < terrainElevationIndex - soilDepth - surfaceDepth && k < Chunk::Size())
   {
-    column[k] = Block::ID::Stone;
+    column[k] = block::ID::Stone;
     k++;
   }
   while (k < terrainElevationIndex - surfaceDepth && k < Chunk::Size())
@@ -62,12 +62,12 @@ void Biome::StandardColumnFill(BlockArrayBox<Block::Type>::Strip column, length_
   }
   while (k < waterLevelIndex && k < Chunk::Size())
   {
-    column[k] = Block::ID::Water;
+    column[k] = block::ID::Water;
     k++;
   }
   while (k < Chunk::Size())
   {
-    column[k] = Block::ID::Air;
+    column[k] = block::ID::Air;
     k++;
   }
 }

@@ -1,26 +1,26 @@
 #include "ENpch.h"
-#include "Engine/Core/Input.h"
+#include "Engine/Core/Input/Input.h"
 #include "Engine/Core/Application.h"
 #include "Engine/Core/Window.h"
 #include <GLFW/glfw3.h>
 
-namespace Engine
+namespace eng::input
 {
-  bool Input::IsKeyPressed(Key key)
+  bool isKeyPressed(Key key)
   {
     GLFWwindow* window = static_cast<GLFWwindow*>(Application::Get().getWindow().getNativeWindow());
     int state = glfwGetKey(window, static_cast<int>(key));
     return state == GLFW_PRESS;
   }
 
-  bool Input::IsMouseButtonPressed(Mouse button)
+  bool isMouseButtonPressed(Mouse button)
   {
     GLFWwindow* window = static_cast<GLFWwindow*>(Application::Get().getWindow().getNativeWindow());
     int state = glfwGetMouseButton(window, static_cast<int>(button));
     return state == GLFW_PRESS;
   }
 
-  Float2 Input::GetMousePosition()
+  math::Float2 getMousePosition()
   {
     GLFWwindow* window = static_cast<GLFWwindow*>(Application::Get().getWindow().getNativeWindow());
     double xPos, yPos;
@@ -28,13 +28,13 @@ namespace Engine
     return { static_cast<float>(xPos), static_cast<float>(yPos) };
   }
 
-  float Input::GetMouseX()
+  float getMouseX()
   {
-    return GetMousePosition().x;
+    return getMousePosition().x;
   }
 
-  float Input::GetMouseY()
+  float getMouseY()
   {
-    return GetMousePosition().y;
+    return getMousePosition().y;
   }
 }

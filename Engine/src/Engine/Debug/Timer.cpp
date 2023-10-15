@@ -1,7 +1,7 @@
 #include "ENpch.h"
 #include "Timer.h"
 
-namespace Engine::Debug
+namespace eng::debug
 {
   Timer::Timer()
   : Timer("Unnamed Timer") {}

@@ -5,12 +5,12 @@
 #include "Util/Util.h"
 
 ChunkManager::ChunkManager()
-  : m_ThreadPool(std::make_shared<Engine::Threads::ThreadPool>(1)),
-    m_LoadWork(m_ThreadPool, Engine::Threads::Priority::Normal),
-    m_CleanWork(m_ThreadPool, Engine::Threads::Priority::High),
-    m_LightingWork(m_ThreadPool, Engine::Threads::Priority::Normal),
-    m_LazyMeshingWork(m_ThreadPool, Engine::Threads::Priority::Normal),
-    m_ForceMeshingWork(m_ThreadPool, Engine::Threads::Priority::Immediate) {}
+  : m_ThreadPool(std::make_shared<eng::threads::ThreadPool>(1)),
+    m_LoadWork(m_ThreadPool, eng::threads::Priority::Normal),
+    m_CleanWork(m_ThreadPool, eng::threads::Priority::High),
+    m_LightingWork(m_ThreadPool, eng::threads::Priority::Normal),
+    m_LazyMeshingWork(m_ThreadPool, eng::threads::Priority::Normal),
+    m_ForceMeshingWork(m_ThreadPool, eng::threads::Priority::Immediate) {}
 
 ChunkManager::~ChunkManager()
 {
@@ -21,17 +21,17 @@ void ChunkManager::initialize()
 {
   if (!s_Shader)
   {
-    s_Shader = Engine::Shader::Create("assets/shaders/Chunk.glsl");
-    s_LightUniform = Engine::Uniform::Create(2, sizeof(LightUniforms));
-    s_TextureArray = Block::GetTextureArray();
+    s_Shader = eng::Shader::Create("assets/shaders/Chunk.glsl");
+    s_LightUniform = eng::Uniform::Create(2, sizeof(LightUniforms));
+    s_TextureArray = block::getTextureArray();
 
-    s_SSBO = Engine::StorageBuffer::Create(Engine::StorageBuffer::Type::SSBO, c_StorageBufferBinding);
+    s_SSBO = eng::StorageBuffer::Create(eng::StorageBuffer::Type::SSBO, c_StorageBufferBinding);
     s_SSBO->set(nullptr, c_StorageBufferSize);
     s_SSBO->bind();
   }
 
-  m_OpaqueMultiDrawArray = std::make_unique<Engine::MultiDrawIndexedArray<ChunkDrawCommand>>(s_VertexBufferLayout);
-  m_TransparentMultiDrawArray = std::make_unique<Engine::MultiDrawIndexedArray<ChunkDrawCommand>>(s_VertexBufferLayout);
+  m_OpaqueMultiDrawArray = std::make_unique<eng::MultiDrawIndexedArray<ChunkDrawCommand>>(s_VertexBufferLayout);
+  m_TransparentMultiDrawArray = std::make_unique<eng::MultiDrawIndexedArray<ChunkDrawCommand>>(s_VertexBufferLayout);
 
   LightUniforms lightUniforms;
   lightUniforms.sunIntensity = 1.0f;
@@ -42,76 +42,76 @@ void ChunkManager::render()
 {
   EN_PROFILE_FUNCTION();
 
-  const Mat4& viewProjection = Engine::Scene::CalculateViewProjection(Engine::Scene::ActiveCamera());
-  std::array<Vec4, 6> frustumPlanes = Util::CalculateViewFrustumPlanes(viewProjection);
+  const eng::math::Mat4& viewProjection = eng::scene::CalculateViewProjection(eng::scene::ActiveCamera());
+  std::array<eng::math::Vec4, 6> frustumPlanes = util::calculateViewFrustumPlanes(viewProjection);
 
   // Shift each plane by distance equal to radius of sphere that circumscribes chunk
   static constexpr length_t chunkSphereRadius = std::numbers::sqrt3_v<length_t> * Chunk::Length() / 2;
-  for (Vec4& plane : frustumPlanes)
+  for (eng::math::Vec4& plane : frustumPlanes)
   {
-    length_t planeNormalMag = glm::length(Vec3(plane));
+    length_t planeNormalMag = glm::length(eng::math::Vec3(plane));
     plane.w += chunkSphereRadius * planeNormalMag;
   }
 
-  Vec3 playerCameraPosition = Player::CameraPosition();
-  GlobalIndex originIndex = Player::OriginIndex();
+  eng::math::Vec3 playerCameraPosition = player::cameraPosition();
+  GlobalIndex originIndex = player::originIndex();
 
   s_Shader->bind();
   s_TextureArray->bind(c_TextureSlot);
 
   {
-    Engine::RenderCommand::SetDepthWriting(true);
-    Engine::RenderCommand::SetUseDepthOffset(false);
+    eng::command::setDepthWriting(true);
+    eng::command::setUseDepthOffset(false);
 
     int commandCount = m_OpaqueMultiDrawArray->partition([&originIndex, &frustumPlanes](const GlobalIndex& chunkIndex)
       {
-        Vec3 anchorPosition = Chunk::AnchorPosition(chunkIndex, originIndex);
-        Vec3 chunkCenter = Chunk::Center(anchorPosition);
-        return Util::IsInRange(chunkIndex, originIndex, c_RenderDistance) && Util::IsInFrustum(chunkCenter, frustumPlanes);
+        eng::math::Vec3 anchorPosition = Chunk::AnchorPosition(chunkIndex, originIndex);
+        eng::math::Vec3 chunkCenter = Chunk::Center(anchorPosition);
+        return util::isInRange(chunkIndex, originIndex, c_RenderDistance) && util::isInFrustum(chunkCenter, frustumPlanes);
       });
 
-    std::vector<Float4> storageBufferData;
+    std::vector<eng::math::Float4> storageBufferData;
     storageBufferData.reserve(commandCount);
     const std::vector<ChunkDrawCommand>& drawCommands = m_OpaqueMultiDrawArray->getDrawCommandBuffer();
     for (int i = 0; i < commandCount; ++i)
     {
       const GlobalIndex& chunkIndex = drawCommands[i].id();
-      Vec3 chunkAnchor = Chunk::AnchorPosition(chunkIndex, originIndex);
+      eng::math::Vec3 chunkAnchor = Chunk::AnchorPosition(chunkIndex, originIndex);
       storageBufferData.emplace_back(chunkAnchor, 0);
     }
 
-    uint32_t bufferDataSize = static_cast<uint32_t>(storageBufferData.size() * sizeof(Float4));
+    uint32_t bufferDataSize = static_cast<uint32_t>(storageBufferData.size() * sizeof(eng::math::Float4));
     if (bufferDataSize > c_StorageBufferSize)
       EN_ERROR("Chunk anchor data exceeds SSBO size!");
 
     m_OpaqueMultiDrawArray->bind();
     s_SSBO->update(storageBufferData.data(), 0, bufferDataSize);
-    Engine::RenderCommand::MultiDrawIndexed(drawCommands.data(), commandCount, sizeof(ChunkDrawCommand));
+    eng::command::multiDrawIndexed(drawCommands.data(), commandCount, sizeof(ChunkDrawCommand));
   }
 
   {
-    Engine::RenderCommand::SetBlending(true);
-    Engine::RenderCommand::SetFaceCulling(false);
-    Engine::RenderCommand::SetDepthWriting(false);
-    Engine::RenderCommand::SetUseDepthOffset(true);
-    Engine::RenderCommand::SetDepthOffset(-1.0f, -1.0f);
+    eng::command::setBlending(true);
+    eng::command::setFaceCulling(false);
+    eng::command::setDepthWriting(false);
+    eng::command::setUseDepthOffset(true);
+    eng::command::setDepthOffset(-1.0f, -1.0f);
 
     int commandCount = m_TransparentMultiDrawArray->partition([&originIndex, &frustumPlanes](const GlobalIndex& chunkIndex)
       {
-        Vec3 anchorPosition = Chunk::AnchorPosition(chunkIndex, originIndex);
-        Vec3 chunkCenter = Chunk::Center(anchorPosition);
-        return Util::IsInRange(chunkIndex, originIndex, c_RenderDistance) && Util::IsInFrustum(chunkCenter, frustumPlanes);
+        eng::math::Vec3 anchorPosition = Chunk::AnchorPosition(chunkIndex, originIndex);
+        eng::math::Vec3 chunkCenter = Chunk::Center(anchorPosition);
+        return util::isInRange(chunkIndex, originIndex, c_RenderDistance) && util::isInFrustum(chunkCenter, frustumPlanes);
       });
     m_TransparentMultiDrawArray->sort(commandCount, [&originIndex, &playerCameraPosition](const GlobalIndex& chunkA, const GlobalIndex& chunkB)
       {
         // NOTE: Maybe measure min distance to chunk faces instead
     
-        Vec3 anchorA = Chunk::AnchorPosition(chunkA, originIndex);
-        Vec3 centerA = Chunk::Center(anchorA);
+        eng::math::Vec3 anchorA = Chunk::AnchorPosition(chunkA, originIndex);
+        eng::math::Vec3 centerA = Chunk::Center(anchorA);
         length_t distA = glm::length2(centerA - playerCameraPosition);
     
-        Vec3 anchorB = Chunk::AnchorPosition(chunkB, originIndex);
-        Vec3 centerB = Chunk::Center(anchorB);
+        eng::math::Vec3 anchorB = Chunk::AnchorPosition(chunkB, originIndex);
+        eng::math::Vec3 centerB = Chunk::Center(anchorB);
         length_t distB = glm::length2(centerB - playerCameraPosition);
     
         return distA > distB;
@@ -122,23 +122,23 @@ void ChunkManager::render()
         return orderModified;
       });
 
-    std::vector<Float4> storageBufferData;
+    std::vector<eng::math::Float4> storageBufferData;
     storageBufferData.reserve(commandCount);
     const std::vector<ChunkDrawCommand>& drawCommands = m_TransparentMultiDrawArray->getDrawCommandBuffer();
     for (int i = 0; i < commandCount; ++i)
     {
       const GlobalIndex& chunkIndex = drawCommands[i].id();
-      Vec3 chunkAnchor = Chunk::AnchorPosition(chunkIndex, originIndex);
+      eng::math::Vec3 chunkAnchor = Chunk::AnchorPosition(chunkIndex, originIndex);
       storageBufferData.emplace_back(chunkAnchor, 0);
     }
 
-    uint32_t bufferDataSize = static_cast<uint32_t>(storageBufferData.size() * sizeof(Float4));
+    uint32_t bufferDataSize = static_cast<uint32_t>(storageBufferData.size() * sizeof(eng::math::Float4));
     if (bufferDataSize > c_StorageBufferSize)
       EN_ERROR("Chunk anchor data exceeds SSBO size!");
 
     m_TransparentMultiDrawArray->bind();
     s_SSBO->update(storageBufferData.data(), 0, bufferDataSize);
-    Engine::RenderCommand::MultiDrawIndexed(drawCommands.data(), commandCount, sizeof(ChunkDrawCommand));
+    eng::command::multiDrawIndexed(drawCommands.data(), commandCount, sizeof(ChunkDrawCommand));
   }
 }
 
@@ -169,16 +169,16 @@ void ChunkManager::loadNewChunks()
     m_LoadWork.waitAndDiscardSaved();
 
   std::chrono::duration<seconds> timeSinceLastSearch = std::chrono::steady_clock::now() - lastSearchTimePoint;
-  if (timeSinceLastSearch < searchInterval || (future.valid() && !Engine::Threads::IsReady(future)))
+  if (timeSinceLastSearch < searchInterval || (future.valid() && !eng::threads::isReady(future)))
     return;
 
-  future = m_ThreadPool->submit(Engine::Threads::Priority::High, [this]()
+  future = m_ThreadPool->submit(eng::threads::Priority::High, [this]()
     {
       std::unordered_set<GlobalIndex> newChunkIndices = m_ChunkContainer.findAllLoadableIndices();
 
       // Load First chunk if none exist
       if (newChunkIndices.empty() && m_ChunkContainer.chunks().empty())
-        newChunkIndices.insert(Player::OriginIndex());
+        newChunkIndices.insert(player::originIndex());
 
       for (const GlobalIndex& newChunkIndex : newChunkIndices)
         m_LoadWork.submitAndSaveResult(newChunkIndex, &ChunkManager::generateNewChunk, this, newChunkIndex);
@@ -203,34 +203,34 @@ void ChunkManager::clean()
     m_CleanWork.waitAndDiscardSaved();
 
   std::chrono::duration<seconds> timeSinceLastSearch = std::chrono::steady_clock::now() - lastSearchTimePoint;
-  if (timeSinceLastSearch < searchInterval || previousPlayerOriginIndex == Player::OriginIndex() || (future.valid() && !Engine::Threads::IsReady(future)))
+  if (timeSinceLastSearch < searchInterval || previousPlayerOriginIndex == player::originIndex() || (future.valid() && !eng::threads::isReady(future)))
     return;
 
-  future = m_ThreadPool->submit(Engine::Threads::Priority::High, [this]()
+  future = m_ThreadPool->submit(eng::threads::Priority::High, [this]()
     {
-      GlobalIndex originIndex = Player::OriginIndex();
+      GlobalIndex originIndex = player::originIndex();
       std::vector<GlobalIndex> chunksMarkedForDeletion = m_ChunkContainer.chunks().getKeys([&originIndex](const GlobalIndex& chunkIndex)
         {
-          return !Util::IsInRange(chunkIndex, originIndex, c_UnloadDistance);
+          return !util::isInRange(chunkIndex, originIndex, c_UnloadDistance);
         });
 
       for (const GlobalIndex& chunkIndex : chunksMarkedForDeletion)
         m_CleanWork.submitAndSaveResult(chunkIndex, &ChunkManager::eraseChunk, this, chunkIndex);
     });
 
-  previousPlayerOriginIndex = Player::OriginIndex();
+  previousPlayerOriginIndex = player::originIndex();
   lastSearchTimePoint = std::chrono::steady_clock::now();
 }
 
 std::shared_ptr<const Chunk> ChunkManager::getChunk(const LocalIndex& chunkIndex) const
 {
-  GlobalIndex originChunk = Player::OriginIndex();
+  GlobalIndex originChunk = player::originIndex();
   return m_ChunkContainer.chunks().get(GlobalIndex(originChunk.i + chunkIndex.i, originChunk.j + chunkIndex.j, originChunk.k + chunkIndex.k));
 }
 
-void ChunkManager::placeBlock(GlobalIndex chunkIndex, BlockIndex blockIndex, Direction face, Block::Type blockType)
+void ChunkManager::placeBlock(GlobalIndex chunkIndex, BlockIndex blockIndex, eng::math::Direction face, block::Type blockType)
 {
-  if (Util::BlockNeighborIsInAnotherChunk(blockIndex, face))
+  if (util::blockNeighborIsInAnotherChunk(blockIndex, face))
   {
     chunkIndex += GlobalIndex::Dir(face);
     blockIndex -= static_cast<blockIndex_t>(Chunk::Size() - 1) * BlockIndex::Dir(face);
@@ -242,7 +242,7 @@ void ChunkManager::placeBlock(GlobalIndex chunkIndex, BlockIndex blockIndex, Dir
   if (!chunk)
     return;
 
-  bool validBlockPlacement = chunk->composition().setIf(blockIndex, blockType, [](Block::Type containedBlockType)
+  bool validBlockPlacement = chunk->composition().setIf(blockIndex, blockType, [](block::Type containedBlockType)
     {
       return !containedBlockType.hasCollision();
     });
@@ -264,13 +264,13 @@ void ChunkManager::removeBlock(const GlobalIndex& chunkIndex, const BlockIndex& 
   std::shared_ptr<Chunk> chunk = m_ChunkContainer.chunks().get(chunkIndex);
   if (!chunk)
     return;
-  Block::Type removedBlock = chunk->composition().replace(blockIndex, Block::ID::Air);
+  block::Type removedBlock = chunk->composition().replace(blockIndex, block::ID::Air);
 
   if (!removedBlock.hasTransparency())
   {
     // Get estimate of light value of effected block for immediate meshing
     int8_t lightEstimate = 0;
-    for (Direction direction : Directions())
+    for (eng::math::Direction direction : eng::math::Directions())
     {
       BlockIndex blockNeighbor = blockIndex + BlockIndex::Dir(direction);
       if (!Chunk::Bounds().encloses(blockNeighbor) || !chunk->composition().get(blockNeighbor).hasTransparency())
@@ -288,13 +288,13 @@ void ChunkManager::removeBlock(const GlobalIndex& chunkIndex, const BlockIndex& 
   sendBlockUpdate(chunkIndex, blockIndex);
 }
 
-void ChunkManager::loadChunk(const GlobalIndex& chunkIndex, Block::ID blockType)
+void ChunkManager::loadChunk(const GlobalIndex& chunkIndex, block::ID blockType)
 {
   std::shared_ptr<Chunk> chunk = std::make_shared<Chunk>(chunkIndex);
-  if (blockType != Block::ID::Air)
+  if (blockType != block::ID::Air)
   {
-    chunk->setComposition(BlockArrayBox<Block::Type>(Chunk::Bounds(), blockType));
-    chunk->setLighting(BlockArrayBox<Block::Light>(Chunk::Bounds(), AllocationPolicy::DefaultInitialize));
+    chunk->setComposition(BlockArrayBox<block::Type>(Chunk::Bounds(), blockType));
+    chunk->setLighting(BlockArrayBox<block::Light>(Chunk::Bounds(), eng::AllocationPolicy::DefaultInitialize));
   }
 
   m_ChunkContainer.insert(chunkIndex, std::move(chunk));
@@ -330,7 +330,7 @@ std::shared_ptr<Chunk> ChunkManager::generateNewChunk(const GlobalIndex& chunkIn
 {
   EN_PROFILE_FUNCTION();
 
-  std::shared_ptr<Chunk> chunk = Terrain::GenerateNew(chunkIndex);
+  std::shared_ptr<Chunk> chunk = terrain::generateNew(chunkIndex);
 
   bool insertionSuccess = m_ChunkContainer.insert(chunkIndex, std::move(chunk));
   if (insertionSuccess)
@@ -343,7 +343,7 @@ std::shared_ptr<Chunk> ChunkManager::generateNewChunk(const GlobalIndex& chunkIn
 
 void ChunkManager::eraseChunk(const GlobalIndex& chunkIndex)
 {
-  if (!Util::IsInRange(chunkIndex, Player::OriginIndex(), c_UnloadDistance))
+  if (!util::isInRange(chunkIndex, player::originIndex(), c_UnloadDistance))
   {
     // Order is important here to prevent memory leaks
     m_ChunkContainer.erase(chunkIndex);
@@ -354,7 +354,7 @@ void ChunkManager::eraseChunk(const GlobalIndex& chunkIndex)
 void ChunkManager::sendBlockUpdate(const GlobalIndex& chunkIndex, const BlockIndex& blockIndex)
 {
   BlockBox affectedBlocks = BlockBox(blockIndex, blockIndex).expand();
-  LocalBox affectedChunks = Util::BlockBoxToLocalBox(affectedBlocks);
+  LocalBox affectedChunks = util::blockBoxToLocalBox(affectedBlocks);
   affectedChunks.forEach([this, &chunkIndex](const LocalIndex& localIndex)
     {
       GlobalIndex neighborIndex = chunkIndex + static_cast<GlobalIndex>(localIndex);
@@ -367,7 +367,7 @@ void ChunkManager::sendBlockUpdate(const GlobalIndex& chunkIndex, const BlockInd
     });
 }
 
-void ChunkManager::uploadMeshes(Engine::Threads::UnorderedSet<ChunkDrawCommand>& commandQueue, std::unique_ptr<Engine::MultiDrawIndexedArray<ChunkDrawCommand>>& multiDrawArray)
+void ChunkManager::uploadMeshes(eng::threads::UnorderedSet<ChunkDrawCommand>& commandQueue, std::unique_ptr<eng::MultiDrawIndexedArray<ChunkDrawCommand>>& multiDrawArray)
 {
   std::unordered_set<ChunkDrawCommand> drawCommands = commandQueue.removeAll();
   while (!drawCommands.empty())
@@ -391,11 +391,11 @@ enum class AccessPattern
 
 struct BlockData
 {
-  BlockArrayBox<Block::Type> composition;
-  BlockArrayBox<Block::Light> lighting;
+  BlockArrayBox<block::Type> composition;
+  BlockArrayBox<block::Light> lighting;
 
   BlockData()
-    : composition(Bounds(), AllocationPolicy::ForOverwrite), lighting(Bounds(), AllocationPolicy::ForOverwrite) {}
+    : composition(Bounds(), eng::AllocationPolicy::ForOverwrite), lighting(Bounds(), eng::AllocationPolicy::ForOverwrite) {}
 
   static constexpr BlockBox Bounds() { return BlockBox(-1, Chunk::Size()); }
 };
@@ -403,9 +403,9 @@ struct BlockData
 template<typename T>
 static const ProtectedBlockArrayBox<T>& selectChunkData(const std::shared_ptr<const Chunk>& chunk)
 {
-  if constexpr (std::is_same_v<T, Block::Type>)
+  if constexpr (std::is_same_v<T, block::Type>)
     return chunk->composition();
-  if constexpr (std::is_same_v<T, Block::Light>)
+  if constexpr (std::is_same_v<T, block::Light>)
     return chunk->lighting();
 }
 
@@ -464,8 +464,8 @@ static void retrieveNeighborData(BlockArrayBox<T>& blockData, const ChunkContain
 static BlockData& getThreadLocalWorkspace()
 {
   thread_local BlockData blockData;
-  blockData.composition.fill(Block::Type());
-  blockData.lighting.fill(Block::Light());
+  blockData.composition.fill(block::Type());
+  blockData.lighting.fill(block::Light());
   return blockData;
 }
 
@@ -495,17 +495,17 @@ void ChunkManager::meshChunk(const std::shared_ptr<Chunk>& chunk)
   ChunkDrawCommand transparentDraw(chunkIndex, true);
   Chunk::Bounds().forEach([&blockData, &opaqueDraw, &transparentDraw](const BlockIndex& blockIndex)
     {
-      Block::Type blockType = blockData.composition(blockIndex);
+      block::Type blockType = blockData.composition(blockIndex);
 
-      if (blockType == Block::ID::Air)
+      if (blockType == block::ID::Air)
         return;
 
-      DirectionBitMask enabledFaces;
+      eng::math::DirectionBitMask enabledFaces;
       ChunkDrawCommand& draw = blockType.hasTransparency() ? transparentDraw : opaqueDraw;
-      for (Direction face : Directions())
+      for (eng::math::Direction face : eng::math::Directions())
       {
         BlockIndex cardinalIndex = blockIndex + BlockIndex::Dir(face);
-        Block::Type cardinalNeighbor = blockData.composition(cardinalIndex);
+        block::Type cardinalNeighbor = blockData.composition(cardinalIndex);
         if (cardinalNeighbor == blockType || (!blockType.hasTransparency() && !cardinalNeighbor.hasTransparency()))
           continue;
 
@@ -537,12 +537,12 @@ void ChunkManager::meshChunk(const std::shared_ptr<Chunk>& chunk)
         if (!blockType.hasTransparency())
           for (int quadIndex = 0; quadIndex < 4; ++quadIndex)
           {
-            Axis u = AxisOf(face);
-            Axis v = Cycle(u);
-            Axis w = Cycle(v);
+            eng::math::Axis u = AxisOf(face);
+            eng::math::Axis v = Cycle(u);
+            eng::math::Axis w = Cycle(v);
 
-            Direction edgeADir = ToDirection(v, ChunkVertex::GetOffset(face, quadIndex)[v]);
-            Direction edgeBDir = ToDirection(w, ChunkVertex::GetOffset(face, quadIndex)[w]);
+            eng::math::Direction edgeADir = ToDirection(v, ChunkVertex::GetOffset(face, quadIndex)[v]);
+            eng::math::Direction edgeBDir = ToDirection(w, ChunkVertex::GetOffset(face, quadIndex)[w]);
 
             BlockIndex edgeA = blockIndex + BlockIndex::Dir(face) + BlockIndex::Dir(edgeADir);
             BlockIndex edgeB = blockIndex + BlockIndex::Dir(face) + BlockIndex::Dir(edgeBDir);
@@ -583,10 +583,10 @@ void ChunkManager::updateLighting(const std::shared_ptr<Chunk>& chunk)
 
   // Perform initial propogation of sunlight downward until light hits opaque block
   BlockArrayRect<blockIndex_t> attenuatedSunlightExtents(Chunk::Bounds2D(), Chunk::Size());
-  BlockData::Bounds().faceInterior(Direction::Top).forEach([&blockData, &attenuatedSunlightExtents](const BlockIndex& blockIndex)
+  BlockData::Bounds().faceInterior(eng::math::Direction::Top).forEach([&blockData, &attenuatedSunlightExtents](const BlockIndex& blockIndex)
     {
       BlockIndex propogationIndex = blockIndex;
-      if (blockData.lighting(propogationIndex) != Block::Light::MaxValue())
+      if (blockData.lighting(propogationIndex) != block::Light::MaxValue())
         return;
 
       for (propogationIndex.k = blockIndex.k - 1; propogationIndex.k >= Chunk::Bounds().min.k; --propogationIndex.k)
@@ -594,7 +594,7 @@ void ChunkManager::updateLighting(const std::shared_ptr<Chunk>& chunk)
         if (!blockData.composition(propogationIndex).hasTransparency())
           break;
 
-        blockData.lighting(propogationIndex) = Block::Light::MaxValue();
+        blockData.lighting(propogationIndex) = block::Light::MaxValue();
       }
 
       blockIndex_t i = propogationIndex.i;
@@ -612,14 +612,14 @@ void ChunkManager::updateLighting(const std::shared_ptr<Chunk>& chunk)
     });
 
   // Light unlit blocks neighboring sunlight with attenuated sunlight value and add them to the propogation stack
-  std::array<std::stack<BlockIndex>, Block::Light::MaxValue() + 1> sunlight;
-  attenuatedSunlightExtents.bounds().forEach([&blockData, &sunlight, &attenuatedSunlightExtents](const IVec2<blockIndex_t>& index)
+  std::array<std::stack<BlockIndex>, block::Light::MaxValue() + 1> sunlight;
+  attenuatedSunlightExtents.bounds().forEach([&blockData, &sunlight, &attenuatedSunlightExtents](const eng::math::IVec2<blockIndex_t>& index)
     {
-      static constexpr int8_t attenuatedIntensity = Block::Light::MaxValue() - attenuation;
+      static constexpr int8_t attenuatedIntensity = block::Light::MaxValue() - attenuation;
 
       for (BlockIndex blockIndex(index, attenuatedSunlightExtents(index)); blockIndex.k < Chunk::Size(); ++blockIndex.k)
       {
-        if (!blockData.composition(blockIndex).hasTransparency() || blockData.lighting(blockIndex) == Block::Light::MaxValue())
+        if (!blockData.composition(blockIndex).hasTransparency() || blockData.lighting(blockIndex) == block::Light::MaxValue())
           continue;
 
         blockData.lighting(blockIndex) = attenuatedIntensity;
@@ -628,7 +628,7 @@ void ChunkManager::updateLighting(const std::shared_ptr<Chunk>& chunk)
     });
 
   // Add lit blocks in neighboring chunk to propogation stack
-  for (Direction direction = Direction::West; direction < Direction::Top; ++direction)
+  for (eng::math::Direction direction = eng::math::Direction::West; direction < eng::math::Direction::Top; ++direction)
   {
     BlockBox faceInterior = BlockData::Bounds().faceInterior(direction);
     faceInterior.forEach([&blockData, &sunlight](const BlockIndex& blockIndex)
@@ -639,13 +639,13 @@ void ChunkManager::updateLighting(const std::shared_ptr<Chunk>& chunk)
   }
 
   // Propogate attenuated sunlight
-  for (int8_t intensity = Block::Light::MaxValue(); intensity > 0; --intensity)
+  for (int8_t intensity = block::Light::MaxValue(); intensity > 0; --intensity)
     while (!sunlight[intensity].empty())
     {
       BlockIndex lightIndex = sunlight[intensity].top();
       sunlight[intensity].pop();
 
-      for (Direction direction : Directions())
+      for (eng::math::Direction direction : eng::math::Directions())
       {
         BlockIndex lightNeighbor = lightIndex + BlockIndex::Dir(direction);
         if (!Chunk::Bounds().encloses(lightNeighbor) || !blockData.composition(lightNeighbor).hasTransparency())
@@ -660,15 +660,15 @@ void ChunkManager::updateLighting(const std::shared_ptr<Chunk>& chunk)
       }
     }
 
-  BlockArrayBox<Block::Light> newLighting(Chunk::Bounds(), AllocationPolicy::Deferred);
-  if (blockData.lighting.anyOf(Chunk::Bounds(), [](Block::Light blockLight) { return blockLight != Block::Light::MaxValue(); }))
+  BlockArrayBox<block::Light> newLighting(Chunk::Bounds(), eng::AllocationPolicy::Deferred);
+  if (blockData.lighting.anyOf(Chunk::Bounds(), [](block::Light blockLight) { return blockLight != block::Light::MaxValue(); }))
   {
     newLighting.allocate();
-    newLighting.fill(Chunk::Bounds(), blockData.lighting, Chunk::Bounds(), Block::Light::MaxValue());
+    newLighting.fill(Chunk::Bounds(), blockData.lighting, Chunk::Bounds(), block::Light::MaxValue());
   }
 
   std::unordered_set<GlobalIndex> additionalLightingUpdates;
-  chunk->lighting().readOperation([&chunkIndex, &newLighting, &additionalLightingUpdates](const BlockArrayBox<Block::Light>& lighting, const Block::Light& defaultValue)
+  chunk->lighting().readOperation([&chunkIndex, &newLighting, &additionalLightingUpdates](const BlockArrayBox<block::Light>& lighting, const block::Light& defaultValue)
     {
       for (const auto& [side, faceInterior] : FaceInteriors(lighting.bounds()))
         if (!lighting.contentsEqual(faceInterior, newLighting, faceInterior, defaultValue))

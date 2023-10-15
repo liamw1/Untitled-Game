@@ -3,7 +3,7 @@
 #include "RendererAPI.h"
 #include "Platform/OpenGL/OpenGLVertexArray.h"
 
-namespace Engine
+namespace eng
 {
   IndexBuffer::IndexBuffer(const uint32_t* indices, uint32_t count)
     : m_Buffer(StorageBuffer::Create(StorageBuffer::Type::IndexBuffer))

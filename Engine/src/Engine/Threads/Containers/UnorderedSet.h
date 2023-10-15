@@ -1,6 +1,6 @@
 #pragma once
 
-namespace Engine::Threads
+namespace eng::threads
 {
   template<std::movable V>
     requires Hashable<V>

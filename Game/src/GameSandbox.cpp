@@ -10,11 +10,11 @@ GameSandbox::GameSandbox()
     m_PrintMinFrameRate(false),
     m_PrintPlayerPosition(false)
 {
-  Engine::Renderer::Initialize();
+  eng::renderer::initialize();
 
-  Block::Initialize();
+  block::initialize();
   Biome::Initialize();
-  LOD::MeshData::Initialize();
+  lod::MeshData::Initialize();
   m_World.initialize();
 }
 
@@ -28,7 +28,7 @@ void GameSandbox::onDetach()
 {
 }
 
-void GameSandbox::onUpdate(Engine::Timestep timestep)
+void GameSandbox::onUpdate(eng::Timestep timestep)
 {
   EN_PROFILE_FUNCTION();
 
@@ -54,15 +54,15 @@ void GameSandbox::onUpdate(Engine::Timestep timestep)
   }
   else if (m_PrintPlayerPosition)
   {
-    GlobalIndex position = static_cast<globalIndex_t>(Chunk::Size()) * Player::OriginIndex() + GlobalIndex::ToIndex(Player::Position());
+    GlobalIndex position = static_cast<globalIndex_t>(Chunk::Size()) * player::originIndex() + GlobalIndex::ToIndex(player::position());
     EN_TRACE("Position: {0}", position);
   }
 
-  Engine::RenderCommand::SetDepthWriting(true);
-  Engine::RenderCommand::SetUseDepthOffset(false);
-  Engine::RenderCommand::Clear(Float4(0.788f, 0.949f, 0.949f, 1.0f));
+  eng::command::setDepthWriting(true);
+  eng::command::setUseDepthOffset(false);
+  eng::command::clear(eng::math::Float4(0.788f, 0.949f, 0.949f, 1.0f));
 
-  Engine::Scene::OnUpdate(timestep);
+  eng::scene::OnUpdate(timestep);
   m_World.onUpdate(timestep);
 }
 
@@ -70,36 +70,36 @@ void GameSandbox::onImGuiRender()
 {
 }
 
-void GameSandbox::onEvent(Engine::Event& event)
+void GameSandbox::onEvent(eng::event::Event& event)
 {
-  Engine::EventDispatcher dispatcher(event);
-  dispatcher.dispatch<Engine::KeyPressEvent>(&GameSandbox::onKeyPressEvent, this);
+  eng::event::EventDispatcher dispatcher(event);
+  dispatcher.dispatch<eng::event::KeyPress>(&GameSandbox::onKeyPress, this);
 
-  Engine::Scene::OnEvent(event);
+  eng::scene::OnEvent(event);
   m_World.onEvent(event);
 }
 
-bool GameSandbox::onKeyPressEvent(Engine::KeyPressEvent& event)
+bool GameSandbox::onKeyPress(eng::event::KeyPress& event)
 {
   static bool mouseEnabled = false;
   static bool wireFrameEnabled = false;
   static bool faceCullingEnabled = false;
 
-  if (event.keyCode() == Key::Escape)
+  if (event.keyCode() == eng::input::Key::Escape)
   {
     mouseEnabled = !mouseEnabled;
-    mouseEnabled ? Engine::Application::Get().getWindow().enableCursor() : Engine::Application::Get().getWindow().disableCursor();
+    mouseEnabled ? eng::Application::Get().getWindow().enableCursor() : eng::Application::Get().getWindow().disableCursor();
   }
-  if (event.keyCode() == Key::F1)
+  if (event.keyCode() == eng::input::Key::F1)
   {
     wireFrameEnabled = !wireFrameEnabled;
-    Engine::RenderCommand::SetWireFrame(wireFrameEnabled);
+    eng::command::setWireFrame(wireFrameEnabled);
   }
-  if (event.keyCode() == Key::F2)
+  if (event.keyCode() == eng::input::Key::F2)
     m_PrintFrameRate = !m_PrintFrameRate;
-  if (event.keyCode() == Key::F3)
+  if (event.keyCode() == eng::input::Key::F3)
     m_PrintMinFrameRate = !m_PrintMinFrameRate;
-  if (event.keyCode() == Key::F4)
+  if (event.keyCode() == eng::input::Key::F4)
     m_PrintPlayerPosition = !m_PrintPlayerPosition;
 
   return false;

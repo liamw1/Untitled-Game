@@ -3,7 +3,7 @@
 #include "RendererAPI.h"
 #include "Platform/OpenGL/OpenGLFramebuffer.h"
 
-namespace Engine
+namespace eng
 {
   FramebufferTextureSpecification::FramebufferTextureSpecification()
     : textureFormat(FramebufferTextureFormat::None) {}

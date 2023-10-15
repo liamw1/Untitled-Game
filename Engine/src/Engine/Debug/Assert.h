@@ -30,7 +30,7 @@
 /*
   Debug functions for use in assert macros.
 */
-namespace Engine::Debug
+namespace eng::debug
 {
   // Returns true if value is on the interval [a, b).
   template<std::three_way_comparable T, std::convertible_to<T> A, std::convertible_to<T> B>

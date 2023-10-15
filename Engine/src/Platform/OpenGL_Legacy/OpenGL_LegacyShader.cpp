@@ -5,7 +5,7 @@
 #include <glad/glad.h>
 #include <glm/gtc/type_ptr.hpp>
 
-namespace Engine
+namespace eng
 {
   static constexpr int c_MaxShaders = 3;
 
@@ -39,7 +39,7 @@ namespace Engine
   OpenGL_LegacyShader::~OpenGL_LegacyShader()
   {
     EN_PROFILE_FUNCTION();
-    EN_CORE_ASSERT(Threads::IsMainThread(), "OpenGL calls must be made on the main thread!");
+    EN_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
 
     glDeleteProgram(m_RendererID);
   }
@@ -51,21 +51,21 @@ namespace Engine
 
   void OpenGL_LegacyShader::bind() const
   {
-    EN_CORE_ASSERT(Threads::IsMainThread(), "OpenGL calls must be made on the main thread!");
+    EN_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
     glUseProgram(m_RendererID);
   }
 
   void OpenGL_LegacyShader::unBind() const
   {
-    EN_CORE_ASSERT(Threads::IsMainThread(), "OpenGL calls must be made on the main thread!");
+    EN_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
     glUseProgram(0);
   }
 
   void OpenGL_LegacyShader::compile(const std::unordered_map<std::string, std::string>& shaderSources)
   {
     EN_PROFILE_FUNCTION();
-    EN_CORE_ASSERT(Threads::IsMainThread(), "OpenGL calls must be made on the main thread!");
-    EN_CORE_ASSERT(Debug::BoundsCheck(shaderSources.size(), 0, c_MaxShaders + 1), "A maximum of {0} shaders is supported", c_MaxShaders);
+    EN_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
+    EN_CORE_ASSERT(debug::BoundsCheck(shaderSources.size(), 0, c_MaxShaders + 1), "A maximum of {0} shaders is supported", c_MaxShaders);
 
     GLuint program = glCreateProgram();
     std::vector<GLenum> glShaderIDs(shaderSources.size());

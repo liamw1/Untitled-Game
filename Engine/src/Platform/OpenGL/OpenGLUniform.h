@@ -1,7 +1,7 @@
 #pragma once
 #include "Engine/Renderer/Uniform.h"
 
-namespace Engine
+namespace eng
 {
   class OpenGLUniform : public Uniform
   {

@@ -1,6 +1,6 @@
 #pragma once
 
-namespace Engine
+namespace eng
 {
   /*
     Abstract representation of a shader.

@@ -3,8 +3,8 @@
 #include "Player/Player.h"
 
 Chunk::Chunk(const GlobalIndex& chunkIndex)
-  : m_Composition(Bounds(), Block::ID::Air),
-    m_Lighting(Bounds(), Block::Light::MaxValue()),
+  : m_Composition(Bounds(), block::ID::Air),
+    m_Lighting(Bounds(), block::Light::MaxValue()),
     m_NonOpaqueFaces(0x3F),
     m_GlobalIndex(chunkIndex) {}
 
@@ -13,46 +13,46 @@ const GlobalIndex& Chunk::globalIndex() const
   return m_GlobalIndex;
 }
 
-ProtectedBlockArrayBox<Block::Type>& Chunk::composition()
+ProtectedBlockArrayBox<block::Type>& Chunk::composition()
 {
   return m_Composition;
 }
 
-const ProtectedBlockArrayBox<Block::Type>& Chunk::composition() const
+const ProtectedBlockArrayBox<block::Type>& Chunk::composition() const
 {
   return m_Composition;
 }
 
-ProtectedBlockArrayBox<Block::Light>& Chunk::lighting()
+ProtectedBlockArrayBox<block::Light>& Chunk::lighting()
 {
   return m_Lighting;
 }
 
-const ProtectedBlockArrayBox<Block::Light>& Chunk::lighting() const
+const ProtectedBlockArrayBox<block::Light>& Chunk::lighting() const
 {
   return m_Lighting;
 }
 
-bool Chunk::isFaceOpaque(Direction face) const
+bool Chunk::isFaceOpaque(eng::math::Direction face) const
 {
   uint16_t nonOpaqueFaces = m_NonOpaqueFaces.load();
-  return !(nonOpaqueFaces & Engine::Bit(static_cast<int>(face)));
+  return !(nonOpaqueFaces & eng::bit(static_cast<int>(face)));
 }
 
-void Chunk::setComposition(BlockArrayBox<Block::Type>&& composition)
+void Chunk::setComposition(BlockArrayBox<block::Type>&& composition)
 {
   m_Composition.setData(std::move(composition));
   determineOpacity();
 }
 
-void Chunk::setLighting(BlockArrayBox<Block::Light>&& lighting)
+void Chunk::setLighting(BlockArrayBox<block::Light>&& lighting)
 {
   m_Lighting.setData(std::move(lighting));
 }
 
 void Chunk::determineOpacity()
 {
-  m_Composition.readOperation([this](const BlockArrayBox<Block::Type>& arrayBox)
+  m_Composition.readOperation([this](const BlockArrayBox<block::Type>& arrayBox)
     {
       if (!arrayBox)
       {
@@ -61,11 +61,11 @@ void Chunk::determineOpacity()
       }
 
       uint16_t nonOpaqueFaces = 0;
-      for (Direction direction : Directions())
+      for (eng::math::Direction direction : eng::math::Directions())
       {
         BlockBox face = Bounds().face(direction);
-        if (arrayBox.anyOf(face, [](Block::Type blockType) { return blockType.hasTransparency(); }))
-          nonOpaqueFaces |= Engine::Bit(static_cast<int>(direction));
+        if (arrayBox.anyOf(face, [](block::Type blockType) { return blockType.hasTransparency(); }))
+          nonOpaqueFaces |= eng::bit(static_cast<int>(direction));
       }
       m_NonOpaqueFaces.store(nonOpaqueFaces);
     });
@@ -79,12 +79,12 @@ void Chunk::update()
   determineOpacity();
 }
 
-Vec3 Chunk::Center(const Vec3& anchorPosition)
+eng::math::Vec3 Chunk::Center(const eng::math::Vec3& anchorPosition)
 {
   return anchorPosition + Chunk::Length() / 2;
 }
 
-Vec3 Chunk::AnchorPosition(const GlobalIndex& chunkIndex, const GlobalIndex& originIndex)
+eng::math::Vec3 Chunk::AnchorPosition(const GlobalIndex& chunkIndex, const GlobalIndex& originIndex)
 {
-  return Chunk::Length() * static_cast<Vec3>(chunkIndex - originIndex);
+  return Chunk::Length() * static_cast<eng::math::Vec3>(chunkIndex - originIndex);
 }

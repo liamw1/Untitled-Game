@@ -1,51 +1,51 @@
 #include "ENpch.h"
 #include "ApplicationEvent.h"
 
-namespace Engine
+namespace eng::event
 {
-  WindowResizeEvent::WindowResizeEvent(uint32_t width, uint32_t height)
+  WindowResize::WindowResize(uint32_t width, uint32_t height)
     : m_Width(width), m_Height(height) {}
 
-  EventType WindowResizeEvent::type() const { return Type(); }
-  EventType WindowResizeEvent::Type() { return EventType::WindowResize; }
-  EventCategory WindowResizeEvent::categoryFlags() const { return EventCategory::Application; }
-  const char* WindowResizeEvent::name() const { return "WindowResized"; }
+  EventType WindowResize::type() const { return Type(); }
+  EventType WindowResize::Type() { return EventType::WindowResize; }
+  EventCategory WindowResize::categoryFlags() const { return EventCategory::Application; }
+  const char* WindowResize::name() const { return "WindowResized"; }
 
-  std::string WindowResizeEvent::toString() const
+  std::string WindowResize::toString() const
   {
     std::stringstream ss;
     ss << "WindowResizedEvent: " << m_Width << ", " << m_Height;
     return ss.str();
   }
 
-  uint32_t WindowResizeEvent::width() const { return m_Width; }
-  uint32_t WindowResizeEvent::height() const { return m_Height; }
+  uint32_t WindowResize::width() const { return m_Width; }
+  uint32_t WindowResize::height() const { return m_Height; }
 
 
 
-  EventType WindowCloseEvent::type() const { return Type(); }
-  EventType WindowCloseEvent::Type() { return EventType::WindowClose; }
-  EventCategory WindowCloseEvent::categoryFlags() const { return EventCategory::Application; }
-  const char* WindowCloseEvent::name() const { return "WindowClose"; }
+  EventType WindowClose::type() const { return Type(); }
+  EventType WindowClose::Type() { return EventType::WindowClose; }
+  EventCategory WindowClose::categoryFlags() const { return EventCategory::Application; }
+  const char* WindowClose::name() const { return "WindowClose"; }
 
 
 
-  EventType AppTickEvent::type() const { return Type(); }
-  EventType AppTickEvent::Type() { return EventType::AppTick; }
-  EventCategory AppTickEvent::categoryFlags() const { return EventCategory::Application; }
-  const char* AppTickEvent::name() const { return "AppTick"; }
+  EventType AppTick::type() const { return Type(); }
+  EventType AppTick::Type() { return EventType::AppTick; }
+  EventCategory AppTick::categoryFlags() const { return EventCategory::Application; }
+  const char* AppTick::name() const { return "AppTick"; }
 
 
 
-  EventType AppUpdateEvent::type() const { return Type(); }
-  EventType AppUpdateEvent::Type() { return EventType::AppUpdate; }
-  EventCategory AppUpdateEvent::categoryFlags() const { return EventCategory::Application; }
-  const char* AppUpdateEvent::name() const { return "AppUpdate"; }
+  EventType AppUpdate::type() const { return Type(); }
+  EventType AppUpdate::Type() { return EventType::AppUpdate; }
+  EventCategory AppUpdate::categoryFlags() const { return EventCategory::Application; }
+  const char* AppUpdate::name() const { return "AppUpdate"; }
 
 
 
-  EventType AppRenderEvent::type() const { return Type(); }
-  EventType AppRenderEvent::Type() { return EventType::AppRender; }
-  EventCategory AppRenderEvent::categoryFlags() const { return EventCategory::Application; }
-  const char* AppRenderEvent::name() const { return "AppRender"; }
+  EventType AppRender::type() const { return Type(); }
+  EventType AppRender::Type() { return EventType::AppRender; }
+  EventCategory AppRender::categoryFlags() const { return EventCategory::Application; }
+  const char* AppRender::name() const { return "AppRender"; }
 }

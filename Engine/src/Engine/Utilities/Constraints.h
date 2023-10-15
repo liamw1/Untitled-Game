@@ -1,6 +1,6 @@
 #pragma once
 
-namespace Engine
+namespace eng
 {
   /*
     A contraint on classes that prevents copy construction and assignment.

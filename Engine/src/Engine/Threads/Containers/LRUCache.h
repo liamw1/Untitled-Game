@@ -1,12 +1,12 @@
 #pragma once
 #include "Engine/Utilities/LRUCache.h"
 
-namespace Engine::Threads
+namespace eng::threads
 {
   template<Hashable K, typename V>
   class LRUCache : private NonCopyable, NonMovable
   {
-    using const_iterator = Engine::LRUCache<K, std::shared_ptr<V>>::const_iterator;
+    using const_iterator = eng::LRUCache<K, std::shared_ptr<V>>::const_iterator;
 
   public:
 
@@ -38,6 +38,6 @@ namespace Engine::Threads
 
   private:
     std::mutex m_Mutex;
-    Engine::LRUCache<K, std::shared_ptr<V>> m_Cache;
+    eng::LRUCache<K, std::shared_ptr<V>> m_Cache;
   };
 }
