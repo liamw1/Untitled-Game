@@ -19,16 +19,13 @@ ChunkManager::~ChunkManager()
 
 void ChunkManager::initialize()
 {
-  if (!s_Shader)
-  {
-    s_Shader = eng::Shader::Create("assets/shaders/Chunk.glsl");
-    s_LightUniform = eng::Uniform::Create(2, sizeof(LightUniforms));
-    s_TextureArray = block::getTextureArray();
+  s_Shader = eng::Shader::Create("assets/shaders/Chunk.glsl");
+  s_LightUniform = eng::Uniform::Create(2, sizeof(LightUniforms));
+  s_TextureArray = block::getTextureArray();
 
-    s_SSBO = eng::StorageBuffer::Create(eng::StorageBuffer::Type::SSBO, c_StorageBufferBinding);
-    s_SSBO->set(nullptr, c_StorageBufferSize);
-    s_SSBO->bind();
-  }
+  s_SSBO = eng::StorageBuffer::Create(eng::StorageBuffer::Type::SSBO, c_StorageBufferBinding);
+  s_SSBO->set(nullptr, c_StorageBufferSize);
+  s_SSBO->bind();
 
   m_OpaqueMultiDrawArray = std::make_unique<eng::MultiDrawIndexedArray<ChunkDrawCommand>>(s_VertexBufferLayout);
   m_TransparentMultiDrawArray = std::make_unique<eng::MultiDrawIndexedArray<ChunkDrawCommand>>(s_VertexBufferLayout);
@@ -60,8 +57,8 @@ void ChunkManager::render()
   s_TextureArray->bind(c_TextureSlot);
 
   {
-    eng::command::setDepthWriting(true);
-    eng::command::setUseDepthOffset(false);
+    eng::render::command::setDepthWriting(true);
+    eng::render::command::setUseDepthOffset(false);
 
     int commandCount = m_OpaqueMultiDrawArray->partition([&originIndex, &frustumPlanes](const GlobalIndex& chunkIndex)
       {
@@ -86,15 +83,15 @@ void ChunkManager::render()
 
     m_OpaqueMultiDrawArray->bind();
     s_SSBO->update(storageBufferData.data(), 0, bufferDataSize);
-    eng::command::multiDrawIndexed(drawCommands.data(), commandCount, sizeof(ChunkDrawCommand));
+    eng::render::command::multiDrawIndexed(drawCommands.data(), commandCount, sizeof(ChunkDrawCommand));
   }
 
   {
-    eng::command::setBlending(true);
-    eng::command::setFaceCulling(false);
-    eng::command::setDepthWriting(false);
-    eng::command::setUseDepthOffset(true);
-    eng::command::setDepthOffset(-1.0f, -1.0f);
+    eng::render::command::setBlending(true);
+    eng::render::command::setFaceCulling(false);
+    eng::render::command::setDepthWriting(false);
+    eng::render::command::setUseDepthOffset(true);
+    eng::render::command::setDepthOffset(-1.0f, -1.0f);
 
     int commandCount = m_TransparentMultiDrawArray->partition([&originIndex, &frustumPlanes](const GlobalIndex& chunkIndex)
       {
@@ -138,7 +135,7 @@ void ChunkManager::render()
 
     m_TransparentMultiDrawArray->bind();
     s_SSBO->update(storageBufferData.data(), 0, bufferDataSize);
-    eng::command::multiDrawIndexed(drawCommands.data(), commandCount, sizeof(ChunkDrawCommand));
+    eng::render::command::multiDrawIndexed(drawCommands.data(), commandCount, sizeof(ChunkDrawCommand));
   }
 }
 

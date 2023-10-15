@@ -6,15 +6,11 @@
 /*
   A general-purpose renderer for 3D objects/effects.
 */
-namespace eng::renderer
+namespace eng::render
 {
-  void initialize();
-  void shutdown();
-
   void beginScene(Entity viewer);
   void endScene();
 
-  void drawCube(const math::Vec3& position, const math::Vec3& size, const Texture* texture = nullptr);
   void drawCubeFrame(const math::Vec3& position, const math::Vec3& size, const math::Float4& color = math::Float4(0.0f, 0.0f, 0.0f, 1.0f));
 
   void onWindowResize(uint32_t width, uint32_t height);

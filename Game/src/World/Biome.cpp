@@ -2,29 +2,23 @@
 #include "Biome.h"
 #include "BiomeDefs.h"
 
-Biome::Biome()
+static eng::EnumArray<std::unique_ptr<Biome>, Biome::Type> initializeBiomes()
 {
-  s_BiomesInitialized++;
+  eng::EnumArray<std::unique_ptr<Biome>, Biome::Type> biomes;
+  biomes[Biome::Type::Default] = std::make_unique<DefaultBiome>();
+  biomes[Biome::Type::GrassField] = std::make_unique<GrassFieldsBiome>();
+  biomes[Biome::Type::Desert] = std::make_unique<DesertBoime>();
+  biomes[Biome::Type::SuperFlat] = std::make_unique<SuperFlatBiome>();
+  return biomes;
 }
 
-void Biome::Initialize()
-{
-  s_Biomes[static_cast<int>(Biome::Type::Default)] = std::make_unique<DefaultBiome>();
-  s_Biomes[static_cast<int>(Biome::Type::GrassField)] = std::make_unique<GrassFieldsBiome>();
-  s_Biomes[static_cast<int>(Biome::Type::Desert)] = std::make_unique<DesertBoime>();
-  s_Biomes[static_cast<int>(Biome::Type::SuperFlat)] = std::make_unique<SuperFlatBiome>();
 
-  if (s_BiomesInitialized != Biome::Count())
-    EN_ERROR("{0} of {1} biomes have not been initialized!", Biome::Count() - s_BiomesInitialized, Biome::Count());
-}
+
+eng::EnumArray<std::unique_ptr<Biome>, Biome::Type> Biome::s_Biomes = initializeBiomes();
 
 const Biome* Biome::Get(Type biome)
 {
-  int biomeIndex = static_cast<int>(biome);
-  if (biomeIndex < 0)
-    EN_INFO("Something is wrong!");
-  EN_ASSERT(biomeIndex >= 0 && biomeIndex < Biome::Count(), "Invalid biome type!");
-  return s_Biomes[biomeIndex].get();
+  return s_Biomes[biome].get();
 }
 
 length_t Biome::CalculateOctaveNoise(const NoiseSamples& noiseSamples, length_t largestAmplitude, float persistence)

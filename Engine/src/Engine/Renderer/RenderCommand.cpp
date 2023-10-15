@@ -3,7 +3,7 @@
 #include "RendererAPI.h"
 #include "Platform/OpenGL/OpenGLRendererAPI.h"
 
-namespace eng::command
+namespace eng::render::command
 {
   static std::unique_ptr<RendererAPI> createAPI()
   {

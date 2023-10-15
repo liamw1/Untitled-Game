@@ -10,11 +10,6 @@ GameSandbox::GameSandbox()
     m_PrintMinFrameRate(false),
     m_PrintPlayerPosition(false)
 {
-  eng::renderer::initialize();
-
-  block::initialize();
-  Biome::Initialize();
-  lod::MeshData::Initialize();
   m_World.initialize();
 }
 
@@ -58,9 +53,9 @@ void GameSandbox::onUpdate(eng::Timestep timestep)
     EN_TRACE("Position: {0}", position);
   }
 
-  eng::command::setDepthWriting(true);
-  eng::command::setUseDepthOffset(false);
-  eng::command::clear(eng::math::Float4(0.788f, 0.949f, 0.949f, 1.0f));
+  eng::render::command::setDepthWriting(true);
+  eng::render::command::setUseDepthOffset(false);
+  eng::render::command::clear(eng::math::Float4(0.788f, 0.949f, 0.949f, 1.0f));
 
   eng::scene::OnUpdate(timestep);
   m_World.onUpdate(timestep);
@@ -93,7 +88,7 @@ bool GameSandbox::onKeyPress(eng::event::KeyPress& event)
   if (event.keyCode() == eng::input::Key::F1)
   {
     wireFrameEnabled = !wireFrameEnabled;
-    eng::command::setWireFrame(wireFrameEnabled);
+    eng::render::command::setWireFrame(wireFrameEnabled);
   }
   if (event.keyCode() == eng::input::Key::F2)
     m_PrintFrameRate = !m_PrintFrameRate;

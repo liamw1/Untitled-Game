@@ -36,9 +36,6 @@ namespace eng::math
   };
   using Directions = EnumIterator<Direction>;
 
-  template<typename T>
-  using DirectionArray = EnumArray<T, Direction>;
-
   /*
     \returns The next direction in sequence.
   */

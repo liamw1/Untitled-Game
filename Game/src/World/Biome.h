@@ -20,27 +20,21 @@ public:
     SuperFlat,
 
     Null,
-    Begin = 0, End = Null
+    Begin = 0, End = Null - 1
   };
-
-  Biome();
 
   virtual length_t localSurfaceElevation(const NoiseSamples& noiseSamples) const = 0;
   virtual void fillColumn(BlockArrayBox<block::Type>::Strip column, length_t chunkFloor, length_t elevation) const = 0;
 
-  static void Initialize();
   static const Biome* Get(Type biome);
 
   static constexpr int LocalElevationOctaves() { return c_LocalElevationOctaves; }
-  static constexpr int Count() { return c_BiomeCount; }
+  static constexpr int Count() { return static_cast<int>(s_Biomes.size()); }
 
 protected:
   static length_t CalculateOctaveNoise(const NoiseSamples& noiseSamples, length_t largestAmplitude, float persistence);
   static void StandardColumnFill(BlockArrayBox<block::Type>::Strip column, length_t chunkFloor, length_t elevation, block::Type surfaceType, int surfaceDepth, block::Type soilType, int soilDepth);
 
 private:
-  static constexpr int c_BiomeCount = static_cast<int>(Type::End) - static_cast<int>(Type::Begin);
-
-  static inline int s_BiomesInitialized = 0;
-  static inline std::array<std::unique_ptr<Biome>, c_BiomeCount> s_Biomes;
+  static eng::EnumArray<std::unique_ptr<Biome>, Type> s_Biomes;
 };

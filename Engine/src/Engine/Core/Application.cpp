@@ -33,11 +33,7 @@ namespace eng
     // pushOverlay(m_ImGuiLayer);
   }
 
-  Application::~Application()
-  {
-    EN_PROFILE_FUNCTION();
-    renderer::shutdown();
-  }
+  Application::~Application() = default;
 
   void Application::run()
   {
@@ -116,7 +112,7 @@ namespace eng
       return false;
     }
     m_Minimized = false;
-    renderer::onWindowResize(event.width(), event.height());
+    render::onWindowResize(event.width(), event.height());
 
     return false;
   }

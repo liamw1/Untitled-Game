@@ -85,8 +85,9 @@ namespace eng
       return m_Data[std::underlying_type_t<E>(index)];
     }
 
+    constexpr size_t size() { return m_Data.size(); }
+
   private:
-    static constexpr int c_Size = enumRange<E>();
-    std::array<T, c_Size> m_Data;
+    std::array<T, enumRange<E>()> m_Data;
   };
 }

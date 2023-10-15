@@ -183,13 +183,17 @@ namespace lod
 
   void MeshData::Initialize()
   {
-    s_Uniform = eng::Uniform::Create(c_UniformBinding, sizeof(UniformData));
-    s_Shader = eng::Shader::Create("assets/shaders/ChunkLOD.glsl");
-    s_TextureArray = block::getTextureArray();
+    std::call_once(s_InitializedFlag, []()
+    {
+      s_Uniform = eng::Uniform::Create(c_UniformBinding, sizeof(UniformData));
+      s_Shader = eng::Shader::Create("assets/shaders/ChunkLOD.glsl");
+      s_TextureArray = block::getTextureArray();
+    });
   }
 
   void MeshData::BindBuffers()
   {
+    Initialize();
     s_Uniform->bind();
     s_Shader->bind();
     s_TextureArray->bind(c_TextureSlot);
@@ -197,6 +201,7 @@ namespace lod
 
   void MeshData::SetUniforms(const UniformData& uniformData)
   {
+    Initialize();
     s_Uniform->set(&uniformData, sizeof(UniformData));
   }
 
@@ -215,7 +220,7 @@ namespace lod
     uniformData.textureScaling = static_cast<float>(eng::bit(leaf->LODLevel()));
     MeshData::SetUniforms(uniformData);
 
-    eng::command::drawIndexed(leaf->data->primaryMesh.vertexArray.get(), primaryMeshIndexCount);
+    eng::render::command::drawIndexed(leaf->data->primaryMesh.vertexArray.get(), primaryMeshIndexCount);
     for (eng::math::Direction face : eng::math::Directions())
     {
       int faceID = static_cast<int>(face);
@@ -225,7 +230,7 @@ namespace lod
       if (transitionMeshIndexCount == 0 || !(leaf->data->transitionFaces & eng::bit(faceID)))
         continue;
 
-      eng::command::drawIndexed(leaf->data->transitionMeshes[faceID].vertexArray.get(), transitionMeshIndexCount);
+      eng::render::command::drawIndexed(leaf->data->transitionMeshes[faceID].vertexArray.get(), transitionMeshIndexCount);
     }
   }
 
@@ -824,14 +829,14 @@ namespace lod
     determineTransitionFaces(tree, node);
 
     MeshData& primaryMesh = node->data->primaryMesh;
-    eng::renderer::uploadMesh(primaryMesh.vertexArray.get(), calcAdjustedPrimaryMesh(node), primaryMesh.indices);
+    eng::render::uploadMesh(primaryMesh.vertexArray.get(), calcAdjustedPrimaryMesh(node), primaryMesh.indices);
 
     for (eng::math::Direction face : eng::math::Directions())
     {
       int faceID = static_cast<int>(face);
 
       MeshData& transitionMesh = node->data->transitionMeshes[faceID];
-      eng::renderer::uploadMesh(transitionMesh.vertexArray.get(), calcAdjustedTransitionMesh(node, face), transitionMesh.indices);
+      eng::render::uploadMesh(transitionMesh.vertexArray.get(), calcAdjustedTransitionMesh(node, face), transitionMesh.indices);
     }
 
     node->data->needsUpdate = false;

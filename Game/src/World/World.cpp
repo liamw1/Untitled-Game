@@ -24,13 +24,13 @@ void World::onUpdate(eng::Timestep timestep)
   player::updatePosition(timestep);
 
   /* Rendering stage */
-  eng::renderer::beginScene(eng::scene::ActiveCamera());
+  eng::render::beginScene(eng::scene::ActiveCamera());
 
   playerWorldInteraction();
   m_ChunkManager.update();
   m_ChunkManager.render();
 
-  eng::renderer::endScene();
+  eng::render::endScene();
 
   m_ChunkManager.loadNewChunks();
   m_ChunkManager.clean();
@@ -198,7 +198,7 @@ void World::playerWorldInteraction()
     const LocalIndex& chunkIndex = m_PlayerRayCast.chunkIndex;
     eng::math::Vec3 blockCenter = Chunk::Length() * static_cast<eng::math::Vec3>(chunkIndex) + block::length() * (static_cast<eng::math::Vec3>(blockIndex) + eng::math::Vec3(0.5));
 
-    eng::renderer::drawCubeFrame(blockCenter, 1.01 * block::length() * eng::math::Vec3(1.0), eng::math::Float4(0.1f, 0.1f, 0.1f, 1.0f));
+    eng::render::drawCubeFrame(blockCenter, 1.01 * block::length() * eng::math::Vec3(1.0), eng::math::Float4(0.1f, 0.1f, 0.1f, 1.0f));
   }
 
   if (m_PlayerRayCast.distance <= maxInteractionDistance)

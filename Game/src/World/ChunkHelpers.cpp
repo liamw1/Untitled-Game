@@ -199,7 +199,7 @@ void ChunkDrawCommand::reorderIndices(const GlobalIndex& originIndex, const eng:
     eng::math::Vec3 toBlock = blockCenter - viewPosition;
 
     int quadVertexOffset = 0;
-    eng::math::DirectionArray<int> quadVertexOffsets(-1);
+    eng::EnumArray<int, eng::math::Direction> quadVertexOffsets(-1);
     for (eng::math::Direction face : eng::math::Directions())
       if (voxel.faceEnabled(face))
       {

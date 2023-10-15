@@ -97,8 +97,8 @@ namespace eng::math
   
     static constexpr const IVec3& Dir(Direction direction)
     {
-      static constexpr DirectionArray<IVec3> directions = { { -1, 0, 0}, { 1, 0, 0}, { 0, -1, 0}, { 0, 1, 0}, { 0, 0, -1}, { 0, 0, 1} };
-      return directions[direction];                    //       West        East        South        North       Bottom        Top
+      static constexpr EnumArray<IVec3, Direction> directions = { { -1, 0, 0}, { 1, 0, 0}, { 0, -1, 0}, { 0, 1, 0}, { 0, 0, -1}, { 0, 0, 1} };
+      return directions[direction];                          //       West        East        South        North       Bottom        Top
     }
   
     static constexpr IVec3 CreatePermuted(IntType i, IntType j, IntType k, Axis permutation)

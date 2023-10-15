@@ -39,13 +39,13 @@ namespace lod
 
     MeshData();
 
-    static void Initialize();
     static void BindBuffers();
     static void SetUniforms(const UniformData& uniformData);
 
   private:
     static constexpr int c_TextureSlot = 0;
     static constexpr int c_UniformBinding = 3;
+    static inline std::once_flag s_InitializedFlag;
     static inline std::unique_ptr<eng::Shader> s_Shader = nullptr;
     static inline std::unique_ptr<eng::Uniform> s_Uniform = nullptr;
     static inline std::shared_ptr<eng::TextureArray> s_TextureArray = nullptr;
@@ -54,6 +54,8 @@ namespace lod
                                                                       { ShaderDataType::Int2,   "a_TextureIndices"  },
                                                                       { ShaderDataType::Float2, "a_TextureWeighs"   },
                                                                       { ShaderDataType::Int,    "a_QuadIndex"       } };
+
+    static void Initialize();
   };
 
   struct Data 
