@@ -21,13 +21,13 @@ namespace eng
       case ShaderDataType::Float4:      return GL_FLOAT;
       case ShaderDataType::Mat3:        return GL_FLOAT;
       case ShaderDataType::Mat4:        return GL_FLOAT;
-      default: EN_CORE_ASSERT(false, "Unknown ShaderDataType!"); return 0;
+      default: ENG_CORE_ASSERT(false, "Unknown ShaderDataType!"); return 0;
     }
   }
 
   OpenGLVertexArray::OpenGLVertexArray()
   {
-    EN_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
+    ENG_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
 
     glCreateVertexArrays(1, &m_RendererID);
     m_VertexBuffer = StorageBuffer::Create(StorageBuffer::Type::VertexBuffer);
@@ -35,13 +35,13 @@ namespace eng
 
   OpenGLVertexArray::~OpenGLVertexArray()
   {
-    EN_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
+    ENG_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
     glDeleteVertexArrays(1, &m_RendererID);
   }
 
   void OpenGLVertexArray::bind() const
   {
-    EN_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
+    ENG_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
 
     glBindVertexArray(m_RendererID);
 
@@ -51,7 +51,7 @@ namespace eng
 
   void OpenGLVertexArray::unBind() const
   {
-    EN_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
+    ENG_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
 
     glBindVertexArray(0);
 
@@ -63,7 +63,7 @@ namespace eng
 
   void OpenGLVertexArray::setLayout(const BufferLayout& layout)
   {
-    EN_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
+    ENG_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
 
     m_VertexBufferLayout = layout;
 
@@ -113,10 +113,10 @@ namespace eng
         }
       }
       else
-        EN_CORE_ASSERT(false, ("Unknown shader data type!"));
+        ENG_CORE_ASSERT(false, ("Unknown shader data type!"));
     }
 
-#if EN_DEBUG
+#if ENG_DEBUG
     unBind();
 #endif
   }
@@ -125,7 +125,7 @@ namespace eng
   {
     m_VertexBuffer->set(data, size);
 
-#if EN_DEBUG
+#if ENG_DEBUG
     unBind();
 #endif
   }
@@ -140,7 +140,7 @@ namespace eng
   {
     m_VertexBuffer->update(data, offset, size);
 
-#if EN_DEBUG
+#if ENG_DEBUG
     unBind();
 #endif
   }
@@ -150,30 +150,30 @@ namespace eng
     m_VertexBuffer->resize(newSize);
     setLayout(m_VertexBufferLayout);
 
-#if EN_DEBUG
+#if ENG_DEBUG
     unBind();
 #endif
   }
 
   void OpenGLVertexArray::setIndexBuffer(const IndexBuffer& indexBuffer)
   {
-    EN_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
+    ENG_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
 
     m_IndexBuffer = indexBuffer;
 
-#if EN_DEBUG
+#if ENG_DEBUG
     unBind();
 #endif
   }
 
   void OpenGLVertexArray::setIndexBuffer(const std::shared_ptr<StorageBuffer>& indexBufferStorage)
   {
-    EN_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
-    EN_CORE_ASSERT(indexBufferStorage->type() == StorageBuffer::Type::IndexBuffer, "Submitted buffer is not an index buffer!");
+    ENG_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
+    ENG_CORE_ASSERT(indexBufferStorage->type() == StorageBuffer::Type::IndexBuffer, "Submitted buffer is not an index buffer!");
 
     m_IndexBuffer = IndexBuffer(indexBufferStorage);
 
-#if EN_DEBUG
+#if ENG_DEBUG
     unBind();
 #endif
   }

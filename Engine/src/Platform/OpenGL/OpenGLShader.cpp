@@ -21,7 +21,7 @@ namespace eng
     if (type == "fragment" || type == "pixel")
       return GL_FRAGMENT_SHADER;
 
-    EN_CORE_ASSERT(false, "Unknown shader type {0}!", type);
+    ENG_CORE_ASSERT(false, "Unknown shader type {0}!", type);
     return 0;
   }
 
@@ -32,7 +32,7 @@ namespace eng
       case GL_VERTEX_SHADER:    return shaderc_glsl_vertex_shader;
       case GL_GEOMETRY_SHADER:  return shaderc_glsl_geometry_shader;
       case GL_FRAGMENT_SHADER:  return shaderc_glsl_fragment_shader;
-      default: EN_CORE_ERROR("Invalid openGL shader stage!");  return static_cast<shaderc_shader_kind>(0);
+      default: ENG_CORE_ERROR("Invalid openGL shader stage!");  return static_cast<shaderc_shader_kind>(0);
     }
   }
 
@@ -43,7 +43,7 @@ namespace eng
       case GL_VERTEX_SHADER:    return "GL_VERTEX_SHADER";
       case GL_GEOMETRY_SHADER:  return "GL_GEOMETRY_SHADER";
       case GL_FRAGMENT_SHADER:  return "GL_FRAGMENT_SHADER";
-      default: EN_CORE_ERROR("Invalid openGL shader stage!");  return nullptr;
+      default: ENG_CORE_ERROR("Invalid openGL shader stage!");  return nullptr;
     }
   }
 
@@ -54,7 +54,7 @@ namespace eng
       m_Name("Unnamed Shader"),
       m_FilePath(filepath)
   {
-    EN_PROFILE_FUNCTION();
+    ENG_PROFILE_FUNCTION();
 
     std::string source = ReadFile(filepath);
     std::unordered_map<std::string, std::string> shaderSources = PreProcess(source, preprocessorDefinitions);
@@ -76,8 +76,8 @@ namespace eng
 
   OpenGLShader::~OpenGLShader()
   {
-    EN_PROFILE_FUNCTION();
-    EN_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
+    ENG_PROFILE_FUNCTION();
+    ENG_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
 
     glDeleteProgram(m_RendererID);
   }
@@ -89,19 +89,19 @@ namespace eng
 
   void OpenGLShader::bind() const
   {
-    EN_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
+    ENG_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
     glUseProgram(m_RendererID);
   }
 
   void OpenGLShader::unBind() const
   {
-    EN_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
+    ENG_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
     glUseProgram(0);
   }
 
   void OpenGLShader::compileVulkanBinaries(const std::unordered_map<std::string, std::string>& shaderSources)
   {
-    EN_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
+    ENG_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
 
     static constexpr bool optimize = true;
 
@@ -121,7 +121,7 @@ namespace eng
 
       shaderc::SpvCompilationResult module = compiler.CompileGlslToSpv(source, openGLShaderStageToShaderC(stage), m_FilePath.c_str(), options);
       if (module.GetCompilationStatus() != shaderc_compilation_status_success)
-        EN_CORE_ERROR(module.GetErrorMessage());
+        ENG_CORE_ERROR(module.GetErrorMessage());
 
       shaderData[stage] = std::vector<uint32_t>(module.cbegin(), module.cend());
     }
@@ -152,7 +152,7 @@ namespace eng
 
       shaderc::SpvCompilationResult module = compiler.CompileGlslToSpv(source, openGLShaderStageToShaderC(stage), m_FilePath.c_str());
       if (module.GetCompilationStatus() != shaderc_compilation_status_success)
-        EN_CORE_ERROR(module.GetErrorMessage());
+        ENG_CORE_ERROR(module.GetErrorMessage());
 
       shaderData[stage] = std::vector<uint32_t>(module.cbegin(), module.cend());
     }
@@ -160,7 +160,7 @@ namespace eng
 
   void OpenGLShader::createProgram()
   {
-    EN_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
+    ENG_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
 
     GLuint program = glCreateProgram();
 
@@ -184,7 +184,7 @@ namespace eng
 
       std::vector<GLchar> infoLog(maxLength);
       glGetProgramInfoLog(program, maxLength, &maxLength, infoLog.data());
-      EN_CORE_ERROR("Shader linking failed ({0}):\n{1}", m_FilePath, infoLog.data());
+      ENG_CORE_ERROR("Shader linking failed ({0}):\n{1}", m_FilePath, infoLog.data());
 
       glDeleteProgram(program);
 
@@ -206,11 +206,11 @@ namespace eng
     spirv_cross::Compiler compiler(shaderData);
     spirv_cross::ShaderResources resources = compiler.get_shader_resources();
 
-    EN_CORE_TRACE("OpenGLShader::Reflect - {0} {1}", openGLShaderStageToString(stage), m_FilePath);
-    EN_CORE_TRACE("    {0} uniform buffers", resources.uniform_buffers.size());
-    EN_CORE_TRACE("    {0} resources", resources.sampled_images.size());
+    ENG_CORE_TRACE("OpenGLShader::Reflect - {0} {1}", openGLShaderStageToString(stage), m_FilePath);
+    ENG_CORE_TRACE("    {0} uniform buffers", resources.uniform_buffers.size());
+    ENG_CORE_TRACE("    {0} resources", resources.sampled_images.size());
 
-    EN_CORE_TRACE("Uniform buffers:");
+    ENG_CORE_TRACE("Uniform buffers:");
     for (const spirv_cross::Resource& uniform : resources.uniform_buffers)
     {
       const spirv_cross::SPIRType& bufferType = compiler.get_type(uniform.base_type_id);
@@ -218,10 +218,10 @@ namespace eng
       uint32_t binding = compiler.get_decoration(uniform.id, spv::DecorationBinding);
       int memberCount = static_cast<int>(bufferType.member_types.size());
 
-      EN_CORE_TRACE("  {0}", uniform.name);
-      EN_CORE_TRACE("    Size = {0}", bufferSize);
-      EN_CORE_TRACE("    Binding = {0}", binding);
-      EN_CORE_TRACE("    Members = {0}", memberCount);
+      ENG_CORE_TRACE("  {0}", uniform.name);
+      ENG_CORE_TRACE("    Size = {0}", bufferSize);
+      ENG_CORE_TRACE("    Binding = {0}", binding);
+      ENG_CORE_TRACE("    Members = {0}", memberCount);
     }
   }
 }

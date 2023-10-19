@@ -2,8 +2,8 @@
 
 namespace eng::threads
 {
-  template<std::movable V>
-    requires Hashable<V>
+  template<Hashable V>
+    requires std::movable<V>
   class UnorderedSet : private NonCopyable, NonMovable
   {
   public:

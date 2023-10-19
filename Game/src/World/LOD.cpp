@@ -88,9 +88,9 @@ namespace lod
 
   void Octree::splitNode(Node* node)
   {
-    EN_ASSERT(node != nullptr, "Node can't be nullptr!");
-    EN_ASSERT(node->isLeaf(), "Node must be a leaf node!");
-    EN_ASSERT(node->depth != c_MaxNodeDepth, "Node is already at max depth!");
+    ENG_ASSERT(node != nullptr, "Node can't be nullptr!");
+    ENG_ASSERT(node->isLeaf(), "Node must be a leaf node!");
+    ENG_ASSERT(node->depth != c_MaxNodeDepth, "Node is already at max depth!");
 
     const globalIndex_t nodeChildSize = node->size() / 2;
 
@@ -100,7 +100,7 @@ namespace lod
         for (int k = 0; k < 2; ++k)
         {
           int childIndex = i * eng::u32Bit(2) + j * eng::u32Bit(1) + k * eng::u32Bit(0);
-          EN_ASSERT(node->children[childIndex] == nullptr, "Child node already exists!");
+          ENG_ASSERT(node->children[childIndex] == nullptr, "Child node already exists!");
 
           GlobalIndex nodeChildAnchor = node->anchor + nodeChildSize * GlobalIndex(i, j, k);
           node->children[childIndex] = new Node(node, node->depth + 1, nodeChildAnchor);
@@ -114,7 +114,7 @@ namespace lod
 
   void Octree::combineChildren(Node* node)
   {
-    EN_ASSERT(node != nullptr, "Node can't be nullptr!");
+    ENG_ASSERT(node != nullptr, "Node can't be nullptr!");
 
     // Return if node is already a leaf
     if (node->isLeaf())
@@ -256,7 +256,7 @@ namespace lod
 
   static BlockArrayRect<terrain::CompoundSurfaceData> generateNoise(Octree::Node* node)
   {
-    EN_PROFILE_FUNCTION();
+    ENG_PROFILE_FUNCTION();
 
     length_t cellLength = node->length() / c_NumCells;
     eng::math::Vec2 LODAnchorXY = Chunk::Length() * static_cast<eng::math::Vec2>(node->anchor);
@@ -391,7 +391,7 @@ namespace lod
   // Generate primary LOD mesh using Marching Cubes algorithm
   static void generatePrimaryMesh(Octree::Node* node, const BlockArrayRect<terrain::CompoundSurfaceData>& noiseValues, const BlockArrayRect<eng::math::Vec3>& noiseNormals)
   {
-    EN_PROFILE_FUNCTION();
+    ENG_PROFILE_FUNCTION();
 
     struct VertexReuseData
     {
@@ -516,7 +516,7 @@ namespace lod
   // Generate transition meshes using Transvoxel algorithm
   static void generateTransitionMeshes(Octree::Node* node, const BlockArrayRect<terrain::CompoundSurfaceData>& noiseValues, const BlockArrayRect<eng::math::Vec3>& noiseNormals)
   {
-    EN_PROFILE_FUNCTION();
+    ENG_PROFILE_FUNCTION();
 
     struct VertexReuseData
     {
@@ -689,7 +689,7 @@ namespace lod
     if (LODFloor > globalMaxTerrainHeight || LODCeiling < globalMinTerrainHeight)
       return;
 
-    EN_PROFILE_FUNCTION();
+    ENG_PROFILE_FUNCTION();
 
     // Generate voxel data using heightmap
     BlockArrayRect<terrain::CompoundSurfaceData> noiseValues = generateNoise(node);
@@ -816,7 +816,7 @@ namespace lod
       else if (neighbor->LODLevel() - node->LODLevel() == 1)
         transitionFaces |= eng::bit(faceID);
       else if (neighbor->LODLevel() - node->LODLevel() > 1)
-        EN_WARN("LOD neighbor is more than one level lower resolution");
+        ENG_WARN("LOD neighbor is more than one level lower resolution");
     }
 
     node->data->transitionFaces = transitionFaces;
@@ -824,7 +824,7 @@ namespace lod
 
   void updateMesh(Octree& tree, Octree::Node* node)
   {
-    EN_PROFILE_FUNCTION();
+    ENG_PROFILE_FUNCTION();
 
     determineTransitionFaces(tree, node);
 

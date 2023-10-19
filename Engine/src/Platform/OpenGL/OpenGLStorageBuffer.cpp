@@ -12,7 +12,7 @@ namespace eng
       case StorageBuffer::Type::VertexBuffer:   return GL_ARRAY_BUFFER;
       case StorageBuffer::Type::IndexBuffer:    return GL_ELEMENT_ARRAY_BUFFER;
       case StorageBuffer::Type::SSBO:           return GL_SHADER_STORAGE_BUFFER;
-      default:  EN_CORE_ERROR("Invalid storage buffer type!"); return 0;
+      default:  ENG_CORE_ERROR("Invalid storage buffer type!"); return 0;
     }
   }
 
@@ -22,23 +22,23 @@ namespace eng
       m_Binding(binding),
       m_RendererID(0)
   {
-    EN_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
+    ENG_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
     glCreateBuffers(1, &m_RendererID);
 
-#if EN_DEBUG
+#if ENG_DEBUG
     unBind();
 #endif
   }
 
   OpenGLStorageBuffer::~OpenGLStorageBuffer()
   {
-    EN_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
+    ENG_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
     glDeleteBuffers(1, &m_RendererID);
   }
 
   void OpenGLStorageBuffer::bind() const
   {
-    EN_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
+    ENG_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
 
     GLenum target = convertTypeToGLEnum(m_Type);
 
@@ -49,7 +49,7 @@ namespace eng
 
   void OpenGLStorageBuffer::unBind() const
   {
-    EN_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
+    ENG_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
     glBindBuffer(convertTypeToGLEnum(m_Type), 0);
   }
 
@@ -65,29 +65,29 @@ namespace eng
 
   void OpenGLStorageBuffer::set(const void* data, uint32_t size)
   {
-    EN_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
+    ENG_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
     glNamedBufferData(m_RendererID, size, data, GL_DYNAMIC_DRAW);
     m_Size = size;
 
-#if EN_DEBUG
+#if ENG_DEBUG
     unBind();
 #endif
   }
 
   void OpenGLStorageBuffer::update(const void* data, uint32_t offset, uint32_t size)
   {
-    EN_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
-    EN_CORE_ASSERT(offset + size <= m_Size, "Data is outside of buffer range!");
+    ENG_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
+    ENG_CORE_ASSERT(offset + size <= m_Size, "Data is outside of buffer range!");
     glNamedBufferSubData(m_RendererID, offset, size, data);
 
-#if EN_DEBUG
+#if ENG_DEBUG
     unBind();
 #endif
   }
 
   void OpenGLStorageBuffer::resize(uint32_t newSize)
   {
-    EN_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
+    ENG_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
 
     // Set up new vertex buffer
     uint32_t oldRendererID = m_RendererID;
@@ -99,7 +99,7 @@ namespace eng
     glDeleteBuffers(1, &oldRendererID);
     m_Size = newSize;
 
-#if EN_DEBUG
+#if ENG_DEBUG
     unBind();
 #endif
   }

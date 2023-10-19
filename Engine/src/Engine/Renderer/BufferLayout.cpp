@@ -19,7 +19,7 @@ namespace eng
       case ShaderDataType::Float4:      return 4 * sizeof(float);
       case ShaderDataType::Mat3:        return 3 * 3 * sizeof(float);
       case ShaderDataType::Mat4:        return 4 * 4 * sizeof(float);
-      default: EN_CORE_ASSERT(false, "Unknown ShaderDataType!"); return 0;
+      default: ENG_CORE_ASSERT(false, "Unknown ShaderDataType!"); return 0;
     }
   }
 
@@ -50,7 +50,7 @@ namespace eng
       case ShaderDataType::Float4:      return 4;
       case ShaderDataType::Mat3:        return 3;
       case ShaderDataType::Mat4:        return 4;
-      default: EN_CORE_ASSERT(false, "Unknown ShaderDataType!"); return 0;
+      default: ENG_CORE_ASSERT(false, "Unknown ShaderDataType!"); return 0;
     }
   }
 

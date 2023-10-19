@@ -26,10 +26,7 @@ namespace eng::math
     template<std::integral NewIntType>
     explicit constexpr operator IVec2<NewIntType>() const { return { static_cast<NewIntType>(i), static_cast<NewIntType>(j) }; }
   
-    constexpr IntType& operator[](Axis axis)
-    {
-      return const_cast<IntType&>(static_cast<const IVec2*>(this)->operator[](axis));
-    }
+    constexpr IntType& operator[](Axis axis) { return ENG_MUTABLE_VERSION(operator[], axis); }
     constexpr const IntType& operator[](Axis axis) const
     {
       switch (axis)
@@ -55,7 +52,7 @@ namespace eng::math
   
     constexpr IVec2& operator*=(IntType n)
     {
-      EN_CORE_ASSERT(debug::OverflowCheck(n, i) && debug::OverflowCheck(n, j), "Integer overflow!");
+      ENG_CORE_ASSERT(debug::OverflowCheck(n, i) && debug::OverflowCheck(n, j), "Integer overflow!");
       i *= n;
       j *= n;
       return *this;

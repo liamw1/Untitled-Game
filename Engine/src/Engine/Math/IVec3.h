@@ -31,10 +31,7 @@ namespace eng::math
     template<std::integral NewIntType>
     explicit constexpr operator IVec3<NewIntType>() const { return { static_cast<NewIntType>(i), static_cast<NewIntType>(j), static_cast<NewIntType>(k) }; }
   
-    constexpr IntType& operator[](Axis axis)
-    {
-      return const_cast<IntType&>(static_cast<const IVec3*>(this)->operator[](axis));
-    }
+    constexpr IntType& operator[](Axis axis) { return ENG_MUTABLE_VERSION(operator[], axis); }
     constexpr const IntType& operator[](Axis axis) const
     {
       switch (axis)
@@ -62,7 +59,7 @@ namespace eng::math
   
     constexpr IVec3& operator*=(IntType n)
     {
-      EN_CORE_ASSERT(debug::OverflowCheck(n, i) && debug::OverflowCheck(n, j) && debug::OverflowCheck(n, k), "Integer overflow!");
+      ENG_CORE_ASSERT(debug::OverflowCheck(n, i) && debug::OverflowCheck(n, j) && debug::OverflowCheck(n, k), "Integer overflow!");
       i *= n;
       j *= n;
       k *= n;
@@ -97,8 +94,10 @@ namespace eng::math
   
     static constexpr const IVec3& Dir(Direction direction)
     {
-      static constexpr EnumArray<IVec3, Direction> directions = { { -1, 0, 0}, { 1, 0, 0}, { 0, -1, 0}, { 0, 1, 0}, { 0, 0, -1}, { 0, 0, 1} };
-      return directions[direction];                          //       West        East        South        North       Bottom        Top
+      static constexpr EnumArray<IVec3, Direction> directions = {{Direction::West,   IVec3(-1, 0, 0)}, {Direction::East,  IVec3(1, 0, 0)},
+                                                                 {Direction::South,  IVec3(0, -1, 0)}, {Direction::North, IVec3(0, 1, 0)},
+                                                                 {Direction::Bottom, IVec3(0, 0, -1)}, {Direction::Top,   IVec3(0, 0, 1)}};
+      return directions[direction];
     }
   
     static constexpr IVec3 CreatePermuted(IntType i, IntType j, IntType k, Axis permutation)

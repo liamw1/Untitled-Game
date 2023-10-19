@@ -29,18 +29,25 @@ namespace eng
   template<typename E>
   concept IterableEnum = Enum<E> && requires(E)
   {
-    { E::Begin } -> std::same_as<E&>;
-    { E::End   } -> std::same_as<E&>;
+    { E::First };
+    { E::Last  };
   };
   
   template<typename T>
   concept Hashable = requires(T instance)
   {
-    { std::hash<T>{}(instance) } -> std::convertible_to<std::size_t>;
+    { std::hash<T>{}(instance) } -> std::convertible_to<size_t>;
   };
   
   template <typename T, typename ReturnType, typename IndexType>
   concept Indexable = requires(T t) { { t(IndexType()) } -> DecaysTo<ReturnType>; };
+
+  template<typename T>
+  concept Iterable = requires(T t)
+  {
+    { std::begin(t) } -> std::forward_iterator;
+    { std::end(t)   } -> std::forward_iterator;
+  };
   
   template<typename F, typename ReturnType, typename... Args>
   concept InvocableWithReturnType = std::is_invocable_r_v<ReturnType, F, Args...>;

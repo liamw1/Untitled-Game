@@ -13,7 +13,7 @@ namespace eng
 
   static void GLFWErrorCallback(int errorCode, const char* description)
   {
-    EN_CORE_ERROR("GLFW Error ({0}): {1}", errorCode, description);
+    ENG_CORE_ERROR("GLFW Error ({0}): {1}", errorCode, description);
   }
 
   WindowsWindow::WindowsWindow(const WindowProps& properties)
@@ -23,14 +23,14 @@ namespace eng
 
   WindowsWindow::~WindowsWindow()
   {
-    EN_PROFILE_FUNCTION();
+    ENG_PROFILE_FUNCTION();
 
     shutdown();
   }
 
   void WindowsWindow::onUpdate()
   {
-    EN_PROFILE_FUNCTION();
+    ENG_PROFILE_FUNCTION();
 
     glfwPollEvents();
     m_Context->swapBuffers();
@@ -78,26 +78,26 @@ namespace eng
 
   void WindowsWindow::initialize(const WindowProps& properties)
   {
-    EN_PROFILE_FUNCTION();
+    ENG_PROFILE_FUNCTION();
 
     m_Data.title = properties.title;
     m_Data.width = properties.width;
     m_Data.height = properties.height;
 
-    EN_CORE_INFO("Creating window {0} ({1}, {2})", properties.title, properties.width, properties.height);
+    ENG_CORE_INFO("Creating window {0} ({1}, {2})", properties.title, properties.width, properties.height);
     
     if (GLFWWindowCount == 0)
     {
-      EN_PROFILE_SCOPE("glfwInit");
+      ENG_PROFILE_SCOPE("glfwInit");
       int success = glfwInit();
-      EN_CORE_ASSERT(success, "Could not initialize GLFW!");
+      ENG_CORE_ASSERT(success, "Could not initialize GLFW!");
       glfwSetErrorCallback(GLFWErrorCallback);
     }
 
     {
-      EN_PROFILE_SCOPE("glfwCreateWindow");
+      ENG_PROFILE_SCOPE("glfwCreateWindow");
 
-      #if defined(EN_DEBUG)
+      #if defined(ENG_DEBUG)
         if (RendererAPI::GetAPI() == RendererAPI::API::OpenGL || RendererAPI::GetAPI() == RendererAPI::API::OpenGL_Legacy)
           glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
       #endif
@@ -208,7 +208,7 @@ namespace eng
 
   void WindowsWindow::shutdown()
   {
-    EN_PROFILE_FUNCTION();
+    ENG_PROFILE_FUNCTION();
 
     glfwDestroyWindow(m_Window);
     --GLFWWindowCount;

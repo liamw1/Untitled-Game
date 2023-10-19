@@ -40,9 +40,18 @@ namespace block
     return collisionalities;
   }
 
+  static eng::EnumArray<TextureID, eng::math::Direction> createBlockTextures(TextureID westTexture,   TextureID eastTexture,
+                                                                             TextureID southTexture,  TextureID northTexture,
+                                                                             TextureID bottomTexture, TextureID topTexture)
+  {
+    return {{eng::math::Direction::West,   westTexture  }, {eng::math::Direction::East,  eastTexture },
+            {eng::math::Direction::South,  southTexture }, {eng::math::Direction::North, northTexture},
+            {eng::math::Direction::Bottom, bottomTexture}, {eng::math::Direction::Top,   topTexture  }};
+  }
+
   static eng::EnumArray<TextureID, eng::math::Direction> createBlockTextures(TextureID topTexture, TextureID sideTextures, TextureID bottomTexture)
   {
-    return {sideTextures, sideTextures, sideTextures, sideTextures, bottomTexture, topTexture};
+    return createBlockTextures(sideTextures, sideTextures, sideTextures, sideTextures, bottomTexture, topTexture);
   }
 
   static eng::EnumArray<TextureID, eng::math::Direction> createBlockTextures(TextureID topBotTextures, TextureID sideTextures)
@@ -147,7 +156,7 @@ namespace block
       {
         if (s_TexturePaths[texture] == "")
         {
-          EN_ERROR("Block texture {0} has not been assign a path!", std::underlying_type_t<TextureID>(texture));
+          ENG_ERROR("Block texture {0} has not been assign a path!", std::underlying_type_t<TextureID>(texture));
           texture = TextureID::ErrorTexture;
         }
 
@@ -191,7 +200,7 @@ namespace block
   Light::Light(int8_t sunlight)
     : m_Sunlight(sunlight)
   {
-    EN_ASSERT(eng::debug::BoundsCheck(sunlight, 0, MaxValue() + 1), "Invalid value for sunlight!");
+    ENG_ASSERT(eng::debug::BoundsCheck(sunlight, 0, MaxValue() + 1), "Invalid value for sunlight!");
   }
 
   bool Light::operator==(Light other) const

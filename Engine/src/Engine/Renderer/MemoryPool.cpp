@@ -42,8 +42,8 @@ namespace eng
       m_FreeRegions.erase(bestFreeRegionPosition);
 
       bestRegionPosition = m_Regions.find(regionAddress);
-      EN_CORE_ASSERT(bestRegionPosition != m_Regions.end(), "No memory region was found at offset {0}!", regionAddress);
-      EN_CORE_ASSERT(regionSize(bestRegionPosition) >= size, "Memory region is not large enough to hold data!");
+      ENG_CORE_ASSERT(bestRegionPosition != m_Regions.end(), "No memory region was found at offset {0}!", regionAddress);
+      ENG_CORE_ASSERT(regionSize(bestRegionPosition) >= size, "Memory region is not large enough to hold data!");
     }
     else
     {
@@ -53,7 +53,7 @@ namespace eng
         // Add to memory regions but defer adding to free regions until we know final size
         auto [insertionPosition, insertionSuccess] = m_Regions.emplace(m_Capacity, 0);
         bestRegionPosition = insertionPosition;
-        EN_CORE_ASSERT(insertionSuccess, "Memory Region already exists at offset {0}!", m_Capacity);
+        ENG_CORE_ASSERT(insertionSuccess, "Memory Region already exists at offset {0}!", m_Capacity);
       }
       else
         removeFromFreeRegions(bestRegionPosition);
@@ -86,8 +86,8 @@ namespace eng
   void MemoryPool::remove(address_t address)
   {
     RegionsIterator allocationPosition = m_Regions.find(address);
-    EN_CORE_ASSERT(allocationPosition != m_Regions.end(), "No memory region was found at adress {0}!", address);
-    EN_CORE_ASSERT(!isFree(allocationPosition), "Region is already free!");
+    ENG_CORE_ASSERT(allocationPosition != m_Regions.end(), "No memory region was found at adress {0}!", address);
+    ENG_CORE_ASSERT(!isFree(allocationPosition), "Region is already free!");
 
     int freedRegionSize = regionSize(allocationPosition);
     address_t freedRegionAddress = address;
@@ -159,6 +159,6 @@ namespace eng
         m_FreeRegions.erase(it);
         return;
       }
-    EN_CORE_ERROR("No region at address {0} of size {1} found!", address, region.size);
+    ENG_CORE_ERROR("No region at address {0} of size {1} found!", address, region.size);
   }
 }

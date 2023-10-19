@@ -133,7 +133,7 @@ bool ChunkDrawCommand::sort(const GlobalIndex& originIndex, const eng::math::Vec
 
   // Find block index that is closest to the specified position
   BlockIndex originBlock = BlockIndex::ToIndex(viewPosition / block::length());
-  EN_ASSERT(Chunk::Bounds().encloses(originBlock), "Given view position is not inside the origin chunk!");
+  ENG_ASSERT(Chunk::Bounds().encloses(originBlock), "Given view position is not inside the origin chunk!");
   for (eng::math::Axis axis : eng::math::Axes())
   {
     if (originIndex[axis] > id()[axis])

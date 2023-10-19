@@ -13,7 +13,7 @@ namespace eng::math
     ArrayBoxStrip(T* begin, int offset)
       : m_Begin(begin), m_Offset(offset) {}
 
-    T& operator[](IntType index) { return const_cast<T&>(static_cast<const ArrayBoxStrip*>(this)->operator[](index)); }
+    T& operator[](IntType index) { return ENG_MUTABLE_VERSION(operator[], index); }
     const T& operator[](IntType index) const { return m_Begin[index - m_Offset]; }
 
   private:
@@ -33,7 +33,7 @@ namespace eng::math
     ArrayBoxStrip<T, IntType> operator[](IntType index) { return static_cast<const ArrayBoxLayer&>(*this).operator[](index); }
     const ArrayBoxStrip<T, IntType> operator[](IntType index) const
     {
-      EN_CORE_ASSERT(debug::BoundsCheck(index, m_Bounds.min.i, m_Bounds.max.i + 1), "Index is out of bounds!");
+      ENG_CORE_ASSERT(debug::BoundsCheck(index, m_Bounds.min.i, m_Bounds.max.i + 1), "Index is out of bounds!");
       return ArrayBoxStrip<T, IntType>(m_Begin + m_Bounds.extents().j * (index - m_Bounds.min.i), m_Bounds.min.j);
     }
 
@@ -95,19 +95,19 @@ namespace eng::math
     operator bool() const { return m_Data; }
     const T* data() const { return m_Data; }
 
-    T& operator()(const IVec3<IntType>& index) { return const_cast<T&>(static_cast<const ArrayBox*>(this)->operator()(index)); }
+    T& operator()(const IVec3<IntType>& index) { return ENG_MUTABLE_VERSION(operator(), index); }
     const T& operator()(const IVec3<IntType>& index) const
     {
-      EN_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
-      EN_CORE_ASSERT(m_Bounds.encloses(index), "Index is out of bounds!");
+      ENG_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
+      ENG_CORE_ASSERT(m_Bounds.encloses(index), "Index is out of bounds!");
       return m_Data[m_Strides.i * index.i + m_Strides.j * index.j + index.k - m_Offset];
     }
 
     Layer operator[](IntType index) { return static_cast<const ArrayBox*>(this)->operator[](index); }
     const Layer operator[](IntType index) const
     {
-      EN_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
-      EN_CORE_ASSERT(debug::BoundsCheck(index, m_Bounds.min.i, m_Bounds.max.i + 1), "Index is out of bounds!");
+      ENG_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
+      ENG_CORE_ASSERT(debug::BoundsCheck(index, m_Bounds.min.i, m_Bounds.max.i + 1), "Index is out of bounds!");
       IBox2<IntType> layerBounds(m_Bounds.min.j, m_Bounds.min.k, m_Bounds.max.j, m_Bounds.max.k);
       return Layer(m_Data + m_Strides.i * (index - m_Bounds.min.i), layerBounds);
     }
@@ -117,7 +117,7 @@ namespace eng::math
 
     bool contains(const T& value) const
     {
-      EN_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
+      ENG_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
       return std::any_of(m_Data, m_Data + size(), [&value](const T& data)
         {
           return data == value;
@@ -126,7 +126,7 @@ namespace eng::math
 
     bool filledWith(const T& value) const
     {
-      EN_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
+      ENG_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
       return std::all_of(m_Data, m_Data + size(), [&value](const T& data)
         {
           return data == value;
@@ -135,7 +135,7 @@ namespace eng::math
 
     bool contentsEqual(const IBox3<IntType>& compareSection, const ArrayBox<T, IntType>& container, const IBox3<IntType>& containerSection, const T& defaultValue) const
     {
-      EN_CORE_ASSERT(compareSection.extents() == containerSection.extents(), "Compared sections are not the same dimensions!");
+      ENG_CORE_ASSERT(compareSection.extents() == containerSection.extents(), "Compared sections are not the same dimensions!");
 
       if (!m_Data && !container)
         return true;
@@ -154,7 +154,7 @@ namespace eng::math
     template<InvocableWithReturnType<bool, T> F>
     bool allOf(const IBox3<IntType>& section, const F& condition) const
     {
-      EN_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
+      ENG_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
       return section.allOf([this, &condition](const IVec3<IntType>& index)
         {
           return condition((*this)(index));
@@ -164,7 +164,7 @@ namespace eng::math
     template<InvocableWithReturnType<bool, T> F>
     bool anyOf(const IBox3<IntType>& section, const F& condition) const
     {
-      EN_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
+      ENG_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
       return section.anyOf([this, &condition](const IVec3<IntType>& index)
         {
           return condition((*this)(index));
@@ -174,7 +174,7 @@ namespace eng::math
     template<InvocableWithReturnType<bool, T> F>
     bool noneOf(const IBox3<IntType>& section, const F& condition) const
     {
-      EN_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
+      ENG_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
       return section.noneOf([this, &condition](const IVec3<IntType>& index)
         {
           return condition((*this)(index));
@@ -183,13 +183,13 @@ namespace eng::math
 
     void fill(const T& value)
     {
-      EN_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
+      ENG_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
       std::fill_n(m_Data, size(), value);
     }
 
     void fill(const IBox3<IntType>& fillSection, const T& value)
     {
-      EN_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
+      ENG_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
       fillSection.forEach([this, &value](const IVec3<IntType>& index)
         {
           (*this)(index) = value;
@@ -198,8 +198,8 @@ namespace eng::math
 
     void fill(const IBox3<IntType>& fillSection, const ArrayBox<T, IntType>& container, const IBox3<IntType>& containerSection, const T& defaultValue)
     {
-      EN_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
-      EN_CORE_ASSERT(fillSection.extents() == containerSection.extents(), "Read and write sections are not the same dimensions!");
+      ENG_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
+      ENG_CORE_ASSERT(fillSection.extents() == containerSection.extents(), "Read and write sections are not the same dimensions!");
 
       if (!container)
       {
@@ -225,7 +225,7 @@ namespace eng::math
     void allocate()
     {
       if (m_Data)
-        EN_CORE_WARN("Data already allocated to ArrayBox. Ignoring...");
+        ENG_CORE_WARN("Data already allocated to ArrayBox. Ignoring...");
       else
         m_Data = new T[size()];
     }

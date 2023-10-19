@@ -72,7 +72,7 @@ namespace eng
     {
       case FramebufferTextureFormat::RED_INTEGER: return GL_RED_INTEGER;
       case FramebufferTextureFormat::RGBA8:       return GL_RGBA8;
-      default: EN_CORE_ERROR("Invalid texture format!");  return 0;
+      default: ENG_CORE_ERROR("Invalid texture format!");  return 0;
     }
   }
 
@@ -97,7 +97,7 @@ namespace eng
 
   OpenGLFramebuffer::~OpenGLFramebuffer()
   {
-    EN_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
+    ENG_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
 
     glDeleteFramebuffers(1, &m_RendererID);
     glDeleteTextures(static_cast<GLsizei>(m_ColorAttachments.size()), m_ColorAttachments.data());
@@ -106,7 +106,7 @@ namespace eng
 
   void OpenGLFramebuffer::bind()
   {
-    EN_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
+    ENG_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
 
     glBindFramebuffer(GL_FRAMEBUFFER, m_RendererID);
     glViewport(0, 0, m_Specification.width, m_Specification.height);
@@ -114,7 +114,7 @@ namespace eng
 
   void OpenGLFramebuffer::unbind()
   {
-    EN_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
+    ENG_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
   }
 
@@ -125,13 +125,13 @@ namespace eng
 
   uint32_t OpenGLFramebuffer::getColorAttachmentRendererID(uint32_t index) const
   {
-    EN_CORE_ASSERT(index < m_ColorAttachments.size(), "Color attachment index is out of bounds!");
+    ENG_CORE_ASSERT(index < m_ColorAttachments.size(), "Color attachment index is out of bounds!");
     return m_ColorAttachments[index];
   }
 
   void OpenGLFramebuffer::invalidate()
   {
-    EN_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
+    ENG_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
 
     if (m_RendererID != 0)
     {
@@ -184,14 +184,14 @@ namespace eng
 
     if (m_ColorAttachments.size() > 1)
     {
-      EN_CORE_ASSERT(m_ColorAttachments.size() <= 4, "Engine only supports up to 4 color attachments");
+      ENG_CORE_ASSERT(m_ColorAttachments.size() <= 4, "Engine only supports up to 4 color attachments");
       static constexpr GLenum buffers[4] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3 };
       glDrawBuffers(static_cast<GLsizei>(m_ColorAttachments.size()), buffers);
     }
     else if (m_ColorAttachments.empty())
       glDrawBuffer(GL_NONE);  // Only depth-pass
 
-    EN_CORE_ASSERT(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE, "Framebuffer is incomplete!");
+    ENG_CORE_ASSERT(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE, "Framebuffer is incomplete!");
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
   }
@@ -200,7 +200,7 @@ namespace eng
   {
     if (width == 0 || width > c_MaxFrameBufferSize || height == 0 || height > c_MaxFrameBufferSize)
     {
-      EN_CORE_WARN("Attempted to resize framebuffer to {0}, {1}", width, height);
+      ENG_CORE_WARN("Attempted to resize framebuffer to {0}, {1}", width, height);
       return;
     }
 
@@ -211,8 +211,8 @@ namespace eng
 
   int OpenGLFramebuffer::readPixel(uint32_t attachmentIndex, int x, int y)
   {
-    EN_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
-    EN_CORE_ASSERT(attachmentIndex < m_ColorAttachments.size(), "Color attachment index is out of bounds!");
+    ENG_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
+    ENG_CORE_ASSERT(attachmentIndex < m_ColorAttachments.size(), "Color attachment index is out of bounds!");
     glReadBuffer(GL_COLOR_ATTACHMENT0 + attachmentIndex);
     int pixelData;
     glReadPixels(x, y, 1, 1, GL_RED_INTEGER, GL_INT, &pixelData);
@@ -221,8 +221,8 @@ namespace eng
 
   void OpenGLFramebuffer::clearAttachment(uint32_t attachmentIndex, int value)
   {
-    EN_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
-    EN_CORE_ASSERT(attachmentIndex < m_ColorAttachments.size(), "Color attachment index is out of bounds!");
+    ENG_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
+    ENG_CORE_ASSERT(attachmentIndex < m_ColorAttachments.size(), "Color attachment index is out of bounds!");
 
     const FramebufferTextureSpecification& spec = m_ColorAttachmentSpecifications[attachmentIndex];
     uint32_t attachment = m_ColorAttachments[attachmentIndex];
@@ -233,8 +233,8 @@ namespace eng
 
   void OpenGLFramebuffer::clearAttachment(uint32_t attachmentIndex, float value)
   {
-    EN_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
-    EN_CORE_ASSERT(attachmentIndex < m_ColorAttachments.size(), "Color attachment index is out of bounds!");
+    ENG_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
+    ENG_CORE_ASSERT(attachmentIndex < m_ColorAttachments.size(), "Color attachment index is out of bounds!");
 
     const FramebufferTextureSpecification& spec = m_ColorAttachmentSpecifications[attachmentIndex];
     uint32_t attachment = m_ColorAttachments[attachmentIndex];

@@ -25,7 +25,7 @@ namespace eng
 
   void ImGuiLayer::onAttach()
   {
-    EN_PROFILE_FUNCTION();
+    ENG_PROFILE_FUNCTION();
 
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
@@ -64,7 +64,7 @@ namespace eng
 
   void ImGuiLayer::onDetach()
   {
-    EN_PROFILE_FUNCTION();
+    ENG_PROFILE_FUNCTION();
 
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
@@ -83,7 +83,7 @@ namespace eng
 
   void ImGuiLayer::begin()
   {
-    EN_PROFILE_FUNCTION();
+    ENG_PROFILE_FUNCTION();
 
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
@@ -92,7 +92,7 @@ namespace eng
 
   void ImGuiLayer::end()
   {
-    EN_PROFILE_FUNCTION();
+    ENG_PROFILE_FUNCTION();
 
     ImGuiIO& io = ImGui::GetIO();
     Application& app = Application::Get();

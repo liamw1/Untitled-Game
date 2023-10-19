@@ -21,7 +21,7 @@ namespace eng
       if (!insertionSuccess)
         listPosition = find(key);
 
-      EN_CORE_ASSERT(listPosition != end(), "Could not find or insert value at the given key!");
+      ENG_CORE_ASSERT(listPosition != end(), "Could not find or insert value at the given key!");
       return listPosition->second;
     }
 

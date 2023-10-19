@@ -1,7 +1,7 @@
 #pragma once
 #include "VertexArray.h"
 #include "MemoryPool.h"
-#include "Engine/Core/Concepts.h"
+#include "Engine/Core/Algorithm.h"
 #include "Engine/Utilities/Constraints.h"
 
 namespace eng
@@ -140,7 +140,7 @@ namespace eng
       if (vertexCount == 0)
         return;
 
-      EN_CORE_ASSERT(m_DrawCommandIndices.find(drawCommand.id()) == m_DrawCommandIndices.end(), "Draw command with ID {0} has already been allocated!", drawCommand.id());
+      ENG_CORE_ASSERT(m_DrawCommandIndices.find(drawCommand.id()) == m_DrawCommandIndices.end(), "Draw command with ID {0} has already been allocated!", drawCommand.id());
 
       // Add draw command data to memory pool. If a resize is triggered, vertex array needs to have layout set again.
       auto [triggeredResize, allocationAddress] = m_MemoryPool.add(drawCommand.vertexData(), vertexCount * m_Stride);
@@ -172,48 +172,45 @@ namespace eng
     }
 
     template<InvocableWithReturnType<bool, Identifier> F>
-    int partition(const F& condition)
+    int partition(const F& predicate)
     {
-      DrawCommandIterator partitionEnd = std::partition(m_DrawCommands.begin(), m_DrawCommands.end(), [&condition](const DrawCommandType& draw)
-        {
-          return condition(draw.id());
-        });
-
-      for (size_t i = 0; i < m_DrawCommands.size(); ++i)
-        *m_DrawCommands[i].commandIndex() = i;
-
+      DrawCommandIterator partitionEnd = partitionContainer(m_DrawCommands, [&predicate](const DrawCommandType& draw) { return predicate(draw.id()); });
+      setDrawCommandIndices(0, m_DrawCommands.size());
       return static_cast<int>(partitionEnd - m_DrawCommands.begin());
     }
 
-    template<InvocableWithReturnType<bool, Identifier, Identifier> F>
-    void sort(int drawCount, const F& comparision)
+    template<InvocableWithReturnType<bool, Identifier> F>
+    void unarySort(int drawCount, const F& unary)
     {
-      std::sort(m_DrawCommands.begin(), m_DrawCommands.begin() + drawCount, [&comparision](const DrawCommandType& drawA, const DrawCommandType& drawB)
-        {
-          return comparision(drawA.id(), drawB.id());
-        });
+      eng::unarySort(m_DrawCommands.begin(), m_DrawCommands.begin() + drawCount, [&unary](const DrawCommandType& draw) { return unary(draw.id()); });
+      setDrawCommandIndices(0, drawCount);
+    }
 
-      for (int i = 0; i < drawCount; ++i)
-        *m_DrawCommands[i].commandIndex() = i;
+    template<InvocableWithReturnType<bool, Identifier, Identifier> F>
+    void sort(int drawCount, const F& comparison)
+    {
+      std::sort(m_DrawCommands.begin(), m_DrawCommands.begin() + drawCount,
+                [&comparison](const DrawCommandType& drawA, const DrawCommandType& drawB) { return comparison(drawA.id(), drawB.id()); });
+      setDrawCommandIndices(0, drawCount);
     }
 
     template<InvocableWithReturnType<bool, DrawCommandType&> F>
     void amend(int drawCount, const F& function)
     {
       std::for_each_n(m_DrawCommands.begin(), drawCount, [this, &function](DrawCommandType& draw)
+      {
+        uint32_t oldVertexCount = draw.vertexCount();
+        if (!function(draw))
+          return;
+
+        if (draw.vertexCount() > oldVertexCount)
         {
-          uint32_t oldVertexCount = draw.vertexCount();
-          if (!function(draw))
-            return;
+          ENG_CORE_ERROR("Ammended draw command added additional vertices! Discarding changes...");
+          return;
+        }
 
-          if (draw.vertexCount() > oldVertexCount)
-          {
-            EN_CORE_ERROR("Ammended draw command added additional vertices! Discarding changes...");
-            return;
-          }
-
-          m_MemoryPool.amend(draw.vertexData(), getDrawCommandAddress(draw));
-        });
+        m_MemoryPool.amend(draw.vertexData(), getDrawCommandAddress(draw));
+      });
     }
 
     const std::vector<DrawCommandType>& getDrawCommandBuffer() const { return m_DrawCommands; }
@@ -231,6 +228,12 @@ namespace eng
     MemoryPool::address_t getDrawCommandAddress(const DrawCommandType& drawCommand)
     {
       return drawCommand.firstVertex() * m_Stride;
+    }
+
+    void setDrawCommandIndices(size_t begin, size_t end)
+    {
+      for (size_t i = begin; i < end; ++i)
+        *m_DrawCommands[i].commandIndex() = i;
     }
   };
 
@@ -267,7 +270,7 @@ namespace eng
       if (vertexCount == 0 || indexCount == 0)
         return;
 
-      EN_CORE_ASSERT(m_DrawCommandIndices.find(drawCommand.id()) == m_DrawCommandIndices.end(), "Draw command with ID {0} has already been allocated!", drawCommand.id());
+      ENG_CORE_ASSERT(m_DrawCommandIndices.find(drawCommand.id()) == m_DrawCommandIndices.end(), "Draw command with ID {0} has already been allocated!", drawCommand.id());
 
       // Add draw command data to memory pools. If a vertex buffer resize is triggered, vertex array needs to have layout set again.
       auto [indexBufferResized, indexAllocationAddress] = m_IndexMemory.add(drawCommand.indexData(), indexCount * sizeof(uint32_t));
@@ -302,48 +305,45 @@ namespace eng
     }
 
     template<InvocableWithReturnType<bool, Identifier> F>
-    int partition(const F& condition)
+    int partition(const F& predicate)
     {
-      DrawCommandIterator partitionEnd = std::partition(m_DrawCommands.begin(), m_DrawCommands.end(), [&condition](const DrawCommandType& draw)
-        {
-          return condition(draw.id());
-        });
-
-      for (size_t i = 0; i < m_DrawCommands.size(); ++i)
-        *m_DrawCommands[i].commandIndex() = i;
-
+      DrawCommandIterator partitionEnd = partitionContainer(m_DrawCommands, [&predicate](const DrawCommandType& draw) { return predicate(draw.id()); });
+      setDrawCommandIndices(0, m_DrawCommands.size());
       return static_cast<int>(partitionEnd - m_DrawCommands.begin());
     }
 
-    template<InvocableWithReturnType<bool, Identifier, Identifier> F>
-    void sort(int drawCount, const F& comparision)
+    template<InvocableWithReturnType<bool, Identifier> F>
+    void unarySort(int drawCount, const F& unary)
     {
-      std::sort(m_DrawCommands.begin(), m_DrawCommands.begin() + drawCount, [&comparision](const DrawCommandType& drawA, const DrawCommandType& drawB)
-        {
-          return comparision(drawA.id(), drawB.id());
-        });
+      eng::unarySort(m_DrawCommands.begin(), m_DrawCommands.begin() + drawCount, [&unary](const DrawCommandType& draw) { return unary(draw.id()); });
+      setDrawCommandIndices(0, drawCount);
+    }
 
-      for (int i = 0; i < drawCount; ++i)
-        *m_DrawCommands[i].commandIndex() = i;
+    template<InvocableWithReturnType<bool, Identifier, Identifier> F>
+    void sort(int drawCount, const F& comparison)
+    {
+      std::sort(m_DrawCommands.begin(), m_DrawCommands.begin() + drawCount,
+                [&comparison](const DrawCommandType& drawA, const DrawCommandType& drawB) { return comparison(drawA.id(), drawB.id()); });
+      setDrawCommandIndices(0, drawCount);
     }
 
     template<InvocableWithReturnType<bool, DrawCommandType&> F>
     void amend(int drawCount, const F& function)
     {
       std::for_each_n(m_DrawCommands.begin(), drawCount, [this, &function](DrawCommandType& draw)
+      {
+        uint32_t oldIndexCount = draw.indexCount();
+        if (!function(draw))
+          return;
+
+        if (draw.indexCount() > oldIndexCount)
         {
-          uint32_t oldIndexCount = draw.indexCount();
-          if (!function(draw))
-            return;
+          ENG_CORE_ERROR("Ammended draw command added additional indices! Discarding changes...");
+          return;
+        }
 
-          if (draw.indexCount() > oldIndexCount)
-          {
-            EN_CORE_ERROR("Ammended draw command added additional indices! Discarding changes...");
-            return;
-          }
-
-          m_IndexMemory.amend(draw.indexData(), getDrawCommandIndicesAddress(draw));
-        });
+        m_IndexMemory.amend(draw.indexData(), getDrawCommandIndicesAddress(draw));
+      });
     }
 
     const std::vector<DrawCommandType>& getDrawCommandBuffer() const { return m_DrawCommands; }
@@ -367,6 +367,12 @@ namespace eng
     MemoryPool::address_t getDrawCommandVerticesAddress(const DrawCommandType& drawCommand)
     {
       return drawCommand.baseVertex() * m_Stride;
+    }
+
+    void setDrawCommandIndices(size_t begin, size_t end)
+    {
+      for (size_t i = begin; i < end; ++i)
+        *m_DrawCommands[i].commandIndex() = i;
     }
   };
 }

@@ -18,7 +18,7 @@ namespace eng
     if (type == "fragment" || type == "pixel")
       return GL_FRAGMENT_SHADER;
 
-    EN_CORE_ASSERT(false, "Unknown shader type {0}!", type);
+    ENG_CORE_ASSERT(false, "Unknown shader type {0}!", type);
     return 0;
   }
 
@@ -28,7 +28,7 @@ namespace eng
     : m_RendererID(0),
       m_Name("Unnamed Shader")
   {
-    EN_PROFILE_FUNCTION();
+    ENG_PROFILE_FUNCTION();
 
     compile(PreProcess(ReadFile(filepath), preprocessorDefinitions));
 
@@ -38,8 +38,8 @@ namespace eng
 
   OpenGL_LegacyShader::~OpenGL_LegacyShader()
   {
-    EN_PROFILE_FUNCTION();
-    EN_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
+    ENG_PROFILE_FUNCTION();
+    ENG_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
 
     glDeleteProgram(m_RendererID);
   }
@@ -51,21 +51,21 @@ namespace eng
 
   void OpenGL_LegacyShader::bind() const
   {
-    EN_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
+    ENG_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
     glUseProgram(m_RendererID);
   }
 
   void OpenGL_LegacyShader::unBind() const
   {
-    EN_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
+    ENG_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
     glUseProgram(0);
   }
 
   void OpenGL_LegacyShader::compile(const std::unordered_map<std::string, std::string>& shaderSources)
   {
-    EN_PROFILE_FUNCTION();
-    EN_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
-    EN_CORE_ASSERT(debug::BoundsCheck(shaderSources.size(), 0, c_MaxShaders + 1), "A maximum of {0} shaders is supported", c_MaxShaders);
+    ENG_PROFILE_FUNCTION();
+    ENG_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
+    ENG_CORE_ASSERT(debug::BoundsCheck(shaderSources.size(), 0, c_MaxShaders + 1), "A maximum of {0} shaders is supported", c_MaxShaders);
 
     GLuint program = glCreateProgram();
     std::vector<GLenum> glShaderIDs(shaderSources.size());
@@ -91,8 +91,8 @@ namespace eng
 
         glDeleteShader(shader);
 
-        EN_CORE_ERROR("{0}", infoLog.data());
-        EN_CORE_ASSERT(false, "{0} shader compilation failure!", type);
+        ENG_CORE_ERROR("{0}", infoLog.data());
+        ENG_CORE_ASSERT(false, "{0} shader compilation failure!", type);
         break;
       }
       glAttachShader(program, shader);
@@ -121,8 +121,8 @@ namespace eng
         glDeleteShader(id);
       }
 
-      EN_CORE_ERROR("{0}", infoLog.data());
-      EN_CORE_ASSERT(false, "Shader link failure!");
+      ENG_CORE_ERROR("{0}", infoLog.data());
+      ENG_CORE_ASSERT(false, "Shader link failure!");
       return;
     }
 

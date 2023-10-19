@@ -11,35 +11,35 @@ namespace eng
     template<typename T>
     bool has() const
     {
-      EN_CORE_ASSERT(isValid(), "Entity handle is invalid!");
+      ENG_CORE_ASSERT(isValid(), "Entity handle is invalid!");
       return s_Registry.any_of<T>(m_EntityID);
     }
     
     template<typename T, typename... Args>
     T& add(Args&&... args)
     {
-      EN_CORE_ASSERT(!has<T>(), "Entity already has component!");
+      ENG_CORE_ASSERT(!has<T>(), "Entity already has component!");
       return s_Registry.emplace<T>(m_EntityID, std::forward<Args>(args)...);
     }
     
     template<typename T>
     T& get()
     {
-      EN_CORE_ASSERT(has<T>(), "Entity does not have component!");
+      ENG_CORE_ASSERT(has<T>(), "Entity does not have component!");
       return s_Registry.get<T>(m_EntityID);
     }
 
     template<typename T>
     const T& get() const
     {
-      EN_CORE_ASSERT(has<T>(), "Entity does not have component!");
+      ENG_CORE_ASSERT(has<T>(), "Entity does not have component!");
       return s_Registry.get<T>(m_EntityID);
     }
     
     template<typename T>
     void remove()
     {
-      EN_CORE_ASSERT(has<T>(), "Entity does not have component!");
+      ENG_CORE_ASSERT(has<T>(), "Entity does not have component!");
       s_Registry.remove<T>(m_EntityID);
     }
 

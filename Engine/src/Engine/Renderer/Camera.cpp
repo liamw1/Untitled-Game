@@ -28,20 +28,20 @@ namespace eng
 
   math::Angle Camera::fov() const
   {
-    EN_ASSERT(m_ProjectionType == ProjectionType::Perspective, "An orthographic camera does not have a FOV!");
+    ENG_ASSERT(m_ProjectionType == ProjectionType::Perspective, "An orthographic camera does not have a FOV!");
     return m_FOV;
   }
 
   void Camera::setFov(math::Angle fov)
   {
-    EN_ASSERT(m_ProjectionType == ProjectionType::Perspective, "An orthographic camera does not have a FOV!");
+    ENG_ASSERT(m_ProjectionType == ProjectionType::Perspective, "An orthographic camera does not have a FOV!");
     m_FOV = fov;
     recalculatePerspectiveProjection();
   }
 
   float Camera::orthographicSize() const
   {
-    EN_ASSERT(m_ProjectionType == ProjectionType::Orthographic, "A perspective camera does not have an orthographic size!");
+    ENG_ASSERT(m_ProjectionType == ProjectionType::Orthographic, "A perspective camera does not have an orthographic size!");
     return m_OrthographicSize;
   }
 
@@ -79,7 +79,7 @@ namespace eng
     {
       case ProjectionType::Orthographic: recalculateOrthographicProjection(); break;
       case ProjectionType::Perspective:  recalculatePerspectiveProjection();  break;
-      default: EN_CORE_ERROR("Unknown projection type!");
+      default: ENG_CORE_ERROR("Unknown projection type!");
     }
   }
 

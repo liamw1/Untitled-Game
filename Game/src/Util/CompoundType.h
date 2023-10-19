@@ -40,7 +40,7 @@ public:
 
   const Component& operator[](int index) const
   {
-    EN_ASSERT(0 <= index && index < ComponentCount, "Index out of bounds!");
+    ENG_ASSERT(0 <= index && index < ComponentCount, "Index out of bounds!");
     return m_Components[index];
   }
 
@@ -82,7 +82,7 @@ public:
 
   CompoundType& operator*=(float x)
   {
-    EN_ASSERT(x >= 0.0, "Compound block cannot be multiplied by a negative number!");
+    ENG_ASSERT(x >= 0.0, "Compound block cannot be multiplied by a negative number!");
 
     for (int i = 0; i < ComponentCount; ++i)
       m_Components[i].weight *= x;

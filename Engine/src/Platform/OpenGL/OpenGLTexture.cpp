@@ -39,8 +39,8 @@ namespace eng
       m_InternalFormat(GL_RGBA8),
       m_DataFormat(GL_RGBA)
   {
-    EN_PROFILE_FUNCTION();
-    EN_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
+    ENG_PROFILE_FUNCTION();
+    ENG_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
 
     glCreateTextures(GL_TEXTURE_2D, 1, &m_RendererID);
     glTextureStorage2D(m_RendererID, 1, m_InternalFormat, m_Width, m_Height);
@@ -56,8 +56,8 @@ namespace eng
       m_Height(0),
       m_RendererID(0)
   {
-    EN_PROFILE_FUNCTION();
-    EN_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
+    ENG_PROFILE_FUNCTION();
+    ENG_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
 
     Image image(path);
     m_Width = image.width();
@@ -78,8 +78,8 @@ namespace eng
 
   OpenGLTexture::~OpenGLTexture()
   {
-    EN_PROFILE_FUNCTION();
-    EN_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
+    ENG_PROFILE_FUNCTION();
+    ENG_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
 
     glDeleteTextures(1, &m_RendererID);
   }
@@ -90,16 +90,16 @@ namespace eng
 
   void OpenGLTexture::setData(void* data, uint32_t size)
   {
-    EN_PROFILE_FUNCTION();
-    EN_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
+    ENG_PROFILE_FUNCTION();
+    ENG_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
 
-    EN_CORE_ASSERT(size == m_Width * m_Height * (m_DataFormat == GL_RGBA ? 4 : 3), "Data must be entire texture!");
+    ENG_CORE_ASSERT(size == m_Width * m_Height * (m_DataFormat == GL_RGBA ? 4 : 3), "Data must be entire texture!");
     glTextureSubImage2D(m_RendererID, 0, 0, 0, m_Width, m_Height, m_DataFormat, GL_UNSIGNED_BYTE, data);
   }
 
   void OpenGLTexture::bind(uint32_t slot) const
   {
-    EN_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
+    ENG_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
     glBindTextureUnit(slot, m_RendererID);
   }
 
@@ -118,8 +118,8 @@ namespace eng
       m_InternalFormat(GL_RGBA8),
       m_DataFormat(GL_RGBA)
   {
-    EN_PROFILE_FUNCTION();
-    EN_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
+    ENG_PROFILE_FUNCTION();
+    ENG_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
 
     glCreateTextures(GL_TEXTURE_2D_ARRAY, 1, &m_RendererID);
     glTextureStorage3D(m_RendererID, c_MipmapLevels, m_InternalFormat, m_TextureSize, m_TextureSize, m_MaxTextures);
@@ -127,30 +127,30 @@ namespace eng
 
   OpenGLTextureArray::~OpenGLTextureArray()
   {
-    EN_PROFILE_FUNCTION();
-    EN_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
+    ENG_PROFILE_FUNCTION();
+    ENG_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
 
     glDeleteTextures(1, &m_RendererID);
   }
 
   void OpenGLTextureArray::bind(uint32_t slot) const
   {
-    EN_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
+    ENG_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
     glBindTextureUnit(slot, m_RendererID);
   }
 
   void OpenGLTextureArray::addTexture(const std::filesystem::path& path)
   {
-    EN_CORE_ASSERT(path.string().size() > 0, "Filepath is an empty string!");
+    ENG_CORE_ASSERT(path.string().size() > 0, "Filepath is an empty string!");
     addTexture(Image(path));
   }
 
   void OpenGLTextureArray::addTexture(const Image& image)
   {
-    EN_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
-    EN_CORE_ASSERT(image.width() == m_TextureSize && image.height() == m_TextureSize, "Texture has incorrect size!");
-    EN_CORE_ASSERT(internalFormatOf(image) == m_InternalFormat && dataFormatOf(image) == m_DataFormat, "Texture has incorrect format!");
-    EN_CORE_ASSERT(m_TextureCount < m_MaxTextures, "Textures added has exceeded maximum textures!");
+    ENG_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
+    ENG_CORE_ASSERT(image.width() == m_TextureSize && image.height() == m_TextureSize, "Texture has incorrect size!");
+    ENG_CORE_ASSERT(internalFormatOf(image) == m_InternalFormat && dataFormatOf(image) == m_DataFormat, "Texture has incorrect format!");
+    ENG_CORE_ASSERT(m_TextureCount < m_MaxTextures, "Textures added has exceeded maximum textures!");
 
     glTextureSubImage3D(m_RendererID, 0, 0, 0, m_TextureCount, m_TextureSize,
       m_TextureSize, 1, m_DataFormat, GL_UNSIGNED_BYTE, image.data());

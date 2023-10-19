@@ -11,7 +11,7 @@ namespace eng
   public:
     static Entity GetEntity(entt::entity entityID)
     {
-      EN_CORE_ASSERT(Entity::Registry().valid(entityID), "Entity ID does not refer to a valid entity!");
+      ENG_CORE_ASSERT(Entity::Registry().valid(entityID), "Entity ID does not refer to a valid entity!");
       return Entity(entityID);
     }
     static Entity GetEntity(uint32_t entityID) { return static_cast<entt::entity>(entityID); }
@@ -90,7 +90,7 @@ namespace eng::scene
         return ECS::GetEntity(entityID);
     }
 
-    EN_CORE_ERROR("No active camera found!");
+    ENG_CORE_ERROR("No active camera found!");
     return {};
   }
 
@@ -109,7 +109,7 @@ namespace eng::scene
     else if (camera.projectionType() == Camera::ProjectionType::Orthographic)
       viewMatrix = glm::inverse(viewer.get<component::Transform>().calculateTransform());
     else
-      EN_CORE_ERROR("Unknown camera projection type!");
+      ENG_CORE_ERROR("Unknown camera projection type!");
 
     return projection * viewMatrix;
   }

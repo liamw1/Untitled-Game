@@ -131,7 +131,7 @@ static CompoundBiome getBiomeData(const eng::math::Vec2& surfaceLocation)
     }
 
   // Combine components of same type
-  std::sort(nearbyBiomes.begin(), nearbyBiomes.end(), [](const WeightedBiome& biomeA, const WeightedBiome& biomeB) { return static_cast<int>(biomeA.type) < static_cast<int>(biomeB.type); });
+  eng::unarySortContainer(nearbyBiomes, [](const WeightedBiome& biome) { return eng::toUnderlying(biome.type); });
   int lastUniqueElementIndex = 0;
   for (int i = 1; i < nearbyBiomes.size(); ++i)
   {
@@ -145,7 +145,7 @@ static CompoundBiome getBiomeData(const eng::math::Vec2& surfaceLocation)
   }
 
   // Sort biomes by weight and create compound type
-  std::sort(nearbyBiomes.begin(), nearbyBiomes.end(), [](const WeightedBiome& biomeA, const WeightedBiome& biomeB) { return biomeA.weight > biomeB.weight; });
+  eng::unarySortContainer(nearbyBiomes, [](const WeightedBiome& biome) { return -biome.weight; });
   return CompoundBiome(nearbyBiomes);
 }
 

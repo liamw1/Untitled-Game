@@ -3,6 +3,7 @@
   For use by Engine applications
 */
 
+#include "Engine/Core/Algorithm.h"
 #include "Engine/Core/Application.h"
 #include "Engine/Core/Concepts.h"
 #include "Engine/Core/Layer.h"

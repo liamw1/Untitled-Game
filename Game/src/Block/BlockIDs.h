@@ -20,7 +20,7 @@ namespace block
     Water,
 
     Null,
-    Begin = 0, End = Null
+    First = 0, Last = Null
   };
   using IDs = eng::EnumIterator<ID>;
 
@@ -44,7 +44,7 @@ namespace block
     Invisible,
     ErrorTexture,
 
-    Begin = 0, End = ErrorTexture
+    First = 0, Last = ErrorTexture
   };
   using Textures = eng::EnumIterator<TextureID>;
 }

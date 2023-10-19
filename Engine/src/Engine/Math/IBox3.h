@@ -83,7 +83,7 @@ namespace eng::math
     */
     constexpr IVec3<IntType> extents() const
     {
-      EN_CORE_ASSERT(valid(), "Box is not valid!");
+      ENG_CORE_ASSERT(valid(), "Box is not valid!");
       return IVec3<IntType>(max.i - min.i + 1, max.j - min.j + 1, max.k - min.k + 1);
     }
   
@@ -101,7 +101,7 @@ namespace eng::math
   
     constexpr int linearIndexOf(const IVec3<IntType>& index) const
     {
-      EN_CORE_ASSERT(encloses(index), "Index is outside box!");
+      ENG_CORE_ASSERT(encloses(index), "Index is outside box!");
       IVec3<IntType> boxExtents = extents();
       IVec3<IntType> strides(boxExtents.j * boxExtents.k, boxExtents.k, 1);
       IVec3<IntType> indexRelativeToBase = index - min;
@@ -159,7 +159,7 @@ namespace eng::math
   
     constexpr IBox3 edge(Direction sideA, Direction sideB) const
     {
-      EN_CORE_ASSERT(sideA != !sideB, "Opposite faces cannot form edge!");
+      ENG_CORE_ASSERT(sideA != !sideB, "Opposite faces cannot form edge!");
   
       IBox3 faceA = face(sideA);
       IBox3 faceB = face(sideB);
@@ -174,7 +174,7 @@ namespace eng::math
     template<std::integral IndexType>
     constexpr IBox3 corner(const IVec3<IndexType>& offset) const
     {
-      EN_CORE_ASSERT(debug::EqualsOneOf(offset.i, -1, 1)
+      ENG_CORE_ASSERT(debug::EqualsOneOf(offset.i, -1, 1)
                   && debug::EqualsOneOf(offset.j, -1, 1)
                   && debug::EqualsOneOf(offset.k, -1, 1), "Offset IVec3 must contains values of -1 or 1!");
   
@@ -191,7 +191,7 @@ namespace eng::math
     template<InvocableWithReturnType<bool, const IVec3<IntType>&> F>
     bool anyOf(const F& condition) const
     {
-      EN_CORE_ASSERT(valid(), "Box is not valid!");
+      ENG_CORE_ASSERT(valid(), "Box is not valid!");
   
       IVec3<IntType> index;
       for (index.i = min.i; index.i <= max.i; ++index.i)
@@ -205,7 +205,7 @@ namespace eng::math
     template<InvocableWithReturnType<bool, const IVec3<IntType>&> F>
     bool noneOf(const F& condition) const
     {
-      EN_CORE_ASSERT(valid(), "Box is not valid!");
+      ENG_CORE_ASSERT(valid(), "Box is not valid!");
   
       IVec3<IntType> index;
       for (index.i = min.i; index.i <= max.i; ++index.i)
@@ -219,7 +219,7 @@ namespace eng::math
     template<InvocableWithReturnType<void, const IVec3<IntType>&> F>
     void forEach(const F& function) const
     {
-      EN_CORE_ASSERT(valid(), "Box is not valid!");
+      ENG_CORE_ASSERT(valid(), "Box is not valid!");
   
       IVec3<IntType> index;
       for (index.i = min.i; index.i <= max.i; ++index.i)
@@ -248,7 +248,7 @@ namespace eng::math
     IBox3<IntType> bounds;
   
     constexpr BoxFace()
-      : BoxFace(Direction::Begin, {}) {}
+      : BoxFace(Direction::First, {}) {}
     constexpr BoxFace(Direction faceSide, const IBox3<IntType>& faceBounds)
       : side(faceSide), bounds(faceBounds) {}
   };
@@ -261,7 +261,7 @@ namespace eng::math
     IBox3<IntType> bounds;
   
     constexpr BoxEdge()
-      : BoxEdge(Direction::Begin, Direction::Begin, {}) {}
+      : BoxEdge(Direction::First, Direction::First, {}) {}
     constexpr BoxEdge(Direction edgeSideA, Direction edgeSideB, const IBox3<IntType>& edgeBounds)
       : sideA(edgeSideA), sideB(edgeSideB), bounds(edgeBounds) {}
   };

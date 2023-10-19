@@ -25,7 +25,7 @@ void GameSandbox::onDetach()
 
 void GameSandbox::onUpdate(eng::Timestep timestep)
 {
-  EN_PROFILE_FUNCTION();
+  ENG_PROFILE_FUNCTION();
 
   if (m_PrintFrameRate || m_PrintMinFrameRate)
   {
@@ -39,18 +39,18 @@ void GameSandbox::onUpdate(eng::Timestep timestep)
     if (m_PrintFrameRate)
     {
       float averageFrameTime = std::accumulate(m_FrameTimeWindow.begin(), m_FrameTimeWindow.end(), 0.0f) / m_FrameTimeWindow.size();
-      EN_TRACE("FPS: {0}", static_cast<int>(1.0f / averageFrameTime));
+      ENG_TRACE("FPS: {0}", static_cast<int>(1.0f / averageFrameTime));
     }
     else
     {
       float maxFrameTime = *std::max_element(m_FrameTimeWindow.begin(), m_FrameTimeWindow.end());
-      EN_TRACE("Min FPS: {0}", static_cast<int>(1.0f / maxFrameTime));
+      ENG_TRACE("Min FPS: {0}", static_cast<int>(1.0f / maxFrameTime));
     }
   }
   else if (m_PrintPlayerPosition)
   {
     GlobalIndex position = static_cast<globalIndex_t>(Chunk::Size()) * player::originIndex() + GlobalIndex::ToIndex(player::position());
-    EN_TRACE("Position: {0}", position);
+    ENG_TRACE("Position: {0}", position);
   }
 
   eng::render::command::setDepthWriting(true);

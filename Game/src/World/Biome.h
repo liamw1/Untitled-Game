@@ -20,7 +20,7 @@ public:
     SuperFlat,
 
     Null,
-    Begin = 0, End = Null - 1
+    First = 0, Last = Null - 1
   };
 
   virtual length_t localSurfaceElevation(const NoiseSamples& noiseSamples) const = 0;

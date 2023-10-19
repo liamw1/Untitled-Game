@@ -7,7 +7,7 @@ namespace eng
 {
   const char* ApplicationCommandLineArgs::operator[](int index) const
   {
-    EN_CORE_ASSERT(debug::BoundsCheck(index, 0, count), "Index is out of bounds!");
+    ENG_CORE_ASSERT(debug::BoundsCheck(index, 0, count), "Index is out of bounds!");
     return args[index];
   }
 
@@ -19,9 +19,9 @@ namespace eng
       m_Minimized(false),
       m_LastFrameTime(std::chrono::steady_clock::now())
   {
-    EN_PROFILE_FUNCTION();
+    ENG_PROFILE_FUNCTION();
 
-    EN_CORE_ASSERT(!s_Instance, "Application already exists!");
+    ENG_CORE_ASSERT(!s_Instance, "Application already exists!");
     s_Instance = this;
 
     m_Window = Window::Create(WindowProps(name));
@@ -37,11 +37,11 @@ namespace eng
 
   void Application::run()
   {
-    EN_PROFILE_FUNCTION();
+    ENG_PROFILE_FUNCTION();
 
     while (m_Running)
     {
-      EN_PROFILE_SCOPE("Run Loop");
+      ENG_PROFILE_SCOPE("Run Loop");
 
       std::chrono::steady_clock::time_point time = std::chrono::steady_clock::now();
       Timestep timestep = Timestep(time - m_LastFrameTime);

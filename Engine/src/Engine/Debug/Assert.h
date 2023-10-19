@@ -2,27 +2,27 @@
 #include "Engine/Core/PlatformDetection.h"
 
 // ======================== Debug Macros ======================== //
-#ifdef EN_DEBUG
-  #define EN_ENABLE_ASSERTS
-#if defined(EN_PLATFORM_WINDOWS)
-  #define EN_DEBUG_BREAK() __debugbreak()
-#elif defined(EN_PLATFORM_LINUX)
+#ifdef ENG_DEBUG
+  #define ENG_ENABLE_ASSERTS
+#if defined(ENG_PLATFORM_WINDOWS)
+  #define ENG_DEBUG_BREAK() __debugbreak()
+#elif defined(ENG_PLATFORM_LINUX)
   #include <signal.h>
-    #define EN_DEBUG_BREAK() raise(SIGTRAP)
+    #define ENG_DEBUG_BREAK() raise(SIGTRAP)
   #else
     #error "Platform doesn't support debugbreak yet!"
   #endif
 #else
-  #define EN_DEBUG_BREAK()
+  #define ENG_DEBUG_BREAK()
 #endif
 
-// Assert macros.  Will be removed from code in non-debug builds
-#ifdef EN_ENABLE_ASSERTS
-  #define EN_ASSERT(x, ...) { if (!(x)) { EN_FATAL(__VA_ARGS__); EN_DEBUG_BREAK(); } }
-  #define EN_CORE_ASSERT(x, ...) { if (!(x)) { EN_CORE_FATAL(__VA_ARGS__); EN_DEBUG_BREAK(); } }
+// Runtime assert macros.  Will be removed from code in non-debug builds
+#ifdef ENG_ENABLE_ASSERTS
+  #define ENG_ASSERT(x, ...) { if (!(x)) { ENG_FATAL(__VA_ARGS__); ENG_DEBUG_BREAK(); } }
+  #define ENG_CORE_ASSERT(x, ...) { if (!(x)) { ENG_CORE_FATAL(__VA_ARGS__); ENG_DEBUG_BREAK(); } }
 #else
-  #define EN_ASSERT(x, ...)
-  #define EN_CORE_ASSERT(x, ...)
+  #define ENG_ASSERT(x, ...)
+  #define ENG_CORE_ASSERT(x, ...)
 #endif
 
 

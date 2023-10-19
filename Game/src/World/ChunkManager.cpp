@@ -37,7 +37,7 @@ void ChunkManager::initialize()
 
 void ChunkManager::render()
 {
-  EN_PROFILE_FUNCTION();
+  ENG_PROFILE_FUNCTION();
 
   const eng::math::Mat4& viewProjection = eng::scene::CalculateViewProjection(eng::scene::ActiveCamera());
   std::array<eng::math::Vec4, 6> frustumPlanes = util::calculateViewFrustumPlanes(viewProjection);
@@ -79,7 +79,7 @@ void ChunkManager::render()
 
     uint32_t bufferDataSize = static_cast<uint32_t>(storageBufferData.size() * sizeof(eng::math::Float4));
     if (bufferDataSize > c_StorageBufferSize)
-      EN_ERROR("Chunk anchor data exceeds SSBO size!");
+      ENG_ERROR("Chunk anchor data exceeds SSBO size!");
 
     m_OpaqueMultiDrawArray->bind();
     s_SSBO->update(storageBufferData.data(), 0, bufferDataSize);
@@ -99,19 +99,12 @@ void ChunkManager::render()
         eng::math::Vec3 chunkCenter = Chunk::Center(anchorPosition);
         return util::isInRange(chunkIndex, originIndex, c_RenderDistance) && util::isInFrustum(chunkCenter, frustumPlanes);
       });
-    m_TransparentMultiDrawArray->sort(commandCount, [&originIndex, &playerCameraPosition](const GlobalIndex& chunkA, const GlobalIndex& chunkB)
+    m_TransparentMultiDrawArray->unarySort(commandCount, [&originIndex, &playerCameraPosition](const GlobalIndex& chunk)
       {
         // NOTE: Maybe measure min distance to chunk faces instead
-    
-        eng::math::Vec3 anchorA = Chunk::AnchorPosition(chunkA, originIndex);
-        eng::math::Vec3 centerA = Chunk::Center(anchorA);
-        length_t distA = glm::length2(centerA - playerCameraPosition);
-    
-        eng::math::Vec3 anchorB = Chunk::AnchorPosition(chunkB, originIndex);
-        eng::math::Vec3 centerB = Chunk::Center(anchorB);
-        length_t distB = glm::length2(centerB - playerCameraPosition);
-    
-        return distA > distB;
+        eng::math::Vec3 chunkCenter = Chunk::Center(Chunk::AnchorPosition(chunk, originIndex));
+        length_t dist = glm::length2(chunkCenter - playerCameraPosition);
+        return -dist;
       });
     m_TransparentMultiDrawArray->amend(commandCount, [&originIndex, &playerCameraPosition](ChunkDrawCommand& drawCommand)
       {
@@ -131,7 +124,7 @@ void ChunkManager::render()
 
     uint32_t bufferDataSize = static_cast<uint32_t>(storageBufferData.size() * sizeof(eng::math::Float4));
     if (bufferDataSize > c_StorageBufferSize)
-      EN_ERROR("Chunk anchor data exceeds SSBO size!");
+      ENG_ERROR("Chunk anchor data exceeds SSBO size!");
 
     m_TransparentMultiDrawArray->bind();
     s_SSBO->update(storageBufferData.data(), 0, bufferDataSize);
@@ -141,7 +134,7 @@ void ChunkManager::render()
 
 void ChunkManager::update()
 {
-  EN_PROFILE_FUNCTION();
+  ENG_PROFILE_FUNCTION();
 
   m_ForceMeshingWork.waitAndDiscardSaved();
 
@@ -247,7 +240,7 @@ void ChunkManager::placeBlock(GlobalIndex chunkIndex, BlockIndex blockIndex, eng
   // If trying to place a block in a space occupied by another block with collision, do nothing and warn
   if (!validBlockPlacement)
   {
-    EN_WARN("Invalid block placement!");
+    ENG_WARN("Invalid block placement!");
     return;
   }
 
@@ -325,7 +318,7 @@ void ChunkManager::addToMeshRemovalQueue(const GlobalIndex& chunkIndex)
 
 std::shared_ptr<Chunk> ChunkManager::generateNewChunk(const GlobalIndex& chunkIndex)
 {
-  EN_PROFILE_FUNCTION();
+  ENG_PROFILE_FUNCTION();
 
   std::shared_ptr<Chunk> chunk = terrain::generateNew(chunkIndex);
 
@@ -468,7 +461,7 @@ static BlockData& getThreadLocalWorkspace()
 
 void ChunkManager::meshChunk(const std::shared_ptr<Chunk>& chunk)
 {
-  EN_ASSERT(chunk, "Chunk does not exist!");
+  ENG_ASSERT(chunk, "Chunk does not exist!");
 
   const GlobalIndex& chunkIndex = chunk->globalIndex();
 
@@ -478,7 +471,7 @@ void ChunkManager::meshChunk(const std::shared_ptr<Chunk>& chunk)
     addToMeshRemovalQueue(chunkIndex);
     return;
   }
-  EN_PROFILE_FUNCTION();
+  ENG_PROFILE_FUNCTION();
 
   BlockData& blockData = getThreadLocalWorkspace();
 
@@ -564,8 +557,8 @@ void ChunkManager::meshChunk(const std::shared_ptr<Chunk>& chunk)
 
 void ChunkManager::updateLighting(const std::shared_ptr<Chunk>& chunk)
 {
-  EN_PROFILE_FUNCTION();
-  EN_ASSERT(chunk, "Chunk does not exist!");
+  ENG_PROFILE_FUNCTION();
+  ENG_ASSERT(chunk, "Chunk does not exist!");
 
   static constexpr int8_t attenuation = 1;
   const GlobalIndex& chunkIndex = chunk->globalIndex();

@@ -47,7 +47,7 @@ project "Engine"
 		systemversion "latest"
 
 	filter "configurations:Debug"
-		defines "EN_DEBUG"
+		defines "ENG_DEBUG"
 		runtime "Debug"
 		symbols "on"
 
@@ -59,7 +59,7 @@ project "Engine"
 		}
 
 	filter "configurations:Release"
-		defines "EN_RELEASE"
+		defines "ENG_RELEASE"
 		runtime "Release"
 		optimize "on"
 
@@ -71,7 +71,7 @@ project "Engine"
 		}
 
 	filter "configurations:Dist"
-		defines "EN_DIST"
+		defines "ENG_DIST"
 		runtime "Release"
 		optimize "on"
 

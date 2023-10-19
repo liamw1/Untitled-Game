@@ -8,7 +8,7 @@ namespace eng::math
   {
     X, Y, Z,
 
-    Begin = 0, End = Z
+    First = 0, Last = Z
   };
   using Axes = EnumIterator<Axis>;
 
@@ -32,7 +32,7 @@ namespace eng::math
   {
     West, East, South, North, Bottom, Top,
 
-    Begin = 0, End = Top
+    First = 0, Last = Top
   };
   using Directions = EnumIterator<Direction>;
 

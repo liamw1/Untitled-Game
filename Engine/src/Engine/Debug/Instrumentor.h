@@ -1,24 +1,24 @@
 #pragma once
 #include "Engine/Utilities/Constraints.h"
 
-#define EN_PROFILE 0
-#if EN_PROFILE
-#define EN_PROFILE_BEGIN_SESSION(name, filepath)  ::eng::debug::Instrumentor::Get().beginSession(name, filepath)
-#define EN_PROFILE_END_SESSION()                  ::eng::debug::Instrumentor::Get().endSession()
-#define EN_PROFILE_SCOPE(name)                    ::eng::debug::InstrumentationTimer timer##__LINE__(name)
-#define EN_PROFILE_FUNCTION()                     EN_PROFILE_SCOPE(__FUNCTION__)
+#define ENG_PROFILE 0
+#if ENG_PROFILE
+#define ENG_PROFILE_BEGIN_SESSION(name, filepath)  ::eng::debug::Instrumentor::Get().beginSession(name, filepath)
+#define ENG_PROFILE_END_SESSION()                  ::eng::debug::Instrumentor::Get().endSession()
+#define ENG_PROFILE_SCOPE(name)                    ::eng::debug::InstrumentationTimer timer##__LINE__(name)
+#define ENG_PROFILE_FUNCTION()                     ENG_PROFILE_SCOPE(__FUNCTION__)
 #else
-#define EN_PROFILE_BEGIN_SESSION(name, filepath)
-#define EN_PROFILE_END_SESSION()
-#define EN_PROFILE_SCOPE(name)
-#define EN_PROFILE_FUNCTION()
+#define ENG_PROFILE_BEGIN_SESSION(name, filepath)
+#define ENG_PROFILE_END_SESSION()
+#define ENG_PROFILE_SCOPE(name)
+#define ENG_PROFILE_FUNCTION()
 #endif
 
 /*
   Tool for easily profiling functions and scopes.ilovveu-izel
   Outputs formatted .json files for visualization by chrome://tracing.
-  To format a function, add EN_PROFILE_FUNCTION() to top line of desired function.
-  To format a scope, use EN_PROFILE_SCOPE within that scope.
+  To format a function, add ENG_PROFILE_FUNCTION() to top line of desired function.
+  To format a scope, use ENG_PROFILE_SCOPE within that scope.
 */
 namespace eng::debug
 {

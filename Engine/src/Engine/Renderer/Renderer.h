@@ -18,7 +18,7 @@ namespace eng::render
   template<typename Vertex>
   void uploadMesh(VertexArray* target, const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices)
   {
-    EN_ASSERT(target, "Vertex array has not been initialized!");
+    ENG_ASSERT(target, "Vertex array has not been initialized!");
 
     uintptr_t dataSize = vertices.size() * sizeof(Vertex);
     target->setVertexBuffer(vertices.data(), dataSize);

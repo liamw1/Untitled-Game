@@ -9,7 +9,7 @@ namespace eng
 
   LayerStack::~LayerStack()
   {
-    EN_PROFILE_FUNCTION();
+    ENG_PROFILE_FUNCTION();
 
     for (Layer* layer : m_Layers)
     {
@@ -31,7 +31,7 @@ namespace eng
 
   void LayerStack::popLayer(Layer* layer)
   {
-    EN_PROFILE_FUNCTION();
+    ENG_PROFILE_FUNCTION();
 
     auto it = std::find(m_Layers.begin(), m_Layers.begin() + m_LayerInsertIndex, layer);
     if (it != m_Layers.begin() + m_LayerInsertIndex)
@@ -44,7 +44,7 @@ namespace eng
 
   void LayerStack::popOverlay(Layer* overlay)
   {
-    EN_PROFILE_FUNCTION();
+    ENG_PROFILE_FUNCTION();
 
     auto it = std::find(m_Layers.begin() + m_LayerInsertIndex, m_Layers.end(), overlay);
     if (it != m_Layers.end())

@@ -22,7 +22,7 @@ namespace eng::debug
 
       ~Counters()
       {
-        EN_CORE_INFO("{0} move constructors and {1} copy constructors were called during the object's lifetime", moves, copies);
+        ENG_CORE_INFO("{0} move constructors and {1} copy constructors were called during the object's lifetime", moves, copies);
       }
     };
 

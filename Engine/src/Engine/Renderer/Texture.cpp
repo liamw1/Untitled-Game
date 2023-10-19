@@ -11,14 +11,14 @@ namespace eng
   Image::Image(const std::filesystem::path& path)
     : m_Data({}, AllocationPolicy::Deferred)
   {
-    EN_PROFILE_FUNCTION();
+    ENG_PROFILE_FUNCTION();
 
     int width, height, channels;
 
     // Load image data
     stbi_set_flip_vertically_on_load(true);
     stbi_uc* imageData = stbi_load(path.string().c_str(), &width, &height, &channels, 0);
-    EN_CORE_ASSERT(imageData, "Failed to load image at {0}.", path);
+    ENG_CORE_ASSERT(imageData, "Failed to load image at {0}.", path);
 
     // Copy data into ArrayBox
     math::IBox3<int> imageBounds(0, 0, 0, height - 1, width - 1, channels - 1);
@@ -40,7 +40,7 @@ namespace eng
 
   math::Float4 Image::averageColor() const
   {
-    EN_CORE_ASSERT(channels() <= 4, "Image has more than four channels!");
+    ENG_CORE_ASSERT(channels() <= 4, "Image has more than four channels!");
 
     math::Float4 totalColor(0);
     m_Data.bounds().forEach([this, &totalColor](const math::IVec3<int>& index)

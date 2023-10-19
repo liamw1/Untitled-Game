@@ -23,7 +23,7 @@ static std::mutex s_Mutex;
 
 void player::initialize(const GlobalIndex& chunkIndex, const eng::math::Vec3& positionWithinChunk)
 {
-  EN_ASSERT(positionWithinChunk.x >= 0.0 && positionWithinChunk.x <= Chunk::Length() &&
+  ENG_ASSERT(positionWithinChunk.x >= 0.0 && positionWithinChunk.x <= Chunk::Length() &&
             positionWithinChunk.y >= 0.0 && positionWithinChunk.y <= Chunk::Length() &&
             positionWithinChunk.z >= 0.0 && positionWithinChunk.z <= Chunk::Length(), "Local position is out of bounds!");
 

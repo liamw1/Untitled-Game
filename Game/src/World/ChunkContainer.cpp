@@ -25,7 +25,7 @@ std::unordered_set<GlobalIndex> ChunkContainer::findAllLoadableIndices() const
 
 bool ChunkContainer::insert(const GlobalIndex& chunkIndex, const std::shared_ptr<Chunk>& newChunk)
 {
-  EN_ASSERT(newChunk, "Chunk does not exist!");
+  ENG_ASSERT(newChunk, "Chunk does not exist!");
 
   bool chunkInserted = m_Chunks.insert(chunkIndex, newChunk);
   if (chunkInserted)

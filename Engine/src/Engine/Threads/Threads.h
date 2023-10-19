@@ -9,9 +9,9 @@ namespace eng::threads
     Normal,
     Low,
 
-    Begin = 0, End = Low
+    First = 0, Last = Low
   };
-  static constexpr int c_PriorityCount = 1 + static_cast<int>(Priority::End) - static_cast<int>(Priority::Begin);
+  static constexpr int c_PriorityCount = 1 + static_cast<int>(Priority::Last) - static_cast<int>(Priority::First);
 
   void setAsMainThread();
   bool isMainThread();

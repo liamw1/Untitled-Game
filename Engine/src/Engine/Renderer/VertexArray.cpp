@@ -39,7 +39,7 @@ namespace eng
 
   void VertexArray::setVertexBuffer(const void* data, uint64_t size)
   {
-    EN_ASSERT(size < std::numeric_limits<uint32_t>::max(), "Requested vertex buffer size is greater than 32-bit unsigned integer limit!");
+    ENG_ASSERT(size < std::numeric_limits<uint32_t>::max(), "Requested vertex buffer size is greater than 32-bit unsigned integer limit!");
     setVertexBuffer(data, static_cast<uint32_t>(size));
   }
 }

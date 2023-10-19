@@ -16,7 +16,7 @@ void World::initialize()
 
 void World::onUpdate(eng::Timestep timestep)
 {
-  EN_PROFILE_FUNCTION();
+  ENG_PROFILE_FUNCTION();
 
   /* Player update stage */
   player::handleDirectionalInput();
@@ -178,7 +178,7 @@ void World::playerCollisionHandling(eng::Timestep timestep) const
   }
 
   if (iterations >= maxIterations)
-    EN_ERROR("Player collision handling exceeded maximum number of iterations!");
+    ENG_ERROR("Player collision handling exceeded maximum number of iterations!");
 
   player::setPosition(playerPosition);
   player::setVelocity(playerVelocity);
@@ -186,7 +186,7 @@ void World::playerCollisionHandling(eng::Timestep timestep) const
 
 void World::playerWorldInteraction()
 {
-  EN_PROFILE_FUNCTION();
+  ENG_PROFILE_FUNCTION();
 
   static constexpr blockIndex_t chunkLimits[2] = { 0, Chunk::Size() - 1 };
   static constexpr length_t maxInteractionDistance = 1000 * block::length();

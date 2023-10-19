@@ -16,7 +16,7 @@
 #include "Engine/Math/Vec.h"
 
 // ========================= Platform ========================= //
-#ifdef EN_PLATFORM_WINDOWS
+#ifdef ENG_PLATFORM_WINDOWS
   #include <Windows.h>
 #endif
 

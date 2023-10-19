@@ -80,7 +80,7 @@ namespace eng::math
     */
     constexpr IVec2<IntType> extents() const
     {
-      EN_CORE_ASSERT(valid(), "Box is not valid!");
+      ENG_CORE_ASSERT(valid(), "Box is not valid!");
       return IVec2<IntType>(max.i - min.i + 1, max.j - min.j + 1);
     }
   
@@ -98,7 +98,7 @@ namespace eng::math
   
     constexpr int linearIndexOf(const IVec2<IntType>& index) const
     {
-      EN_CORE_ASSERT(encloses(index), "Index is outside box!");
+      ENG_CORE_ASSERT(encloses(index), "Index is outside box!");
       IVec2<IntType> boxExtents = extents();
       IVec2<IntType> strides(boxExtents.j, 1);
       IVec2<IntType> indexRelativeToBase = index - min;
@@ -122,7 +122,7 @@ namespace eng::math
     template<InvocableWithReturnType<bool, const IVec2<IntType>&> F>
     bool anyOf(const F& condition) const
     {
-      EN_CORE_ASSERT(valid(), "Box is not valid!");
+      ENG_CORE_ASSERT(valid(), "Box is not valid!");
   
       IVec2<IntType> index;
       for (index.i = min.i; index.i <= max.i; ++index.i)
@@ -135,7 +135,7 @@ namespace eng::math
     template<InvocableWithReturnType<bool, const IVec2<IntType>&> F>
     bool noneOf(const F& condition) const
     {
-      EN_CORE_ASSERT(valid(), "Box is not valid!");
+      ENG_CORE_ASSERT(valid(), "Box is not valid!");
   
       IVec2<IntType> index;
       for (index.i = min.i; index.i <= max.i; ++index.i)
@@ -148,7 +148,7 @@ namespace eng::math
     template<InvocableWithReturnType<void, const IVec2<IntType>&> F>
     void forEach(const F& function) const
     {
-      EN_CORE_ASSERT(valid(), "Box is not valid!");
+      ENG_CORE_ASSERT(valid(), "Box is not valid!");
   
       IVec2<IntType> index;
       for (index.i = min.i; index.i <= max.i; ++index.i)

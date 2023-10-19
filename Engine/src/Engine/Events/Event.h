@@ -30,7 +30,7 @@ namespace eng::event
     Mouse        = u8Bit(3),
     MouseButton  = u8Bit(4)
   };
-  EN_ENABLE_BITMASK_OPERATORS(EventCategory);
+  ENG_ENABLE_BITMASK_OPERATORS(EventCategory);
 
   class Event
   {
