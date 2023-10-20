@@ -56,13 +56,14 @@ namespace eng
 
   void Application::onEvent(event::Event& event)
   {
-    event::EventDispatcher dispatcher(event);
-    dispatcher.dispatch<event::WindowClose>(&Application::onWindowClose, this);
-    dispatcher.dispatch<event::WindowResize>(&Application::onWindowResize, this);
+    ENG_PROFILE_FUNCTION();
+
+    event.dispatch(&Application::onWindowClose, this);
+    event.dispatch(&Application::onWindowResize, this);
 
     for (LayerStack::reverse_iterator it = m_LayerStack.rbegin(); it != m_LayerStack.rend(); ++it)
     {
-      if (event.handled)
+      if (event.handled())
         break;
       (*it)->onEvent(event);
     }

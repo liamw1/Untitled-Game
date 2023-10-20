@@ -70,8 +70,9 @@ namespace eng
     if (m_BlockEvents)
     {
       ImGuiIO& io = ImGui::GetIO();
-      event.handled |= event.isInCategory(event::EventCategory::Mouse) & io.WantCaptureMouse;
-      event.handled |= event.isInCategory(event::EventCategory::Keyboard) & io.WantCaptureKeyboard;
+      if ((io.WantCaptureMouse && event.isInCategory(event::EventCategory::Mouse)) ||
+          (io.WantCaptureKeyboard && event.isInCategory(event::EventCategory::Keyboard)))
+        event.flagAsHandled();
     }
   }
 

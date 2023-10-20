@@ -17,9 +17,8 @@ void CameraController::onUpdate(eng::Timestep timestep)
 
 void CameraController::onEvent(eng::event::Event& event)
 {
-  eng::event::EventDispatcher dispatcher(event);
-  dispatcher.dispatch<eng::event::MouseMove>(&CameraController::onMouseMove, this);
-  dispatcher.dispatch<eng::event::MouseScroll>(&CameraController::onMouseScroll, this);
+  event.dispatch(&CameraController::onMouseMove, this);
+  event.dispatch(&CameraController::onMouseScroll, this);
 }
 
 bool CameraController::onMouseMove(eng::event::MouseMove& event)

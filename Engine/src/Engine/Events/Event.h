@@ -1,6 +1,8 @@
 #pragma once
-#include "Engine/Utilities/BitUtilities.h"
-#include "Engine/Utilities/EnumUtilities.h"
+#include "ApplicationEvent.h"
+#include "KeyEvent.h"
+#include "MouseEvent.h"
+#include "Engine/Utilities/Constraints.h"
 
 namespace eng::event
 {
@@ -12,62 +14,41 @@ namespace eng::event
     bus and process them during the "event" part of the update stage.
   */
 
-  enum class EventType : uint8_t
-  {
-    None,
-    WindowClose, WindowResize, WindowFocus, WindowLostFocus, WindowMove,
-    AppTick, AppUpdate, AppRender,
-    KeyPress, KeyRelease, KeyType,
-    MouseButtonPress, MouseButtonRelease, MouseMove, MouseScroll
-  };
-
-  enum class EventCategory : uint8_t
-  {
-    None,
-    Application  = u8Bit(0),
-    Input        = u8Bit(1),
-    Keyboard     = u8Bit(2),
-    Mouse        = u8Bit(3),
-    MouseButton  = u8Bit(4)
-  };
-  ENG_ENABLE_BITMASK_OPERATORS(EventCategory);
-
-  class Event
+  class Event : private NonCopyable, NonMovable
   {
   public:
-    virtual ~Event() = default;
+    template<typename T>
+    Event(const T& e)
+      : m_Event(e), m_Handled(false) {}
 
-    bool handled = false;
+    EventCategory categoryFlags() const;
+    const char* name() const;
+    std::string toString() const;
 
-    virtual EventType type() const = 0;
-    virtual EventCategory categoryFlags() const = 0;
-    virtual const char* name() const = 0;
-    virtual std::string toString() const { return name(); }
+    bool handled() const;
+    void flagAsHandled();
+    bool isInCategory(EventCategory category);
 
-    bool isInCategory(EventCategory category) { return static_cast<bool>(categoryFlags() & category); }
-  };
-
-  class EventDispatcher
-  {
-  public:
-    EventDispatcher(Event& event)
-      : m_Event(event) {}
-
-    // T must be specified by caller.
-    template<typename T, typename F, typename... Args>
-      requires InvocableWithReturnType<F, bool, Args..., T&>
-    bool dispatch(F&& eventFunction, Args&&... args)
+    template<typename F, typename... Args>
+    void dispatch(F&& eventFunction, Args&&... args)
     {
-      if (m_Event.type() != T::Type())
-        return false;
+      std::visit([this, eventFunction = std::forward<F>(eventFunction), ...args = std::forward<Args>(args)](auto&& rawEvent)
+      {
+        // TODO: Static assert here if function is not invocable with any event type
 
-      if (!m_Event.handled)
-        m_Event.handled = std::invoke(std::forward<F>(eventFunction), std::forward<Args>(args)..., static_cast<T&>(m_Event));
-      return true;
+        using EventType = decltype(rawEvent);
+        if constexpr (std::is_invocable_v<F, Args..., EventType>)
+          if (!m_Handled)
+            m_Handled = std::invoke(eventFunction, args..., std::forward<EventType>(rawEvent));
+      }, m_Event);
     }
 
   private:
-    Event& m_Event;
+    using EventVariant = std::variant<AppRender, AppTick, AppUpdate, WindowClose, WindowResize,
+                                      KeyPress, KeyRelease, KeyType,
+                                      MouseButtonPress, MouseButtonRelease, MouseMove, MouseScroll>;
+    EventVariant m_Event;
+    bool m_Handled;
   };
 
   inline std::ostream& operator<<(std::ostream& os, const Event& e) { return os << e.toString(); }

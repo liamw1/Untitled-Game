@@ -63,8 +63,7 @@ void GameSandbox::onUpdate(eng::Timestep timestep)
 
 void GameSandbox::onEvent(eng::event::Event& event)
 {
-  eng::event::EventDispatcher dispatcher(event);
-  dispatcher.dispatch<eng::event::KeyPress>(&GameSandbox::onKeyPress, this);
+  event.dispatch(&GameSandbox::onKeyPress, this);
 
   eng::scene::OnEvent(event);
   m_World.onEvent(event);

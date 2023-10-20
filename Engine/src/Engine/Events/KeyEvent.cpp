@@ -6,8 +6,6 @@ namespace eng::event
   KeyPress::KeyPress(input::Key key, bool isRepeat)
     : m_Key(key), m_IsRepeat(isRepeat) {}
 
-  EventType KeyPress::type() const { return Type(); }
-  EventType KeyPress::Type() { return EventType::KeyPress; }
   EventCategory KeyPress::categoryFlags() const { return EventCategory::Keyboard | EventCategory::Input; }
   const char* KeyPress::name() const { return "KeyPress"; }
   std::string KeyPress::toString() const
@@ -25,8 +23,6 @@ namespace eng::event
   KeyRelease::KeyRelease(input::Key key)
     : m_Key(key) {}
 
-  EventType KeyRelease::type() const { return Type(); }
-  EventType KeyRelease::Type() { return EventType::KeyRelease; }
   EventCategory KeyRelease::categoryFlags() const { return EventCategory::Keyboard | EventCategory::Input; }
   const char* KeyRelease::name() const { return "KeyRelease"; }
   std::string KeyRelease::toString() const
@@ -43,8 +39,6 @@ namespace eng::event
   KeyType::KeyType(input::Key key)
     : m_Key(key) {}
 
-  EventType KeyType::type() const { return Type(); }
-  EventType KeyType::Type() { return EventType::KeyType; }
   EventCategory KeyType::categoryFlags() const { return EventCategory::Keyboard | EventCategory::Input; }
   const char* KeyType::name() const { return "KeyType"; }
   std::string KeyType::toString() const

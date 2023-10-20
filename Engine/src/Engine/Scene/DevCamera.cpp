@@ -120,8 +120,7 @@ namespace eng
 
 	void DevCamera::OnEvent(event::Event& event)
 	{
-    event::EventDispatcher dispatcher(event);
-		dispatcher.dispatch<event::MouseScroll>(onMouseScroll);
+    event.dispatch(onMouseScroll);
 	}
 
 	length_t DevCamera::Distance() { return s_Distance; }

@@ -219,8 +219,7 @@ void World::playerWorldInteraction()
 
 void World::onEvent(eng::event::Event& event)
 {
-  eng::event::EventDispatcher dispatcher(event);
-  dispatcher.dispatch<eng::event::KeyPress>(&World::onKeyPress, this);
+  event.dispatch(&World::onKeyPress, this);
 }
 
 bool World::onKeyPress(eng::event::KeyPress& event)
