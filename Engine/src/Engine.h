@@ -62,6 +62,7 @@
 #include "Engine/Threads/Containers/UnorderedSet.h"
 
 #include "Engine/Utilities/BitUtilities.h"
+#include "Engine/Utilities/BoilerplateReduction.h"
 #include "Engine/Utilities/Constraints.h"
 #include "Engine/Utilities/EnumUtilities.h"
 #include "Engine/Utilities/Helpers.h"

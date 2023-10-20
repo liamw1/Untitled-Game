@@ -9,7 +9,6 @@ namespace eng::threads
     using const_iterator = eng::LRUCache<K, std::shared_ptr<V>>::const_iterator;
 
   public:
-
     LRUCache(int size)
       : m_Cache(size) {}
 

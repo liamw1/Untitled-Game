@@ -48,8 +48,8 @@ private:
   static inline std::unique_ptr<eng::Uniform> s_LightUniform;
   static inline std::unique_ptr<eng::StorageBuffer> s_SSBO;
   static inline std::shared_ptr<eng::TextureArray> s_TextureArray;
-  static inline const eng::BufferLayout s_VertexBufferLayout = { { ShaderDataType::Uint32, "a_VertexData" },
-                                                                    { ShaderDataType::Uint32, "a_Lighting"   } };
+  static inline const eng::BufferLayout s_VertexBufferLayout = { { eng::ShaderDataType::Uint32, "a_VertexData" },
+                                                                 { eng::ShaderDataType::Uint32, "a_Lighting"   } };
   static constexpr int c_TextureSlot = 0;
   static constexpr int c_StorageBufferBinding = 0;
   static constexpr uint32_t c_StorageBufferSize = static_cast<uint32_t>(eng::pow2(20));

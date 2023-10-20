@@ -26,13 +26,9 @@ namespace eng
 
 
   BufferElement::BufferElement()
-    : name(""), type(ShaderDataType::None), size(0), offset(0), normalized(false)
-  {
-  }
+    : name(""), type(ShaderDataType::None), size(0), offset(0), normalized(false) {}
   BufferElement::BufferElement(ShaderDataType type, const std::string& name, bool normalized)
-    : name(name), type(type), size(shaderDataTypeSize(type)), offset(0), normalized(normalized)
-  {
-  }
+    : name(name), type(type), size(shaderDataTypeSize(type)), offset(0), normalized(normalized) {}
 
   int BufferElement::getComponentCount() const
   {
@@ -56,20 +52,13 @@ namespace eng
 
 
 
-  BufferLayout::BufferLayout() = default;
+  BufferLayout::BufferLayout()
+    : BufferLayout({}) {}
   BufferLayout::BufferLayout(const std::initializer_list<BufferElement>& elements)
-    : m_Elements(elements), m_Stride(0)
-  {
-    calculateOffsetsAndStride();
-  }
+    : m_Elements(elements), m_Stride(0) { calculateOffsetsAndStride(); }
 
   uint32_t BufferLayout::stride() const { return m_Stride; }
   const std::vector<BufferElement>& BufferLayout::elements() const { return m_Elements; }
-
-  std::vector<BufferElement>::iterator BufferLayout::begin() { return m_Elements.begin(); }
-  std::vector<BufferElement>::iterator BufferLayout::end() { return m_Elements.end(); }
-  std::vector<BufferElement>::const_iterator BufferLayout::begin() const { return m_Elements.begin(); }
-  std::vector<BufferElement>::const_iterator BufferLayout::end() const { return m_Elements.end(); }
 
   void BufferLayout::calculateOffsetsAndStride()
   {

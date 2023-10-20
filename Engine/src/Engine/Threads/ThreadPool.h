@@ -1,5 +1,6 @@
 #pragma once
 #include "Threads.h"
+#include "Engine/Utilities/EnumUtilities.h"
 #include "Engine/Utilities/MoveOnlyFunction.h"
 
 namespace eng::threads
@@ -10,17 +11,22 @@ namespace eng::threads
     ThreadPool(int numThreads);
     ~ThreadPool();
 
+    /*
+      Submits a task to the thread pool at some specified priority.
+      If reference semantics is desired, you must wrap arguments in std::ref.
+    */
     template<typename F, typename... Args>
       requires std::is_invocable_v<F, Args...>
     std::future<std::invoke_result_t<F, Args...>> submit(Priority priority, F&& function, Args&&... args)
     {
-      using ReturnType = std::invoke_result_t<F, Args...>;
+      using ResultType = std::invoke_result_t<F, Args...>;
 
-      std::packaged_task<ReturnType()> task(std::bind(std::forward<F>(function), std::forward<Args>(args)...));
-      std::future<ReturnType> future(task.get_future());
+      // std::bind makes copies when arguments are references, which is necessary as arguments may be out of scope when task is executed
+      std::packaged_task<ResultType()> task(std::bind(std::forward<F>(function), std::forward<Args>(args)...));
+      std::future<ResultType> future(task.get_future());
       {
         std::lock_guard lock(m_Mutex);
-        m_Work[static_cast<int>(priority)].push(std::move(task));
+        m_Work[priority].push(std::move(task));
       }
       m_Condition.notify_one();
 
@@ -37,7 +43,7 @@ namespace eng::threads
     mutable std::mutex m_Mutex;
     std::condition_variable m_Condition;
     std::vector<std::thread> m_Threads;
-    std::array<std::queue<MoveOnlyFunction>, c_PriorityCount> m_Work;
+    EnumArray<std::queue<MoveOnlyFunction>, Priority> m_Work;
 
     bool hasWork();
 

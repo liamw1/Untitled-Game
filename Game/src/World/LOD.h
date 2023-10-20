@@ -49,11 +49,11 @@ namespace lod
     static inline std::unique_ptr<eng::Shader> s_Shader = nullptr;
     static inline std::unique_ptr<eng::Uniform> s_Uniform = nullptr;
     static inline std::shared_ptr<eng::TextureArray> s_TextureArray = nullptr;
-    static inline const eng::BufferLayout s_VertexBufferLayout = { { ShaderDataType::Float3, "a_Position"        },
-                                                                      { ShaderDataType::Float3, "a_IsoNormal"       },
-                                                                      { ShaderDataType::Int2,   "a_TextureIndices"  },
-                                                                      { ShaderDataType::Float2, "a_TextureWeighs"   },
-                                                                      { ShaderDataType::Int,    "a_QuadIndex"       } };
+    static inline const eng::BufferLayout s_VertexBufferLayout = { { eng::ShaderDataType::Float3, "a_Position"        },
+                                                                   { eng::ShaderDataType::Float3, "a_IsoNormal"       },
+                                                                   { eng::ShaderDataType::Int2,   "a_TextureIndices"  },
+                                                                   { eng::ShaderDataType::Float2, "a_TextureWeighs"   },
+                                                                   { eng::ShaderDataType::Int,    "a_QuadIndex"       } };
 
     static void Initialize();
   };

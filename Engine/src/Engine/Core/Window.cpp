@@ -9,8 +9,7 @@ namespace eng
 #ifdef ENG_PLATFORM_WINDOWS
 		return std::make_unique<WindowsWindow>(props);
 #else
-		ENG_CORE_ASSERT(false, "Unknown platform!");
-		return nullptr;
+		static_assert(false, "Unknown platform!");
 #endif
 	}
 }

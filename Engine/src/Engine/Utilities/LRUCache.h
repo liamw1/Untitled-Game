@@ -5,15 +5,13 @@ namespace eng
   template<Hashable K, typename V>
   class LRUCache
   {
+    std::list<std::pair<K, V>> m_MostRecentlyUsed;
+
   public:
-    using iterator = std::list<std::pair<K, V>>::iterator;
-    using const_iterator = std::list<std::pair<K, V>>::iterator;
+    ENG_DEFINE_ITERATORS(m_MostRecentlyUsed);
   
     LRUCache(int size)
       : m_Size(size) {}
-  
-    iterator begin() { return m_MostRecentlyUsed.begin(); }
-    iterator end() { return m_MostRecentlyUsed.end(); }
 
     V& operator[](const K& key)
     {
@@ -58,7 +56,6 @@ namespace eng
     }
   
   private:
-    std::list<std::pair<K, V>> m_MostRecentlyUsed;
     std::unordered_map<K, iterator> m_Map;
     int m_Size;
   

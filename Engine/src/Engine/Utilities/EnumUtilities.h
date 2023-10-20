@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include "Helpers.h"
+#include "BoilerplateReduction.h"
 #include "Engine/Core/Algorithm.h"
 
 namespace eng
@@ -62,6 +63,9 @@ namespace eng
 
   private:
     std::array<T, enumRange<E>()> m_Data;
+
+  public:
+    ENG_DEFINE_CONSTEXPR_ITERATORS(m_Data);
   };
 }
 
