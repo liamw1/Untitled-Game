@@ -99,13 +99,13 @@ void ChunkManager::render()
         eng::math::Vec3 chunkCenter = Chunk::Center(anchorPosition);
         return util::isInRange(chunkIndex, originIndex, c_RenderDistance) && util::isInFrustum(chunkCenter, frustumPlanes);
       });
-    m_TransparentMultiDrawArray->unarySort(commandCount, [&originIndex, &playerCameraPosition](const GlobalIndex& chunk)
+    m_TransparentMultiDrawArray->sort(commandCount, [&originIndex, &playerCameraPosition](const GlobalIndex& chunk)
       {
         // NOTE: Maybe measure min distance to chunk faces instead
         eng::math::Vec3 chunkCenter = Chunk::Center(Chunk::AnchorPosition(chunk, originIndex));
         length_t dist = glm::length2(chunkCenter - playerCameraPosition);
-        return -dist;
-      });
+        return dist;
+      }, eng::SortPolicy::Descending);
     m_TransparentMultiDrawArray->amend(commandCount, [&originIndex, &playerCameraPosition](ChunkDrawCommand& drawCommand)
       {
         bool orderModified = drawCommand.sort(originIndex, playerCameraPosition);

@@ -180,9 +180,9 @@ namespace eng
     }
 
     template<InvocableWithReturnType<bool, Identifier> F>
-    void unarySort(int drawCount, const F& unary)
+    void sort(int drawCount, const F& unary, SortPolicy sortPolicy)
     {
-      eng::unarySort(m_DrawCommands.begin(), m_DrawCommands.begin() + drawCount, [&unary](const DrawCommandType& draw) { return unary(draw.id()); });
+      eng::sort(m_DrawCommands.begin(), m_DrawCommands.begin() + drawCount, [&unary](const DrawCommandType& draw) { return unary(draw.id()); }, sortPolicy);
       setDrawCommandIndices(0, drawCount);
     }
 
@@ -313,9 +313,9 @@ namespace eng
     }
 
     template<InvocableWithReturnType<bool, Identifier> F>
-    void unarySort(int drawCount, const F& unary)
+    void sort(int drawCount, const F& unary, SortPolicy sortPolicy)
     {
-      eng::unarySort(m_DrawCommands.begin(), m_DrawCommands.begin() + drawCount, [&unary](const DrawCommandType& draw) { return unary(draw.id()); });
+      eng::sort(m_DrawCommands.begin(), m_DrawCommands.begin() + drawCount, [&unary](const DrawCommandType& draw) { return unary(draw.id()); }, sortPolicy);
       setDrawCommandIndices(0, drawCount);
     }
 

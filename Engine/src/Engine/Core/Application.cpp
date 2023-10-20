@@ -28,8 +28,7 @@ namespace eng
     m_Window->setEventCallback(bindMemberFunction(&Application::onEvent, this));
     m_Window->setVSync(false);
 
-    m_LayerStack = std::make_unique<LayerStack>();
-    // m_ImGuiLayer = new ImGuiLayer();
+    // m_ImGuiLayer = std::make_unique<ImGuiLayer>();
     // pushOverlay(m_ImGuiLayer);
   }
 
@@ -48,15 +47,8 @@ namespace eng
       m_LastFrameTime = time;
 
       if (!m_Minimized)
-      {
-        for (Layer* layer : *m_LayerStack)
+        for (std::unique_ptr<Layer>& layer : m_LayerStack)
           layer->onUpdate(timestep);
-
-        // m_ImGuiLayer->begin();
-        // for (Layer* layer : *m_LayerStack)
-        //   layer->onImGuiRender();
-        // m_ImGuiLayer->end();
-      }
       
       m_Window->onUpdate();
     }
@@ -68,7 +60,7 @@ namespace eng
     dispatcher.dispatch<event::WindowClose>(&Application::onWindowClose, this);
     dispatcher.dispatch<event::WindowResize>(&Application::onWindowResize, this);
 
-    for (auto it = m_LayerStack->rbegin(); it != m_LayerStack->rend(); ++it)
+    for (LayerStack::reverse_iterator it = m_LayerStack.rbegin(); it != m_LayerStack.rend(); ++it)
     {
       if (event.handled)
         break;
@@ -76,16 +68,9 @@ namespace eng
     }
   }
 
-  void Application::pushLayer(Layer* layer)
+  void Application::pushLayer(std::unique_ptr<Layer> layer)
   {
-    m_LayerStack->pushLayer(layer);
-    layer->onAttach();
-  }
-
-  void Application::pushOverlay(Layer* layer)
-  {
-    m_LayerStack->pushOverlay(layer);
-    layer->onAttach();
+    m_LayerStack.pushLayer(std::move(layer));
   }
 
   void Application::close()
@@ -93,7 +78,7 @@ namespace eng
     m_Running = false;
   }
 
-  ImGuiLayer* Application::getImGuiLayer() { return m_ImGuiLayer; }
+  ImGuiLayer& Application::getImGuiLayer() { return *m_ImGuiLayer; }
   Window& Application::getWindow() { return *m_Window; }
   const ApplicationCommandLineArgs& Application::GetCommandLineArgs() const { return m_CommandLineArgs; }
   Application& Application::Get() { return *s_Instance; }
@@ -106,14 +91,9 @@ namespace eng
 
   bool Application::onWindowResize(event::WindowResize& event)
   {
-    if (event.width() == 0 || event.height() == 0)
-    {
-      m_Minimized = true;
-      return false;
-    }
-    m_Minimized = false;
-    render::onWindowResize(event.width(), event.height());
-
+    m_Minimized = event.width() == 0 || event.height() == 0;
+    if (!m_Minimized)
+      render::onWindowResize(event.width(), event.height());
     return false;
   }
 }

@@ -15,13 +15,7 @@
 namespace eng
 {
   ImGuiLayer::ImGuiLayer()
-    : Layer("ImGuiLayer")
-  {
-  }
-
-  ImGuiLayer::~ImGuiLayer()
-  {
-  }
+    : Layer("ImGuiLayer") {}
 
   void ImGuiLayer::onAttach()
   {

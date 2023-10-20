@@ -4,63 +4,44 @@
 
 namespace eng
 {
-  LayerStack::LayerStack()
-    : m_Layers(), m_LayerInsertIndex(0) {}
+  LayerStack::LayerStack() = default;
 
   LayerStack::~LayerStack()
   {
     ENG_PROFILE_FUNCTION();
 
-    for (Layer* layer : m_Layers)
-    {
+    for (std::unique_ptr<Layer>& layer : m_Layers)
       layer->onDetach();
-      delete layer;
-    }
   }
 
-  void LayerStack::pushLayer(Layer* layer)
-  {
-    m_Layers.emplace(m_Layers.begin() + m_LayerInsertIndex, layer);
-    m_LayerInsertIndex++;
-  }
-
-  void LayerStack::pushOverlay(Layer* overlay)
-  {
-    m_Layers.push_back(overlay);
-  }
-
-  void LayerStack::popLayer(Layer* layer)
+  void LayerStack::pushLayer(std::unique_ptr<Layer> layer)
   {
     ENG_PROFILE_FUNCTION();
 
-    auto it = std::find(m_Layers.begin(), m_Layers.begin() + m_LayerInsertIndex, layer);
-    if (it != m_Layers.begin() + m_LayerInsertIndex)
-    {
-      layer->onDetach();
-      m_Layers.erase(it);
-      m_LayerInsertIndex--;
-    }
+    layer->onAttach();
+    m_Layers.push_back(std::move(layer));
   }
 
-  void LayerStack::popOverlay(Layer* overlay)
+  void LayerStack::popLayer(iterator layerPosition)
   {
     ENG_PROFILE_FUNCTION();
 
-    auto it = std::find(m_Layers.begin() + m_LayerInsertIndex, m_Layers.end(), overlay);
-    if (it != m_Layers.end())
-    {
-      overlay->onDetach();
-      m_Layers.erase(it);
-    }
+    (*layerPosition)->onDetach();
+    m_Layers.erase(layerPosition);
   }
 
-  std::vector<Layer*>::iterator LayerStack::begin() { return m_Layers.begin(); }
-  std::vector<Layer*>::iterator LayerStack::end() { return m_Layers.end(); }
-  std::vector<Layer*>::reverse_iterator LayerStack::rbegin() { return m_Layers.rbegin(); }
-  std::vector<Layer*>::reverse_iterator LayerStack::rend() { return m_Layers.rend(); }
+  void LayerStack::popLayer(reverse_iterator layerPosition)
+  {
+    popLayer(std::next(layerPosition).base());
+  }
 
-  std::vector<Layer*>::const_iterator LayerStack::begin() const { return m_Layers.begin(); }
-  std::vector<Layer*>::const_iterator LayerStack::end() const { return m_Layers.end(); }
-  std::vector<Layer*>::const_reverse_iterator LayerStack::rbegin() const { return m_Layers.rbegin(); }
-  std::vector<Layer*>::const_reverse_iterator LayerStack::rend() const { return m_Layers.rend(); }
+  LayerStack::iterator LayerStack::begin() { return m_Layers.begin(); }
+  LayerStack::iterator LayerStack::end() { return m_Layers.end(); }
+  LayerStack::reverse_iterator LayerStack::rbegin() { return m_Layers.rbegin(); }
+  LayerStack::reverse_iterator LayerStack::rend() { return m_Layers.rend(); }
+
+  LayerStack::const_iterator LayerStack::begin() const { return m_Layers.begin(); }
+  LayerStack::const_iterator LayerStack::end() const { return m_Layers.end(); }
+  LayerStack::const_reverse_iterator LayerStack::rbegin() const { return m_Layers.rbegin(); }
+  LayerStack::const_reverse_iterator LayerStack::rend() const { return m_Layers.rend(); }
 }

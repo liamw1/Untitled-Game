@@ -33,6 +33,15 @@ namespace eng
     { E::Last  };
   };
   
+  template<typename F, typename ReturnType, typename... Args>
+  concept InvocableWithReturnType = std::is_invocable_r_v<ReturnType, F, Args...>;
+  
+  template<typename F>
+  concept MemberFunction = std::is_member_function_pointer_v<F>;
+  
+  template<typename P>
+  concept Pointer = std::is_pointer_v<P>;
+
   template<typename T>
   concept Hashable = requires(T instance)
   {
@@ -48,13 +57,17 @@ namespace eng
     { std::begin(t) } -> std::forward_iterator;
     { std::end(t)   } -> std::forward_iterator;
   };
-  
-  template<typename F, typename ReturnType, typename... Args>
-  concept InvocableWithReturnType = std::is_invocable_r_v<ReturnType, F, Args...>;
-  
-  template<typename F>
-  concept MemberFunction = std::is_member_function_pointer_v<F>;
-  
-  template<typename P>
-  concept Pointer = std::is_pointer_v<P>;
+
+  template<typename T>
+  concept EqualityComparable = requires(T a, T b)
+  {
+    { a == b } -> std::same_as<bool>;
+    { a != b } -> std::same_as<bool>;
+  };
+
+  template<typename T>
+  concept LessThanComparable = requires(T a, T b)
+  {
+    { a < b } -> std::same_as<bool>;
+  };
 }

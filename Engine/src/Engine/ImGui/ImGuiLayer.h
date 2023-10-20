@@ -7,7 +7,6 @@ namespace eng
   {
   public:
     ImGuiLayer();
-    ~ImGuiLayer();
 
     void onAttach() override;
     void onDetach() override;

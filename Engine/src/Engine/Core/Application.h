@@ -26,12 +26,11 @@ namespace eng
     // Handler for all player input
     void onEvent(event::Event& event);
 
-    void pushLayer(Layer* layer);
-    void pushOverlay(Layer* layer);
+    void pushLayer(std::unique_ptr<Layer> layer);
 
     void close();
 
-    ImGuiLayer* getImGuiLayer();
+    ImGuiLayer& getImGuiLayer();
     Window& getWindow();
     const ApplicationCommandLineArgs& GetCommandLineArgs() const;
     static Application& Get();
@@ -40,8 +39,8 @@ namespace eng
     static Application* s_Instance;
     ApplicationCommandLineArgs m_CommandLineArgs;
     std::unique_ptr<Window> m_Window;
-    ImGuiLayer* m_ImGuiLayer;
-    std::unique_ptr<LayerStack> m_LayerStack;
+    std::unique_ptr<ImGuiLayer> m_ImGuiLayer;
+    LayerStack m_LayerStack;
     bool m_Running;
     bool m_Minimized;
     std::chrono::steady_clock::time_point m_LastFrameTime;

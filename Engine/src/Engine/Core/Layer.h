@@ -4,8 +4,6 @@
 
 namespace eng
 {
-  class Event;
-
   class Layer
   {
   public:
@@ -16,7 +14,6 @@ namespace eng
     virtual void onAttach() {}
     virtual void onDetach() {}
     virtual void onUpdate(Timestep /*timestep*/) {}
-    virtual void onImGuiRender() {}
     virtual void onEvent(event::Event& /*event*/) {}
 
     const std::string& getName() const { return m_DebugName; }

@@ -8,4 +8,10 @@ namespace eng
     ForOverwrite,
     DefaultInitialize
   };
+
+  enum class SortPolicy
+  {
+    Ascending,
+    Descending
+  };
 }

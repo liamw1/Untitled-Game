@@ -11,7 +11,6 @@ public:
   void onDetach() override;
 
   void onUpdate(eng::Timestep timestep) override;
-  void onImGuiRender() override;
   void onEvent(eng::event::Event& event) override;
 
 private:

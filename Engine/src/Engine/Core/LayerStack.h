@@ -6,26 +6,29 @@ namespace eng
   class LayerStack
   {
   public:
+    using iterator = std::list<std::unique_ptr<Layer>>::iterator;
+    using const_iterator = std::list<std::unique_ptr<Layer>>::const_iterator;
+    using reverse_iterator = std::list<std::unique_ptr<Layer>>::reverse_iterator;
+    using const_reverse_iterator = std::list<std::unique_ptr<Layer>>::const_reverse_iterator;
+
     LayerStack();
     ~LayerStack();
 
-    void pushLayer(Layer* layer);
-    void pushOverlay(Layer* overlay);
-    void popLayer(Layer* layer);
-    void popOverlay(Layer* overlay);
+    void pushLayer(std::unique_ptr<Layer> layer);
+    void popLayer(iterator layerPosition);
+    void popLayer(reverse_iterator layerPosition);
 
-    std::vector<Layer*>::iterator begin();
-    std::vector<Layer*>::iterator end();
-    std::vector<Layer*>::reverse_iterator rbegin();
-    std::vector<Layer*>::reverse_iterator rend();
+    iterator begin();
+    iterator end();
+    reverse_iterator rbegin();
+    reverse_iterator rend();
 
-    std::vector<Layer*>::const_iterator begin() const;
-    std::vector<Layer*>::const_iterator end() const;
-    std::vector<Layer*>::const_reverse_iterator rbegin() const;
-    std::vector<Layer*>::const_reverse_iterator rend() const;
+    const_iterator begin() const;
+    const_iterator end() const;
+    const_reverse_iterator rbegin() const;
+    const_reverse_iterator rend() const;
 
   private:
-    std::vector<Layer*> m_Layers;
-    uint32_t m_LayerInsertIndex;
+    std::list<std::unique_ptr<Layer>> m_Layers;
   };
 }

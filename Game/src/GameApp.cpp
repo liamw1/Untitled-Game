@@ -6,7 +6,7 @@ class GameApp : public eng::Application
 {
 public:
   GameApp(eng::ApplicationCommandLineArgs args)
-    : Application("Game", args) { pushLayer(new GameSandbox()); }
+    : Application("Game", args) { pushLayer(std::make_unique<GameSandbox>()); }
 
   ~GameApp() = default;
 };

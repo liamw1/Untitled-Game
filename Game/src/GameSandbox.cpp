@@ -61,10 +61,6 @@ void GameSandbox::onUpdate(eng::Timestep timestep)
   m_World.onUpdate(timestep);
 }
 
-void GameSandbox::onImGuiRender()
-{
-}
-
 void GameSandbox::onEvent(eng::event::Event& event)
 {
   eng::event::EventDispatcher dispatcher(event);
