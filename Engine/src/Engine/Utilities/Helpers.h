@@ -10,7 +10,7 @@ namespace eng
   using removeConst = std::conditional_t<std::is_reference_v<T>, removeConstFromReference<T>, std::remove_const_t<T>>;
 
   template<typename>
-  [[maybe_unused]] constexpr bool alwaysFalse = false;
+  [[maybe_unused]] constexpr bool AlwaysFalse = false;
 
   template<std::copyable T>
   constexpr T clone(const T& obj) { return obj; }
