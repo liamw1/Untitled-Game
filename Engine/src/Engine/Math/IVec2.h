@@ -1,33 +1,33 @@
 #pragma once
 #include "Direction.h"
+#include "Engine/Core/Concepts.h"
 #include "Engine/Utilities/Helpers.h"
-#include "Engine/Utilities/BitUtilities.h"
 
 namespace eng::math
 {
   /*
     Represents a point on a 2D integer lattice.
   */
-  template<std::integral IntType>
+  template<Integer T>
   struct IVec2
   {
-    IntType i;
-    IntType j;
+    T i;
+    T j;
   
     constexpr IVec2()
       : IVec2(0) {}
-    constexpr IVec2(IntType n)
+    constexpr IVec2(T n)
       : IVec2(n, n) {}
-    constexpr IVec2(IntType _i, IntType _j)
+    constexpr IVec2(T _i, T _j)
       : i(_i), j(_j) {}
   
     explicit constexpr operator Vec2() const { return Vec2(i, j); }
   
-    template<std::integral NewIntType>
-    explicit constexpr operator IVec2<NewIntType>() const { return { static_cast<NewIntType>(i), static_cast<NewIntType>(j) }; }
+    template<Integer U>
+    explicit constexpr operator IVec2<U>() const { return { static_cast<U>(i), static_cast<U>(j) }; }
   
-    constexpr IntType& operator[](Axis axis) { return ENG_MUTABLE_VERSION(operator[], axis); }
-    constexpr const IntType& operator[](Axis axis) const
+    constexpr T& operator[](Axis axis) { return ENG_MUTABLE_VERSION(operator[], axis); }
+    constexpr const T& operator[](Axis axis) const
     {
       switch (axis)
       {
@@ -47,17 +47,17 @@ namespace eng::math
       return *this;
     }
     constexpr IVec2& operator-=(const IVec2& other) { return *this += -other; }
-    constexpr IVec2& operator+=(IntType n) { return *this += IVec2(n); }
-    constexpr IVec2& operator-=(IntType n) { return *this -= IVec2(n); }
+    constexpr IVec2& operator+=(T n) { return *this += IVec2(n); }
+    constexpr IVec2& operator-=(T n) { return *this -= IVec2(n); }
   
-    constexpr IVec2& operator*=(IntType n)
+    constexpr IVec2& operator*=(T n)
     {
       ENG_CORE_ASSERT(debug::OverflowCheck(n, i) && debug::OverflowCheck(n, j), "Integer overflow!");
       i *= n;
       j *= n;
       return *this;
     }
-    constexpr IVec2& operator/=(IntType n)
+    constexpr IVec2& operator/=(T n)
     {
       i /= n;
       j /= n;
@@ -69,35 +69,35 @@ namespace eng::math
     constexpr IVec2 operator+(IVec2 other) const { return other += *this; }
     constexpr IVec2 operator-(IVec2 other) const { return -(other -= *this); }
   
-    constexpr IVec2 operator+(IntType n) const { return Clone(*this) += n; }
-    constexpr IVec2 operator-(IntType n) const { return Clone(*this) -= n; }
+    constexpr IVec2 operator+(T n) const { return clone(*this) += n; }
+    constexpr IVec2 operator-(T n) const { return clone(*this) -= n; }
   
-    constexpr IVec2 operator*(IntType n) const { return Clone(*this) *= n; }
-    constexpr IVec2 operator/(IntType n) const { return Clone(*this) /= n; }
+    constexpr IVec2 operator*(T n) const { return clone(*this) *= n; }
+    constexpr IVec2 operator/(T n) const { return clone(*this) /= n; }
   
     constexpr int l1Norm() const { return std::abs(i) + std::abs(j); }
     constexpr int dot(const IVec2& other) const { return i * other.i + j * other.j; }
   
     static constexpr IVec2 ToIndex(const Vec2& vec)
     {
-      return IVec2(static_cast<IntType>(std::floor(vec.x)), static_cast<IntType>(std::floor(vec.y)));
+      return IVec2(static_cast<T>(std::floor(vec.x)), static_cast<T>(std::floor(vec.y)));
     }
   };
   
-  template<std::integral IntType>
-  constexpr IVec2<IntType> operator*(IntType n, IVec2<IntType> index)
+  template<Integer T>
+  constexpr IVec2<T> operator*(T n, IVec2<T> index)
   {
     return index *= n;
   }
   
-  template<std::integral IntType>
-  constexpr IVec2<IntType> ComponentWiseMin(const IVec2<IntType>& a, const IVec2<IntType>& b)
+  template<Integer T>
+  constexpr IVec2<T> ComponentWiseMin(const IVec2<T>& a, const IVec2<T>& b)
   {
     return IVec2(std::min(a.i, b.i), std::min(a.j, b.j));
   }
   
-  template<std::integral IntType>
-  constexpr IVec2<IntType> ComponentWiseMax(const IVec2<IntType>& a, const IVec2<IntType>& b)
+  template<Integer T>
+  constexpr IVec2<T> ComponentWiseMax(const IVec2<T>& a, const IVec2<T>& b)
   {
     return IVec2(std::max(a.i, b.i), std::max(a.j, b.j));
   }
@@ -107,16 +107,16 @@ namespace eng::math
 
 namespace std
 {
-  template<std::integral IntType>
-  inline ostream& operator<<(ostream& os, const eng::math::IVec2<IntType>& index)
+  template<eng::Integer T>
+  inline ostream& operator<<(ostream& os, const eng::math::IVec2<T>& index)
   {
     return os << '[' << static_cast<int64_t>(index.i) << ", " << static_cast<int64_t>(index.j) << ']';
   }
 
-  template<std::integral IntType>
-  struct hash<eng::math::IVec2<IntType>>
+  template<eng::Integer T>
+  struct hash<eng::math::IVec2<T>>
   {
-    constexpr int operator()(const eng::math::IVec2<IntType>& index) const
+    constexpr int operator()(const eng::math::IVec2<T>& index) const
     {
       return eng::u32Bit( 0) * (index.i % eng::u32Bit(16)) +
              eng::u32Bit(16) * (index.j % eng::u32Bit(16));

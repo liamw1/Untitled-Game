@@ -53,7 +53,7 @@ namespace eng
     constexpr EnumArray(const std::initializer_list<std::pair<E, T>>& list)
     {
       for (const auto& [index, value] : list)
-        this->operator[](index) = value;
+        operator[](index) = value;
     }
 
     constexpr T& operator[](E index) { return ENG_MUTABLE_VERSION(operator[], index); }

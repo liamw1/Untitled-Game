@@ -9,6 +9,9 @@
 #include "Engine/Core/Layer.h"
 #include "Engine/Core/Time.h"
 #include "Engine/Core/UID.h"
+#include "Engine/Core/FundamentalTypes/FixedWidthTypes.h"
+#include "Engine/Core/FundamentalTypes/Float.h"
+#include "Engine/Core/FundamentalTypes/Int.h"
 #include "Engine/Core/Input/MouseButtonCodes.h"
 #include "Engine/Core/Input/KeyCodes.h"
 #include "Engine/Core/Input/Input.h"
@@ -61,6 +64,7 @@
 #include "Engine/Threads/Containers/UnorderedMap.h"
 #include "Engine/Threads/Containers/UnorderedSet.h"
 
+#include "Engine/Utilities/BindMember.h"
 #include "Engine/Utilities/BitUtilities.h"
 #include "Engine/Utilities/BoilerplateReduction.h"
 #include "Engine/Utilities/Constraints.h"

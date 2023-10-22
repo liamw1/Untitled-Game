@@ -6,7 +6,7 @@ namespace eng::threads
   /*
     Thread-safe version of the ArrayBox.
   */
-  template<typename T, std::integral IntType>
+  template<typename T, Integer IntType>
   class ProtectedArrayBox : private NonCopyable, NonMovable
   {
   public:

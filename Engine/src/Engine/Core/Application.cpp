@@ -1,7 +1,8 @@
 #include "ENpch.h"
 #include "Application.h"
-#include "Engine/Renderer/Renderer.h"
 #include "Engine/Debug/Instrumentor.h"
+#include "Engine/Renderer/Renderer.h"
+#include "Engine/Utilities/BindMember.h"
 
 namespace eng
 {

@@ -6,7 +6,7 @@
 
 namespace eng::math
 {
-  template<typename T, std::integral IntType>
+  template<typename T, Integer IntType>
   class ArrayBoxStrip
   {
   public:
@@ -23,7 +23,7 @@ namespace eng::math
     ~ArrayBoxStrip() = default;
   };
 
-  template<typename T, std::integral IntType>
+  template<typename T, Integer IntType>
   class ArrayBoxLayer
   {
   public:
@@ -55,7 +55,7 @@ namespace eng::math
     portions of the array using square brackets. For instance, arr[i] gives a
     2D layer and arr[i][j] gives a 1D strip.
   */
-  template<typename T, std::integral IntType>
+  template<typename T, Integer IntType>
   class ArrayBox : private NonCopyable
   {
   public:
@@ -142,7 +142,7 @@ namespace eng::math
       if (!m_Data)
         return container.allOf(containerSection, [&defaultValue](const T& value) { return value == defaultValue; });
       if (!container)
-        return this->allOf(compareSection, [&defaultValue](const T& value) { return value == defaultValue; });
+        return allOf(compareSection, [&defaultValue](const T& value) { return value == defaultValue; });
 
       IVec3<IntType> offset = containerSection.min - compareSection.min;
       return compareSection.allOf([this, &container, &offset](const IVec3<IntType>& index)

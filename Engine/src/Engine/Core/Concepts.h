@@ -1,24 +1,16 @@
 #pragma once
+#include "FundamentalTypes/FixedWidthTypes.h"
 
 namespace eng
 {
-  namespace detail
-  {
-    template<int... args>
-    constexpr bool allPositive()
-    {
-      for (int n : { args... })
-        if (n <= 0)
-          return false;
-      return true;
-    }
-  }
+  template<typename T, typename... Args>
+  concept AnyOf = (std::same_as<T, Args> || ...);
 
-  template<int N>
-  concept positive = N > 0;
-  
-  template<int... args>
-  concept allPositive = detail::allPositive<args...>();
+  template<typename T>
+  concept Integer = std::integral<T> || eng::AnyOf<u8, u16, u32, u64, i8, i16, i32, i64>;
+
+  template<typename T>
+  concept FloatingPoint = std::floating_point<T> || eng::AnyOf<f32, f64>;
   
   template<typename T, typename DecayedType>
   concept DecaysTo = std::same_as<std::decay_t<T>, DecayedType>;

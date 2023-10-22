@@ -12,7 +12,7 @@ namespace eng::math
   Elements can be accessed with a 3D index. Alternatively, one can
   strip off portions of the array using square brackets.
 */
-  template<typename T, std::integral IntType>
+  template<typename T, Integer IntType>
   class ArrayRect : private NonCopyable
   {
   public:
@@ -97,7 +97,7 @@ namespace eng::math
       if (!m_Data)
         return container.allOf(containerSection, [&defaultValue](const T& value) { return value == defaultValue; });
       if (!container)
-        return this->allOf(compareSection, [&defaultValue](const T& value) { return value == defaultValue; });
+        return allOf(compareSection, [&defaultValue](const T& value) { return value == defaultValue; });
 
       IVec2<IntType> offset = containerSection.min - compareSection.min;
       return compareSection.allOf([this, &container, &offset](const IVec2<IntType>& index)
