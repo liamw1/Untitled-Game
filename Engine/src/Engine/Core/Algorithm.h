@@ -2,50 +2,64 @@
 #include "Concepts.h"
 #include "Policy.h"
 
-namespace eng
+namespace eng::algo
 {
   namespace detail
   {
     template<std::forward_iterator I>
-    using underlyingType = std::remove_reference_t<decltype(*I())>;
+    using underlyingType = decltype(*std::declval<I>());
 
     template<Iterable C>
-    using containedType = std::remove_reference_t<decltype(*std::begin(C()))>;
+    using containedType = decltype(*std::begin(std::declval<C>()));
   }
 
-  template<std::forward_iterator I, typename F>
-    requires std::invocable<F, detail::underlyingType<I>> &&
-             LessThanComparable<std::invoke_result_t<F, detail::underlyingType<I>>>
-  void sort(I first, I last, const F& unary, SortPolicy sortPolicy)
+  template<Iterable C, typename R, InvocableWithReturnType<R, detail::containedType<C>> F, BinaryOp<R, detail::containedType<C>> Op>
+  R accumulate(const C& container, F&& transform, Op&& operation, R initialValue)
+  {
+    using ContainedType = detail::containedType<C>;
+    return std::accumulate(std::begin(container), std::end(container), initialValue, [&transform, &operation](const R& a, const ContainedType& b) { return operation(a, transform(b)); });
+  }
+
+  template<Iterable C, typename R, TransformToAddable<R, detail::containedType<C>> F>
+  R sum(const C& container, F&& transform, R initialValue)
+  {
+    using ContainedType = detail::containedType<C>;
+    return std::accumulate(std::begin(container), std::end(container), initialValue, [&transform](const R& a, const ContainedType& b) { return a + transform(b); });
+  }
+
+  template<Iterable C, Predicate<detail::containedType<C>> P>
+  auto findIf(C& container, P&& predicate) -> decltype(std::begin(container))
+  {
+    return std::find_if(std::begin(container), std::end(container), std::forward<P>(predicate));
+  }
+
+  template<std::forward_iterator I, TransformToComarable<detail::underlyingType<I>> F>
+  void sort(I first, I last, F&& transform, SortPolicy sortPolicy)
   {
     using UnderlyingType = detail::underlyingType<I>;
     switch (sortPolicy)
     {
-      case SortPolicy::Ascending:   std::sort(first, last, [&unary](const UnderlyingType& a, const UnderlyingType& b) { return   unary(a) < unary(b);  }); break;
-      case SortPolicy::Descending:  std::sort(first, last, [&unary](const UnderlyingType& a, const UnderlyingType& b) { return !(unary(a) < unary(b)); }); break;
+      case SortPolicy::Ascending:   std::sort(first, last, [&transform](const UnderlyingType& a, const UnderlyingType& b) { return   transform(a) < transform(b);  }); break;
+      case SortPolicy::Descending:  std::sort(first, last, [&transform](const UnderlyingType& a, const UnderlyingType& b) { return !(transform(a) < transform(b)); }); break;
       default:                      throw std::invalid_argument("Unknown sort policy!");
     }
   }
 
-  template<Iterable C, typename F>
-    requires std::invocable<F, detail::containedType<C>> &&
-             LessThanComparable<std::invoke_result_t<F, detail::containedType<C>>>
-  void sortContainer(C& container, const F& unary, SortPolicy sortPolicy)
+  template<Iterable C, TransformToComarable<detail::containedType<C>> F>
+  void sort(C& container, F&& transform, SortPolicy sortPolicy)
   {
-    sort(std::begin(container), std::end(container), unary, sortPolicy);
+    sort(std::begin(container), std::end(container), std::forward<F>(transform), sortPolicy);
   }
 
-  template<Iterable C, typename F>
-    requires InvocableWithReturnType<F, bool, detail::containedType<C>>
-  auto partitionContainer(C& container, const F& predicate) -> decltype(std::begin(container))
+  template<Iterable C, Predicate<detail::containedType<C>> P>
+  auto partition(C& container, P&& predicate) -> decltype(std::begin(container))
   {
-    return std::partition(std::begin(container), std::end(container), predicate);
+    return std::partition(std::begin(container), std::end(container), std::forward<P>(predicate));
   }
 
-  template<Iterable C, typename T>
-    requires std::convertible_to<T, detail::containedType<C>>
-  void fillContainer(C& container, const T& value)
+  template<Iterable C, std::convertible_to<detail::containedType<C>> T>
+  void fill(C& container, T&& value)
   {
-    std::fill(std::begin(container), std::end(container), value);
+    std::fill(std::begin(container), std::end(container), std::forward<T>(value));
   }
 }

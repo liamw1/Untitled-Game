@@ -39,6 +39,8 @@ void ChunkManager::render()
 {
   ENG_PROFILE_FUNCTION();
 
+  m_ThreadPool->queuedTasks();
+
   const eng::math::Mat4& viewProjection = eng::scene::CalculateViewProjection(eng::scene::ActiveCamera());
   std::array<eng::math::Vec4, 6> frustumPlanes = util::calculateViewFrustumPlanes(viewProjection);
 
@@ -130,16 +132,6 @@ void ChunkManager::render()
     s_SSBO->update(storageBufferData.data(), 0, bufferDataSize);
     eng::render::command::multiDrawIndexed(drawCommands.data(), commandCount, sizeof(ChunkDrawCommand));
   }
-
-  int n = 0;
-  m_ThreadPool->submit(eng::threads::Priority::Immediate, [](int& k)
-  {
-    ++k;
-  }, n);
-
-  using namespace std::chrono_literals;
-  std::this_thread::sleep_for(10ms);
-  ENG_INFO("{0}", n);
 }
 
 void ChunkManager::update()

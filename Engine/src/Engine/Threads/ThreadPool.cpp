@@ -18,11 +18,7 @@ namespace eng::threads
   size_t ThreadPool::queuedTasks() const
   {
     std::lock_guard lock(m_Mutex);
-
-    size_t queuedTasks = 0;
-    for (const std::queue<MoveOnlyFunction>& workQueue : m_Work)
-      queuedTasks += workQueue.size();
-    return queuedTasks;
+    return algo::sum(m_Work, [](const std::queue<MoveOnlyFunction>& workQueue) { return workQueue.size(); }, size_t());
   }
 
   bool ThreadPool::running() const
@@ -46,10 +42,12 @@ namespace eng::threads
 
   bool ThreadPool::hasWork()
   {
-    for (const std::queue<MoveOnlyFunction>& workQueue : m_Work)
-      if (!workQueue.empty())
-        return true;
-    return false;
+    return firstQueueWithWork() != m_Work.end();
+  }
+
+  ThreadPool::WorkIterator ThreadPool::firstQueueWithWork()
+  {
+    return algo::findIf(m_Work, [](const std::queue<MoveOnlyFunction>& workQueue) { return !workQueue.empty(); });
   }
 
   void ThreadPool::workerThread()
@@ -65,13 +63,12 @@ namespace eng::threads
         if (m_Stop)
           return;
 
-        for (std::queue<MoveOnlyFunction>& workQueue : m_Work)
-          if (!workQueue.empty())
-          {
-            task = std::move(workQueue.front());
-            workQueue.pop();
-            break;
-          }
+        WorkIterator workQueuePosition = firstQueueWithWork();
+        if (workQueuePosition == m_Work.end())
+          continue;
+
+        task = std::move(workQueuePosition->front());
+        workQueuePosition->pop();
       }
 
       task();

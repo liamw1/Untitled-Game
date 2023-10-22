@@ -171,23 +171,23 @@ namespace eng
       m_DrawCommands.pop_back();
     }
 
-    template<InvocableWithReturnType<bool, Identifier> F>
-    int partition(const F& predicate)
+    template<Predicate<Identifier> P>
+    int partition(P&& predicate)
     {
       DrawCommandIterator partitionEnd = partitionContainer(m_DrawCommands, [&predicate](const DrawCommandType& draw) { return predicate(draw.id()); });
       setDrawCommandIndices(0, m_DrawCommands.size());
       return static_cast<int>(partitionEnd - m_DrawCommands.begin());
     }
 
-    template<InvocableWithReturnType<bool, Identifier> F>
-    void sort(int drawCount, const F& unary, SortPolicy sortPolicy)
+    template<TransformToComarable<Identifier> F>
+    void sort(int drawCount, F&& transform, SortPolicy sortPolicy)
     {
-      eng::sort(m_DrawCommands.begin(), m_DrawCommands.begin() + drawCount, [&unary](const DrawCommandType& draw) { return unary(draw.id()); }, sortPolicy);
+      algo::sort(m_DrawCommands.begin(), m_DrawCommands.begin() + drawCount, [&transform](const DrawCommandType& draw) { return transform(draw.id()); }, sortPolicy);
       setDrawCommandIndices(0, drawCount);
     }
 
-    template<InvocableWithReturnType<bool, Identifier, Identifier> F>
-    void sort(int drawCount, const F& comparison)
+    template<BinaryComparison F>
+    void sort(int drawCount, F&& comparison)
     {
       std::sort(m_DrawCommands.begin(), m_DrawCommands.begin() + drawCount,
                 [&comparison](const DrawCommandType& drawA, const DrawCommandType& drawB) { return comparison(drawA.id(), drawB.id()); });
@@ -195,7 +195,7 @@ namespace eng
     }
 
     template<InvocableWithReturnType<bool, DrawCommandType&> F>
-    void amend(int drawCount, const F& function)
+    void amend(int drawCount, F&& function)
     {
       std::for_each_n(m_DrawCommands.begin(), drawCount, [this, &function](DrawCommandType& draw)
       {
@@ -304,23 +304,23 @@ namespace eng
       m_DrawCommands.pop_back();
     }
 
-    template<InvocableWithReturnType<bool, Identifier> F>
-    int partition(const F& predicate)
+    template<Predicate<Identifier> P>
+    int partition(P&& predicate)
     {
-      DrawCommandIterator partitionEnd = partitionContainer(m_DrawCommands, [&predicate](const DrawCommandType& draw) { return predicate(draw.id()); });
+      DrawCommandIterator partitionEnd = algo::partition(m_DrawCommands, [&predicate](const DrawCommandType& draw) { return predicate(draw.id()); });
       setDrawCommandIndices(0, m_DrawCommands.size());
       return static_cast<int>(partitionEnd - m_DrawCommands.begin());
     }
 
-    template<InvocableWithReturnType<bool, Identifier> F>
-    void sort(int drawCount, const F& unary, SortPolicy sortPolicy)
+    template<TransformToComarable<Identifier> F>
+    void sort(int drawCount, F&& transform, SortPolicy sortPolicy)
     {
-      eng::sort(m_DrawCommands.begin(), m_DrawCommands.begin() + drawCount, [&unary](const DrawCommandType& draw) { return unary(draw.id()); }, sortPolicy);
+      algo::sort(m_DrawCommands.begin(), m_DrawCommands.begin() + drawCount, [&transform](const DrawCommandType& draw) { return transform(draw.id()); }, sortPolicy);
       setDrawCommandIndices(0, drawCount);
     }
 
-    template<InvocableWithReturnType<bool, Identifier, Identifier> F>
-    void sort(int drawCount, const F& comparison)
+    template<BinaryComparison<Identifier> F>
+    void sort(int drawCount, F&& comparison)
     {
       std::sort(m_DrawCommands.begin(), m_DrawCommands.begin() + drawCount,
                 [&comparison](const DrawCommandType& drawA, const DrawCommandType& drawB) { return comparison(drawA.id(), drawB.id()); });
@@ -328,7 +328,7 @@ namespace eng
     }
 
     template<InvocableWithReturnType<bool, DrawCommandType&> F>
-    void amend(int drawCount, const F& function)
+    void amend(int drawCount, F&& function)
     {
       std::for_each_n(m_DrawCommands.begin(), drawCount, [this, &function](DrawCommandType& draw)
       {

@@ -49,7 +49,7 @@ namespace eng
   {
   public:
     constexpr EnumArray() = default;
-    constexpr EnumArray(const T& initialValue) { fillContainer(m_Data, initialValue); }
+    constexpr EnumArray(const T& initialValue) { algo::fill(m_Data, initialValue); }
     constexpr EnumArray(const std::initializer_list<std::pair<E, T>>& list)
     {
       for (const auto& [index, value] : list)

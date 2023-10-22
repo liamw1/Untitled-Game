@@ -32,9 +32,13 @@ namespace eng
     { E::First };
     { E::Last  };
   };
-  
+
+  // Return type must match exactly. If merely convertible to return type is desired, use std::is_invocable_r_v.
   template<typename F, typename ReturnType, typename... Args>
-  concept InvocableWithReturnType = std::is_invocable_r_v<ReturnType, F, Args...>;
+  concept InvocableWithReturnType = std::is_invocable_v<F, Args...> && std::same_as<ReturnType, std::invoke_result_t<F, Args...>>;
+
+  template<typename F, typename... Args>
+  concept Predicate = InvocableWithReturnType<F, bool, Args...>;
   
   template<typename F>
   concept MemberFunction = std::is_member_function_pointer_v<F>;
@@ -58,6 +62,12 @@ namespace eng
     { std::end(t)   } -> std::forward_iterator;
   };
 
+  template<typename F, typename R, typename T>
+  concept UnaryOp = InvocableWithReturnType<F, R, T>;
+
+  template<typename F, typename R, typename T>
+  concept BinaryOp = InvocableWithReturnType<F, R, T, T>;
+
   template<typename T>
   concept EqualityComparable = requires(T a, T b)
   {
@@ -70,4 +80,19 @@ namespace eng
   {
     { a < b } -> std::same_as<bool>;
   };
+
+  template<typename F, typename T>
+  concept TransformToComarable = std::invocable<F, T> && LessThanComparable<std::invoke_result_t<F, T>>;
+
+  template<typename F, typename T>
+  concept BinaryComparison = BinaryOp<F, bool, T>;
+
+  template<typename T>
+  concept Addable = requires(T a, T b)
+  {
+    { a + b } -> std::same_as<T>;
+  };
+
+  template<typename F, typename ReturnType, typename T>
+  concept TransformToAddable = UnaryOp<F, ReturnType, T> && Addable<ReturnType>;
 }

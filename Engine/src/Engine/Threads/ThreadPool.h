@@ -45,7 +45,10 @@ namespace eng::threads
     std::vector<std::thread> m_Threads;
     EnumArray<std::queue<MoveOnlyFunction>, Priority> m_Work;
 
+    using WorkIterator = decltype(m_Work)::iterator;
+
     bool hasWork();
+    WorkIterator firstQueueWithWork();
 
     void workerThread();
   };

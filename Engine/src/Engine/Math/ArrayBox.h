@@ -119,18 +119,18 @@ namespace eng::math
     {
       ENG_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
       return std::any_of(m_Data, m_Data + size(), [&value](const T& data)
-        {
-          return data == value;
-        });
+      {
+        return data == value;
+      });
     }
 
     bool filledWith(const T& value) const
     {
       ENG_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
       return std::all_of(m_Data, m_Data + size(), [&value](const T& data)
-        {
-          return data == value;
-        });
+      {
+        return data == value;
+      });
     }
 
     bool contentsEqual(const IBox3<IntType>& compareSection, const ArrayBox<T, IntType>& container, const IBox3<IntType>& containerSection, const T& defaultValue) const
@@ -146,39 +146,39 @@ namespace eng::math
 
       IVec3<IntType> offset = containerSection.min - compareSection.min;
       return compareSection.allOf([this, &container, &offset](const IVec3<IntType>& index)
-        {
-          return (*this)(index) == container(index + offset);
-        });
+      {
+        return (*this)(index) == container(index + offset);
+      });
     }
 
     template<InvocableWithReturnType<bool, T> F>
-    bool allOf(const IBox3<IntType>& section, const F& condition) const
+    bool allOf(const IBox3<IntType>& section, F&& condition) const
     {
       ENG_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
       return section.allOf([this, &condition](const IVec3<IntType>& index)
-        {
-          return condition((*this)(index));
-        });
+      {
+        return condition((*this)(index));
+      });
     }
 
     template<InvocableWithReturnType<bool, T> F>
-    bool anyOf(const IBox3<IntType>& section, const F& condition) const
+    bool anyOf(const IBox3<IntType>& section, F&& condition) const
     {
       ENG_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
       return section.anyOf([this, &condition](const IVec3<IntType>& index)
-        {
-          return condition((*this)(index));
-        });
+      {
+        return condition((*this)(index));
+      });
     }
 
     template<InvocableWithReturnType<bool, T> F>
-    bool noneOf(const IBox3<IntType>& section, const F& condition) const
+    bool noneOf(const IBox3<IntType>& section, F&& condition) const
     {
       ENG_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
       return section.noneOf([this, &condition](const IVec3<IntType>& index)
-        {
-          return condition((*this)(index));
-        });
+      {
+        return condition((*this)(index));
+      });
     }
 
     void fill(const T& value)
@@ -191,9 +191,9 @@ namespace eng::math
     {
       ENG_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
       fillSection.forEach([this, &value](const IVec3<IntType>& index)
-        {
-          (*this)(index) = value;
-        });
+      {
+        (*this)(index) = value;
+      });
     }
 
     void fill(const IBox3<IntType>& fillSection, const ArrayBox<T, IntType>& container, const IBox3<IntType>& containerSection, const T& defaultValue)
@@ -209,9 +209,9 @@ namespace eng::math
 
       IVec3<IntType> offset = containerSection.min - fillSection.min;
       fillSection.forEach([this, &container, &offset](const IVec3<IntType>& index)
-        {
-          (*this)(index) = container(index + offset);
-        });
+      {
+        (*this)(index) = container(index + offset);
+      });
     }
 
     void setBounds(const IBox3<IntType>& bounds)

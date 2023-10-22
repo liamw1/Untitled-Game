@@ -150,15 +150,13 @@ namespace eng
 
   void MemoryPool::removeFromFreeRegions(RegionsIterator regionIterator)
   {
-    auto [address, region] = *regionIterator;
+    const auto& [address, region] = *regionIterator;
 
     auto [begin, end] = m_FreeRegions.equal_range(region.size);
-    for (FreeRegionsIterator it = begin; it != end; ++it)
-      if (it->second == address)
-      {
-        m_FreeRegions.erase(it);
-        return;
-      }
-    ENG_CORE_ERROR("No region at address {0} of size {1} found!", address, region.size);
+    FreeRegionsIterator removalPosition = std::find_if(begin, end, [address](std::pair<int, address_t> freeRegion) { return freeRegion.second == address; });
+    if (removalPosition == end)
+      ENG_CORE_ERROR("No region at address {0} of size {1} found!", address, region.size);
+    else
+      m_FreeRegions.erase(removalPosition);
   }
 }
