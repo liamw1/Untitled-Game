@@ -3,23 +3,34 @@
 
 namespace eng
 {
+  namespace detail
+  {
+    template<typename T>
+    concept ConvertibleType = std::is_arithmetic_v<T> || std::same_as<T, Int<typename T::UnderlyingType>>;
+
+    template<typename T>
+    concept Integral = std::integral<T> || std::same_as<T, Int<typename T::UnderlyingType>>;
+  }
+
   template<std::floating_point T>
   class Float
   {
   public:
+    using UnderlyingType = T;
+
     constexpr Float() = default;
 
-    template<std::integral U>
-    constexpr Float(U value)
+    template<std::floating_point F>
+    constexpr Float(F value)
       : m_Value(value) {}
 
-    template<std::integral U>
-    constexpr Float(Int<U> value)
+    template<std::integral I>
+    constexpr Float(I value)
+      : m_Value(value) {}
+
+    template<std::integral I>
+    constexpr Float(Int<I> value)
       : m_Value(value.m_Value) {}
-
-    template<std::floating_point U>
-    constexpr Float(U value)
-      : m_Value(value) {}
 
     // Operators are defined in order of operator precedence https://en.cppreference.com/w/cpp/language/operator_precedence
 
@@ -54,133 +65,162 @@ namespace eng
 
     constexpr bool operator!() const { return !m_Value; }
 
-    template<std::integral U>
-    constexpr Float operator*(U other) const { return *this * Float(other); }
-
-    template<std::integral U>
-    constexpr Float operator*(Int<U> other) const { return *this * Float(other); }
-
-    template<std::floating_point U>
-    constexpr Float<largest<T, U>> operator*(U other) const { return *this * Float<U>(other); }
-
-    template<std::floating_point U>
-    constexpr Float<largest<T, U>> operator*(Float<U> other) const { return Float<largest<T, U>>(m_Value) *= other; }
 
 
+    template<std::integral I>
+    constexpr operator I() const { return static_cast<I>(m_Value); }
 
-    template<std::integral U>
-    constexpr Float operator/(U other) const { return *this / Float(other); }
+    template<std::integral I>
+    constexpr operator Int<I>() const { return Int<I>(m_Value); }
 
-    template<std::integral U>
-    constexpr Float operator/(Int<U> other) const { return *this / Float(other); }
+    template<std::floating_point F>
+    constexpr operator F() const { return static_cast<F>(m_Value); }
 
-    template<std::floating_point U>
-    constexpr Float<largest<T, U>> operator/(U other) const { return *this / Float<U>(other); }
-
-    template<std::floating_point U>
-    constexpr Float<largest<T, U>> operator/(Float<U> other) const { return Float<largest<T, U>>(m_Value) /= other; }
+    template<std::floating_point F>
+    constexpr operator Float<F>() const { return Float<F>(m_Value); }
 
 
 
-    template<std::integral U>
-    constexpr Float operator+(U other) const { return *this + Float(other); }
+    template<detail::Integral I>
+    constexpr Float operator*(I right) const { return *this * Float(right); }
 
-    template<std::integral U>
-    constexpr Float operator+(Int<U> other) const { return *this + Float(other); }
+    template<std::floating_point F>
+    constexpr Float<largest<T, F>> operator*(F right) const { return *this * Float<F>(right); }
 
-    template<std::floating_point U>
-    constexpr Float<largest<T, U>> operator+(U other) const { return *this + Float<U>(other); }
-
-    template<std::floating_point U>
-    constexpr Float<largest<T, U>> operator+(Float<U> other) const { return Float<largest<T, U>>(m_Value) += other; }
+    template<std::floating_point F>
+    constexpr Float<largest<T, F>> operator*(Float<F> right) const { return Float<largest<T, F>>(m_Value) *= right; }
 
 
 
-    template<std::integral U>
-    constexpr Float operator-(U other) const { return *this - Float(other); }
+    template<detail::Integral I>
+    constexpr Float operator/(I right) const { return *this / Float(right); }
 
-    template<std::integral U>
-    constexpr Float operator-(Int<U> other) const { return *this - Float(other); }
+    template<std::floating_point F>
+    constexpr Float<largest<T, F>> operator/(F right) const { return *this / Float<F>(right); }
 
-    template<std::floating_point U>
-    constexpr Float<largest<T, U>> operator-(U other) const { return *this - Float<U>(other); }
-
-    template<std::floating_point U>
-    constexpr Float<largest<T, U>> operator-(Float<U> other) const { return Float<largest<T, U>>(m_Value) -= other; }
+    template<std::floating_point F>
+    constexpr Float<largest<T, F>> operator/(Float<F> right) const { return Float<largest<T, F>>(m_Value) /= right; }
 
 
 
-    constexpr std::partial_ordering operator<=>(const Float& other) const = default;
+    template<detail::Integral I>
+    constexpr Float operator+(I right) const { return *this + Float(right); }
+
+    template<std::floating_point F>
+    constexpr Float<largest<T, F>> operator+(F right) const { return *this + Float<F>(right); }
+
+    template<std::floating_point F>
+    constexpr Float<largest<T, F>> operator+(Float<F> right) const { return Float<largest<T, F>>(m_Value) += right; }
 
 
 
-    template<std::integral U>
-    constexpr Float& operator+=(U other) { return *this += Float(other); }
+    template<detail::Integral I>
+    constexpr Float operator-(I right) const { return *this - Float(right); }
 
-    template<std::integral U>
-    constexpr Float& operator+=(Int<U> other) { return *this += Float(other); }
+    template<std::floating_point F>
+    constexpr Float<largest<T, F>> operator-(F right) const { return *this - Float<F>(right); }
 
-    template<std::floating_point U>
-    constexpr Float& operator+=(U other) { return *this += Float<U>(other); }
+    template<std::floating_point F>
+    constexpr Float<largest<T, F>> operator-(Float<F> right) const { return Float<largest<T, F>>(m_Value) -= right; }
 
-    template<std::floating_point U>
-    constexpr Float& operator+=(Float<U> other)
+
+
+    constexpr std::partial_ordering operator<=>(const Float& right) const = default;
+
+
+
+    template<detail::Integral I>
+    constexpr Float& operator+=(I right) { return *this += Float(right); }
+
+    template<std::floating_point F>
+    constexpr Float& operator+=(F right) { return *this += Float<F>(right); }
+
+    template<std::floating_point F>
+    constexpr Float& operator+=(Float<F> right)
     {
-      m_Value += other.m_Value;
+      m_Value += right.m_Value;
       return *this;
     }
 
 
 
-    template<std::integral U>
-    constexpr Float& operator-=(U other) { return *this -= Float(other); }
+    template<detail::Integral I>
+    constexpr Float& operator-=(I right) { return *this -= Float(right); }
 
-    template<std::integral U>
-    constexpr Float& operator-=(Int<U> other) { return *this -= Float(other); }
+    template<std::floating_point F>
+    constexpr Float& operator-=(F right) { return *this -= Float<F>(right); }
 
-    template<std::floating_point U>
-    constexpr Float& operator-=(U other) { return *this -= Float<U>(other); }
-
-    template<std::floating_point U>
-    constexpr Float& operator-=(Float<U> other) { return *this += -other; }
+    template<std::floating_point F>
+    constexpr Float& operator-=(Float<F> right) { return *this += -right; }
 
 
 
-    template<std::integral U>
-    constexpr Float& operator*=(U other) { return *this *= Float(other); }
+    template<detail::Integral I>
+    constexpr Float& operator*=(I right) { return *this *= Float(right); }
 
-    template<std::integral U>
-    constexpr Float& operator*=(Int<U> other) { return *this *= Float(other); }
+    template<std::floating_point F>
+    constexpr Float& operator*=(F right) { return *this *= Float<F>(right); }
 
-    template<std::floating_point U>
-    constexpr Float& operator*=(U other) { return *this *= Float<U>(other); }
-
-    template<std::floating_point U>
-    constexpr Float& operator*=(Float<U> other)
+    template<std::floating_point F>
+    constexpr Float& operator*=(Float<F> right)
     {
-      m_Value *= other.m_Value;
+      m_Value *= right.m_Value;
       return *this;
     }
 
 
 
-    template<std::integral U>
-    constexpr Float& operator/=(U other) { return *this /= Float(other); }
+    template<detail::Integral F>
+    constexpr Float& operator/=(F right) { return *this /= Float(right); }
 
-    template<std::integral U>
-    constexpr Float& operator/=(Int<U> other) { return *this /= Float(other); }
+    template<std::floating_point F>
+    constexpr Float& operator/=(F right) { return *this /= Float<F>(right); }
 
-    template<std::floating_point U>
-    constexpr Float& operator/=(U other) { return *this /= Float<U>(other); }
-
-    template<std::floating_point U>
-    constexpr Float& operator/=(Float<U> other)
+    template<std::floating_point F>
+    constexpr Float& operator/=(Float<F> right)
     {
-      m_Value /= other.m_Value; 
+      m_Value /= right.m_Value; 
       return *this;
     }
+
+
+
+    template<std::integral I>
+    friend class Int;
 
   private:
     T m_Value;
   };
+
+
+
+  template<detail::Integral I, std::floating_point F>
+  constexpr Float<F> operator*(I left, Float<F> right) { return Float<F>(left) * right; }
+
+  template<std::floating_point F1, std::floating_point F2>
+  constexpr Float<largest<F1, F2>> operator*(F1 left, Float<F2> right) { return Float<F1>(left) * right; }
+
+
+
+  template<detail::Integral I, std::floating_point F>
+  constexpr Float<F> operator/(I left, Float<F> right) { return Float<F>(left) / right; }
+
+  template<std::floating_point F1, std::floating_point F2>
+  constexpr Float<largest<F1, F2>> operator/(F1 left, Float<F2> right) { return Float<F1>(left) / right; }
+
+
+
+  template<detail::Integral I, std::floating_point F>
+  constexpr Float<F> operator+(I left, Float<F> right) { return Float<F>(left) + right; }
+
+  template<std::floating_point F1, std::floating_point F2>
+  constexpr Float<largest<F1, F2>> operator+(F1 left, Float<F2> right) { return Float<F1>(left) + right; }
+
+
+
+  template<detail::Integral I, std::floating_point F>
+  constexpr Float<F> operator-(I left, Float<F> right) { return Float<F>(left) - right; }
+
+  template<std::floating_point F1, std::floating_point F2>
+  constexpr Float<largest<F1, F2>> operator-(F1 left, Float<F2> right) { return Float<F1>(left) - right; }
 }

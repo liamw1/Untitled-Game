@@ -7,7 +7,7 @@ namespace eng::math
   /*
     Represents a box on a 2D integer lattice. Min and max bounds are both inclusive.
   */
-  template<Integer T>
+  template<std::integral T>
   struct IBox2
   {
     IVec2<T> min;
@@ -22,7 +22,7 @@ namespace eng::math
     constexpr IBox2(T iMin, T jMin, T iMax, T jMax)
       : min(iMin, jMin), max(iMax, jMax) {}
   
-    template<Integer U>
+    template<std::integral U>
     explicit constexpr operator IBox2<U>() const { return IBox2<U>(static_cast<IVec2<U>>(min), static_cast<IVec2<U>>(max)); }
   
     // Define lexicographical ordering on stored IVec2s
@@ -172,7 +172,7 @@ namespace eng::math
 
 namespace std
 {
-  template<eng::Integer T>
+  template<std::integral T>
   inline ostream& operator<<(ostream& os, const eng::math::IBox2<T>& box)
   {
     return os << '(' << box.min << ", " << box.max << ')';

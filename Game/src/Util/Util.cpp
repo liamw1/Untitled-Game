@@ -7,7 +7,7 @@ namespace util
   bool isInRange(const GlobalIndex& chunkIndex, const GlobalIndex& originIndex, globalIndex_t range)
   {
     GlobalIndex diff = chunkIndex - originIndex;
-    return abs(diff.i) <= range && abs(diff.j) <= range && abs(diff.k) <= range;
+    return std::abs(diff.i) <= range && std::abs(diff.j) <= range && std::abs(diff.k) <= range;
   }
   
   bool blockNeighborIsInAnotherChunk(const BlockIndex& blockIndex, eng::math::Direction direction)

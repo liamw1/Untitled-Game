@@ -8,7 +8,7 @@ namespace eng::math
   /*
     Represents a point on a 2D integer lattice.
   */
-  template<Integer T>
+  template<std::integral T>
   struct IVec2
   {
     T i;
@@ -23,7 +23,7 @@ namespace eng::math
   
     explicit constexpr operator Vec2() const { return Vec2(i, j); }
   
-    template<Integer U>
+    template<std::integral U>
     explicit constexpr operator IVec2<U>() const { return { static_cast<U>(i), static_cast<U>(j) }; }
   
     constexpr T& operator[](Axis axis) { return ENG_MUTABLE_VERSION(operator[], axis); }
@@ -84,19 +84,19 @@ namespace eng::math
     }
   };
   
-  template<Integer T>
+  template<std::integral T>
   constexpr IVec2<T> operator*(T n, IVec2<T> index)
   {
     return index *= n;
   }
   
-  template<Integer T>
+  template<std::integral T>
   constexpr IVec2<T> ComponentWiseMin(const IVec2<T>& a, const IVec2<T>& b)
   {
     return IVec2(std::min(a.i, b.i), std::min(a.j, b.j));
   }
   
-  template<Integer T>
+  template<std::integral T>
   constexpr IVec2<T> ComponentWiseMax(const IVec2<T>& a, const IVec2<T>& b)
   {
     return IVec2(std::max(a.i, b.i), std::max(a.j, b.j));
@@ -107,13 +107,13 @@ namespace eng::math
 
 namespace std
 {
-  template<eng::Integer T>
+  template<std::integral T>
   inline ostream& operator<<(ostream& os, const eng::math::IVec2<T>& index)
   {
     return os << '[' << static_cast<int64_t>(index.i) << ", " << static_cast<int64_t>(index.j) << ']';
   }
 
-  template<eng::Integer T>
+  template<std::integral T>
   struct hash<eng::math::IVec2<T>>
   {
     constexpr int operator()(const eng::math::IVec2<T>& index) const

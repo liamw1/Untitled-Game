@@ -7,7 +7,7 @@ namespace eng::math
   /*
     Represents a box on a 3D integer lattice. Min and max bounds are both inclusive.
   */
-  template<Integer T>
+  template<std::integral T>
   struct IBox3
   {
     IVec3<T> min;
@@ -22,7 +22,7 @@ namespace eng::math
     constexpr IBox3(T iMin, T jMin, T kMin, T iMax, T jMax, T kMax)
       : min(iMin, jMin, kMin), max(iMax, jMax, kMax) {}
   
-    template<Integer U>
+    template<std::integral U>
     explicit constexpr operator IBox3<U>() const { return IBox3<U>(static_cast<IVec3<U>>(min), static_cast<IVec3<U>>(max)); }
   
     // Define lexicographical ordering on stored IVec3s
@@ -171,7 +171,7 @@ namespace eng::math
       return edge(sideA, sideB).shrinkAlongAxis(edgeAxis);
     }
   
-    template<Integer IndexType>
+    template<std::integral IndexType>
     constexpr IBox3 corner(const IVec3<IndexType>& offset) const
     {
       ENG_CORE_ASSERT(debug::EqualsOneOf(offset.i, -1, 1)
@@ -241,7 +241,7 @@ namespace eng::math
   
   
   
-  template<Integer T>
+  template<std::integral T>
   struct BoxFace
   {
     Direction side;
@@ -253,7 +253,7 @@ namespace eng::math
       : side(faceSide), bounds(faceBounds) {}
   };
   
-  template<Integer T>
+  template<std::integral T>
   struct BoxEdge
   {
     Direction sideA;
@@ -266,7 +266,7 @@ namespace eng::math
       : sideA(edgeSideA), sideB(edgeSideB), bounds(edgeBounds) {}
   };
   
-  template<Integer T>
+  template<std::integral T>
   struct BoxCorner
   {
     IVec3<T> offset;
@@ -279,7 +279,7 @@ namespace eng::math
   
   namespace detail
   {
-    template<Integer T>
+    template<std::integral T>
     constexpr std::array<BoxFace<T>, 6> ConstructFaces(const IBox3<T>& box, bool interiorOnly)
     {
       std::array<BoxFace<T>, 6> faces;
@@ -288,7 +288,7 @@ namespace eng::math
       return faces;
     }
   
-    template<Integer T>
+    template<std::integral T>
     constexpr std::array<BoxEdge<T>, 12> ConstructEdges(const IBox3<T>& box, bool interiorOnly)
     {
       int edgeIndex = 0;
@@ -309,7 +309,7 @@ namespace eng::math
       return edges;
     }
   
-    template<Integer T>
+    template<std::integral T>
     constexpr std::array<BoxCorner<T>, 8> ConstructCorners(const IBox3<T>& box)
     {
       int cornerIndex = 0;
@@ -326,31 +326,31 @@ namespace eng::math
     }
   }
   
-  template<Integer T>
+  template<std::integral T>
   constexpr std::array<BoxFace<T>, 6> Faces(const IBox3<T>& box)
   {
     return detail::ConstructFaces(box, false);
   }
   
-  template<Integer T>
+  template<std::integral T>
   constexpr std::array<BoxFace<T>, 6> FaceInteriors(const IBox3<T>& box)
   {
     return detail::ConstructFaces(box, true);
   }
   
-  template<Integer T>
+  template<std::integral T>
   constexpr std::array<BoxEdge<T>, 12> Edges(const IBox3<T>& box)
   {
     return detail::ConstructEdges(box, false);
   }
   
-  template<Integer T>
+  template<std::integral T>
   constexpr std::array<BoxEdge<T>, 12> EdgeInteriors(const IBox3<T>& box)
   {
     return detail::ConstructEdges(box, true);
   }
   
-  template<Integer T>
+  template<std::integral T>
   constexpr std::array<BoxCorner<T>, 8> Corners(const IBox3<T>& box)
   {
     return detail::ConstructCorners(box);
@@ -361,7 +361,7 @@ namespace eng::math
 
 namespace std
 {
-  template<eng::Integer T>
+  template<std::integral T>
   inline ostream& operator<<(ostream& os, const eng::math::IBox3<T>& box)
   {
     return os << '(' << box.min << ", " << box.max << ')';

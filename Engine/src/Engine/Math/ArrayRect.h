@@ -12,7 +12,7 @@ namespace eng::math
   Elements can be accessed with a 3D index. Alternatively, one can
   strip off portions of the array using square brackets.
 */
-  template<typename T, Integer IntType>
+  template<typename T, std::integral IntType>
   class ArrayRect : private NonCopyable
   {
   public:

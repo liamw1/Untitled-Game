@@ -6,7 +6,7 @@ namespace eng::math
   /*
     Represents a point on a 3D integer lattice.
   */
-  template<Integer T>
+  template<std::integral T>
   struct IVec3
   {
     T i;
@@ -25,10 +25,10 @@ namespace eng::math
     explicit constexpr operator Vec2() const { return Vec2(i, j); }
     explicit constexpr operator Vec3() const { return Vec3(i, j, k); }
   
-    template<Integer U>
+    template<std::integral U>
     explicit constexpr operator IVec2<U>() const { return { static_cast<U>(i), static_cast<U>(j) }; }
   
-    template<Integer U>
+    template<std::integral U>
     explicit constexpr operator IVec3<U>() const { return { static_cast<U>(i), static_cast<U>(j), static_cast<U>(k) }; }
   
     constexpr T& operator[](Axis axis) { return ENG_MUTABLE_VERSION(operator[], axis); }
@@ -112,19 +112,19 @@ namespace eng::math
     }
   };
   
-  template<Integer T>
+  template<std::integral T>
   constexpr IVec3<T> operator*(T n, IVec3<T> index)
   {
     return index *= n;
   }
   
-  template<Integer T>
+  template<std::integral T>
   constexpr IVec3<T> ComponentWiseMin(const IVec3<T>& a, const IVec3<T>& b)
   {
     return IVec3(std::min(a.i, b.i), std::min(a.j, b.j), std::min(a.k, b.k));
   }
   
-  template<Integer T>
+  template<std::integral T>
   constexpr IVec3<T> ComponentWiseMax(const IVec3<T>& a, const IVec3<T>& b)
   {
     return IVec3(std::max(a.i, b.i), std::max(a.j, b.j), std::max(a.k, b.k));
@@ -135,13 +135,13 @@ namespace eng::math
 
 namespace std
 {
-  template<eng::Integer T>
+  template<std::integral T>
   inline ostream& operator<<(ostream& os, const eng::math::IVec3<T>& index)
   {
     return os << '[' << static_cast<int64_t>(index.i) << ", " << static_cast<int64_t>(index.j) << ", " << static_cast<int64_t>(index.k) << ']';
   }
 
-  template<eng::Integer T>
+  template<std::integral T>
   struct hash<eng::math::IVec3<T>>
   {
     constexpr int operator()(const eng::math::IVec3<T>& index) const

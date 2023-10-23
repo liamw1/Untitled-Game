@@ -6,7 +6,7 @@
 
 namespace eng::math
 {
-  template<typename T, Integer IntType>
+  template<typename T, std::integral IntType>
   class ArrayBoxStrip
   {
   public:
@@ -23,7 +23,7 @@ namespace eng::math
     ~ArrayBoxStrip() = default;
   };
 
-  template<typename T, Integer IntType>
+  template<typename T, std::integral IntType>
   class ArrayBoxLayer
   {
   public:
@@ -55,7 +55,7 @@ namespace eng::math
     portions of the array using square brackets. For instance, arr[i] gives a
     2D layer and arr[i][j] gives a 1D strip.
   */
-  template<typename T, Integer IntType>
+  template<typename T, std::integral IntType>
   class ArrayBox : private NonCopyable
   {
   public:

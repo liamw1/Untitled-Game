@@ -44,10 +44,10 @@ public:
     return m_Components[index];
   }
 
-  CompoundType operator+(const CompoundType& other) const
+  CompoundType operator+(const CompoundType& right) const
   {
     CompoundType sum = *this;
-    return sum += other;
+    return sum += right;
   }
   CompoundType operator*(float x) const
   {
@@ -55,21 +55,21 @@ public:
     return result *= x;
   }
 
-  CompoundType& operator+=(const CompoundType& other)
+  CompoundType& operator+=(const CompoundType& right)
   {
     std::array<Component, ComponentCount> mergedComposition{};
 
     int i = 0, j = 0;
     for (int k = 0; k < ComponentCount; ++k)
     {
-      if (m_Components[i].weight > other.m_Components[j].weight)
+      if (m_Components[i].weight > right.m_Components[j].weight)
       {
         mergedComposition[k] = m_Components[i];
         i++;
       }
       else
       {
-        mergedComposition[k] = other.m_Components[j];
+        mergedComposition[k] = right.m_Components[j];
         j++;
       }
     }
