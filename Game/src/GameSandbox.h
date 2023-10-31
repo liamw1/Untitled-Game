@@ -3,6 +3,12 @@
 
 class GameSandbox : public eng::Layer
 {
+  World m_World;
+  std::list<f32> m_FrameTimeWindow;
+  bool m_PrintFrameRate;
+  bool m_PrintMinFrameRate;
+  bool m_PrintPlayerPosition;
+
 public:
   GameSandbox();
   ~GameSandbox();
@@ -14,11 +20,5 @@ public:
   void onEvent(eng::event::Event& event) override;
 
 private:
-  World m_World;
-  std::list<f32> m_FrameTimeWindow;
-  bool m_PrintFrameRate;
-  bool m_PrintMinFrameRate;
-  bool m_PrintPlayerPosition;
-
   bool onKeyPress(eng::event::KeyPress& event);
 };

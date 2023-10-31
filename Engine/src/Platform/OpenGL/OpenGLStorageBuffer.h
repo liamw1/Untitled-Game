@@ -5,6 +5,11 @@ namespace eng
 {
   class OpenGLStorageBuffer : public StorageBuffer
   {
+    Type m_Type;
+    u32 m_Size;
+    std::optional<u32> m_Binding;
+    u32 m_RendererID;
+
   public:
     OpenGLStorageBuffer(Type type, std::optional<u32> binding);
     ~OpenGLStorageBuffer();
@@ -18,11 +23,5 @@ namespace eng
     void set(const void* data, u32 size) override;
     void update(const void* data, u32 offset, u32 size) override;
     void resize(u32 newSize) override;
-
-  private:
-    Type m_Type;
-    u32 m_Size;
-    std::optional<u32> m_Binding;
-    u32 m_RendererID;
   };
 }

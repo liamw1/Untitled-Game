@@ -6,6 +6,9 @@ namespace eng
 {
   class Entity
   {
+    static inline entt::registry s_Registry{};
+    entt::entity m_EntityID = entt::null;
+
   public:
     Entity() = default;
 
@@ -53,10 +56,7 @@ namespace eng
     bool operator==(const Entity& other) const = default;
 
   private:
-    static inline entt::registry s_Registry{};
     static entt::registry& Registry() { return s_Registry; }
-
-    entt::entity m_EntityID = entt::null;
 
     Entity(entt::entity entityID)
       : m_EntityID(entityID) {}

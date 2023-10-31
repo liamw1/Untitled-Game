@@ -15,6 +15,13 @@ namespace eng::event
 {
   class Event : private NonCopyable, NonMovable
   {
+    using EventVariant = std::variant<AppRender, AppTick, AppUpdate, WindowClose, WindowResize,
+      KeyPress, KeyRelease, KeyType,
+      MouseButtonPress, MouseButtonRelease, MouseMove, MouseScroll>;
+
+    EventVariant m_Event;
+    bool m_Handled;
+
   public:
     template<typename T>
     Event(const T& e)
@@ -43,13 +50,6 @@ namespace eng::event
     }
 
   private:
-    using EventVariant = std::variant<AppRender, AppTick, AppUpdate, WindowClose, WindowResize,
-                                      KeyPress, KeyRelease, KeyType,
-                                      MouseButtonPress, MouseButtonRelease, MouseMove, MouseScroll>;
-
-    EventVariant m_Event;
-    bool m_Handled;
-
     template<typename EventType, typename F, typename... Args>
     static constexpr bool EventFunctionFor() { return std::is_invocable_r_v<bool, F, Args..., EventType&>; }
 

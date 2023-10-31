@@ -5,6 +5,31 @@
 
 class ChunkManager
 {
+  // Rendering
+  static inline std::unique_ptr<eng::Shader> s_Shader;
+  static inline std::unique_ptr<eng::Uniform> s_LightUniform;
+  static inline std::unique_ptr<eng::StorageBuffer> s_SSBO;
+  static inline std::shared_ptr<eng::TextureArray> s_TextureArray;
+  static inline const eng::BufferLayout s_VertexBufferLayout = {{ eng::ShaderDataType::Uint32, "a_VertexData" },
+                                                                { eng::ShaderDataType::Uint32, "a_Lighting"   }};
+  static constexpr i32 c_TextureSlot = 0;
+  static constexpr i32 c_StorageBufferBinding = 0;
+  static constexpr u32 c_StorageBufferSize = static_cast<u32>(eng::pow2(20));
+
+  eng::threads::UnorderedSet<ChunkDrawCommand> m_OpaqueCommandQueue;
+  eng::threads::UnorderedSet<ChunkDrawCommand> m_TransparentCommandQueue;
+  std::unique_ptr<eng::MultiDrawIndexedArray<ChunkDrawCommand>> m_OpaqueMultiDrawArray;
+  std::unique_ptr<eng::MultiDrawIndexedArray<ChunkDrawCommand>> m_TransparentMultiDrawArray;
+
+  // Multi-threading
+  ChunkContainer m_ChunkContainer;
+  std::shared_ptr<eng::threads::ThreadPool> m_ThreadPool;
+  eng::threads::WorkSet<GlobalIndex, std::shared_ptr<Chunk>> m_LoadWork;
+  eng::threads::WorkSet<GlobalIndex, void> m_CleanWork;
+  eng::threads::WorkSet<GlobalIndex, void> m_LightingWork;
+  eng::threads::WorkSet<GlobalIndex, void> m_LazyMeshingWork;
+  eng::threads::WorkSet<GlobalIndex, void> m_ForceMeshingWork;
+
 public:
   ChunkManager();
   ~ChunkManager();
@@ -42,31 +67,6 @@ private:
     const f32 maxSunlight = static_cast<f32>(block::Light::MaxValue());
     f32 sunIntensity = 1.0f;
   };
-
-  // Rendering
-  static inline std::unique_ptr<eng::Shader> s_Shader;
-  static inline std::unique_ptr<eng::Uniform> s_LightUniform;
-  static inline std::unique_ptr<eng::StorageBuffer> s_SSBO;
-  static inline std::shared_ptr<eng::TextureArray> s_TextureArray;
-  static inline const eng::BufferLayout s_VertexBufferLayout = { { eng::ShaderDataType::Uint32, "a_VertexData" },
-                                                                 { eng::ShaderDataType::Uint32, "a_Lighting"   } };
-  static constexpr i32 c_TextureSlot = 0;
-  static constexpr i32 c_StorageBufferBinding = 0;
-  static constexpr u32 c_StorageBufferSize = static_cast<u32>(eng::pow2(20));
-
-  eng::threads::UnorderedSet<ChunkDrawCommand> m_OpaqueCommandQueue;
-  eng::threads::UnorderedSet<ChunkDrawCommand> m_TransparentCommandQueue;
-  std::unique_ptr<eng::MultiDrawIndexedArray<ChunkDrawCommand>> m_OpaqueMultiDrawArray;
-  std::unique_ptr<eng::MultiDrawIndexedArray<ChunkDrawCommand>> m_TransparentMultiDrawArray;
-
-  // Multi-threading
-  ChunkContainer m_ChunkContainer;
-  std::shared_ptr<eng::threads::ThreadPool> m_ThreadPool;
-  eng::threads::WorkSet<GlobalIndex, std::shared_ptr<Chunk>> m_LoadWork;
-  eng::threads::WorkSet<GlobalIndex, void> m_CleanWork;
-  eng::threads::WorkSet<GlobalIndex, void> m_LightingWork;
-  eng::threads::WorkSet<GlobalIndex, void> m_LazyMeshingWork;
-  eng::threads::WorkSet<GlobalIndex, void> m_ForceMeshingWork;
 
   void addToLightingUpdateQueue(const GlobalIndex& chunkIndex);
   void addToLazyMeshUpdateQueue(const GlobalIndex& chunkIndex);

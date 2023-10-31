@@ -6,12 +6,14 @@ namespace eng
   class LRUCache
   {
     std::list<std::pair<K, V>> m_MostRecentlyUsed;
+    std::unordered_map<K, decltype(m_MostRecentlyUsed.begin())> m_Map;
+    i32 m_Size;
 
   public:
-    ENG_DEFINE_ITERATORS(m_MostRecentlyUsed);
-  
     LRUCache(i32 size)
       : m_Size(size) {}
+
+    ENG_DEFINE_ITERATORS(m_MostRecentlyUsed);
 
     V& operator[](const K& key)
     {
@@ -56,9 +58,6 @@ namespace eng
     }
   
   private:
-    std::unordered_map<K, iterator> m_Map;
-    i32 m_Size;
-  
     void setAsMostRecentlyUsed(iterator listPosition)
     {
       m_MostRecentlyUsed.splice(m_MostRecentlyUsed.begin(), m_MostRecentlyUsed, listPosition);

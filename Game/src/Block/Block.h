@@ -11,6 +11,8 @@ namespace block
 
   class Type
   {
+    ID m_TypeID;
+
   public:
     constexpr Type()
       : Type(ID::Null) {}
@@ -24,13 +26,12 @@ namespace block
   
     bool hasTransparency() const;
     bool hasCollision() const;
-  
-  private:
-    ID m_TypeID;
   };
 
   class Light
   {
+    i8 m_Sunlight;
+
   public:
     Light();
     Light(i8 sunlight);
@@ -40,8 +41,5 @@ namespace block
     i8 sunlight() const;
 
     static constexpr i32 MaxValue() { return 15; }
-
-  private:
-    i8 m_Sunlight;
   };
 };

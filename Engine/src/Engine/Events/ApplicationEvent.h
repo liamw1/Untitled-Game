@@ -33,6 +33,9 @@ namespace eng::event
 
   class WindowResize
   {
+    u32 m_Width;
+    u32 m_Height;
+
   public:
     WindowResize(u32 width, u32 height);
 
@@ -42,9 +45,5 @@ namespace eng::event
 
     u32 width() const;
     u32 height() const;
-
-  private:
-    u32 m_Width;
-    u32 m_Height;
   };
 }

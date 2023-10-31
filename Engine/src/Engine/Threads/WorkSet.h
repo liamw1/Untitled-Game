@@ -6,8 +6,11 @@ namespace eng::threads
   template<Hashable Identifier, typename ReturnType>
   class WorkSet
   {
-  private:
-    using FuturesIterator = std::unordered_map<Identifier, std::future<ReturnType>>::iterator;
+    mutable std::mutex m_Mutex;
+    std::shared_ptr<ThreadPool> m_ThreadPool;
+    std::unordered_set<Identifier> m_Work;
+    std::unordered_map<Identifier, std::future<ReturnType>> m_Futures;
+    Priority m_Priority;
 
   public:
     WorkSet() = default;
@@ -63,7 +66,7 @@ namespace eng::threads
       std::vector<Identifier> finishedTasks;
 
       std::lock_guard lock(m_Mutex);
-      for (FuturesIterator it = m_Futures.begin(); it != m_Futures.end();)
+      for (auto it = m_Futures.begin(); it != m_Futures.end();)
       {
         if (!IsReady(it->second))
         {
@@ -96,12 +99,6 @@ namespace eng::threads
     }
 
   private:
-    mutable std::mutex m_Mutex;
-    std::shared_ptr<ThreadPool> m_ThreadPool;
-    std::unordered_set<Identifier> m_Work;
-    std::unordered_map<Identifier, std::future<ReturnType>> m_Futures;
-    Priority m_Priority;
-
     void submitCallback(const Identifier& id)
     {
       std::lock_guard lock(m_Mutex);

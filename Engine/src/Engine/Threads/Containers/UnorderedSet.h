@@ -6,6 +6,9 @@ namespace eng::threads
     requires std::movable<V>
   class UnorderedSet : private NonCopyable, NonMovable
   {
+    mutable std::shared_mutex m_Mutex;
+    std::unordered_set<V> m_Data;
+
   public:
     UnorderedSet() = default;
 
@@ -101,9 +104,5 @@ namespace eng::threads
       std::shared_lock lock(m_Mutex);
       return m_Data.size();
     }
-
-  private:
-    mutable std::shared_mutex m_Mutex;
-    std::unordered_set<V> m_Data;
   };
 }

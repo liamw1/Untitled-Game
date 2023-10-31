@@ -9,6 +9,9 @@ namespace eng::math
   template<typename T, std::integral IntType>
   class ArrayBoxStrip
   {
+    T* m_Begin;
+    i32 m_Offset;
+
   public:
     ArrayBoxStrip(T* begin, i32 offset)
       : m_Begin(begin), m_Offset(offset) {}
@@ -17,15 +20,15 @@ namespace eng::math
     const T& operator[](IntType index) const { return m_Begin[index - m_Offset]; }
 
   private:
-    T* m_Begin;
-    i32 m_Offset;
-
     ~ArrayBoxStrip() = default;
   };
 
   template<typename T, std::integral IntType>
   class ArrayBoxLayer
   {
+    T* m_Begin;
+    IBox2<IntType> m_Bounds;
+
   public:
     ArrayBoxLayer(T* begin, const IBox2<IntType>& bounds)
       : m_Begin(begin), m_Bounds(bounds) {}
@@ -38,9 +41,6 @@ namespace eng::math
     }
 
   private:
-    T* m_Begin;
-    IBox2<IntType> m_Bounds;
-
     ~ArrayBoxLayer() = default;
   };
 
@@ -58,11 +58,15 @@ namespace eng::math
   template<typename T, std::integral IntType>
   class ArrayBox : private NonCopyable
   {
+    IBox3<IntType> m_Bounds;
+    IVec2<i32> m_Strides;
+    i32 m_Offset;
+    T* m_Data;
+
   public:
     using Layer = ArrayBoxLayer<T, IntType>;
     using Strip = ArrayBoxStrip<T, IntType>;
 
-  public:
     ArrayBox(const IBox3<IntType>& bounds, AllocationPolicy policy)
       : m_Data(nullptr)
     {
@@ -235,11 +239,5 @@ namespace eng::math
       delete[] m_Data;
       m_Data = nullptr;
     }
-
-  private:
-    IBox3<IntType> m_Bounds;
-    IVec2<i32> m_Strides;
-    i32 m_Offset;
-    T* m_Data;
   };
 }

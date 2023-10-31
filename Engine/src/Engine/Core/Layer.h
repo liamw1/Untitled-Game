@@ -6,6 +6,9 @@ namespace eng
 {
   class Layer
   {
+  protected:
+    std::string m_DebugName;
+
   public:
     Layer(const std::string& debugName = "Layer")
     : m_DebugName(debugName) {}
@@ -17,8 +20,5 @@ namespace eng
     virtual void onEvent(event::Event& /*event*/) {}
 
     const std::string& getName() const { return m_DebugName; }
-
-  protected:
-    std::string m_DebugName;
   };
 }

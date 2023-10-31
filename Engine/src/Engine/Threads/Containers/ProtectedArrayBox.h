@@ -9,6 +9,10 @@ namespace eng::threads
   template<typename T, std::integral IntType>
   class ProtectedArrayBox : private NonCopyable, NonMovable
   {
+    mutable std::shared_mutex m_Mutex;
+    math::ArrayBox<T, IntType> m_ArrayBox;
+    T m_DefaultValue;
+
   public:
     ProtectedArrayBox(const math::IBox3<IntType>& bounds, const T& defaultValue)
       : m_ArrayBox(bounds, AllocationPolicy::Deferred), m_DefaultValue(defaultValue) {}
@@ -105,10 +109,6 @@ namespace eng::threads
     }
 
   private:
-    mutable std::shared_mutex m_Mutex;
-    math::ArrayBox<T, IntType> m_ArrayBox;
-    T m_DefaultValue;
-
     void allocateAndFillWithDefaultValue()
     {
       m_ArrayBox.allocate();

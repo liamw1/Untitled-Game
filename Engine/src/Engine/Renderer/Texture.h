@@ -10,6 +10,8 @@ namespace eng
 {
   class Image : private NonCopyable, NonMovable
   {
+    math::ArrayBox<u8, i32> m_Data;
+
   public:
     Image(const std::filesystem::path& path);
 
@@ -21,9 +23,6 @@ namespace eng
     const u8* data() const;
 
     math::Float4 averageColor() const;
-
-  private:
-    math::ArrayBox<u8, i32> m_Data;
   };
 
 

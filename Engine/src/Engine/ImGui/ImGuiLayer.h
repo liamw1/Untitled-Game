@@ -5,6 +5,8 @@ namespace eng
 {
   class ImGuiLayer : public Layer
   {
+    bool m_BlockEvents = true;
+
   public:
     ImGuiLayer();
 
@@ -18,8 +20,6 @@ namespace eng
     void blockEvents(bool isBlocking);
 
   private:
-    bool m_BlockEvents = true;
-
     void setDarkThemeColors();
   };
 }

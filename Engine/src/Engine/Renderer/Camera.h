@@ -8,6 +8,19 @@ namespace eng
   public:
     enum class ProjectionType { Perspective, Orthographic };
 
+  private:
+    math::Mat4 m_Projection;
+    ProjectionType m_ProjectionType;
+
+    // Shared parameters
+    f32 m_AspectRatio;
+    f32 m_NearClip;
+    f32 m_FarClip;
+
+    // Projection-specific parameters
+    math::Angle m_FOV;
+    f32 m_OrthographicSize;
+
   public:
     Camera();
 
@@ -31,18 +44,6 @@ namespace eng
     void setViewportSize(u32 width, u32 height);
 
   private:
-    math::Mat4 m_Projection;
-    ProjectionType m_ProjectionType;
-
-    // Shared parameters
-    f32 m_AspectRatio;
-    f32 m_NearClip;
-    f32 m_FarClip;
-
-    // Projection-specific parameters
-    math::Angle m_FOV;
-    f32 m_OrthographicSize;
-
     void recalculateProjection();
     void recalculateOrthographicProjection();
     void recalculatePerspectiveProjection();

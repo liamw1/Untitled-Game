@@ -13,17 +13,6 @@ namespace eng
   */
   class MoveOnlyFunction : private NonCopyable
   {
-  public:
-    MoveOnlyFunction() = default;
-
-    template<InvocableWithReturnType<void> F>
-      requires std::movable<F>
-    MoveOnlyFunction(F&& f)
-      : m_TypeErasedFunction(new FunctionModel<F>(std::move(f))) {}
-
-    void operator()() { m_TypeErasedFunction->call(); }
-  
-  private:
     class FunctionConcept
     {
     public:
@@ -46,5 +35,15 @@ namespace eng
     };
   
     std::unique_ptr<FunctionConcept> m_TypeErasedFunction;
+
+  public:
+    MoveOnlyFunction() = default;
+
+    template<InvocableWithReturnType<void> F>
+      requires std::movable<F>
+    MoveOnlyFunction(F&& f)
+      : m_TypeErasedFunction(new FunctionModel<F>(std::move(f))) {}
+
+    void operator()() { m_TypeErasedFunction->call(); }
   };
 }

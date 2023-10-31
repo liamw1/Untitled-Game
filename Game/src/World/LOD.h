@@ -124,6 +124,14 @@ namespace lod
       GlobalBox boundingBox() const;
     };
 
+  private:
+    static constexpr i32 c_MaxNodeDepth = 12;
+    static constexpr u64 c_RootNodeSize = eng::pow2(c_MaxNodeDepth);
+    static constexpr GlobalIndex c_RootNodeAnchor = -static_cast<globalIndex_t>(c_RootNodeSize / 2) * GlobalIndex(1, 1, 1);
+
+    // Root node of the tree
+    Node m_Root;
+
   public:
     Octree();
 
@@ -154,13 +162,6 @@ namespace lod
     static constexpr i32 MaxNodeDepth() { return c_MaxNodeDepth; }
 
   private:
-    static constexpr i32 c_MaxNodeDepth = 12;
-    static constexpr u64 c_RootNodeSize = eng::pow2(c_MaxNodeDepth);
-    static constexpr GlobalIndex c_RootNodeAnchor = -static_cast<globalIndex_t>(c_RootNodeSize / 2) * GlobalIndex(1, 1, 1);
-
-    // Root node of the tree
-    Node m_Root;
-
     /*
       Helper functions for node searching.
     */

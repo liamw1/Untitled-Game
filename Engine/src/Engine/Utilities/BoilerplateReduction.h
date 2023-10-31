@@ -31,11 +31,6 @@
   Automatically defines all versions of begin/end iterators based on a stored container.
   Container type must have all iterators defined.
 
-  For this macro to function, it must be defined below the declaration of the container.
-  Because of this, we allow an exception to the normal guidelines aroud access specifiers.
-  You may define private members at the beginning of the class definitions, or define the
-  macro in a public: section at the end of the class definition.
-
   Example:
     template<typenameT>
     class VectorWrapper

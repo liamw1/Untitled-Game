@@ -5,6 +5,8 @@ namespace noise
   template<i32 N>
   class OctaveNoiseData
   {
+    std::array<length_t, N> m_Octaves;
+
   public:
     OctaveNoiseData() = default;
     OctaveNoiseData(const std::array<length_t, N>& noiseData)
@@ -22,9 +24,6 @@ namespace noise
     }
 
     static i32 Levels() { return N; }
-
-  private:
-    std::array<length_t, N> m_Octaves;
   };
 
   /*

@@ -21,6 +21,8 @@ namespace eng
   template<IterableEnum E>
   class EnumIterator
   {
+    std::underlying_type_t<E> m_Value;
+
   public:
     constexpr EnumIterator()
       : EnumIterator(E::First) {}
@@ -38,15 +40,14 @@ namespace eng
     constexpr EnumIterator begin() const { return EnumIterator(E::First); }
     constexpr EnumIterator next() const { return ++clone(*this); }
     constexpr EnumIterator end() const { return ++EnumIterator(E::Last); }
-
-  private:
-    std::underlying_type_t<E> m_Value;
   };
 
   // ===================== Arrays Indexable by Enum Classes ====================== //
   template<typename T, IterableEnum E>
   class EnumArray
   {
+    std::array<T, enumRange<E>()> m_Data;
+
   public:
     constexpr EnumArray() = default;
     constexpr EnumArray(const T& initialValue) { algo::fill(m_Data, initialValue); }
@@ -61,10 +62,6 @@ namespace eng
 
     constexpr size_t size() { return m_Data.size(); }
 
-  private:
-    std::array<T, enumRange<E>()> m_Data;
-
-  public:
     ENG_DEFINE_CONSTEXPR_ITERATORS(m_Data);
   };
 }

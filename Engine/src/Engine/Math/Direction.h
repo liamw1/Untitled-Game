@@ -61,6 +61,8 @@ namespace eng::math
 
   class DirectionBitMask
   {
+    u8 m_Data;
+
   public:
     constexpr DirectionBitMask()
       : m_Data(0) {}
@@ -68,8 +70,5 @@ namespace eng::math
     constexpr bool operator[](Direction direction) const { return (m_Data >> static_cast<i32>(direction)) & 0x1; }
     constexpr bool empty() const { return m_Data == 0; }
     constexpr void set(Direction direction) { m_Data |= u8Bit(static_cast<i32>(direction)); }
-
-  private:
-    u8 m_Data;
   };
 }

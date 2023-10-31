@@ -19,7 +19,7 @@ namespace eng::debug
     m_OutputStream.open(filepath);
     if (m_OutputStream.is_open())
     {
-      m_CurrentSession = new InstrumentationSession({ name });
+      m_CurrentSession = name;
       writeHeader();
     }
   }
@@ -63,7 +63,7 @@ namespace eng::debug
   }
 
   Instrumentor::Instrumentor()
-    : m_CurrentSession(nullptr) {}
+    : m_CurrentSession(std::nullopt) {}
 
   Instrumentor::~Instrumentor()
   {
@@ -88,8 +88,7 @@ namespace eng::debug
     {
       writeFooter();
       m_OutputStream.close();
-      delete m_CurrentSession;
-      m_CurrentSession = nullptr;
+      m_CurrentSession.reset();
     }
   }
 

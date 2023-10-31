@@ -15,10 +15,14 @@ namespace eng::math
   template<typename T, std::integral IntType>
   class ArrayRect : private NonCopyable
   {
+    IBox2<IntType> m_Bounds;
+    i32 m_Stride;
+    i32 m_Offset;
+    T* m_Data;
+
   public:
     using Strip = ArrayBoxStrip<T, IntType>;
 
-  public:
     ArrayRect(const IBox2<IntType>& bounds, AllocationPolicy policy)
       : m_Data(nullptr)
     {
@@ -183,11 +187,5 @@ namespace eng::math
       delete[] m_Data;
       m_Data = nullptr;
     }
-
-  private:
-    IBox2<IntType> m_Bounds;
-    i32 m_Stride;
-    i32 m_Offset;
-    T* m_Data;
   };
 }

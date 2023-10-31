@@ -11,6 +11,12 @@ struct RayIntersection
 
 class World
 {
+  static constexpr length_t c_MinDistanceToWall = 0.01_m * block::length();
+
+  ChunkManager m_ChunkManager;
+  RayIntersection m_PlayerRayCast;
+  bool m_RenderingPaused = false;
+
 public:
   void initialize();
 
@@ -19,14 +25,6 @@ public:
   void onEvent(eng::event::Event& event);
 
 private:
-  static constexpr length_t c_MinDistanceToWall = 0.01_m * block::length();
-
-  bool m_RenderingPaused = false;
-
-  ChunkManager m_ChunkManager;
-
-  RayIntersection m_PlayerRayCast;
-
   /*
     \returns The first intersection between the given line segment AB and a solid block Face.
   */

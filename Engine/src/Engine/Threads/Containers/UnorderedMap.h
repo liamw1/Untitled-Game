@@ -7,7 +7,8 @@ namespace eng::threads
     requires std::is_default_constructible_v<K> && std::move_constructible<K>
   class UnorderedMap : private NonCopyable, NonMovable
   {
-    using const_iterator = std::unordered_map<K, std::shared_ptr<V>>::const_iterator;
+    mutable std::shared_mutex m_Mutex;
+    std::unordered_map<K, std::shared_ptr<V>> m_Data;
 
   public:
     UnorderedMap() = default;
@@ -50,7 +51,7 @@ namespace eng::threads
     std::shared_ptr<V> get(const K& key) const
     {
       std::shared_lock lock(m_Mutex);
-      const_iterator mapPosition = m_Data.find(key);
+      auto mapPosition = m_Data.find(key);
       std::shared_ptr<V> copy = mapPosition == m_Data.end() ? nullptr : mapPosition->second;
       return copy;
     }
@@ -90,9 +91,5 @@ namespace eng::threads
       std::shared_lock lock(m_Mutex);
       return m_Data.size();
     }
-
-  private:
-    mutable std::shared_mutex m_Mutex;
-    std::unordered_map<K, std::shared_ptr<V>> m_Data;
   };
 }

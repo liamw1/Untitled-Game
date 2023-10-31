@@ -9,6 +9,11 @@ class Chunk : private eng::NonCopyable, eng::NonMovable
 {
   static constexpr blockIndex_t c_ChunkSize = 32;
 
+  ProtectedBlockArrayBox<block::Type> m_Composition;
+  ProtectedBlockArrayBox<block::Light> m_Lighting;
+  std::atomic<u16> m_NonOpaqueFaces;
+  const GlobalIndex m_GlobalIndex;
+
 public:
   Chunk() = delete;
   Chunk(const GlobalIndex& chunkIndex);
@@ -58,10 +63,4 @@ public:
   static constexpr BlockBox Bounds() { return BlockBox(0, Size() - 1); }
   static constexpr BlockRect Bounds2D() { return BlockRect(0, Size() - 1); }
   static constexpr GlobalBox Stencil(const GlobalIndex& chunkIndex) { return GlobalBox(-1, 1) + chunkIndex; }
-
-private:
-  ProtectedBlockArrayBox<block::Type> m_Composition;
-  ProtectedBlockArrayBox<block::Light> m_Lighting;
-  std::atomic<u16> m_NonOpaqueFaces;
-  const GlobalIndex m_GlobalIndex;
 };

@@ -5,6 +5,12 @@ namespace eng
 {
   class OpenGLTexture : public Texture
   {
+    u32 m_Width;
+    u32 m_Height;
+    u32 m_RendererID;
+    u32 m_InternalFormat;
+    u32 m_DataFormat;
+
   public:
     OpenGLTexture(u32 width, u32 height);
     OpenGLTexture(const std::filesystem::path& path);
@@ -19,19 +25,19 @@ namespace eng
     void bind(u32 slot = 0) const override;
 
     bool operator==(const Texture& other) const override;
-
-  private:
-    u32 m_Width;
-    u32 m_Height;
-    u32 m_RendererID;
-    u32 m_InternalFormat;
-    u32 m_DataFormat;
   };
 
 
 
   class OpenGLTextureArray : public TextureArray
   {
+    u32 m_MaxTextures;
+    u32 m_TextureSize;
+    u32 m_TextureCount;
+    u32 m_RendererID;
+    u32 m_InternalFormat;
+    u32 m_DataFormat;
+
   public:
     OpenGLTextureArray(u32 textureCount, u32 textureSize);
     ~OpenGLTextureArray();
@@ -40,13 +46,5 @@ namespace eng
 
     void addTexture(const std::filesystem::path& path) override;
     void addTexture(const Image& image) override;
-
-  private:
-    u32 m_MaxTextures;
-    u32 m_TextureSize;
-    u32 m_TextureCount;
-    u32 m_RendererID;
-    u32 m_InternalFormat;
-    u32 m_DataFormat;
   };
 }

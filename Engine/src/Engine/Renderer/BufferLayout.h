@@ -50,6 +50,9 @@ namespace eng
 
   class BufferLayout
   {
+    std::vector<BufferElement> m_Elements;
+    u32 m_Stride;
+
   public:
     BufferLayout();
     BufferLayout(const std::initializer_list<BufferElement>& elements);
@@ -57,13 +60,9 @@ namespace eng
     u32 stride() const;
     const std::vector<BufferElement>& elements() const;
 
-  private:
-    std::vector<BufferElement> m_Elements;
-    u32 m_Stride;
-
-    void calculateOffsetsAndStride();
-
-  public:
     ENG_DEFINE_CONSTEXPR_ITERATORS(m_Elements);
+
+  private:
+    void calculateOffsetsAndStride();
   };
 }

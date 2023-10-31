@@ -5,6 +5,15 @@ namespace eng
 {
   class OpenGLFramebuffer : public Framebuffer
   {
+    u32 m_RendererID;
+    FramebufferSpecification m_Specification;
+
+    std::vector<FramebufferTextureSpecification> m_ColorAttachmentSpecifications;
+    FramebufferTextureSpecification m_DepthAttachmentSpecification;
+
+    std::vector<u32> m_ColorAttachments;
+    u32 m_DepthAttachment;
+
   public:
     OpenGLFramebuffer(const FramebufferSpecification& specification);
     ~OpenGLFramebuffer();
@@ -22,15 +31,5 @@ namespace eng
 
     void clearAttachment(u32 attachmentIndex, i32 value) override;
     void clearAttachment(u32 attachmentIndex, f32 value) override;
-
-  private:
-    u32 m_RendererID;
-    FramebufferSpecification m_Specification;
-
-    std::vector<FramebufferTextureSpecification> m_ColorAttachmentSpecifications;
-    FramebufferTextureSpecification m_DepthAttachmentSpecification;
-
-    std::vector<u32> m_ColorAttachments;
-    u32 m_DepthAttachment;
   };
 }

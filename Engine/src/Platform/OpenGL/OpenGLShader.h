@@ -12,6 +12,14 @@ namespace eng
   */
   class OpenGLShader : public Shader
   {
+    u32 m_RendererID;
+    std::string m_Name;
+    std::string m_FilePath;
+
+    std::unordered_map<u32, std::vector<u32>> m_VulkanSPIRV;
+    std::unordered_map<u32, std::vector<u32>> m_OpenGLSPIRV;
+    std::unordered_map<u32, std::string> m_OpenGLSourceCode;
+
   public:
     OpenGLShader(const std::string& filepath, const std::unordered_map<std::string, std::string>& preprocessorDefinitions);
     ~OpenGLShader();
@@ -22,14 +30,6 @@ namespace eng
     void unBind() const override;
 
   private:
-    u32 m_RendererID;
-    std::string m_Name;
-    std::string m_FilePath;
-
-    std::unordered_map<u32, std::vector<u32>> m_VulkanSPIRV;
-    std::unordered_map<u32, std::vector<u32>> m_OpenGLSPIRV;
-    std::unordered_map<u32, std::string> m_OpenGLSourceCode;
-
     void compileVulkanBinaries(const std::unordered_map<std::string, std::string>& shaderSources);
     void compileOpenGLBinaries();
     void createProgram();

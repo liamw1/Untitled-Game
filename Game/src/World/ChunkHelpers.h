@@ -16,15 +16,14 @@
 */
 class ChunkVertex
 {
+  u32 m_VertexData;
+  u32 m_LightingData;
+
 public:
   ChunkVertex();
   ChunkVertex(const BlockIndex& vertexPlacement, i32 quadIndex, block::TextureID texture, i32 sunlight, i32 ambientOcclusion);
 
   static const BlockIndex& GetOffset(eng::math::Direction face, i32 quadIndex);
-
-private:
-  u32 m_VertexData;
-  u32 m_LightingData;
 };
 
 /*
@@ -33,11 +32,10 @@ private:
 */
 class ChunkQuad
 {
+  std::array<ChunkVertex, 4> m_Vertices;
+
 public:
   ChunkQuad(const BlockIndex& blockIndex, eng::math::Direction face, block::TextureID texture, const std::array<i32, 4>& sunlight, const std::array<i32, 4>& ambientOcclusion);
-
-private:
-  std::array<ChunkVertex, 4> m_Vertices;
 };
 
 /*
@@ -46,21 +44,28 @@ private:
 */
 class ChunkVoxel
 {
+  BlockIndex m_Index;
+  eng::math::DirectionBitMask m_EnabledFaces;
+  i32 m_BaseVertex;
+
 public:
   ChunkVoxel(const BlockIndex& blockIndex, eng::math::DirectionBitMask enabledFaces, i32 firstVertex);
 
   const BlockIndex& index() const;
   bool faceEnabled(eng::math::Direction direction) const;
   i32 baseVertex() const;
-
-private:
-  BlockIndex m_Index;
-  eng::math::DirectionBitMask m_EnabledFaces;
-  i32 m_BaseVertex;
 };
 
 class ChunkDrawCommand : public eng::MultiDrawIndexedCommand<GlobalIndex, ChunkDrawCommand>
 {
+  std::vector<ChunkQuad> m_Quads;
+  std::vector<ChunkVoxel> m_Voxels;
+  std::vector<u32> m_Indices;
+  BlockIndex m_SortState;
+  bool m_NeedsSorting;
+
+  i32 m_VoxelBaseVertex;
+
 public:
   ChunkDrawCommand(const GlobalIndex& chunkIndex, bool needsSorting);
 
@@ -86,14 +91,6 @@ public:
   bool sort(const GlobalIndex& originIndex, const eng::math::Vec3& viewPosition);
 
 private:
-  std::vector<ChunkQuad> m_Quads;
-  std::vector<ChunkVoxel> m_Voxels;
-  std::vector<u32> m_Indices;
-  BlockIndex m_SortState;
-  bool m_NeedsSorting;
-
-  i32 m_VoxelBaseVertex;
-
   void addQuadIndices(i32 baseVertex);
   void reorderIndices(const GlobalIndex& originIndex, const eng::math::Vec3& viewPosition);
 };

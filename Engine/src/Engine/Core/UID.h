@@ -7,16 +7,15 @@ namespace eng
   */
   class UID
   {
+    u64 m_LowerUID;
+    u64 m_UpperUID;
+
   public:
     UID();
 
     std::string toString();
 
     size_t hash() const;
-
-  private:
-    u64 m_LowerUID;
-    u64 m_UpperUID;
   };
 }
 

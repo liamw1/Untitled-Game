@@ -6,7 +6,8 @@ namespace eng::threads
   template<Hashable K, typename V>
   class LRUCache : private NonCopyable, NonMovable
   {
-    using const_iterator = eng::LRUCache<K, std::shared_ptr<V>>::const_iterator;
+    std::mutex m_Mutex;
+    eng::LRUCache<K, std::shared_ptr<V>> m_Cache;
 
   public:
     LRUCache(i32 size)
@@ -31,12 +32,8 @@ namespace eng::threads
     std::shared_ptr<V> get(const K& key)
     {
       std::lock_guard lock(m_Mutex);
-      const_iterator cachePosition = m_Cache.find(key);
+      auto cachePosition = m_Cache.find(key);
       return cachePosition == m_Cache.end() ? nullptr : cachePosition->second;
     }
-
-  private:
-    std::mutex m_Mutex;
-    eng::LRUCache<K, std::shared_ptr<V>> m_Cache;
   };
 }

@@ -24,6 +24,10 @@ namespace eng::debug
 {
   class Instrumentor : private NonCopyable, NonMovable
   {
+    std::mutex m_Mutex;
+    std::optional<std::string> m_CurrentSession;
+    std::ofstream m_OutputStream;
+
   public:
     void beginSession(const std::string& name, const std::string& filepath = "results.json");
     void endSession();
@@ -33,15 +37,6 @@ namespace eng::debug
     static Instrumentor& Get();
 
   private:
-    struct InstrumentationSession
-    {
-      std::string name;
-    };
-
-    std::mutex m_Mutex;
-    InstrumentationSession* m_CurrentSession;
-    std::ofstream m_OutputStream;
-
     Instrumentor();
     ~Instrumentor();
 
@@ -56,15 +51,14 @@ namespace eng::debug
 
   class InstrumentationTimer
   {
+    const char* m_Name;
+    std::chrono::steady_clock::time_point m_StartTimepoint;
+    bool m_Stopped;
+
   public:
     InstrumentationTimer(const char* name);
     ~InstrumentationTimer();
 
     void stop();
-
-  private:
-    const char* m_Name;
-    std::chrono::steady_clock::time_point m_StartTimepoint;
-    bool m_Stopped;
   };
 }

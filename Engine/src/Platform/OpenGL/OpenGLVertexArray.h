@@ -6,6 +6,11 @@ namespace eng
 {
   class OpenGLVertexArray : public VertexArray
   {
+    u32 m_RendererID;
+    BufferLayout m_VertexBufferLayout;
+    std::optional<IndexBuffer> m_IndexBuffer;
+    std::shared_ptr<StorageBuffer> m_VertexBuffer;
+
   public:
     OpenGLVertexArray();
     ~OpenGLVertexArray();
@@ -25,11 +30,5 @@ namespace eng
 
     const BufferLayout& getLayout() const override;
     const std::optional<IndexBuffer>& getIndexBuffer() const override;
-
-  private:
-    u32 m_RendererID;
-    BufferLayout m_VertexBufferLayout;
-    std::optional<IndexBuffer> m_IndexBuffer;
-    std::shared_ptr<StorageBuffer> m_VertexBuffer;
   };
 }

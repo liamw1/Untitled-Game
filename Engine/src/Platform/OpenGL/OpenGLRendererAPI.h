@@ -5,6 +5,16 @@ namespace eng
 {
   class OpenGLRendererAPI : public RendererAPI
   {
+    bool m_BlendingEnabled;
+    bool m_DepthOffsetEnabled;
+    bool m_DepthTestingEnabled;
+    bool m_DepthWritingEnabled;
+    bool m_FaceCullingEnabled;
+    bool m_WireFrameEnabled;
+
+    f32 m_DepthOffsetFactor;
+    f32 m_DepthOffsetUnits;
+
   public:
     OpenGLRendererAPI();
 
@@ -28,16 +38,5 @@ namespace eng
 
     void multiDrawVertices(const void* drawCommands, i32 drawCount, i32 stride) override;
     void multiDrawIndexed(const void* drawCommands, i32 drawCount, i32 stride) override;
-
-  private:
-    bool m_BlendingEnabled;
-    bool m_DepthOffsetEnabled;
-    bool m_DepthTestingEnabled;
-    bool m_DepthWritingEnabled;
-    bool m_FaceCullingEnabled;
-    bool m_WireFrameEnabled;
-
-    f32 m_DepthOffsetFactor;
-    f32 m_DepthOffsetUnits;
   };
 }

@@ -9,6 +9,8 @@ namespace eng::math
 {
   class Angle
   {
+    rad_t m_Degrees;
+
   public:
     constexpr Angle()
       : Angle(0) {}
@@ -58,8 +60,6 @@ namespace eng::math
     static constexpr Angle FromRad(f64 rad) { return Angle(c_RadToDegreeFac * static_cast<rad_t>(rad)); }
   
   private:
-    rad_t m_Degrees;
-  
     static constexpr rad_t c_DegreeToRadFac = static_cast<rad_t>(0.0174532925199432957692369076848861271344287188854L);
     static constexpr rad_t c_RadToDegreeFac = static_cast<rad_t>(57.295779513082320876798154814105170332405472466564L);
   };

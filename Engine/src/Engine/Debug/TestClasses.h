@@ -4,17 +4,6 @@ namespace eng::debug
 {
   class CopyMoveTest
   {
-  public:
-    CopyMoveTest();
-    ~CopyMoveTest();
-
-    CopyMoveTest(CopyMoveTest&& other) noexcept;
-    CopyMoveTest& operator=(CopyMoveTest&& other) noexcept;
-
-    CopyMoveTest(const CopyMoveTest& other);
-    CopyMoveTest& operator=(const CopyMoveTest& other);
-
-  private:
     struct Counters
     {
       std::atomic<i32> moves = 0;
@@ -27,5 +16,15 @@ namespace eng::debug
     };
 
     std::shared_ptr<Counters> m_Counters;
+
+  public:
+    CopyMoveTest();
+    ~CopyMoveTest();
+
+    CopyMoveTest(CopyMoveTest&& other) noexcept;
+    CopyMoveTest& operator=(CopyMoveTest&& other) noexcept;
+
+    CopyMoveTest(const CopyMoveTest& other);
+    CopyMoveTest& operator=(const CopyMoveTest& other);
   };
 }

@@ -7,13 +7,12 @@ namespace eng
 {
   class OpenGLContext : public GraphicsContext
   {
+    GLFWwindow* m_WindowHandle;
+
   public:
     OpenGLContext(GLFWwindow* windowHandle);
 
     void initialize() override;
     void swapBuffers() override;
-
-  private:
-    GLFWwindow* m_WindowHandle;
   };
 }

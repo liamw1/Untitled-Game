@@ -8,6 +8,20 @@ namespace eng
 {
   class WindowsWindow : public Window
   {
+    struct WindowData
+    {
+      std::string title;
+      u32 width = 0;
+      u32 height = 0;
+      bool VSync = false;
+
+      EventCallbackFn eventCallback;
+    };
+
+    WindowData m_Data;
+    GLFWwindow* m_Window;
+    std::unique_ptr<GraphicsContext> m_Context;
+
   public:
     WindowsWindow(const WindowProps& properties);
     ~WindowsWindow();
@@ -28,20 +42,6 @@ namespace eng
     void* getNativeWindow() const override;
 
   private:
-    struct WindowData
-    {
-      std::string title;
-      u32 width = 0;
-      u32 height = 0;
-      bool VSync = false;
-
-      EventCallbackFn eventCallback;
-    };
-
-    WindowData m_Data;
-    GLFWwindow* m_Window;
-    std::unique_ptr<GraphicsContext> m_Context;
-
     void initialize(const WindowProps& properties);
     void shutdown();
   };

@@ -6,6 +6,9 @@ namespace eng::event
 {
   class KeyPress
   {
+    input::Key m_Key;
+    bool m_IsRepeat;
+
   public:
     KeyPress(input::Key key, bool isRepeat = false);
 
@@ -15,14 +18,12 @@ namespace eng::event
 
     input::Key keyCode() const;
     bool isRepeat() const;
-
-  private:
-    input::Key m_Key;
-    bool m_IsRepeat;
   };
 
   class KeyRelease
   {
+    input::Key m_Key;
+
   public:
     KeyRelease(input::Key key);
 
@@ -31,13 +32,12 @@ namespace eng::event
     std::string toString() const;
 
     input::Key keyCode() const;
-
-  private:
-    input::Key m_Key;
   };
 
   class KeyType
   {
+    input::Key m_Key;
+
   public:
     KeyType(input::Key key);
 
@@ -46,8 +46,5 @@ namespace eng::event
     std::string toString() const;
 
     input::Key keyCode() const;
-
-  private:
-    input::Key m_Key;
   };
 }

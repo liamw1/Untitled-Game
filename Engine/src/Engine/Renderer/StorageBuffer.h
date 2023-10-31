@@ -13,7 +13,6 @@ namespace eng
       SSBO
     };
 
-  public:
     virtual ~StorageBuffer();
 
     virtual void bind() const = 0;

@@ -14,6 +14,15 @@ namespace eng
   template<Hashable Identifier, typename Derived>
   class MultiDrawCommand : private NonCopyable
   {
+  protected:
+    u32 m_VertexCount;
+    u32 m_InstanceCount;
+    u32 m_FirstVertex;
+    u32 m_BaseInstance;
+
+    Identifier m_ID;
+    std::shared_ptr<size_t> m_CommandIndex;
+
   public:
     MultiDrawCommand(const Identifier& id, i32 vertexCount)
       : m_VertexCount(vertexCount),
@@ -37,15 +46,6 @@ namespace eng
 
     const void* vertexData() const { return static_cast<Derived*>(this)->vertexData(); }
     void prune() { return static_cast<Derived*>(this)->prune(); }
-
-  protected:
-    u32 m_VertexCount;
-    u32 m_InstanceCount;
-    u32 m_FirstVertex;
-    u32 m_BaseInstance;
-
-    Identifier m_ID;
-    std::shared_ptr<size_t> m_CommandIndex;
   };
 
   /*
@@ -56,6 +56,16 @@ namespace eng
   template<Hashable Identifier, typename Derived>
   class MultiDrawIndexedCommand : private NonCopyable
   {
+  protected:
+    u32 m_IndexCount;
+    u32 m_InstanceCount;
+    u32 m_FirstIndex;
+    i32 m_BaseVertex;
+    u32 m_BaseInstance;
+
+    Identifier m_ID;
+    std::shared_ptr<size_t> m_CommandIndex;
+
   public:
     MultiDrawIndexedCommand(const Identifier& id, u32 indexCount)
       : m_IndexCount(indexCount),
@@ -84,16 +94,6 @@ namespace eng
     const void* indexData() { return static_cast<Derived*>(this)->indexData(); }
     const void* vertexData() { return static_cast<Derived*>(this)->vertexData(); }
     void prune() { return static_cast<Derived*>(this)->prune(); }
-
-  protected:
-    u32 m_IndexCount;
-    u32 m_InstanceCount;
-    u32 m_FirstIndex;
-    i32 m_BaseVertex;
-    u32 m_BaseInstance;
-
-    Identifier m_ID;
-    std::shared_ptr<size_t> m_CommandIndex;
   };
 
   namespace detail
@@ -122,6 +122,14 @@ namespace eng
   public:
     using Identifier = detail::IDType<DrawCommandType>;
 
+  private:
+    i32 m_Stride;
+    MemoryPool m_MemoryPool;
+    std::unique_ptr<VertexArray> m_VertexArray;
+    std::vector<DrawCommandType> m_DrawCommands;
+    std::unordered_map<Identifier, std::shared_ptr<size_t>> m_DrawCommandIndices;
+
+  public:
     MultiDrawArray(const BufferLayout& layout)
       : m_Stride(layout.stride()),
         m_MemoryPool(StorageBuffer::Type::VertexBuffer)
@@ -219,12 +227,6 @@ namespace eng
     using DrawCommandIterator = std::vector<DrawCommandType>::iterator;
     using DrawCommandIndicesIterator = std::unordered_map<Identifier, std::shared_ptr<size_t>>::iterator;
 
-    i32 m_Stride;
-    MemoryPool m_MemoryPool;
-    std::unique_ptr<VertexArray> m_VertexArray;
-    std::vector<DrawCommandType> m_DrawCommands;
-    std::unordered_map<Identifier, std::shared_ptr<size_t>> m_DrawCommandIndices;
-
     MemoryPool::address_t getDrawCommandAddress(const DrawCommandType& drawCommand)
     {
       return drawCommand.firstVertex() * m_Stride;
@@ -249,6 +251,15 @@ namespace eng
   public:
     using Identifier = detail::IDType<DrawCommandType>;
 
+  private:
+    i32 m_Stride;
+    MemoryPool m_IndexMemory;
+    MemoryPool m_VertexMemory;
+    std::unique_ptr<VertexArray> m_VertexArray;
+    std::vector<DrawCommandType> m_DrawCommands;
+    std::unordered_map<Identifier, std::shared_ptr<size_t>> m_DrawCommandIndices;
+
+  public:
     MultiDrawIndexedArray(const BufferLayout& layout)
       : m_Stride(layout.stride()),
         m_IndexMemory(StorageBuffer::Type::IndexBuffer),
@@ -351,13 +362,6 @@ namespace eng
   private:
     using DrawCommandIterator = std::vector<DrawCommandType>::iterator;
     using DrawCommandIndicesIterator = std::unordered_map<Identifier, std::shared_ptr<size_t>>::iterator;
-
-    i32 m_Stride;
-    MemoryPool m_IndexMemory;
-    MemoryPool m_VertexMemory;
-    std::unique_ptr<VertexArray> m_VertexArray;
-    std::vector<DrawCommandType> m_DrawCommands;
-    std::unordered_map<Identifier, std::shared_ptr<size_t>> m_DrawCommandIndices;
 
     MemoryPool::address_t getDrawCommandIndicesAddress(const DrawCommandType& drawCommand)
     {

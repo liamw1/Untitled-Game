@@ -19,6 +19,15 @@ namespace eng
 
   class Application
   {
+    static Application* s_Instance;
+    ApplicationCommandLineArgs m_CommandLineArgs;
+    std::unique_ptr<Window> m_Window;
+    std::unique_ptr<ImGuiLayer> m_ImGuiLayer;
+    LayerStack m_LayerStack;
+    bool m_Running;
+    bool m_Minimized;
+    std::chrono::steady_clock::time_point m_LastFrameTime;
+
   public:
     Application(const std::string& name = "Engine", ApplicationCommandLineArgs args = ApplicationCommandLineArgs());
     virtual ~Application();
@@ -36,15 +45,6 @@ namespace eng
     static Application& Get();
 
   private:
-    static Application* s_Instance;
-    ApplicationCommandLineArgs m_CommandLineArgs;
-    std::unique_ptr<Window> m_Window;
-    std::unique_ptr<ImGuiLayer> m_ImGuiLayer;
-    LayerStack m_LayerStack;
-    bool m_Running;
-    bool m_Minimized;
-    std::chrono::steady_clock::time_point m_LastFrameTime;
-
     void run();
 
     bool onWindowClose(event::WindowClose& event);

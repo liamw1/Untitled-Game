@@ -7,6 +7,9 @@ namespace terrain
 {
   class CompoundSurfaceData
   {
+    length_t m_Elevation;
+    CompoundType<block::Type, 4> m_Components;
+
   public:
     CompoundSurfaceData();
     CompoundSurfaceData(length_t surfaceElevation, block::ID blockType);
@@ -19,10 +22,6 @@ namespace terrain
 
     std::array<i32, 2> getTextureIndices() const;
     eng::math::Float2 getTextureWeights() const;
-
-  private:
-    length_t m_Elevation;
-    CompoundType<block::Type, 4> m_Components;
   };
 
   inline CompoundSurfaceData operator*(length_t x, const CompoundSurfaceData& other) { return other * static_cast<f32>(x); }

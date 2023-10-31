@@ -7,6 +7,12 @@ namespace eng::threads
 {
   class ThreadPool
   {
+    bool m_Stop;
+    mutable std::mutex m_Mutex;
+    std::condition_variable m_Condition;
+    std::vector<std::thread> m_Threads;
+    EnumArray<std::queue<MoveOnlyFunction>, Priority> m_Work;
+
   public:
     ThreadPool(i32 numThreads);
     ~ThreadPool();
@@ -39,12 +45,6 @@ namespace eng::threads
     void shutdown();
 
   private:
-    bool m_Stop;
-    mutable std::mutex m_Mutex;
-    std::condition_variable m_Condition;
-    std::vector<std::thread> m_Threads;
-    EnumArray<std::queue<MoveOnlyFunction>, Priority> m_Work;
-
     using WorkIterator = decltype(m_Work)::iterator;
 
     bool hasWork();

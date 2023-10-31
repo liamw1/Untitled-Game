@@ -20,11 +20,14 @@ Engine formatting guidelines:
   Variables sent by or received from vertex shaders should be preceeded with "v_".
   Variables sent by or received from geometry shaders should be preceeded with "g_".
   Fragment shader outputs should be preceeded with "o_".
-  
-  For classes, public sections should appear first, followed by protected sections, followed by private sections.
-  Within a section, variables should appear before function declarations.
+
+  Class/structs should begin with public aliases and subclass definitions.
+  Next go all member variables in order of: static constexpr, static, non-static.
+  If defining a class with only private members, the 'private:' access specifier can be omitted.
+  Then go member function declarations in the order of: public, protected, private.
 
   Strongly prefer to keep function definitions out of header files, including trivial cases like Constructor() = default;.
+  Strongly prefer composition over inheritance.
   
   Identation should consist of two spaces.
   Curly brackets should always be on their own lines, except in the cases of empty constructors or simple inline functions.

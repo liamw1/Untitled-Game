@@ -6,6 +6,9 @@ namespace eng
 {
   class OpenGL_LegacyShader : public Shader
   {
+    u32 m_RendererID;
+    std::string m_Name;
+
   public:
     OpenGL_LegacyShader(const std::string& filepath, const std::unordered_map<std::string, std::string>& preprocessorDefinitions);
     ~OpenGL_LegacyShader();
@@ -16,9 +19,6 @@ namespace eng
     void unBind() const override;
 
   private:
-    u32 m_RendererID;
-    std::string m_Name;
-
     void compile(const std::unordered_map<std::string, std::string>& shaderSources);
   };
 }

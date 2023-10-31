@@ -10,6 +10,10 @@ public:
     f32 weight = 0.0;
   };
 
+private:
+  std::array<Component, ComponentCount> m_Components{};
+
+public:
   constexpr CompoundType()
   {
     for (Component& component : m_Components)
@@ -92,9 +96,6 @@ public:
   }
 
   static constexpr i32 MaxTypes() { return ComponentCount; }
-
-private:
-  std::array<Component, ComponentCount> m_Components{};
 };
 
 template<typename ComponentType, i32 ComponentCount>

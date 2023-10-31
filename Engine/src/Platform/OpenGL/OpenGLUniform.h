@@ -5,6 +5,14 @@ namespace eng
 {
   class OpenGLUniform : public Uniform
   {
+    static constexpr u32 c_MaxUniformBindings = 36;
+    static constexpr u32 c_MaxUniformBlockSize = 16384;
+
+    static inline std::array<u32, c_MaxUniformBindings> s_BufferSizes{};
+    static inline std::array<u32, c_MaxUniformBindings> s_RendererIDs{};
+
+    u32 m_Binding;
+
   public:
     OpenGLUniform(u32 binding, u32 size);
     ~OpenGLUniform();
@@ -13,14 +21,5 @@ namespace eng
     void unBind() const override;
 
     void set(const void* data, u32 size) override;
-
-  private:
-    static constexpr u32 c_MaxUniformBindings = 36;
-    static constexpr u32 c_MaxUniformBlockSize = 16384;
-
-    static inline std::array<u32, c_MaxUniformBindings> s_BufferSizes{};
-    static inline std::array<u32, c_MaxUniformBindings> s_RendererIDs{};
-
-    u32 m_Binding;
   };
 }

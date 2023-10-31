@@ -3,14 +3,6 @@
 
 class CameraController : public eng::EntityScript
 {
-public:
-  CameraController(eng::Entity entity);
-
-  void onUpdate(eng::Timestep timestep) override;
-
-  void onEvent(eng::event::Event& event) override;
-
-private:
   // Camera properties
   static constexpr f32 c_CameraSensitivity = 0.1f;
   static constexpr f32 c_CameraZoomSensitivity = 0.2f;
@@ -31,6 +23,14 @@ private:
   eng::Entity m_Entity;
   eng::math::Float2 m_LastMousePosition;
 
+public:
+  CameraController(eng::Entity entity);
+
+  void onUpdate(eng::Timestep timestep) override;
+
+  void onEvent(eng::event::Event& event) override;
+
+private:
   bool onMouseMove(eng::event::MouseMove& event);
   bool onMouseScroll(eng::event::MouseScroll& event);
 };

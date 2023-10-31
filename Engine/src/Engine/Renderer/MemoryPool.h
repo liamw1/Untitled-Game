@@ -19,6 +19,22 @@ namespace eng
   public:
     using address_t = u32;
 
+  private:
+    struct MemoryRegion
+    {
+      bool free;
+      i32 size;
+
+      MemoryRegion(i32 regionSize)
+        : free(true), size(regionSize) {}
+    };
+
+    std::shared_ptr<StorageBuffer> m_Buffer;
+    std::map<address_t, MemoryRegion> m_Regions;  // For fast access based on address
+    std::multimap<i32, address_t> m_FreeRegions;  // For fast access based on free region size
+    i32 m_Capacity;
+
+  public:
     MemoryPool(StorageBuffer::Type bufferType, i32 initialCapacity = 64);
 
     void bind() const;
@@ -45,24 +61,10 @@ namespace eng
     void amend(const void* data, address_t address);
 
   private:
-    struct MemoryRegion
-    {
-      bool free;
-      i32 size;
-
-      MemoryRegion(i32 regionSize)
-        : free(true), size(regionSize) {}
-    };
-
     using RegionsIterator = std::map<address_t, MemoryRegion>::iterator;
     using FreeRegionsIterator = std::multimap<i32, address_t>::iterator;
 
     static constexpr f32 c_CapacityIncreaseOnResize = 1.25f;
-
-    std::shared_ptr<StorageBuffer> m_Buffer;
-    std::map<address_t, MemoryRegion> m_Regions;  // For fast access based on address
-    std::multimap<i32, address_t> m_FreeRegions;  // For fast access based on free region size
-    i32 m_Capacity;
 
     bool isFree(RegionsIterator region) const;
     i32& regionSize(RegionsIterator region);

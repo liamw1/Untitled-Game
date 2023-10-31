@@ -17,6 +17,10 @@ namespace eng
       OpenGL_Legacy
     };
 
+  private:
+    static inline API s_API = API::OpenGL_Legacy;
+
+  public:
     virtual ~RendererAPI() = default;
 
     virtual void setViewport(u32 x, u32 y, u32 width, u32 height) = 0;
@@ -42,8 +46,5 @@ namespace eng
     virtual void clearDepthBuffer() = 0;
 
     static API GetAPI() { return s_API; }
-
-  private:
-    static inline API s_API = API::OpenGL_Legacy;
   };
 }

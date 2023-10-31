@@ -10,6 +10,8 @@ namespace eng
   */
   class IndexBuffer
   {
+    std::shared_ptr<StorageBuffer> m_Buffer;
+
   public:
     IndexBuffer(const u32* indices, u32 count);
     IndexBuffer(const std::vector<u32>& indices);
@@ -19,9 +21,6 @@ namespace eng
     void unBind() const;
 
     u32 count() const;
-
-  private:
-    std::shared_ptr<StorageBuffer> m_Buffer;
   };
 
 
