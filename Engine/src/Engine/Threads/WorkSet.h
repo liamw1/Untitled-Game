@@ -86,13 +86,13 @@ namespace eng::threads
       return m_Work.contains(id);
     }
 
-    size_t queuedTasks() const
+    uSize queuedTasks() const
     {
       std::lock_guard lock(m_Mutex);
       return m_Work.size();
     }
 
-    size_t savedResults() const
+    uSize savedResults() const
     {
       std::lock_guard lock(m_Mutex);
       return m_Futures.size();

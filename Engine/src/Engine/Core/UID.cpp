@@ -24,7 +24,7 @@ namespace eng
     return ss.str();
   }
 
-  size_t UID::hash() const
+  uSize UID::hash() const
   {
     return m_LowerUID + m_UpperUID;
   }

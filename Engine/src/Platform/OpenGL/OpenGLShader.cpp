@@ -67,10 +67,10 @@ namespace eng
     timer.timeStop();
 
     // Extract name from filepath
-    size_t lastSlash = filepath.find_last_of("/\\");
+    uSize lastSlash = filepath.find_last_of("/\\");
     lastSlash = lastSlash == std::string::npos ? 0 : lastSlash + 1;
-    size_t lastDot = filepath.rfind('.');
-    size_t count = lastDot == std::string::npos ? filepath.size() - lastSlash : lastDot - lastSlash;
+    uSize lastDot = filepath.rfind('.');
+    uSize count = lastDot == std::string::npos ? filepath.size() - lastSlash : lastDot - lastSlash;
     m_Name = filepath.substr(lastSlash, count);
   }
 
@@ -214,7 +214,7 @@ namespace eng
     for (const spirv_cross::Resource& uniform : resources.uniform_buffers)
     {
       const spirv_cross::SPIRType& bufferType = compiler.get_type(uniform.base_type_id);
-      size_t bufferSize = compiler.get_declared_struct_size(bufferType);
+      uSize bufferSize = compiler.get_declared_struct_size(bufferType);
       u32 binding = compiler.get_decoration(uniform.id, spv::DecorationBinding);
       i32 memberCount = static_cast<i32>(bufferType.member_types.size());
 

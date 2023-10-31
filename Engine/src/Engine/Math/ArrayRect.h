@@ -71,7 +71,7 @@ namespace eng::math
       return Strip(m_Data + m_Stride * (index - m_Bounds.min.i), m_Bounds.min.j);
     }
 
-    size_t size() const { return m_Bounds.volume(); }
+    uSize size() const { return m_Bounds.volume(); }
     const IBox2<IntType>& bounds() const { return m_Bounds; }
 
     bool contains(const T& value) const

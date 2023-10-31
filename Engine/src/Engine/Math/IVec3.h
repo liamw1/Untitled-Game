@@ -144,7 +144,7 @@ namespace std
   template<std::integral T>
   struct hash<eng::math::IVec3<T>>
   {
-    constexpr size_t operator()(const eng::math::IVec3<T>& index) const
+    constexpr uSize operator()(const eng::math::IVec3<T>& index) const
     {
       return eng::u32Bit( 0) * eng::math::mod(index.i, eng::u32Bit(10)) +
              eng::u32Bit(10) * eng::math::mod(index.j, eng::u32Bit(10)) +

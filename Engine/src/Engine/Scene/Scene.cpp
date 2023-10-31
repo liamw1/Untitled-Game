@@ -128,7 +128,7 @@ namespace eng::scene
 
   void ForEachEntity(void (*func)(const Entity))
   {
-    const size_t numEntities = ECS::Registry().size();
+    const uSize numEntities = ECS::Registry().size();
     const entt::entity* entityIDs = ECS::Registry().data();
 
     for (i32 i = 0; i < numEntities; ++i)

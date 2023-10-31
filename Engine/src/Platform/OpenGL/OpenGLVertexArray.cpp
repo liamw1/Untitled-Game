@@ -83,7 +83,7 @@ namespace eng
           convertToOpenGLBaseType(element.type),
           element.normalized ? GL_TRUE : GL_FALSE,
           layout.stride(),
-          (const void*)(const size_t)element.offset);
+          std::bit_cast<const void*>(static_cast<uSize>(element.offset)));
         vertexBufferIndex++;
       }
       else if (dataTypeID >= static_cast<i32>(ShaderDataType::IntTypeBegin) && dataTypeID <= static_cast<i32>(ShaderDataType::IntTypeEnd))
@@ -93,7 +93,7 @@ namespace eng
           element.getComponentCount(),
           convertToOpenGLBaseType(element.type),
           layout.stride(),
-          (const void*)(const size_t)element.offset);
+          std::bit_cast<const void*>(static_cast<uSize>(element.offset)));
         vertexBufferIndex++;
       }
       else if (dataTypeID >= static_cast<i32>(ShaderDataType::MatTypeBegin) && dataTypeID <= static_cast<i32>(ShaderDataType::MatTypeEnd))
@@ -107,7 +107,7 @@ namespace eng
             convertToOpenGLBaseType(element.type),
             element.normalized ? GL_TRUE : GL_FALSE,
             layout.stride(),
-            (const void*)(const size_t)(element.offset + sizeof(f32) * count * i));
+            std::bit_cast<const void*>(static_cast<uSize>(element.offset + sizeof(f32) * count * i)));
           glVertexAttribDivisor(vertexBufferIndex, 1);
           vertexBufferIndex++;
         }

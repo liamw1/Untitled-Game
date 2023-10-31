@@ -27,7 +27,7 @@ namespace eng
     std::ifstream in(filepath, std::ios::in | std::ios::binary);  // ifstream closes itself due to RAII
     if (in)
     {
-      const size_t& size = in.tellg();
+      const uSize& size = in.tellg();
       if (size != -1)
       {
         in.seekg(0, std::ios::end);
@@ -48,12 +48,12 @@ namespace eng
   {
     ENG_PROFILE_FUNCTION();
 
-    size_t pos = 0;
+    uSize pos = 0;
     while ((pos = source.find("#define ", pos)) != std::string::npos)
     {
       pos += 8;
 
-      size_t endToken = source.find('\n', pos) - 1;
+      uSize endToken = source.find('\n', pos) - 1;
       std::string token = source.substr(pos, endToken - pos);
       pos = endToken;
 
@@ -70,16 +70,16 @@ namespace eng
     std::unordered_map<std::string, std::string> shaderSources;
 
     const char* typeToken = "#type";
-    size_t typeTokenLength = strlen(typeToken);
+    uSize typeTokenLength = strlen(typeToken);
     pos = source.find(typeToken, 0);                          // Start of shader type declaration line
     while (pos != std::string::npos)
     {
-      size_t eol = source.find_first_of("\r\n", pos);    // End of shader type declaration line
+      uSize eol = source.find_first_of("\r\n", pos);    // End of shader type declaration line
       ENG_CORE_ASSERT(eol != std::string::npos, "Syntax error");
-      size_t begin = pos + typeTokenLength + 1;          // Start of shader type name (after "#type" keyword)
+      uSize begin = pos + typeTokenLength + 1;          // Start of shader type name (after "#type" keyword)
       std::string type = source.substr(begin, eol - begin);
 
-      size_t nextLinePos = source.find_first_not_of("\r\n", eol);
+      uSize nextLinePos = source.find_first_not_of("\r\n", eol);
       ENG_CORE_ASSERT(nextLinePos != std::string::npos, "Syntax error");
       pos = source.find(typeToken, nextLinePos);              // Start of next shader type declaration line
       shaderSources[type] = (pos == std::string::npos) ? source.substr(nextLinePos) : source.substr(nextLinePos, pos - nextLinePos);

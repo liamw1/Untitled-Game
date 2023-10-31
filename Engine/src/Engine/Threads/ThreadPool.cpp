@@ -15,10 +15,10 @@ namespace eng::threads
     shutdown();
   }
 
-  size_t ThreadPool::queuedTasks() const
+  uSize ThreadPool::queuedTasks() const
   {
     std::lock_guard lock(m_Mutex);
-    return algo::sum(m_Work, [](const std::queue<MoveOnlyFunction>& workQueue) { return workQueue.size(); }, size_t());
+    return algo::sum(m_Work, [](const std::queue<MoveOnlyFunction>& workQueue) { return workQueue.size(); }, uSize());
   }
 
   bool ThreadPool::running() const

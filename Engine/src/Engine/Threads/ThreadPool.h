@@ -39,7 +39,7 @@ namespace eng::threads
       return future;
     }
 
-    size_t queuedTasks() const;
+    uSize queuedTasks() const;
 
     bool running() const;
     void shutdown();

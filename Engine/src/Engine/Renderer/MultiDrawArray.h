@@ -21,7 +21,7 @@ namespace eng
     u32 m_BaseInstance;
 
     Identifier m_ID;
-    std::shared_ptr<size_t> m_CommandIndex;
+    std::shared_ptr<uSize> m_CommandIndex;
 
   public:
     MultiDrawCommand(const Identifier& id, i32 vertexCount)
@@ -36,12 +36,12 @@ namespace eng
     i32 firstVertex() const { return m_FirstVertex; }
 
     const Identifier& id() const { return m_ID; }
-    const std::shared_ptr<size_t>& commandIndex() const { return m_CommandIndex; }
+    const std::shared_ptr<uSize>& commandIndex() const { return m_CommandIndex; }
 
-    void setPlacement(i32 firstVertex, size_t commandIndex)
+    void setPlacement(i32 firstVertex, uSize commandIndex)
     {
       m_FirstVertex = firstVertex;
-      m_CommandIndex = std::make_shared<size_t>(commandIndex);
+      m_CommandIndex = std::make_shared<uSize>(commandIndex);
     }
 
     const void* vertexData() const { return static_cast<Derived*>(this)->vertexData(); }
@@ -64,7 +64,7 @@ namespace eng
     u32 m_BaseInstance;
 
     Identifier m_ID;
-    std::shared_ptr<size_t> m_CommandIndex;
+    std::shared_ptr<uSize> m_CommandIndex;
 
   public:
     MultiDrawIndexedCommand(const Identifier& id, u32 indexCount)
@@ -81,13 +81,13 @@ namespace eng
     i32 baseVertex() const { return m_BaseVertex; }
 
     const Identifier& id() const { return m_ID; }
-    const std::shared_ptr<size_t>& commandIndex() const { return m_CommandIndex; }
+    const std::shared_ptr<uSize>& commandIndex() const { return m_CommandIndex; }
 
-    void setPlacement(u32 firstIndex, i32 baseVertex, size_t commandIndex)
+    void setPlacement(u32 firstIndex, i32 baseVertex, uSize commandIndex)
     {
       m_FirstIndex = firstIndex;
       m_BaseVertex = baseVertex;
-      m_CommandIndex = std::make_shared<size_t>(commandIndex);
+      m_CommandIndex = std::make_shared<uSize>(commandIndex);
     }
 
     i32 vertexCount() const { return static_cast<Derived*>(this)->vertexCount(); }
@@ -127,7 +127,7 @@ namespace eng
     MemoryPool m_MemoryPool;
     std::unique_ptr<VertexArray> m_VertexArray;
     std::vector<DrawCommandType> m_DrawCommands;
-    std::unordered_map<Identifier, std::shared_ptr<size_t>> m_DrawCommandIndices;
+    std::unordered_map<Identifier, std::shared_ptr<uSize>> m_DrawCommandIndices;
 
   public:
     MultiDrawArray(const BufferLayout& layout)
@@ -169,7 +169,7 @@ namespace eng
       if (drawCommandToRemove == m_DrawCommandIndices.end())
         return;
 
-      size_t drawCommandIndex = *drawCommandToRemove->second;
+      uSize drawCommandIndex = *drawCommandToRemove->second;
       m_MemoryPool.remove(getDrawCommandAddress(m_DrawCommands[drawCommandIndex]));
       m_DrawCommandIndices.erase(drawCommandToRemove);
 
@@ -225,16 +225,16 @@ namespace eng
 
   private:
     using DrawCommandIterator = std::vector<DrawCommandType>::iterator;
-    using DrawCommandIndicesIterator = std::unordered_map<Identifier, std::shared_ptr<size_t>>::iterator;
+    using DrawCommandIndicesIterator = std::unordered_map<Identifier, std::shared_ptr<uSize>>::iterator;
 
     MemoryPool::address_t getDrawCommandAddress(const DrawCommandType& drawCommand)
     {
       return drawCommand.firstVertex() * m_Stride;
     }
 
-    void setDrawCommandIndices(size_t begin, size_t end)
+    void setDrawCommandIndices(uSize begin, uSize end)
     {
-      for (size_t i = begin; i < end; ++i)
+      for (uSize i = begin; i < end; ++i)
         *m_DrawCommands[i].commandIndex() = i;
     }
   };
@@ -257,7 +257,7 @@ namespace eng
     MemoryPool m_VertexMemory;
     std::unique_ptr<VertexArray> m_VertexArray;
     std::vector<DrawCommandType> m_DrawCommands;
-    std::unordered_map<Identifier, std::shared_ptr<size_t>> m_DrawCommandIndices;
+    std::unordered_map<Identifier, std::shared_ptr<uSize>> m_DrawCommandIndices;
 
   public:
     MultiDrawIndexedArray(const BufferLayout& layout)
@@ -304,7 +304,7 @@ namespace eng
       if (drawCommandToRemove == m_DrawCommandIndices.end())
         return;
 
-      size_t drawCommandIndex = *drawCommandToRemove->second;
+      uSize drawCommandIndex = *drawCommandToRemove->second;
       m_IndexMemory.remove(getDrawCommandIndicesAddress(m_DrawCommands[drawCommandIndex]));
       m_VertexMemory.remove(getDrawCommandVerticesAddress(m_DrawCommands[drawCommandIndex]));
       m_DrawCommandIndices.erase(drawCommandToRemove);
@@ -361,7 +361,7 @@ namespace eng
 
   private:
     using DrawCommandIterator = std::vector<DrawCommandType>::iterator;
-    using DrawCommandIndicesIterator = std::unordered_map<Identifier, std::shared_ptr<size_t>>::iterator;
+    using DrawCommandIndicesIterator = std::unordered_map<Identifier, std::shared_ptr<uSize>>::iterator;
 
     MemoryPool::address_t getDrawCommandIndicesAddress(const DrawCommandType& drawCommand)
     {
@@ -373,9 +373,9 @@ namespace eng
       return drawCommand.baseVertex() * m_Stride;
     }
 
-    void setDrawCommandIndices(size_t begin, size_t end)
+    void setDrawCommandIndices(uSize begin, uSize end)
     {
-      for (size_t i = begin; i < end; ++i)
+      for (uSize i = begin; i < end; ++i)
         *m_DrawCommands[i].commandIndex() = i;
     }
   };

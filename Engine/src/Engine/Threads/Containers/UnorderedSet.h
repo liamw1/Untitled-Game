@@ -50,7 +50,7 @@ namespace eng::threads
     bool erase(const V& value)
     {
       std::lock_guard lock(m_Mutex);
-      size_t elementsErased = m_Data.erase(value);
+      uSize elementsErased = m_Data.erase(value);
       return elementsErased > 0;
     }
 
@@ -99,7 +99,7 @@ namespace eng::threads
       return m_Data.empty();
     }
 
-    size_t size() const
+    uSize size() const
     {
       std::shared_lock lock(m_Mutex);
       return m_Data.size();

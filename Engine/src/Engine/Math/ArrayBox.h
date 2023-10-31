@@ -116,7 +116,7 @@ namespace eng::math
       return Layer(m_Data + m_Strides.i * (index - m_Bounds.min.i), layerBounds);
     }
 
-    size_t size() const { return m_Bounds.volume(); }
+    uSize size() const { return m_Bounds.volume(); }
     const IBox3<IntType>& bounds() const { return m_Bounds; }
 
     bool contains(const T& value) const

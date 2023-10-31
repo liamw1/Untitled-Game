@@ -156,7 +156,7 @@ bool ChunkDrawCommand::sort(const GlobalIndex& originIndex, const eng::math::Vec
   std::partial_sum(counts.begin(), counts.end(), counts.begin());
 
   std::array<i32, c_MaxL1Distance + 1> placements = counts;
-  for (size_t i = 0; i < m_Voxels.size();)
+  for (uSize i = 0; i < m_Voxels.size();)
   {
     i32 key = c_MaxL1Distance - (m_Voxels[i].index() - originBlock).l1Norm();
     i32 prevCount = key > 0 ? counts[key - 1] : 0;

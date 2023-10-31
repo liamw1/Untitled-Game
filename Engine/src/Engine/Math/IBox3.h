@@ -90,12 +90,12 @@ namespace eng::math
     /*
       \returns The number of integers contained within the box.
     */
-    constexpr size_t volume() const
+    constexpr uSize volume() const
     {
       if (!valid())
         return 0;
   
-      IVec3<size_t> boxExtents = static_cast<IVec3<size_t>>(extents());
+      IVec3<uSize> boxExtents = static_cast<IVec3<uSize>>(extents());
       return boxExtents.i * boxExtents.j * boxExtents.k;
     }
   

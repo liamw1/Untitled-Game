@@ -22,6 +22,7 @@
 
 // ==================== Standard Libraries ==================== //
 #include <algorithm>
+#include <bit>
 #include <chrono>
 #include <concepts>
 #include <compare>

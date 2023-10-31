@@ -60,7 +60,7 @@ namespace eng
     constexpr T& operator[](E index) { return ENG_MUTABLE_VERSION(operator[], index); }
     constexpr const T& operator[](E index) const { return m_Data[toUnderlying(index) - toUnderlying(E::First)]; }
 
-    constexpr size_t size() { return m_Data.size(); }
+    constexpr uSize size() { return m_Data.size(); }
 
     ENG_DEFINE_CONSTEXPR_ITERATORS(m_Data);
   };

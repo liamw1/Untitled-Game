@@ -15,7 +15,7 @@ namespace eng
 
     std::string toString();
 
-    size_t hash() const;
+    uSize hash() const;
   };
 }
 
@@ -24,7 +24,7 @@ namespace std
   template<>
   struct hash<eng::UID>
   {
-    size_t operator()(const eng::UID& uuid) const
+    uSize operator()(const eng::UID& uuid) const
     {
       return uuid.hash();
     }

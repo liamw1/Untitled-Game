@@ -1,4 +1,5 @@
 #pragma once
+#include "FixedWidthTypes.h"
 
 namespace eng
 {
@@ -37,7 +38,7 @@ namespace eng
   template<typename T>
   concept Hashable = requires(T instance)
   {
-    { std::hash<T>{}(instance) } -> std::convertible_to<size_t>;
+    { std::hash<T>{}(instance) } -> std::convertible_to<uSize>;
   };
   
   template <typename T, typename ReturnType, typename IndexType>

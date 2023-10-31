@@ -100,7 +100,7 @@ namespace std
   template<>
   struct hash<ChunkDrawCommand>
   {
-    size_t operator()(const ChunkDrawCommand& drawCommand) const
+    uSize operator()(const ChunkDrawCommand& drawCommand) const
     {
       return std::hash<GlobalIndex>()(drawCommand.id());
     }
