@@ -11,7 +11,7 @@ namespace eng::event
   std::string MouseButtonPress::toString() const
   {
     std::stringstream ss;
-    ss << "MouseButtonPress: " << static_cast<input::mouseCode>(m_Button);
+    ss << "MouseButtonPress: " << toUnderlying(m_Button);
     return ss.str();
   }
 
@@ -25,13 +25,13 @@ namespace eng::event
   std::string MouseButtonRelease::toString() const
   {
     std::stringstream ss;
-    ss << "MouseButtonRelease: " << static_cast<input::mouseCode>(m_Button);
+    ss << "MouseButtonRelease: " << toUnderlying(m_Button);
     return ss.str();
   }
 
 
 
-  MouseMove::MouseMove(float x, float y)
+  MouseMove::MouseMove(f32 x, f32 y)
     : m_MouseX(x), m_MouseY(y) {}
 
   EventCategory MouseMove::categoryFlags() const { return EventCategory::Mouse | EventCategory::Input; }
@@ -43,12 +43,12 @@ namespace eng::event
     return ss.str();
   }
 
-  float MouseMove::x() const { return m_MouseX; }
-  float MouseMove::y() const { return m_MouseY; }
+  f32 MouseMove::x() const { return m_MouseX; }
+  f32 MouseMove::y() const { return m_MouseY; }
 
 
 
-  MouseScroll::MouseScroll(float xOffset, float yOffset)
+  MouseScroll::MouseScroll(f32 xOffset, f32 yOffset)
     : m_XOffset(xOffset), m_YOffset(yOffset) {}
 
   EventCategory MouseScroll::categoryFlags() const { return EventCategory::Mouse | EventCategory::Input; }
@@ -60,6 +60,6 @@ namespace eng::event
     return ss.str();
   }
 
-  float MouseScroll::xOffset() const { return m_XOffset; }
-  float MouseScroll::yOffset() const { return m_YOffset; }
+  f32 MouseScroll::xOffset() const { return m_XOffset; }
+  f32 MouseScroll::yOffset() const { return m_YOffset; }
 }

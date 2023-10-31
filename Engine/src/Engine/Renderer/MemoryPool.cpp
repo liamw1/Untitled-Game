@@ -3,7 +3,7 @@
 
 namespace eng
 {
-  MemoryPool::MemoryPool(StorageBuffer::Type bufferType, int initialCapacity)
+  MemoryPool::MemoryPool(StorageBuffer::Type bufferType, i32 initialCapacity)
     : m_Capacity(initialCapacity)
   {
     m_Buffer = StorageBuffer::Create(bufferType);
@@ -27,7 +27,7 @@ namespace eng
     return m_Buffer;
   }
 
-  std::pair<bool, MemoryPool::address_t> MemoryPool::add(const void* data, int size)
+  std::pair<bool, MemoryPool::address_t> MemoryPool::add(const void* data, i32 size)
   {
     if (size <= 0)
       return { false, -1 };
@@ -60,8 +60,8 @@ namespace eng
 
       while (regionSize(bestRegionPosition) < size)
       {
-        int oldCapacity = m_Capacity;
-        m_Capacity = static_cast<int>(c_CapacityIncreaseOnResize * m_Capacity);
+        i32 oldCapacity = m_Capacity;
+        m_Capacity = static_cast<i32>(c_CapacityIncreaseOnResize * m_Capacity);
         regionSize(bestRegionPosition) += m_Capacity - oldCapacity;
       }
 
@@ -72,7 +72,7 @@ namespace eng
     auto& [allocationAddress, allocationRegion] = *bestRegionPosition;
 
     // Add any leftover memory to free regions.
-    int memoryLeftover = allocationRegion.size - size;
+    i32 memoryLeftover = allocationRegion.size - size;
     if (memoryLeftover > 0)
       addFreeRegion(allocationAddress + size, memoryLeftover);
     allocationRegion.free = false;
@@ -89,7 +89,7 @@ namespace eng
     ENG_CORE_ASSERT(allocationPosition != m_Regions.end(), "No memory region was found at adress {0}!", address);
     ENG_CORE_ASSERT(!isFree(allocationPosition), "Region is already free!");
 
-    int freedRegionSize = regionSize(allocationPosition);
+    i32 freedRegionSize = regionSize(allocationPosition);
     address_t freedRegionAddress = address;
     RegionsIterator freedRegionPosition = allocationPosition;
 
@@ -137,12 +137,12 @@ namespace eng
     return regionIterator->second.free;
   }
 
-  int& MemoryPool::regionSize(RegionsIterator regionIterator)
+  i32& MemoryPool::regionSize(RegionsIterator regionIterator)
   {
     return regionIterator->second.size;
   }
 
-  void MemoryPool::addFreeRegion(address_t address, int size)
+  void MemoryPool::addFreeRegion(address_t address, i32 size)
   {
     m_Regions.emplace(address, size);
     m_FreeRegions.emplace(size, address);
@@ -153,7 +153,7 @@ namespace eng
     const auto& [address, region] = *regionIterator;
 
     auto [begin, end] = m_FreeRegions.equal_range(region.size);
-    FreeRegionsIterator removalPosition = std::find_if(begin, end, [address](std::pair<int, address_t> freeRegion) { return freeRegion.second == address; });
+    FreeRegionsIterator removalPosition = std::find_if(begin, end, [address](std::pair<i32, address_t> freeRegion) { return freeRegion.second == address; });
     if (removalPosition == end)
       ENG_CORE_ERROR("No region at address {0} of size {1} found!", address, region.size);
     else

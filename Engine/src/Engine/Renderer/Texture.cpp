@@ -13,7 +13,9 @@ namespace eng
   {
     ENG_PROFILE_FUNCTION();
 
-    int width, height, channels;
+    i32 width;
+    i32 height;
+    i32 channels;
 
     // Load image data
     stbi_set_flip_vertically_on_load(true);
@@ -21,9 +23,9 @@ namespace eng
     ENG_CORE_ASSERT(imageData, "Failed to load image at {0}.", path);
 
     // Copy data into ArrayBox
-    math::IBox3<int> imageBounds(0, 0, 0, height - 1, width - 1, channels - 1);
-    m_Data = math::ArrayBox<uint8_t, int>(imageBounds, AllocationPolicy::ForOverwrite);
-    imageBounds.forEach([this, imageData](const math::IVec3<int>& index)
+    math::IBox3<i32> imageBounds(0, 0, 0, height - 1, width - 1, channels - 1);
+    m_Data = math::ArrayBox<u8, i32>(imageBounds, AllocationPolicy::ForOverwrite);
+    imageBounds.forEach([this, imageData](const math::IVec3<i32>& index)
       {
         m_Data(index) = imageData[m_Data.bounds().linearIndexOf(index)];
       });
@@ -32,18 +34,18 @@ namespace eng
     stbi_image_free(imageData);
   }
 
-  int Image::width() const { return m_Data.bounds().max.j + 1; }
-  int Image::height() const { return m_Data.bounds().max.i + 1; }
-  int Image::channels() const { return m_Data.bounds().max.k + 1; }
-  int Image::pixelCount() const { return width() * height(); }
-  const uint8_t* Image::data() const { return m_Data.data(); }
+  i32 Image::width() const { return m_Data.bounds().max.j + 1; }
+  i32 Image::height() const { return m_Data.bounds().max.i + 1; }
+  i32 Image::channels() const { return m_Data.bounds().max.k + 1; }
+  i32 Image::pixelCount() const { return width() * height(); }
+  const u8* Image::data() const { return m_Data.data(); }
 
   math::Float4 Image::averageColor() const
   {
     ENG_CORE_ASSERT(channels() <= 4, "Image has more than four channels!");
 
     math::Float4 totalColor(0);
-    m_Data.bounds().forEach([this, &totalColor](const math::IVec3<int>& index)
+    m_Data.bounds().forEach([this, &totalColor](const math::IVec3<i32>& index)
       {
         totalColor[index.k] += m_Data(index) / 255.0f;
       });
@@ -59,7 +61,7 @@ namespace eng
 
   Texture::~Texture() = default;
 
-  std::unique_ptr<Texture> Texture::Create(uint32_t width, uint32_t height)
+  std::unique_ptr<Texture> Texture::Create(u32 width, u32 height)
   {
     switch (RendererAPI::GetAPI())
     {
@@ -83,7 +85,7 @@ namespace eng
 
   TextureArray::~TextureArray() = default;
 
-  std::unique_ptr<TextureArray> TextureArray::Create(uint32_t textureCount, uint32_t textureSize)
+  std::unique_ptr<TextureArray> TextureArray::Create(u32 textureCount, u32 textureSize)
   {
     switch (RendererAPI::GetAPI())
     {

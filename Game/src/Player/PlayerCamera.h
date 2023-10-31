@@ -12,8 +12,8 @@ public:
 
 private:
   // Camera properties
-  static constexpr float c_CameraSensitivity = 0.1f;
-  static constexpr float c_CameraZoomSensitivity = 0.2f;
+  static constexpr f32 c_CameraSensitivity = 0.1f;
+  static constexpr f32 c_CameraZoomSensitivity = 0.2f;
 
   static constexpr eng::math::Angle c_MinPitch = -89.99_deg;
   static constexpr eng::math::Angle c_MaxPitch = 89.99_deg;
@@ -24,7 +24,7 @@ private:
 
   // Camera initialization
   static constexpr eng::math::Angle c_FOV = 80_deg;
-  static constexpr float c_AspectRatio = 1280.0f / 720.0f;
+  static constexpr f32 c_AspectRatio = 1280.0f / 720.0f;
   static constexpr length_t c_NearClip = 0.125_m * block::length();
   static constexpr length_t c_FarClip = 1024_m * block::length();
 

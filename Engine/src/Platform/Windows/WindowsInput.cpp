@@ -9,31 +9,31 @@ namespace eng::input
   bool isKeyPressed(Key key)
   {
     GLFWwindow* window = static_cast<GLFWwindow*>(Application::Get().getWindow().getNativeWindow());
-    int state = glfwGetKey(window, static_cast<int>(key));
+    i32 state = glfwGetKey(window, static_cast<i32>(key));
     return state == GLFW_PRESS;
   }
 
   bool isMouseButtonPressed(Mouse button)
   {
     GLFWwindow* window = static_cast<GLFWwindow*>(Application::Get().getWindow().getNativeWindow());
-    int state = glfwGetMouseButton(window, static_cast<int>(button));
+    i32 state = glfwGetMouseButton(window, static_cast<i32>(button));
     return state == GLFW_PRESS;
   }
 
   math::Float2 getMousePosition()
   {
     GLFWwindow* window = static_cast<GLFWwindow*>(Application::Get().getWindow().getNativeWindow());
-    double xPos, yPos;
+    f64 xPos, yPos;
     glfwGetCursorPos(window, &xPos, &yPos);
-    return { static_cast<float>(xPos), static_cast<float>(yPos) };
+    return { static_cast<f32>(xPos), static_cast<f32>(yPos) };
   }
 
-  float getMouseX()
+  f32 getMouseX()
   {
     return getMousePosition().x;
   }
 
-  float getMouseY()
+  f32 getMouseY()
   {
     return getMousePosition().y;
   }

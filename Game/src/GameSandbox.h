@@ -15,7 +15,7 @@ public:
 
 private:
   World m_World;
-  std::list<float> m_FrameTimeWindow;
+  std::list<f32> m_FrameTimeWindow;
   bool m_PrintFrameRate;
   bool m_PrintMinFrameRate;
   bool m_PrintPlayerPosition;

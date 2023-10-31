@@ -186,8 +186,8 @@ namespace eng::math
 
   private:
     IBox2<IntType> m_Bounds;
-    int m_Stride;
-    int m_Offset;
+    i32 m_Stride;
+    i32 m_Offset;
     T* m_Data;
   };
 }

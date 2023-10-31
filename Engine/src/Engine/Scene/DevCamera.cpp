@@ -9,9 +9,9 @@ namespace eng
 	static constexpr math::Angle c_RotationSpeed = 45_deg;
 
 	static math::Angle s_FOV = 45_deg;
-	static float s_AspectRatio = 1.778f;
-	static float s_NearClip = 0.1f;
-	static float s_FarClip = 1000.0f;
+	static f32 s_AspectRatio = 1.778f;
+	static f32 s_NearClip = 0.1f;
+	static f32 s_FarClip = 1000.0f;
 
 	static math::Mat4 s_ViewMatrix(1.0);
 	static math::Mat4 s_Projection(1.0);
@@ -23,7 +23,8 @@ namespace eng
 	static length_t s_Distance = 10.0;
 	static math::Angle s_Pitch, s_Yaw;
 
-	static uint32_t s_ViewportWidth = 1280, s_ViewportHeight = 720;
+	static u32 s_ViewportWidth = 1280;
+  static u32 s_ViewportHeight = 720;
 
 	static math::Vec3 calculatePosition()
 	{
@@ -32,7 +33,7 @@ namespace eng
 
 	static void updateProjection()
 	{
-		s_AspectRatio = static_cast<float>(s_ViewportWidth) / s_ViewportHeight;
+		s_AspectRatio = static_cast<f32>(s_ViewportWidth) / s_ViewportHeight;
 		s_Projection = glm::perspective(s_FOV.radf(), s_AspectRatio, s_NearClip, s_FarClip);
 	}
 
@@ -48,21 +49,21 @@ namespace eng
 
 	static math::Float2 panSpeed()
 	{
-		float x = std::min(s_ViewportWidth / 1000.0f, 2.4f); // max = 2.4f
-		float xFactor = 0.0366f * (x * x) - 0.1778f * x + 0.3021f;
+		f32 x = std::min(s_ViewportWidth / 1000.0f, 2.4f); // max = 2.4f
+		f32 xFactor = 0.0366f * (x * x) - 0.1778f * x + 0.3021f;
 
-		float y = std::min(s_ViewportHeight / 1000.0f, 2.4f); // max = 2.4f
-		float yFactor = 0.0366f * (y * y) - 0.1778f * y + 0.3021f;
+		f32 y = std::min(s_ViewportHeight / 1000.0f, 2.4f); // max = 2.4f
+		f32 yFactor = 0.0366f * (y * y) - 0.1778f * y + 0.3021f;
 
 		return math::Vec2(xFactor, yFactor);
 	}
 
-	static float zoomSpeed()
+	static f32 zoomSpeed()
 	{
-		float distance = static_cast<float>(s_Distance) * 0.2f;
+		f32 distance = static_cast<f32>(s_Distance) * 0.2f;
 		distance = std::max(distance, 0.0f);
 
-     float speed = distance * distance;
+    f32 speed = distance * distance;
 		speed = std::min(speed, 100.0f); // max speed = 100
 		return speed;
 	}
@@ -76,12 +77,12 @@ namespace eng
 
 	static void mouseRotate(const math::Float2& delta)
 	{
-		float yawSign = DevCamera::UpDirection().y < 0 ? -1.0f : 1.0f;
+		f32 yawSign = DevCamera::UpDirection().y < 0 ? -1.0f : 1.0f;
 		s_Yaw += math::Angle(yawSign * delta.x) * c_RotationSpeed;
 		s_Pitch += math::Angle(delta.y) * c_RotationSpeed;
 	}
 
-	static void mouseZoom(float delta)
+	static void mouseZoom(f32 delta)
 	{
 		s_Distance -= delta * zoomSpeed();
 		if (s_Distance < 1.0f)
@@ -93,7 +94,7 @@ namespace eng
 
 	static bool onMouseScroll(event::MouseScroll& event)
 	{
-		float delta = event.yOffset() * 0.1f;
+		f32 delta = event.yOffset() * 0.1f;
 		mouseZoom(delta);
 		updateView();
 		return false;
@@ -126,7 +127,7 @@ namespace eng
 	length_t DevCamera::Distance() { return s_Distance; }
 	void DevCamera::SetDistance(length_t distance) { s_Distance = distance; }
 
-	void DevCamera::SetViewportSize(uint32_t width, uint32_t height)
+	void DevCamera::SetViewportSize(u32 width, u32 height)
 	{
 		s_ViewportWidth = width;
 		s_ViewportHeight = height;

@@ -2,9 +2,7 @@
 
 namespace eng::input
 {
-  using mouseCode = uint8_t;
-
-  enum class Mouse : mouseCode
+  enum class Mouse
   {
     // From glfw3.h
     Button0 = 0,

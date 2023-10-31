@@ -23,7 +23,7 @@ namespace eng::event
 
 
 
-  WindowResize::WindowResize(uint32_t width, uint32_t height)
+  WindowResize::WindowResize(u32 width, u32 height)
     : m_Width(width), m_Height(height) {}
 
   EventCategory WindowResize::categoryFlags() const { return EventCategory::Application; }
@@ -36,6 +36,6 @@ namespace eng::event
     return ss.str();
   }
 
-  uint32_t WindowResize::width() const { return m_Width; }
-  uint32_t WindowResize::height() const { return m_Height; }
+  u32 WindowResize::width() const { return m_Width; }
+  u32 WindowResize::height() const { return m_Height; }
 }

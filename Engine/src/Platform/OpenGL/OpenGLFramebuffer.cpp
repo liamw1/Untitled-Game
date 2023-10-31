@@ -5,17 +5,17 @@
 
 namespace eng
 {
-  static constexpr uint32_t c_MaxFrameBufferSize = 8192;
+  static constexpr u32 c_MaxFrameBufferSize = 8192;
 
   static GLenum textureTarget(bool multiSampled) { return multiSampled ? GL_TEXTURE_2D_MULTISAMPLE : GL_TEXTURE_2D; }
-  static void createTextures(bool multiSampled, uint32_t* outID, uint32_t count) { glCreateTextures(textureTarget(multiSampled), count, outID); }
-  static void bindTexture(bool multiSampled, uint32_t id) { glBindTexture(textureTarget(multiSampled), id); }
+  static void createTextures(bool multiSampled, u32* outID, u32 count) { glCreateTextures(textureTarget(multiSampled), count, outID); }
+  static void bindTexture(bool multiSampled, u32 id) { glBindTexture(textureTarget(multiSampled), id); }
 
-  static void attachColorTexture(uint32_t id, const FramebufferSpecification& fbSpecs, GLenum internalFormat, GLenum format, int index)
+  static void attachColorTexture(u32 id, const FramebufferSpecification& fbSpecs, GLenum internalFormat, GLenum format, i32 index)
   {
-    const uint32_t& samples = fbSpecs.samples;
-    const uint32_t& width = fbSpecs.width;
-    const uint32_t& height = fbSpecs.height;
+    const u32& samples = fbSpecs.samples;
+    const u32& width = fbSpecs.width;
+    const u32& height = fbSpecs.height;
 
     bool multisampled = samples > 1;
     if (multisampled)
@@ -34,11 +34,11 @@ namespace eng
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, textureTarget(multisampled), id, 0);
   }
 
-  static void attachDepthTexture(uint32_t id, const FramebufferSpecification& fbSpecs, GLenum format, GLenum attachmentType)
+  static void attachDepthTexture(u32 id, const FramebufferSpecification& fbSpecs, GLenum format, GLenum attachmentType)
   {
-    const uint32_t& samples = fbSpecs.samples;
-    const uint32_t& width = fbSpecs.width;
-    const uint32_t& height = fbSpecs.height;
+    const u32& samples = fbSpecs.samples;
+    const u32& width = fbSpecs.width;
+    const u32& height = fbSpecs.height;
 
     bool multisampled = samples > 1;
     if (multisampled)
@@ -123,7 +123,7 @@ namespace eng
     return m_Specification;
   }
 
-  uint32_t OpenGLFramebuffer::getColorAttachmentRendererID(uint32_t index) const
+  u32 OpenGLFramebuffer::getColorAttachmentRendererID(u32 index) const
   {
     ENG_CORE_ASSERT(index < m_ColorAttachments.size(), "Color attachment index is out of bounds!");
     return m_ColorAttachments[index];
@@ -152,9 +152,9 @@ namespace eng
     if (m_ColorAttachmentSpecifications.size() > 0)
     {
       m_ColorAttachments.resize(m_ColorAttachmentSpecifications.size());
-      createTextures(multiSample, m_ColorAttachments.data(), static_cast<uint32_t>(m_ColorAttachments.size()));
+      createTextures(multiSample, m_ColorAttachments.data(), static_cast<u32>(m_ColorAttachments.size()));
 
-      for (int i = 0; i < m_ColorAttachments.size(); ++i)
+      for (i32 i = 0; i < m_ColorAttachments.size(); ++i)
       {
         bindTexture(multiSample, m_ColorAttachments[i]);
         switch (m_ColorAttachmentSpecifications[i].textureFormat)
@@ -196,7 +196,7 @@ namespace eng
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
   }
 
-  void OpenGLFramebuffer::resize(uint32_t width, uint32_t height)
+  void OpenGLFramebuffer::resize(u32 width, u32 height)
   {
     if (width == 0 || width > c_MaxFrameBufferSize || height == 0 || height > c_MaxFrameBufferSize)
     {
@@ -209,35 +209,35 @@ namespace eng
     invalidate();
   }
 
-  int OpenGLFramebuffer::readPixel(uint32_t attachmentIndex, int x, int y)
+  i32 OpenGLFramebuffer::readPixel(u32 attachmentIndex, i32 x, i32 y)
   {
     ENG_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
     ENG_CORE_ASSERT(attachmentIndex < m_ColorAttachments.size(), "Color attachment index is out of bounds!");
     glReadBuffer(GL_COLOR_ATTACHMENT0 + attachmentIndex);
-    int pixelData;
+    i32 pixelData;
     glReadPixels(x, y, 1, 1, GL_RED_INTEGER, GL_INT, &pixelData);
     return pixelData;
   }
 
-  void OpenGLFramebuffer::clearAttachment(uint32_t attachmentIndex, int value)
+  void OpenGLFramebuffer::clearAttachment(u32 attachmentIndex, i32 value)
   {
     ENG_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
     ENG_CORE_ASSERT(attachmentIndex < m_ColorAttachments.size(), "Color attachment index is out of bounds!");
 
     const FramebufferTextureSpecification& spec = m_ColorAttachmentSpecifications[attachmentIndex];
-    uint32_t attachment = m_ColorAttachments[attachmentIndex];
+    u32 attachment = m_ColorAttachments[attachmentIndex];
     GLenum textureFormat = openGLTextureFormat(spec.textureFormat);
 
     glClearTexImage(attachment, 0, textureFormat, GL_INT, &value);
   }
 
-  void OpenGLFramebuffer::clearAttachment(uint32_t attachmentIndex, float value)
+  void OpenGLFramebuffer::clearAttachment(u32 attachmentIndex, f32 value)
   {
     ENG_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
     ENG_CORE_ASSERT(attachmentIndex < m_ColorAttachments.size(), "Color attachment index is out of bounds!");
 
     const FramebufferTextureSpecification& spec = m_ColorAttachmentSpecifications[attachmentIndex];
-    uint32_t attachment = m_ColorAttachments[attachmentIndex];
+    u32 attachment = m_ColorAttachments[attachmentIndex];
     GLenum textureFormat = openGLTextureFormat(spec.textureFormat);
 
     glClearTexImage(attachment, 0, textureFormat, GL_FLOAT, &value);

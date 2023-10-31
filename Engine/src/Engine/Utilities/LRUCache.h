@@ -10,7 +10,7 @@ namespace eng
   public:
     ENG_DEFINE_ITERATORS(m_MostRecentlyUsed);
   
-    LRUCache(int size)
+    LRUCache(i32 size)
       : m_Size(size) {}
 
     V& operator[](const K& key)
@@ -57,7 +57,7 @@ namespace eng
   
   private:
     std::unordered_map<K, iterator> m_Map;
-    int m_Size;
+    i32 m_Size;
   
     void setAsMostRecentlyUsed(iterator listPosition)
     {

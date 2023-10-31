@@ -1,4 +1,5 @@
 #pragma once
+#include "Engine/Core/FixedWidthTypes.h"
 
 namespace eng
 {
@@ -10,8 +11,8 @@ namespace eng
     virtual void bind() const = 0;
     virtual void unBind() const = 0;
 
-    virtual void set(const void* data, uint32_t size) = 0;
+    virtual void set(const void* data, u32 size) = 0;
 
-    static std::unique_ptr<Uniform> Create(uint32_t binding, uint32_t size);
+    static std::unique_ptr<Uniform> Create(u32 binding, u32 size);
   };
 }

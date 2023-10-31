@@ -7,7 +7,7 @@
 
 namespace eng
 {
-  static constexpr int c_MaxShaders = 3;
+  static constexpr i32 c_MaxShaders = 3;
 
   static GLenum shaderTypeFromString(const std::string& type)
   {
@@ -69,7 +69,7 @@ namespace eng
 
     GLuint program = glCreateProgram();
     std::vector<GLenum> glShaderIDs(shaderSources.size());
-    int glShaderIDIndex = 0;
+    i32 glShaderIDIndex = 0;
     for (const auto& [type, source] : shaderSources)
     {
       GLuint shader = glCreateShader(shaderTypeFromString(type));
@@ -103,7 +103,7 @@ namespace eng
     glLinkProgram(m_RendererID);
 
     GLint isLinked = 0;
-    glGetProgramiv(m_RendererID, GL_LINK_STATUS, (int*)&isLinked);
+    glGetProgramiv(m_RendererID, GL_LINK_STATUS, &isLinked);
     if (!isLinked)
     {
       GLint maxLength = 0;

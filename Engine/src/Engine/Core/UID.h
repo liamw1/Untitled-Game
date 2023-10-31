@@ -15,8 +15,8 @@ namespace eng
     size_t hash() const;
 
   private:
-    uint64_t m_LowerUID;
-    uint64_t m_UpperUID;
+    u64 m_LowerUID;
+    u64 m_UpperUID;
   };
 }
 

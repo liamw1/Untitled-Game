@@ -3,9 +3,9 @@
 #include "ChunkHelpers.h"
 
 // Will be removed eventually and replaced with settings system
-constexpr int c_RenderDistance = 16;
-constexpr int c_LoadDistance = c_RenderDistance + 1;
-constexpr int c_UnloadDistance = c_LoadDistance;
+constexpr i32 c_RenderDistance = 16;
+constexpr i32 c_LoadDistance = c_RenderDistance + 1;
+constexpr i32 c_UnloadDistance = c_LoadDistance;
 
 /*
   Class that handles the classification of chunks.

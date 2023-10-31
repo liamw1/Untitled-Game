@@ -35,7 +35,7 @@ namespace eng
     ENG_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
 
     glfwMakeContextCurrent(m_WindowHandle);
-    int status = gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
+    i32 status = gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
     ENG_CORE_ASSERT(status, "Failed to initialize GLad!");
 
     ENG_CORE_INFO("OpenGL Info:");

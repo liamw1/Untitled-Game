@@ -3,7 +3,7 @@
 
 namespace block
 {
-  enum class ID : uint8_t
+  enum class ID : u8
   {
     Air,
     Grass,
@@ -24,7 +24,7 @@ namespace block
   };
   using IDs = eng::EnumIterator<ID>;
 
-  enum class TextureID : uint32_t
+  enum class TextureID : u32
   {
     GrassTop,
     GrassSide,

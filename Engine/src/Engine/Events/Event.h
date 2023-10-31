@@ -56,7 +56,7 @@ namespace eng::event
     template<typename F, typename... Args>
     static constexpr bool ValidEventFunction() { return CheckEventTypeAt<0, F, Args...>(); }
 
-    template<int N, typename F, typename... Args>
+    template<i32 N, typename F, typename... Args>
     static constexpr bool CheckEventTypeAt()
     {
       if constexpr (N < std::variant_size_v<EventVariant>)

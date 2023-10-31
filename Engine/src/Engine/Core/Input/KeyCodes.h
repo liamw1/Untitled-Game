@@ -2,9 +2,7 @@
 
 namespace eng::input
 {
-  using keyID = uint16_t;
-
-  enum class Key : keyID
+  enum class Key
   {
     // From glfw3.h
     Space = 32,

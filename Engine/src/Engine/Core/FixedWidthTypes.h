@@ -1,6 +1,4 @@
 #pragma once
-#include "Int.h"
-#include "Float.h"
 
 // Unsigned integer types
 using u8 = std::uint8_t;
@@ -19,3 +17,4 @@ using iSize = std::ptrdiff_t;
 // Floating point types    C++23: Can use standard fixed-width floating point types
 using f32 = float;
 using f64 = double;
+using fMax = long double;

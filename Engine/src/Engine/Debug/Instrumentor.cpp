@@ -30,9 +30,9 @@ namespace eng::debug
     internalEndSession();
   }
 
-  void Instrumentor::writeProfile(const std::string& name, const std::chrono::steady_clock::time_point start, const std::chrono::duration<double, std::micro> elapsedTime, const std::thread::id threadID)
+  void Instrumentor::writeProfile(const std::string& name, const std::chrono::steady_clock::time_point start, const std::chrono::duration<f64, std::micro> elapsedTime, const std::thread::id threadID)
   {
-    int64_t startTimeInNanoseconds = std::chrono::time_point_cast<std::chrono::nanoseconds>(start).time_since_epoch().count();
+    i64 startTimeInNanoseconds = std::chrono::time_point_cast<std::chrono::nanoseconds>(start).time_since_epoch().count();
 
     std::stringstream json{};
 
@@ -44,7 +44,7 @@ namespace eng::debug
     json << "\"ph\":\"X\",";
     json << "\"pid\":0,";
     json << "\"tid\":" << threadID << ",";
-    json << "\"ts\":" << static_cast<double>(startTimeInNanoseconds) / 1e3;
+    json << "\"ts\":" << static_cast<f64>(startTimeInNanoseconds) / 1e3;
     json << "}";
 
     if (m_CurrentSession)
@@ -105,7 +105,7 @@ namespace eng::debug
   void InstrumentationTimer::stop()
   {
     auto endTimepoint = std::chrono::steady_clock::now();
-    std::chrono::duration<double, std::micro> elapsedTime = endTimepoint - m_StartTimepoint;
+    std::chrono::duration<f64, std::micro> elapsedTime = endTimepoint - m_StartTimepoint;
     Instrumentor::Get().writeProfile(m_Name, m_StartTimepoint, elapsedTime, std::this_thread::get_id());
 
     m_Stopped = true;

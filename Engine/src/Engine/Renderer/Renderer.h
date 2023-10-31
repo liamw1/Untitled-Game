@@ -13,10 +13,10 @@ namespace eng::render
 
   void drawCubeFrame(const math::Vec3& position, const math::Vec3& size, const math::Float4& color = math::Float4(0.0f, 0.0f, 0.0f, 1.0f));
 
-  void onWindowResize(uint32_t width, uint32_t height);
+  void onWindowResize(u32 width, u32 height);
 
   template<typename Vertex>
-  void uploadMesh(VertexArray* target, const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices)
+  void uploadMesh(VertexArray* target, const std::vector<Vertex>& vertices, const std::vector<u32>& indices)
   {
     ENG_ASSERT(target, "Vertex array has not been initialized!");
 

@@ -10,7 +10,7 @@ namespace eng::scene
   Entity CreateEntity(const math::Vec3& initialPosition, const std::string& name = std::string());
   Entity CreateEmptyEntity();
   void DestroyEntity(Entity entity);
-  Entity GetEntity(uint32_t entityID);
+  Entity GetEntity(u32 entityID);
 
   void OnUpdate(Timestep timestep);
   void OnEvent(event::Event& event);
@@ -18,7 +18,7 @@ namespace eng::scene
   Entity ActiveCamera();
   math::Mat4 CalculateViewProjection(Entity viewer);
 
-  void OnViewportResize(uint32_t width, uint32_t height);
+  void OnViewportResize(u32 width, u32 height);
 
   void ForEachEntity(void (*func)(const Entity));
 }

@@ -4,7 +4,7 @@
 
 namespace eng::math
 {
-  enum class Axis : int
+  enum class Axis
   {
     X, Y, Z,
 
@@ -14,21 +14,21 @@ namespace eng::math
 
   constexpr Axis Cycle(Axis axis)
   {
-    int axisID = static_cast<int>(axis);
+    i32 axisID = static_cast<i32>(axis);
     return static_cast<Axis>((axisID + 1) % 3);
   }
 
   constexpr Axis GetMissing(Axis axisA, Axis axisB)
   {
-    int u = static_cast<int>(axisA);
-    int v = static_cast<int>(axisB);
-    int w = (2 * (u + v)) % 3;
+    i32 u = static_cast<i32>(axisA);
+    i32 v = static_cast<i32>(axisB);
+    i32 w = (2 * (u + v)) % 3;
     return static_cast<Axis>(w);
   }
 
 
 
-  enum class Direction : int
+  enum class Direction
   {
     West, East, South, North, Bottom, Top,
 
@@ -41,7 +41,7 @@ namespace eng::math
   */
   constexpr void operator++(Direction& direction)
   {
-    int directionID = static_cast<int>(direction);
+    i32 directionID = static_cast<i32>(direction);
     direction = static_cast<Direction>(directionID + 1);
   }
 
@@ -50,14 +50,14 @@ namespace eng::math
   */
   constexpr Direction operator!(const Direction& direction)
   {
-    int directionID = static_cast<int>(direction);
+    i32 directionID = static_cast<i32>(direction);
     Direction oppositeDirection = static_cast<Direction>(directionID % 2 ? directionID - 1 : directionID + 1);
     return oppositeDirection;
   }
 
-  constexpr bool IsUpstream(Direction direction) { return static_cast<int>(direction) % 2; }
-  constexpr Axis AxisOf(Direction direction) { return static_cast<Axis>(static_cast<int>(direction) / 2); }
-  constexpr Direction ToDirection(Axis axis, bool isUpstream) { return static_cast<Direction>(2 * static_cast<int>(axis) + isUpstream); }
+  constexpr bool IsUpstream(Direction direction) { return static_cast<i32>(direction) % 2; }
+  constexpr Axis AxisOf(Direction direction) { return static_cast<Axis>(static_cast<i32>(direction) / 2); }
+  constexpr Direction ToDirection(Axis axis, bool isUpstream) { return static_cast<Direction>(2 * static_cast<i32>(axis) + isUpstream); }
 
   class DirectionBitMask
   {
@@ -65,11 +65,11 @@ namespace eng::math
     constexpr DirectionBitMask()
       : m_Data(0) {}
 
-    constexpr bool operator[](Direction direction) const { return (m_Data >> static_cast<int>(direction)) & 0x1; }
+    constexpr bool operator[](Direction direction) const { return (m_Data >> static_cast<i32>(direction)) & 0x1; }
     constexpr bool empty() const { return m_Data == 0; }
-    constexpr void set(Direction direction) { m_Data |= u8Bit(static_cast<int>(direction)); }
+    constexpr void set(Direction direction) { m_Data |= u8Bit(static_cast<i32>(direction)); }
 
   private:
-    uint8_t m_Data;
+    u8 m_Data;
   };
 }

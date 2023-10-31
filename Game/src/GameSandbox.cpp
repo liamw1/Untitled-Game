@@ -29,22 +29,22 @@ void GameSandbox::onUpdate(eng::Timestep timestep)
 
   if (m_PrintFrameRate || m_PrintMinFrameRate)
   {
-    static constexpr int framerateWindowSize = 100;
+    static constexpr i32 framerateWindowSize = 100;
 
-    float frameTime = timestep.sec();
+    f32 frameTime = timestep.sec();
     m_FrameTimeWindow.push_front(frameTime);
     if (m_FrameTimeWindow.size() > framerateWindowSize)
       m_FrameTimeWindow.pop_back();
 
     if (m_PrintFrameRate)
     {
-      float averageFrameTime = std::accumulate(m_FrameTimeWindow.begin(), m_FrameTimeWindow.end(), 0.0f) / m_FrameTimeWindow.size();
-      ENG_TRACE("FPS: {0}", static_cast<int>(1.0f / averageFrameTime));
+      f32 averageFrameTime = std::accumulate(m_FrameTimeWindow.begin(), m_FrameTimeWindow.end(), 0.0f) / m_FrameTimeWindow.size();
+      ENG_TRACE("FPS: {0}", static_cast<i32>(1.0f / averageFrameTime));
     }
     else
     {
-      float maxFrameTime = *std::max_element(m_FrameTimeWindow.begin(), m_FrameTimeWindow.end());
-      ENG_TRACE("Min FPS: {0}", static_cast<int>(1.0f / maxFrameTime));
+      f32 maxFrameTime = *std::max_element(m_FrameTimeWindow.begin(), m_FrameTimeWindow.end());
+      ENG_TRACE("Min FPS: {0}", static_cast<i32>(1.0f / maxFrameTime));
     }
   }
   else if (m_PrintPlayerPosition)

@@ -4,7 +4,7 @@
 
 static constexpr blockIndex_t modulo(globalIndex_t a, blockIndex_t b)
 {
-  const int result = a % b;
+  const i32 result = a % b;
   return static_cast<blockIndex_t>(result >= 0 ? result : result + b);
 }
 
@@ -45,7 +45,7 @@ RayIntersection World::castRaySegment(const eng::math::Vec3& pointA, const eng::
   RayIntersection firstIntersection{};
   for (eng::math::Axis axis : eng::math::Axes())
   {
-    int axisID = static_cast<int>(axis);
+    i32 axisID = static_cast<i32>(axis);
     bool pointedUpstream = rayDirection[axisID] > 0.0;
 
     // Global indices of first and last planes that segment will intersect in direction i
@@ -72,9 +72,9 @@ RayIntersection World::castRaySegment(const eng::math::Vec3& pointA, const eng::
       if (t < tmin)
       {
         // Relabeling coordinate indices
-        int u = axisID;
-        int v = (u + 1) % 3;
-        int w = (u + 2) % 3;
+        i32 u = axisID;
+        i32 v = (u + 1) % 3;
+        i32 w = (u + 2) % 3;
 
         // Intersection point between ray and plane
         eng::math::Vec3 intersection = pointA + t * rayDirection;
@@ -104,7 +104,7 @@ RayIntersection World::castRaySegment(const eng::math::Vec3& pointA, const eng::
         // If block has collision, note the intersection and move to next spatial direction
         if (chunk->composition().get(blockIndex).hasCollision())
         {
-          int faceID = 2 * u + !pointedUpstream;
+          i32 faceID = 2 * u + !pointedUpstream;
           tmin = t;
 
           firstIntersection.face = static_cast<eng::math::Direction>(faceID);
@@ -131,11 +131,11 @@ RayIntersection World::castRay(const eng::math::Vec3& rayOrigin, const eng::math
 
 void World::playerCollisionHandling(eng::Timestep timestep) const
 {
-  static constexpr int maxIterations = 100;
+  static constexpr i32 maxIterations = 100;
 
   // Player width and height in blocks
-  static const int playerWidth = static_cast<int>(ceil(player::width() / block::length()));
-  static const int playerHeight = static_cast<int>(ceil(player::height() / block::length()));
+  static const i32 playerWidth = static_cast<i32>(ceil(player::width() / block::length()));
+  static const i32 playerHeight = static_cast<i32>(ceil(player::height() / block::length()));
   static const length_t widthInterval = player::width() / playerWidth;
   static const length_t heightInterval = player::height() / playerHeight;
   seconds dt = timestep.sec();  // Time between frames in seconds
@@ -143,7 +143,7 @@ void World::playerCollisionHandling(eng::Timestep timestep) const
   eng::math::Vec3 playerPosition = player::position();
   eng::math::Vec3 playerVelocity = player::velocity();
 
-  int iterations = 0;
+  i32 iterations = 0;
   while (iterations++ < maxIterations)
   {
     length_t distanceMoved = dt * glm::length(playerVelocity);
@@ -153,9 +153,9 @@ void World::playerCollisionHandling(eng::Timestep timestep) const
       break;
 
     RayIntersection firstCollision{};
-    for (int i = 0; i <= playerWidth; ++i)
-      for (int j = 0; j <= playerWidth; ++j)
-        for (int k = 0; k <= playerHeight; ++k)
+    for (i32 i = 0; i <= playerWidth; ++i)
+      for (i32 j = 0; j <= playerWidth; ++j)
+        for (i32 k = 0; k <= playerHeight; ++k)
         {
           eng::math::Vec3 samplePosition = anchorPoint + eng::math::Vec3(i * widthInterval, j * widthInterval, k * heightInterval);
           RayIntersection collision = castRaySegment(samplePosition, samplePosition + playerVelocity * dt);

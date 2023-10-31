@@ -4,7 +4,7 @@
 
 ChunkVertex::ChunkVertex()
   : m_VertexData(0), m_LightingData(0) {}
-ChunkVertex::ChunkVertex(const BlockIndex& vertexPlacement, int quadIndex, block::TextureID texture, int sunlight, int ambientOcclusion)
+ChunkVertex::ChunkVertex(const BlockIndex& vertexPlacement, i32 quadIndex, block::TextureID texture, i32 sunlight, i32 ambientOcclusion)
 {
   m_VertexData =  vertexPlacement.i + (vertexPlacement.j << 6) + (vertexPlacement.k << 12);
   m_VertexData |= quadIndex << 18;
@@ -14,7 +14,7 @@ ChunkVertex::ChunkVertex(const BlockIndex& vertexPlacement, int quadIndex, block
   m_LightingData |= ambientOcclusion << 20;
 }
 
-const BlockIndex& ChunkVertex::GetOffset(eng::math::Direction face, int quadIndex)
+const BlockIndex& ChunkVertex::GetOffset(eng::math::Direction face, i32 quadIndex)
 {
   static constexpr BlockIndex offsets[6][4]
     = { { {0, 1, 0}, {0, 0, 0}, {0, 1, 1}, {0, 0, 1} },    /*  West Face   */
@@ -24,27 +24,27 @@ const BlockIndex& ChunkVertex::GetOffset(eng::math::Direction face, int quadInde
         { {0, 1, 0}, {1, 1, 0}, {0, 0, 0}, {1, 0, 0} },    /*  Bottom Face */
         { {0, 0, 1}, {1, 0, 1}, {0, 1, 1}, {1, 1, 1} } };  /*  Top Face    */
 
-  return offsets[static_cast<int>(face)][quadIndex];
+  return offsets[static_cast<i32>(face)][quadIndex];
 }
 
 
 
-ChunkQuad::ChunkQuad(const BlockIndex& blockIndex, eng::math::Direction face, block::TextureID texture, const std::array<int, 4>& sunlight, const std::array<int, 4>& ambientOcclusion)
+ChunkQuad::ChunkQuad(const BlockIndex& blockIndex, eng::math::Direction face, block::TextureID texture, const std::array<i32, 4>& sunlight, const std::array<i32, 4>& ambientOcclusion)
 {
-  static constexpr std::array<int, 4> standardOrder = { 0, 1, 2, 3 };
-  static constexpr std::array<int, 4> reversedOrder = { 1, 3, 0, 2 };
+  static constexpr std::array<i32, 4> standardOrder = { 0, 1, 2, 3 };
+  static constexpr std::array<i32, 4> reversedOrder = { 1, 3, 0, 2 };
 
-  auto totalLightAtVertex = [&sunlight, &ambientOcclusion](int index)
+  auto totalLightAtVertex = [&sunlight, &ambientOcclusion](i32 index)
   {
     return sunlight[index] + ambientOcclusion[index];
   };
 
-  int lightDifferenceAlongStandardSeam = std::abs(totalLightAtVertex(2) - totalLightAtVertex(1));
-  int lightDifferenceAlongReversedSeam = std::abs(totalLightAtVertex(3) - totalLightAtVertex(0));
-  const std::array<int, 4>& quadOrder = lightDifferenceAlongStandardSeam > lightDifferenceAlongReversedSeam ? reversedOrder : standardOrder;
-  for (int i = 0; i < 4; ++i)
+  i32 lightDifferenceAlongStandardSeam = std::abs(totalLightAtVertex(2) - totalLightAtVertex(1));
+  i32 lightDifferenceAlongReversedSeam = std::abs(totalLightAtVertex(3) - totalLightAtVertex(0));
+  const std::array<i32, 4>& quadOrder = lightDifferenceAlongStandardSeam > lightDifferenceAlongReversedSeam ? reversedOrder : standardOrder;
+  for (i32 i = 0; i < 4; ++i)
   {
-    int quadIndex = quadOrder[i];
+    i32 quadIndex = quadOrder[i];
     BlockIndex vertexPlacement = blockIndex + ChunkVertex::GetOffset(face, quadIndex);
     m_Vertices[i] = ChunkVertex(vertexPlacement, quadIndex, texture, sunlight[quadIndex], ambientOcclusion[quadIndex]);
   }
@@ -52,7 +52,7 @@ ChunkQuad::ChunkQuad(const BlockIndex& blockIndex, eng::math::Direction face, bl
 
 
 
-ChunkVoxel::ChunkVoxel(const BlockIndex& blockIndex, eng::math::DirectionBitMask enabledFaces, int firstVertex)
+ChunkVoxel::ChunkVoxel(const BlockIndex& blockIndex, eng::math::DirectionBitMask enabledFaces, i32 firstVertex)
   : m_Index(blockIndex),
     m_EnabledFaces(enabledFaces),
     m_BaseVertex(firstVertex) {}
@@ -67,7 +67,7 @@ bool ChunkVoxel::faceEnabled(eng::math::Direction direction) const
   return m_EnabledFaces[direction];
 }
 
-int ChunkVoxel::baseVertex() const
+i32 ChunkVoxel::baseVertex() const
 {
   return m_BaseVertex;
 }
@@ -88,9 +88,9 @@ bool ChunkDrawCommand::operator==(const ChunkDrawCommand& other) const
   return m_ID == other.m_ID;
 }
 
-int ChunkDrawCommand::vertexCount() const
+i32 ChunkDrawCommand::vertexCount() const
 {
-  return static_cast<int>(4 * m_Quads.size());
+  return static_cast<i32>(4 * m_Quads.size());
 }
 
 const void* ChunkDrawCommand::indexData()
@@ -114,7 +114,7 @@ void ChunkDrawCommand::prune()
   }
 }
 
-void ChunkDrawCommand::addQuad(const BlockIndex& blockIndex, eng::math::Direction face, block::TextureID texture, const std::array<int, 4>& sunlight, const std::array<int, 4>& ambientOcclusion)
+void ChunkDrawCommand::addQuad(const BlockIndex& blockIndex, eng::math::Direction face, block::TextureID texture, const std::array<i32, 4>& sunlight, const std::array<i32, 4>& ambientOcclusion)
 {
   addQuadIndices(vertexCount());
   m_IndexCount += 6;
@@ -129,7 +129,7 @@ void ChunkDrawCommand::addVoxel(const BlockIndex& blockIndex, eng::math::Directi
 
 bool ChunkDrawCommand::sort(const GlobalIndex& originIndex, const eng::math::Vec3& viewPosition)
 {
-  static constexpr int c_MaxL1Distance = 3 * (Chunk::Size() - 1);
+  static constexpr i32 c_MaxL1Distance = 3 * (Chunk::Size() - 1);
 
   // Find block index that is closest to the specified position
   BlockIndex originBlock = BlockIndex::ToIndex(viewPosition / block::length());
@@ -147,19 +147,19 @@ bool ChunkDrawCommand::sort(const GlobalIndex& originIndex, const eng::math::Vec
     return false;
 
   // Perform an in-place counting sort on L1 distance to originBlock, from highest to lowest
-  std::array<int, c_MaxL1Distance + 1> counts{};
+  std::array<i32, c_MaxL1Distance + 1> counts{};
   for (ChunkVoxel voxel : m_Voxels)
   {
-    int key = c_MaxL1Distance - (voxel.index() - originBlock).l1Norm();
+    i32 key = c_MaxL1Distance - (voxel.index() - originBlock).l1Norm();
     counts[key]++;
   }
   std::partial_sum(counts.begin(), counts.end(), counts.begin());
 
-  std::array<int, c_MaxL1Distance + 1> placements = counts;
+  std::array<i32, c_MaxL1Distance + 1> placements = counts;
   for (size_t i = 0; i < m_Voxels.size();)
   {
-    int key = c_MaxL1Distance - (m_Voxels[i].index() - originBlock).l1Norm();
-    int prevCount = key > 0 ? counts[key - 1] : 0;
+    i32 key = c_MaxL1Distance - (m_Voxels[i].index() - originBlock).l1Norm();
+    i32 prevCount = key > 0 ? counts[key - 1] : 0;
 
     if (prevCount <= i && i < counts[key])
       i++;
@@ -177,7 +177,7 @@ bool ChunkDrawCommand::sort(const GlobalIndex& originIndex, const eng::math::Vec
   return true;
 }
 
-void ChunkDrawCommand::addQuadIndices(int baseVertex)
+void ChunkDrawCommand::addQuadIndices(i32 baseVertex)
 {
   m_Indices.push_back(baseVertex + 0);
   m_Indices.push_back(baseVertex + 1);
@@ -198,8 +198,8 @@ void ChunkDrawCommand::reorderIndices(const GlobalIndex& originIndex, const eng:
     eng::math::Vec3 blockCenter = chunkAnchor + block::length() * eng::math::Vec3(voxel.index()) + eng::math::Vec3(block::length()) / 2;
     eng::math::Vec3 toBlock = blockCenter - viewPosition;
 
-    int quadVertexOffset = 0;
-    eng::EnumArray<int, eng::math::Direction> quadVertexOffsets(-1);
+    i32 quadVertexOffset = 0;
+    eng::EnumArray<i32, eng::math::Direction> quadVertexOffsets(-1);
     for (eng::math::Direction face : eng::math::Directions())
       if (voxel.faceEnabled(face))
       {
@@ -210,7 +210,7 @@ void ChunkDrawCommand::reorderIndices(const GlobalIndex& originIndex, const eng:
     // Add back-facing quads
     for (eng::math::Axis axis : eng::math::Axes())
     {
-      eng::math::Direction face = ToDirection(axis, toBlock[static_cast<int>(axis)] > 0);
+      eng::math::Direction face = ToDirection(axis, toBlock[static_cast<i32>(axis)] > 0);
       if (quadVertexOffsets[face] >= 0)
         addQuadIndices(voxel.baseVertex() + quadVertexOffsets[face]);
     }
@@ -218,7 +218,7 @@ void ChunkDrawCommand::reorderIndices(const GlobalIndex& originIndex, const eng:
     // Add front-facing quads
     for (eng::math::Axis axis : eng::math::Axes())
     {
-      eng::math::Direction face = ToDirection(axis, toBlock[static_cast<int>(axis)] <= 0);
+      eng::math::Direction face = ToDirection(axis, toBlock[static_cast<i32>(axis)] <= 0);
       if (quadVertexOffsets[face] >= 0)
         addQuadIndices(voxel.baseVertex() + quadVertexOffsets[face]);
     }

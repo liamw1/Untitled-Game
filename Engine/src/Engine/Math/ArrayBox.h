@@ -10,7 +10,7 @@ namespace eng::math
   class ArrayBoxStrip
   {
   public:
-    ArrayBoxStrip(T* begin, int offset)
+    ArrayBoxStrip(T* begin, i32 offset)
       : m_Begin(begin), m_Offset(offset) {}
 
     T& operator[](IntType index) { return ENG_MUTABLE_VERSION(operator[], index); }
@@ -18,7 +18,7 @@ namespace eng::math
 
   private:
     T* m_Begin;
-    int m_Offset;
+    i32 m_Offset;
 
     ~ArrayBoxStrip() = default;
   };
@@ -217,8 +217,8 @@ namespace eng::math
     void setBounds(const IBox3<IntType>& bounds)
     {
       m_Bounds = bounds;
-      IVec3<int> extents = static_cast<IVec3<int>>(m_Bounds.extents());
-      m_Strides = IVec2<int>(extents.j * extents.k, extents.k);
+      IVec3<i32> extents = static_cast<IVec3<i32>>(m_Bounds.extents());
+      m_Strides = IVec2<i32>(extents.j * extents.k, extents.k);
       m_Offset = m_Strides.i * m_Bounds.min.i + m_Strides.j * m_Bounds.min.j + m_Bounds.min.k;
     }
 
@@ -238,8 +238,8 @@ namespace eng::math
 
   private:
     IBox3<IntType> m_Bounds;
-    IVec2<int> m_Strides;
-    int m_Offset;
+    IVec2<i32> m_Strides;
+    i32 m_Offset;
     T* m_Data;
   };
 }

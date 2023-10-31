@@ -13,12 +13,11 @@
   Example:
     class i32
     {
-    public:
-      int& get() { return ENG_MUTABLE_VERSION(get); }
-      const int& get() const { return m_Value; }
+      i32 m_Value;
 
-    private:
-      int m_Value;
+    public:
+      i32& get() { return ENG_MUTABLE_VERSION(get); }
+      const i32& get() const { return m_Value; }
     }
 
   Ideally, this wouldn't be a macro, but a function version of this is more verbose than manual casting.
@@ -37,33 +36,30 @@
   You may define private members at the beginning of the class definitions, or define the
   macro in a public: section at the end of the class definition.
 
-  Examples:
-    template<typename T>                        template<typenameT>
-    class VectorWrapper                         class VectorWrapper
-    {                                           {
-    public:                                       std::vector<T> m_Data;
-      VectorWrapper() = default;                
-                                                public:
-    private:                                      ENG_DEFINE_ITERATORS(m_Data);
-      std::vector<T> m_Data;                    
-                                                  VectorWrapper() = default;
-    public:                                     
-      ENG_DEFINE_ITERATORS(m_Data);               bool remove(iterator removalPosition);
-    }                                           }
+  Example:
+    template<typenameT>
+    class VectorWrapper
+    {
+      std::vector<T> m_Data;
+    
+    public:
+      ENG_DEFINE_ITERATORS(m_Data);
+    
+      VectorWrapper() = default;
+    
+      bool remove(iterator removalPosition);
+    }
 */
 #define ENG_DEFINE_ITERATORS(container)           __DEFINE_ITERATORS(container,)
 #define ENG_DEFINE_CONSTEXPR_ITERATORS(container) __DEFINE_ITERATORS(container, constexpr)
 
 // Detail
-#define __DEFINE_ITERATORS(container, keyword)              \
-using iterator               = decltype(container.end());   \
-using const_iterator         = decltype(container.cend());  \
-using reverse_iterator       = decltype(container.rend());  \
-using const_reverse_iterator = decltype(container.crend()); \
-__DEFINE_ITERATOR_ACCESSORS(container, keyword)
-
-// Detail
-#define __DEFINE_ITERATOR_ACCESSORS(container, keyword)                         \
+#define __DEFINE_ITERATORS(container, keyword)                                  \
+using iterator               = decltype(container.end());                       \
+using const_iterator         = decltype(container.cend());                      \
+using reverse_iterator       = decltype(container.rend());                      \
+using const_reverse_iterator = decltype(container.crend());                     \
+                                                                                \
 keyword iterator               begin()         { return container.begin();   }  \
 keyword iterator               end()           { return container.end();     }  \
 keyword reverse_iterator       rbegin()        { return container.rbegin();  }  \

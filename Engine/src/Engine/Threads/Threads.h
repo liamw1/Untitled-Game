@@ -11,7 +11,7 @@ namespace eng::threads
 
     First = 0, Last = Low
   };
-  static constexpr int c_PriorityCount = 1 + static_cast<int>(Priority::Last) - static_cast<int>(Priority::First);
+  static constexpr i32 c_PriorityCount = 1 + static_cast<i32>(Priority::Last) - static_cast<i32>(Priority::First);
 
   void setAsMainThread();
   bool isMainThread();

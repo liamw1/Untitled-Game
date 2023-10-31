@@ -7,6 +7,9 @@ namespace eng
   
   template<typename T, typename DecayedType>
   concept DecaysTo = std::same_as<std::decay_t<T>, DecayedType>;
+
+  template<typename T>
+  concept Arithmetic = std::is_arithmetic_v<T>;
   
   template<typename E>
   concept Enum = std::is_enum_v<E>;

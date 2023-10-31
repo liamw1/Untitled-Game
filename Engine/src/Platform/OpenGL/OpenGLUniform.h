@@ -6,21 +6,21 @@ namespace eng
   class OpenGLUniform : public Uniform
   {
   public:
-    OpenGLUniform(uint32_t binding, uint32_t size);
+    OpenGLUniform(u32 binding, u32 size);
     ~OpenGLUniform();
 
     void bind() const override;
     void unBind() const override;
 
-    void set(const void* data, uint32_t size) override;
+    void set(const void* data, u32 size) override;
 
   private:
-    static constexpr uint32_t c_MaxUniformBindings = 36;
-    static constexpr uint32_t c_MaxUniformBlockSize = 16384;
+    static constexpr u32 c_MaxUniformBindings = 36;
+    static constexpr u32 c_MaxUniformBlockSize = 16384;
 
-    static inline std::array<uint32_t, c_MaxUniformBindings> s_BufferSizes{};
-    static inline std::array<uint32_t, c_MaxUniformBindings> s_RendererIDs{};
+    static inline std::array<u32, c_MaxUniformBindings> s_BufferSizes{};
+    static inline std::array<u32, c_MaxUniformBindings> s_RendererIDs{};
 
-    uint32_t m_Binding;
+    u32 m_Binding;
   };
 }

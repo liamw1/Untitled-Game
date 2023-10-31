@@ -36,7 +36,7 @@ namespace util
   
   bool isInFrustum(const eng::math::Vec3& point, const std::array<eng::math::Vec4, 6>& frustumPlanes)
   {
-    for (int planeID = 0; planeID < 5; ++planeID) // Skip far plane
+    for (i32 planeID = 0; planeID < 5; ++planeID) // Skip far plane
       if (glm::dot(eng::math::Vec4(point, 1.0), frustumPlanes[planeID]) < 0)
         return false;
   

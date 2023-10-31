@@ -70,12 +70,12 @@ namespace eng
     glBindVertexArray(m_RendererID);
     m_VertexBuffer->bind();
 
-    uint32_t vertexBufferIndex = 0;
+    u32 vertexBufferIndex = 0;
     for (const BufferElement& element : layout)
     {
-      const int dataTypeID = static_cast<int>(element.type);
+      const i32 dataTypeID = static_cast<i32>(element.type);
 
-      if (dataTypeID >= static_cast<int>(ShaderDataType::FloatTypeBegin) && dataTypeID <= static_cast<int>(ShaderDataType::FloatTypeEnd))
+      if (dataTypeID >= static_cast<i32>(ShaderDataType::FloatTypeBegin) && dataTypeID <= static_cast<i32>(ShaderDataType::FloatTypeEnd))
       {
         glEnableVertexAttribArray(vertexBufferIndex);
         glVertexAttribPointer(vertexBufferIndex,
@@ -86,7 +86,7 @@ namespace eng
           (const void*)(const size_t)element.offset);
         vertexBufferIndex++;
       }
-      else if (dataTypeID >= static_cast<int>(ShaderDataType::IntTypeBegin) && dataTypeID <= static_cast<int>(ShaderDataType::IntTypeEnd))
+      else if (dataTypeID >= static_cast<i32>(ShaderDataType::IntTypeBegin) && dataTypeID <= static_cast<i32>(ShaderDataType::IntTypeEnd))
       {
         glEnableVertexAttribArray(vertexBufferIndex);
         glVertexAttribIPointer(vertexBufferIndex,
@@ -96,10 +96,10 @@ namespace eng
           (const void*)(const size_t)element.offset);
         vertexBufferIndex++;
       }
-      else if (dataTypeID >= static_cast<int>(ShaderDataType::MatTypeBegin) && dataTypeID <= static_cast<int>(ShaderDataType::MatTypeEnd))
+      else if (dataTypeID >= static_cast<i32>(ShaderDataType::MatTypeBegin) && dataTypeID <= static_cast<i32>(ShaderDataType::MatTypeEnd))
       {
-        int count = element.getComponentCount();
-        for (int i = 0; i < count; ++i)
+        i32 count = element.getComponentCount();
+        for (i32 i = 0; i < count; ++i)
         {
           glEnableVertexAttribArray(vertexBufferIndex);
           glVertexAttribPointer(vertexBufferIndex,
@@ -107,7 +107,7 @@ namespace eng
             convertToOpenGLBaseType(element.type),
             element.normalized ? GL_TRUE : GL_FALSE,
             layout.stride(),
-            (const void*)(const size_t)(element.offset + sizeof(float) * count * i));
+            (const void*)(const size_t)(element.offset + sizeof(f32) * count * i));
           glVertexAttribDivisor(vertexBufferIndex, 1);
           vertexBufferIndex++;
         }
@@ -121,7 +121,7 @@ namespace eng
 #endif
   }
 
-  void OpenGLVertexArray::setVertexBuffer(const void* data, uint32_t size)
+  void OpenGLVertexArray::setVertexBuffer(const void* data, u32 size)
   {
     m_VertexBuffer->set(data, size);
 
@@ -136,7 +136,7 @@ namespace eng
     setLayout(m_VertexBufferLayout);
   }
 
-  void OpenGLVertexArray::updateVertexBuffer(const void* data, uint32_t offset, uint32_t size) const
+  void OpenGLVertexArray::updateVertexBuffer(const void* data, u32 offset, u32 size) const
   {
     m_VertexBuffer->update(data, offset, size);
 
@@ -145,7 +145,7 @@ namespace eng
 #endif
   }
 
-  void OpenGLVertexArray::resizeVertexBuffer(uint32_t newSize)
+  void OpenGLVertexArray::resizeVertexBuffer(u32 newSize)
   {
     m_VertexBuffer->resize(newSize);
     setLayout(m_VertexBufferLayout);

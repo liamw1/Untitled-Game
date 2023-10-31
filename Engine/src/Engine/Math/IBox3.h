@@ -99,7 +99,7 @@ namespace eng::math
       return boxExtents.i * boxExtents.j * boxExtents.k;
     }
   
-    constexpr int linearIndexOf(const IVec3<T>& index) const
+    constexpr i32 linearIndexOf(const IVec3<T>& index) const
     {
       ENG_CORE_ASSERT(encloses(index), "Index is outside box!");
       IVec3<T> boxExtents = extents();
@@ -284,14 +284,14 @@ namespace eng::math
     {
       std::array<BoxFace<T>, 6> faces;
       for (Direction side : Directions())
-        faces[static_cast<int>(side)] = BoxFace(side, interiorOnly ? box.faceInterior(side) : box.face(side));
+        faces[static_cast<i32>(side)] = BoxFace(side, interiorOnly ? box.faceInterior(side) : box.face(side));
       return faces;
     }
   
     template<std::integral T>
     constexpr std::array<BoxEdge<T>, 12> ConstructEdges(const IBox3<T>& box, bool interiorOnly)
     {
-      int edgeIndex = 0;
+      i32 edgeIndex = 0;
       std::array<BoxEdge<T>, 12> edges;
       for (auto itA = Directions().begin(); itA != Directions().end(); ++itA)
         for (auto itB = itA.next(); itB != Directions().end(); ++itB)
@@ -312,11 +312,11 @@ namespace eng::math
     template<std::integral T>
     constexpr std::array<BoxCorner<T>, 8> ConstructCorners(const IBox3<T>& box)
     {
-      int cornerIndex = 0;
+      i32 cornerIndex = 0;
       std::array<BoxCorner<T>, 8> corners;
-      for (int i = -1; i < 2; i += 2)
-        for (int j = -1; j < 2; j += 2)
-          for (int k = -1; k < 2; k += 2)
+      for (i32 i = -1; i < 2; i += 2)
+        for (i32 j = -1; j < 2; j += 2)
+          for (i32 k = -1; k < 2; k += 2)
           {
             IVec3<T> offset(i, j, k);
             corners[cornerIndex] = BoxCorner(offset, box.corner(offset));

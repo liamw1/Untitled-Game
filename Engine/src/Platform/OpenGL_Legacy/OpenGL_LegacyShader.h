@@ -1,5 +1,6 @@
 #pragma once
 #include "Engine/Renderer/Shader.h"
+#include "Engine/Core/FixedWidthTypes.h"
 
 namespace eng
 {
@@ -15,7 +16,7 @@ namespace eng
     void unBind() const override;
 
   private:
-    uint32_t m_RendererID;
+    u32 m_RendererID;
     std::string m_Name;
 
     void compile(const std::unordered_map<std::string, std::string>& shaderSources);

@@ -6,23 +6,23 @@ namespace eng
   class OpenGLStorageBuffer : public StorageBuffer
   {
   public:
-    OpenGLStorageBuffer(Type type, std::optional<uint32_t> binding);
+    OpenGLStorageBuffer(Type type, std::optional<u32> binding);
     ~OpenGLStorageBuffer();
 
     void bind() const override;
     void unBind() const override;
 
-    uint32_t size() const override;
+    u32 size() const override;
     Type type() const override;
 
-    void set(const void* data, uint32_t size) override;
-    void update(const void* data, uint32_t offset, uint32_t size) override;
-    void resize(uint32_t newSize) override;
+    void set(const void* data, u32 size) override;
+    void update(const void* data, u32 offset, u32 size) override;
+    void resize(u32 newSize) override;
 
   private:
     Type m_Type;
-    uint32_t m_Size;
-    std::optional<uint32_t> m_Binding;
-    uint32_t m_RendererID;
+    u32 m_Size;
+    std::optional<u32> m_Binding;
+    u32 m_RendererID;
   };
 }

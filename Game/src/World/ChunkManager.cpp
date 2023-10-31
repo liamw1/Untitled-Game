@@ -62,7 +62,7 @@ void ChunkManager::render()
     eng::render::command::setDepthWriting(true);
     eng::render::command::setUseDepthOffset(false);
 
-    int commandCount = m_OpaqueMultiDrawArray->partition([&originIndex, &frustumPlanes](const GlobalIndex& chunkIndex)
+    i32 commandCount = m_OpaqueMultiDrawArray->partition([&originIndex, &frustumPlanes](const GlobalIndex& chunkIndex)
       {
         eng::math::Vec3 anchorPosition = Chunk::AnchorPosition(chunkIndex, originIndex);
         eng::math::Vec3 chunkCenter = Chunk::Center(anchorPosition);
@@ -72,14 +72,14 @@ void ChunkManager::render()
     std::vector<eng::math::Float4> storageBufferData;
     storageBufferData.reserve(commandCount);
     const std::vector<ChunkDrawCommand>& drawCommands = m_OpaqueMultiDrawArray->getDrawCommandBuffer();
-    for (int i = 0; i < commandCount; ++i)
+    for (i32 i = 0; i < commandCount; ++i)
     {
       const GlobalIndex& chunkIndex = drawCommands[i].id();
       eng::math::Vec3 chunkAnchor = Chunk::AnchorPosition(chunkIndex, originIndex);
       storageBufferData.emplace_back(chunkAnchor, 0);
     }
 
-    uint32_t bufferDataSize = static_cast<uint32_t>(storageBufferData.size() * sizeof(eng::math::Float4));
+    u32 bufferDataSize = static_cast<u32>(storageBufferData.size() * sizeof(eng::math::Float4));
     if (bufferDataSize > c_StorageBufferSize)
       ENG_ERROR("Chunk anchor data exceeds SSBO size!");
 
@@ -95,7 +95,7 @@ void ChunkManager::render()
     eng::render::command::setUseDepthOffset(true);
     eng::render::command::setDepthOffset(-1.0f, -1.0f);
 
-    int commandCount = m_TransparentMultiDrawArray->partition([&originIndex, &frustumPlanes](const GlobalIndex& chunkIndex)
+    i32 commandCount = m_TransparentMultiDrawArray->partition([&originIndex, &frustumPlanes](const GlobalIndex& chunkIndex)
       {
         eng::math::Vec3 anchorPosition = Chunk::AnchorPosition(chunkIndex, originIndex);
         eng::math::Vec3 chunkCenter = Chunk::Center(anchorPosition);
@@ -117,14 +117,14 @@ void ChunkManager::render()
     std::vector<eng::math::Float4> storageBufferData;
     storageBufferData.reserve(commandCount);
     const std::vector<ChunkDrawCommand>& drawCommands = m_TransparentMultiDrawArray->getDrawCommandBuffer();
-    for (int i = 0; i < commandCount; ++i)
+    for (i32 i = 0; i < commandCount; ++i)
     {
       const GlobalIndex& chunkIndex = drawCommands[i].id();
       eng::math::Vec3 chunkAnchor = Chunk::AnchorPosition(chunkIndex, originIndex);
       storageBufferData.emplace_back(chunkAnchor, 0);
     }
 
-    uint32_t bufferDataSize = static_cast<uint32_t>(storageBufferData.size() * sizeof(eng::math::Float4));
+    u32 bufferDataSize = static_cast<u32>(storageBufferData.size() * sizeof(eng::math::Float4));
     if (bufferDataSize > c_StorageBufferSize)
       ENG_ERROR("Chunk anchor data exceeds SSBO size!");
 
@@ -261,7 +261,7 @@ void ChunkManager::removeBlock(const GlobalIndex& chunkIndex, const BlockIndex& 
   if (!removedBlock.hasTransparency())
   {
     // Get estimate of light value of effected block for immediate meshing
-    int8_t lightEstimate = 0;
+    i8 lightEstimate = 0;
     for (eng::math::Direction direction : eng::math::Directions())
     {
       BlockIndex blockNeighbor = blockIndex + BlockIndex::Dir(direction);
@@ -504,11 +504,11 @@ void ChunkManager::meshChunk(const std::shared_ptr<Chunk>& chunk)
         enabledFaces.set(face);
 
         // Calculate lighting
-        std::array<int, 4> sunlight{};
-        for (int quadIndex = 0; quadIndex < 4; ++quadIndex)
+        std::array<i32, 4> sunlight{};
+        for (i32 quadIndex = 0; quadIndex < 4; ++quadIndex)
         {
-          int transparentNeighbors = 0;
-          int totalSunlight = 0;
+          i32 transparentNeighbors = 0;
+          i32 totalSunlight = 0;
 
           BlockIndex vertexPosition = blockIndex + ChunkVertex::GetOffset(face, quadIndex);
           BlockBox lightingStencil = BlockBox(-1, 0) + vertexPosition;
@@ -525,9 +525,9 @@ void ChunkManager::meshChunk(const std::shared_ptr<Chunk>& chunk)
         }
 
         // Calculate ambient occlusion
-        std::array<int, 4> quadAmbientOcclusion{};
+        std::array<i32, 4> quadAmbientOcclusion{};
         if (!blockType.hasTransparency())
-          for (int quadIndex = 0; quadIndex < 4; ++quadIndex)
+          for (i32 quadIndex = 0; quadIndex < 4; ++quadIndex)
           {
             eng::math::Axis u = AxisOf(face);
             eng::math::Axis v = Cycle(u);
@@ -562,7 +562,7 @@ void ChunkManager::updateLighting(const std::shared_ptr<Chunk>& chunk)
   ENG_PROFILE_FUNCTION();
   ENG_ASSERT(chunk, "Chunk does not exist!");
 
-  static constexpr int8_t attenuation = 1;
+  static constexpr i8 attenuation = 1;
   const GlobalIndex& chunkIndex = chunk->globalIndex();
 
   BlockData& blockData = getThreadLocalWorkspace();
@@ -607,7 +607,7 @@ void ChunkManager::updateLighting(const std::shared_ptr<Chunk>& chunk)
   std::array<std::stack<BlockIndex>, block::Light::MaxValue() + 1> sunlight;
   attenuatedSunlightExtents.bounds().forEach([&blockData, &sunlight, &attenuatedSunlightExtents](const eng::math::IVec2<blockIndex_t>& index)
     {
-      static constexpr int8_t attenuatedIntensity = block::Light::MaxValue() - attenuation;
+      static constexpr i8 attenuatedIntensity = block::Light::MaxValue() - attenuation;
 
       for (BlockIndex blockIndex(index, attenuatedSunlightExtents(index)); blockIndex.k < Chunk::Size(); ++blockIndex.k)
       {
@@ -631,7 +631,7 @@ void ChunkManager::updateLighting(const std::shared_ptr<Chunk>& chunk)
   }
 
   // Propogate attenuated sunlight
-  for (int8_t intensity = block::Light::MaxValue(); intensity > 0; --intensity)
+  for (i8 intensity = block::Light::MaxValue(); intensity > 0; --intensity)
     while (!sunlight[intensity].empty())
     {
       BlockIndex lightIndex = sunlight[intensity].top();
@@ -643,7 +643,7 @@ void ChunkManager::updateLighting(const std::shared_ptr<Chunk>& chunk)
         if (!Chunk::Bounds().encloses(lightNeighbor) || !blockData.composition(lightNeighbor).hasTransparency())
           continue;
 
-        int8_t neighborIntensity = intensity - attenuation;
+        i8 neighborIntensity = intensity - attenuation;
         if (neighborIntensity <= blockData.lighting(lightNeighbor).sunlight())
           continue;
 

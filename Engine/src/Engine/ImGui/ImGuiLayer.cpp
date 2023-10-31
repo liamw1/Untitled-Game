@@ -91,7 +91,7 @@ namespace eng
 
     ImGuiIO& io = ImGui::GetIO();
     Application& app = Application::Get();
-    io.DisplaySize = ImVec2(static_cast<float>(app.getWindow().getWidth()), static_cast<float>(app.getWindow().getHeight()));
+    io.DisplaySize = ImVec2(static_cast<f32>(app.getWindow().getWidth()), static_cast<f32>(app.getWindow().getHeight()));
 
     // Rendering
     ImGui::Render();

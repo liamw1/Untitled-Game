@@ -13,17 +13,17 @@ namespace eng
   public:
     Image(const std::filesystem::path& path);
 
-    int width() const;
-    int height() const;
-    int channels() const;
-    int pixelCount() const;
+    i32 width() const;
+    i32 height() const;
+    i32 channels() const;
+    i32 pixelCount() const;
 
-    const uint8_t* data() const;
+    const u8* data() const;
 
     math::Float4 averageColor() const;
 
   private:
-    math::ArrayBox<uint8_t, int> m_Data;
+    math::ArrayBox<u8, i32> m_Data;
   };
 
 
@@ -33,26 +33,26 @@ namespace eng
   public:
     virtual ~Texture();
 
-    virtual uint32_t getWidth() const = 0;
-    virtual uint32_t getHeight() const = 0;
-    virtual uint32_t getRendererID() const = 0;
+    virtual u32 getWidth() const = 0;
+    virtual u32 getHeight() const = 0;
+    virtual u32 getRendererID() const = 0;
 
     /*
       Method for setting texture data directly.
       \param data Buffer of texture data
       \param size Size of buffer in bytes
     */
-    virtual void setData(void* data, uint32_t size) = 0;
+    virtual void setData(void* data, u32 size) = 0;
 
     /*
       Binds texture to texture slot (0 by default).
       Number of slot varies between GPUs, usually around 16-32 total.
     */
-    virtual void bind(uint32_t slot = 0) const = 0;
+    virtual void bind(u32 slot = 0) const = 0;
 
     virtual bool operator==(const Texture& other) const = 0;
 
-    static std::unique_ptr<Texture> Create(uint32_t width, uint32_t height);
+    static std::unique_ptr<Texture> Create(u32 width, u32 height);
     static std::unique_ptr<Texture> Create(const std::filesystem::path& path);
   };
 
@@ -63,11 +63,11 @@ namespace eng
   public:
     virtual ~TextureArray();
 
-    virtual void bind(uint32_t slot = 0) const = 0;
+    virtual void bind(u32 slot = 0) const = 0;
 
     virtual void addTexture(const std::filesystem::path& path) = 0;
     virtual void addTexture(const Image& image) = 0;
 
-    static std::unique_ptr<TextureArray> Create(uint32_t textureCount, uint32_t textureSize);
+    static std::unique_ptr<TextureArray> Create(u32 textureCount, u32 textureSize);
   };
 }

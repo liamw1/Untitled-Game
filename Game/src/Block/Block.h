@@ -5,7 +5,7 @@
 namespace block
 {
   constexpr length_t length() { return 0.5_m; }
-  constexpr float lengthF() { return static_cast<float>(length()); }
+  constexpr f32 lengthF() { return static_cast<f32>(length()); }
 
   std::shared_ptr<eng::TextureArray> getTextureArray();
 
@@ -33,15 +33,15 @@ namespace block
   {
   public:
     Light();
-    Light(int8_t sunlight);
+    Light(i8 sunlight);
 
     bool operator==(Light other) const;
 
-    int8_t sunlight() const;
+    i8 sunlight() const;
 
-    static constexpr int MaxValue() { return 15; }
+    static constexpr i32 MaxValue() { return 15; }
 
   private:
-    int8_t m_Sunlight;
+    i8 m_Sunlight;
   };
 };

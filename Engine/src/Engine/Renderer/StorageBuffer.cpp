@@ -7,7 +7,7 @@ namespace eng
 {
   StorageBuffer::~StorageBuffer() = default;
 
-  std::unique_ptr<StorageBuffer> StorageBuffer::Create(Type type, std::optional<uint32_t> binding)
+  std::unique_ptr<StorageBuffer> StorageBuffer::Create(Type type, std::optional<u32> binding)
   {
     switch (RendererAPI::GetAPI())
     {

@@ -10,10 +10,10 @@ namespace eng
   struct WindowProps
   {
     std::string title;
-    uint32_t width;
-    uint32_t height;
+    u32 width;
+    u32 height;
 
-    WindowProps(const std::string& title = "Engine", uint32_t width = 1600, uint32_t height = 900)
+    WindowProps(const std::string& title = "Engine", u32 width = 1600, u32 height = 900)
       : title(title), width(width), height(height) {}
   };
 
@@ -27,8 +27,8 @@ namespace eng
 
     virtual void onUpdate() = 0;
 
-    virtual uint32_t getWidth() const = 0;
-    virtual uint32_t getHeight() const = 0;
+    virtual u32 getWidth() const = 0;
+    virtual u32 getHeight() const = 0;
 
     // Window attributes
     virtual void setEventCallback(const EventCallbackFn& callback) = 0;

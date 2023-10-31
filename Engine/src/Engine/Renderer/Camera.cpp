@@ -16,11 +16,11 @@ namespace eng
   const math::Mat4& Camera::projectionMatrix() const { return m_Projection; }
   Camera::ProjectionType Camera::projectionType() const { return m_ProjectionType; }
 
-  float Camera::nearClip() const { return m_NearClip; }
-  float Camera::farClip() const { return m_FarClip; }
+  f32 Camera::nearClip() const { return m_NearClip; }
+  f32 Camera::farClip() const { return m_FarClip; }
 
-  float Camera::aspectRatio() const { return m_AspectRatio; }
-  void Camera::setAspectRatio(float aspectRatio)
+  f32 Camera::aspectRatio() const { return m_AspectRatio; }
+  void Camera::setAspectRatio(f32 aspectRatio)
   {
     m_AspectRatio = aspectRatio;
     recalculatePerspectiveProjection();
@@ -39,13 +39,13 @@ namespace eng
     recalculatePerspectiveProjection();
   }
 
-  float Camera::orthographicSize() const
+  f32 Camera::orthographicSize() const
   {
     ENG_ASSERT(m_ProjectionType == ProjectionType::Orthographic, "A perspective camera does not have an orthographic size!");
     return m_OrthographicSize;
   }
 
-  void Camera::setOrthographicView(float aspectRatio, float size, float nearClip, float farClip)
+  void Camera::setOrthographicView(f32 aspectRatio, f32 size, f32 nearClip, f32 farClip)
   {
     m_AspectRatio = aspectRatio;
     m_OrthographicSize = size;
@@ -56,7 +56,7 @@ namespace eng
     recalculateOrthographicProjection();
   }
 
-  void Camera::setPerspectiveView(float aspectRatio, math::Angle fov, float nearClip, float farClip)
+  void Camera::setPerspectiveView(f32 aspectRatio, math::Angle fov, f32 nearClip, f32 farClip)
   {
     m_AspectRatio = aspectRatio;
     m_FOV = fov;
@@ -67,9 +67,9 @@ namespace eng
     recalculatePerspectiveProjection();
   }
 
-  void Camera::setViewportSize(uint32_t width, uint32_t height)
+  void Camera::setViewportSize(u32 width, u32 height)
   {
-    m_AspectRatio = height > 0 ? static_cast<float>(width) / height : 0.0f;
+    m_AspectRatio = height > 0 ? static_cast<f32>(width) / height : 0.0f;
     recalculateProjection();
   }
 
@@ -85,10 +85,10 @@ namespace eng
 
   void Camera::recalculateOrthographicProjection()
   {
-    float left = -m_OrthographicSize * m_AspectRatio / 2;
-    float right = m_OrthographicSize * m_AspectRatio / 2;
-    float bottom = -m_OrthographicSize / 2;
-    float top = m_OrthographicSize / 2;
+    f32 left = -m_OrthographicSize * m_AspectRatio / 2;
+    f32 right = m_OrthographicSize * m_AspectRatio / 2;
+    f32 bottom = -m_OrthographicSize / 2;
+    f32 top = m_OrthographicSize / 2;
 
     m_Projection = glm::ortho(left, right, bottom, top, m_NearClip, m_FarClip);
   }

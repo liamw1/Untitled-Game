@@ -6,7 +6,7 @@
 
 namespace eng
 {
-  const char* ApplicationCommandLineArgs::operator[](int index) const
+  const char* ApplicationCommandLineArgs::operator[](i32 index) const
   {
     ENG_CORE_ASSERT(debug::BoundsCheck(index, 0, count), "Index is out of bounds!");
     return args[index];

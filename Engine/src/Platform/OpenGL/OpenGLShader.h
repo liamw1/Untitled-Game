@@ -1,5 +1,6 @@
 #pragma once
 #include "Engine/Renderer/Shader.h"
+#include "Engine/Core/FixedWidthTypes.h"
 
 namespace eng
 {
@@ -21,17 +22,17 @@ namespace eng
     void unBind() const override;
 
   private:
-    uint32_t m_RendererID;
+    u32 m_RendererID;
     std::string m_Name;
     std::string m_FilePath;
 
-    std::unordered_map<uint32_t, std::vector<uint32_t>> m_VulkanSPIRV;
-    std::unordered_map<uint32_t, std::vector<uint32_t>> m_OpenGLSPIRV;
-    std::unordered_map<uint32_t, std::string> m_OpenGLSourceCode;
+    std::unordered_map<u32, std::vector<u32>> m_VulkanSPIRV;
+    std::unordered_map<u32, std::vector<u32>> m_OpenGLSPIRV;
+    std::unordered_map<u32, std::string> m_OpenGLSourceCode;
 
     void compileVulkanBinaries(const std::unordered_map<std::string, std::string>& shaderSources);
     void compileOpenGLBinaries();
     void createProgram();
-    void reflect(uint32_t stage, const std::vector<uint32_t>& shaderData);
+    void reflect(u32 stage, const std::vector<u32>& shaderData);
   };
 }

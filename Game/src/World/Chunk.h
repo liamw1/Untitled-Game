@@ -54,7 +54,7 @@ public:
 
   static constexpr blockIndex_t Size() { return c_ChunkSize; }
   static constexpr length_t Length() { return block::length() * Size(); }
-  static constexpr int TotalBlocks() { return Size() * Size() * Size(); }
+  static constexpr i32 TotalBlocks() { return eng::math::cube(Size()); }
   static constexpr BlockBox Bounds() { return BlockBox(0, Size() - 1); }
   static constexpr BlockRect Bounds2D() { return BlockRect(0, Size() - 1); }
   static constexpr GlobalBox Stencil(const GlobalIndex& chunkIndex) { return GlobalBox(-1, 1) + chunkIndex; }
@@ -62,6 +62,6 @@ public:
 private:
   ProtectedBlockArrayBox<block::Type> m_Composition;
   ProtectedBlockArrayBox<block::Light> m_Lighting;
-  std::atomic<uint16_t> m_NonOpaqueFaces;
+  std::atomic<u16> m_NonOpaqueFaces;
   const GlobalIndex m_GlobalIndex;
 };

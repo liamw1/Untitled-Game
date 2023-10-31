@@ -11,7 +11,7 @@ namespace eng::event
   std::string KeyPress::toString() const
   {
     std::stringstream ss;
-    ss << "KeyPress: " << static_cast<input::keyID>(m_Key) << " (repeat = " << m_IsRepeat << ")";
+    ss << "KeyPress: " << toUnderlying(m_Key) << " (repeat = " << m_IsRepeat << ")";
     return ss.str();
   }
 
@@ -28,7 +28,7 @@ namespace eng::event
   std::string KeyRelease::toString() const
   {
     std::stringstream ss;
-    ss << "KeyRelease: " << static_cast<input::keyID>(m_Key);
+    ss << "KeyRelease: " << toUnderlying(m_Key);
     return ss.str();
   }
 
@@ -44,7 +44,7 @@ namespace eng::event
   std::string KeyType::toString() const
   {
     std::stringstream ss;
-    ss << "KeyType: " << static_cast<input::keyID>(m_Key);
+    ss << "KeyType: " << toUnderlying(m_Key);
     return ss.str();
   }
 

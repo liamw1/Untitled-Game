@@ -9,7 +9,7 @@ namespace eng::threads
     using const_iterator = eng::LRUCache<K, std::shared_ptr<V>>::const_iterator;
 
   public:
-    LRUCache(int size)
+    LRUCache(i32 size)
       : m_Cache(size) {}
 
     bool insert(const K& key, const std::shared_ptr<V>& valuePointer)

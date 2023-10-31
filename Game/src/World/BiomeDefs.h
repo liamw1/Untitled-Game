@@ -7,7 +7,7 @@ public:
   length_t localSurfaceElevation(const NoiseSamples& noiseSamples) const override
   {
     static constexpr length_t largestElevationAmplitude = 150 * block::length();
-    static constexpr float elevationPersistence = 1.0f / 3;
+    static constexpr f32 elevationPersistence = 1.0f / 3;
 
     length_t h = CalculateOctaveNoise(noiseSamples, largestElevationAmplitude, elevationPersistence);
     return std::sqrt(10 + h * h);
@@ -25,7 +25,7 @@ public:
   length_t localSurfaceElevation(const NoiseSamples& noiseSamples) const override
   {
     static constexpr length_t largestElevationAmplitude = 10 * block::length();
-    static constexpr float elevationPersistence = 1.0f / 5;
+    static constexpr f32 elevationPersistence = 1.0f / 5;
     return CalculateOctaveNoise(noiseSamples, largestElevationAmplitude, elevationPersistence);
   }
 
@@ -41,7 +41,7 @@ public:
   length_t localSurfaceElevation(const NoiseSamples& noiseSamples) const override
   {
     static constexpr length_t largestElevationAmplitude = 30 * block::length();
-    static constexpr float elevationPersistence = 1.0f / 4;
+    static constexpr f32 elevationPersistence = 1.0f / 4;
     return CalculateOctaveNoise(noiseSamples, largestElevationAmplitude, elevationPersistence);
   }
 

@@ -1,13 +1,13 @@
 #pragma once
 
-template<typename ComponentType, int ComponentCount>
+template<typename ComponentType, i32 ComponentCount>
 class CompoundType
 {
 public:
   struct Component
   {
     ComponentType type = ComponentType();
-    float weight = 0.0;
+    f32 weight = 0.0;
   };
 
   constexpr CompoundType()
@@ -18,15 +18,15 @@ public:
   constexpr CompoundType(ComponentType initialValue)
   {
     m_Components.front() = { initialValue, 1.0f };
-    for (int i = 1; i < ComponentCount; ++i)
+    for (i32 i = 1; i < ComponentCount; ++i)
       m_Components[i] = { ComponentType(), 0.0f};
   }
 
-  template<int N>
+  template<i32 N>
   CompoundType(const std::array<Component, N>& components)
   {
-    float sumOfWeights = 0.0;
-    for (int i = 0; i < std::min(N, ComponentCount); ++i)
+    f32 sumOfWeights = 0.0;
+    for (i32 i = 0; i < std::min(N, ComponentCount); ++i)
     {
       m_Components[i] = components[i];
       sumOfWeights += components[i].weight;
@@ -38,7 +38,7 @@ public:
 
   ComponentType getPrimary() const { return m_Components.front().type; };
 
-  const Component& operator[](int index) const
+  const Component& operator[](i32 index) const
   {
     ENG_ASSERT(0 <= index && index < ComponentCount, "Index out of bounds!");
     return m_Components[index];
@@ -49,7 +49,7 @@ public:
     CompoundType sum = *this;
     return sum += right;
   }
-  CompoundType operator*(float x) const
+  CompoundType operator*(f32 x) const
   {
     CompoundType result = *this;
     return result *= x;
@@ -59,8 +59,9 @@ public:
   {
     std::array<Component, ComponentCount> mergedComposition{};
 
-    int i = 0, j = 0;
-    for (int k = 0; k < ComponentCount; ++k)
+    i32 i = 0;
+    i32 j = 0;
+    for (i32 k = 0; k < ComponentCount; ++k)
     {
       if (m_Components[i].weight > right.m_Components[j].weight)
       {
@@ -80,24 +81,24 @@ public:
     return *this;
   }
 
-  CompoundType& operator*=(float x)
+  CompoundType& operator*=(f32 x)
   {
     ENG_ASSERT(x >= 0.0, "Compound block cannot be multiplied by a negative number!");
 
-    for (int i = 0; i < ComponentCount; ++i)
+    for (i32 i = 0; i < ComponentCount; ++i)
       m_Components[i].weight *= x;
 
     return *this;
   }
 
-  static constexpr int MaxTypes() { return ComponentCount; }
+  static constexpr i32 MaxTypes() { return ComponentCount; }
 
 private:
   std::array<Component, ComponentCount> m_Components{};
 };
 
-template<typename ComponentType, int ComponentCount>
-CompoundType<ComponentType, ComponentCount> operator*(float x, const CompoundType<ComponentType, ComponentCount>& compoundType)
+template<typename ComponentType, i32 ComponentCount>
+CompoundType<ComponentType, ComponentCount> operator*(f32 x, const CompoundType<ComponentType, ComponentCount>& compoundType)
 {
   return compoundType * x;
 }

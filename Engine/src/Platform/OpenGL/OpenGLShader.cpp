@@ -113,7 +113,7 @@ namespace eng
     if (optimize)
       options.SetOptimizationLevel(shaderc_optimization_level_performance);
 
-    std::unordered_map<GLenum, std::vector<uint32_t>>& shaderData = m_VulkanSPIRV;
+    std::unordered_map<GLenum, std::vector<u32>>& shaderData = m_VulkanSPIRV;
     shaderData.clear();
     for (const auto& [type, source] : shaderSources)
     {
@@ -123,7 +123,7 @@ namespace eng
       if (module.GetCompilationStatus() != shaderc_compilation_status_success)
         ENG_CORE_ERROR(module.GetErrorMessage());
 
-      shaderData[stage] = std::vector<uint32_t>(module.cbegin(), module.cend());
+      shaderData[stage] = std::vector<u32>(module.cbegin(), module.cend());
     }
 
     for (const auto& [stage, data] : shaderData)
@@ -134,7 +134,7 @@ namespace eng
   {
     static constexpr bool optimize = false;
 
-    std::unordered_map<GLenum, std::vector<uint32_t>>& shaderData = m_OpenGLSPIRV;
+    std::unordered_map<GLenum, std::vector<u32>>& shaderData = m_OpenGLSPIRV;
     
     shaderc::Compiler compiler;
     shaderc::CompileOptions options;
@@ -154,7 +154,7 @@ namespace eng
       if (module.GetCompilationStatus() != shaderc_compilation_status_success)
         ENG_CORE_ERROR(module.GetErrorMessage());
 
-      shaderData[stage] = std::vector<uint32_t>(module.cbegin(), module.cend());
+      shaderData[stage] = std::vector<u32>(module.cbegin(), module.cend());
     }
   }
 
@@ -168,7 +168,7 @@ namespace eng
     for (auto&& [stage, spirv] : m_OpenGLSPIRV)
     {
       GLuint shaderID = shaderIDs.emplace_back(glCreateShader(stage));
-      glShaderBinary(1, &shaderID, GL_SHADER_BINARY_FORMAT_SPIR_V, spirv.data(), sizeof(uint32_t) * static_cast<GLsizei>(spirv.size()));
+      glShaderBinary(1, &shaderID, GL_SHADER_BINARY_FORMAT_SPIR_V, spirv.data(), sizeof(u32) * static_cast<GLsizei>(spirv.size()));
       glSpecializeShader(shaderID, "main", 0, nullptr, nullptr);
       glAttachShader(program, shaderID);
     }
@@ -188,11 +188,11 @@ namespace eng
 
       glDeleteProgram(program);
 
-      for (uint32_t id : shaderIDs)
+      for (u32 id : shaderIDs)
         glDeleteShader(id);
     }
 
-    for (uint32_t id : shaderIDs)
+    for (u32 id : shaderIDs)
     {
       glDetachShader(program, id);
       glDeleteShader(id);
@@ -201,7 +201,7 @@ namespace eng
     m_RendererID = program;
   }
 
-  void OpenGLShader::reflect(uint32_t stage, const std::vector<uint32_t>& shaderData)
+  void OpenGLShader::reflect(u32 stage, const std::vector<u32>& shaderData)
   {
     spirv_cross::Compiler compiler(shaderData);
     spirv_cross::ShaderResources resources = compiler.get_shader_resources();
@@ -215,8 +215,8 @@ namespace eng
     {
       const spirv_cross::SPIRType& bufferType = compiler.get_type(uniform.base_type_id);
       size_t bufferSize = compiler.get_declared_struct_size(bufferType);
-      uint32_t binding = compiler.get_decoration(uniform.id, spv::DecorationBinding);
-      int memberCount = static_cast<int>(bufferType.member_types.size());
+      u32 binding = compiler.get_decoration(uniform.id, spv::DecorationBinding);
+      i32 memberCount = static_cast<i32>(bufferType.member_types.size());
 
       ENG_CORE_TRACE("  {0}", uniform.name);
       ENG_CORE_TRACE("    Size = {0}", bufferSize);

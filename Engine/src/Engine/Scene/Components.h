@@ -42,8 +42,8 @@ namespace eng::component
   struct CircleRenderer
   {
     math::Float4 color = math::Float4(1.0);
-    float thickness = 1.0f;
-    float fade = 0.005f;
+    f32 thickness = 1.0f;
+    f32 fade = 0.005f;
   };
 
   struct Camera

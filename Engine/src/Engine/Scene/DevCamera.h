@@ -10,7 +10,7 @@ namespace eng::DevCamera
 	length_t Distance();
 	void SetDistance(length_t distance);
 
-	void SetViewportSize(uint32_t width, uint32_t height);
+	void SetViewportSize(u32 width, u32 height);
 
 	const math::Mat4& ViewMatrix();
   math::Mat4 ViewProjection();

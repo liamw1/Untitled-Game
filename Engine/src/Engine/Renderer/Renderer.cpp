@@ -41,9 +41,9 @@ namespace eng::render
                                                                   { -0.5f,  0.5f,  0.5f, 1.0f },
                                                                   {  0.5f,  0.5f,  0.5f, 1.0f } };
 
-  static constexpr uint32_t c_CubeFrameIndices[24] = { 0, 1, 1, 2, 2, 3, 3, 0,
-                                                       4, 5, 5, 6, 6, 7, 7, 4,
-                                                       1, 4, 2, 7, 0, 5, 3, 6 };
+  static constexpr u32 c_CubeFrameIndices[24] = { 0, 1, 1, 2, 2, 3, 3, 0,
+                                                  4, 5, 5, 6, 6, 7, 7, 4,
+                                                  1, 4, 2, 7, 0, 5, 3, 6 };
 
   static void initialize()
   {
@@ -84,7 +84,7 @@ namespace eng::render
   {
     std::array<WireVertex, 8> vertices{};
     math::Mat4 transform = glm::translate(math::Mat4(1.0), position) * glm::scale(math::Mat4(1.0), size);
-    for (int i = 0; i < 8; ++i)
+    for (i32 i = 0; i < 8; ++i)
     {
       vertices[i].position = transform * c_CubeFrameVertexPositions[i];
       vertices[i].color = color;
@@ -95,7 +95,7 @@ namespace eng::render
     command::drawIndexedLines(s_WireFrameVertexArray.get());
   }
 
-  void onWindowResize(uint32_t width, uint32_t height)
+  void onWindowResize(u32 width, u32 height)
   {
     command::setViewport(0, 0, width, height);
   }

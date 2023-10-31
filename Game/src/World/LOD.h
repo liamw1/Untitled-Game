@@ -16,25 +16,25 @@ namespace lod
   {
     eng::math::Float3 position;
     eng::math::Float3 isoNormal;
-    std::array<int, 2> textureIndices;
+    std::array<i32, 2> textureIndices;
     eng::math::Float2 textureWeights;
-    int quadIndex;
+    i32 quadIndex;
 
-    Vertex(const eng::math::Float3& position, const eng::math::Float3& isoNormal, const std::array<int, 2>& textureIndices, const eng::math::Float2& textureWeights, int quadIndex);
+    Vertex(const eng::math::Float3& position, const eng::math::Float3& isoNormal, const std::array<i32, 2>& textureIndices, const eng::math::Float2& textureWeights, i32 quadIndex);
   };
 
   struct UniformData
   {
     eng::math::Float3 anchor;
-    float textureScaling;
-    const float nearPlaneDistance = 10 * block::lengthF();
-    const float farPlaneDistance = 1e10f * block::lengthF();
+    f32 textureScaling;
+    const f32 nearPlaneDistance = 10 * block::lengthF();
+    const f32 farPlaneDistance = 1e10f * block::lengthF();
   };
 
   struct MeshData
   {
     std::vector<Vertex> vertices;
-    std::vector<uint32_t> indices;
+    std::vector<u32> indices;
     std::unique_ptr<eng::VertexArray> vertexArray;
 
     MeshData();
@@ -43,8 +43,8 @@ namespace lod
     static void SetUniforms(const UniformData& uniformData);
 
   private:
-    static constexpr int c_TextureSlot = 0;
-    static constexpr int c_UniformBinding = 3;
+    static constexpr i32 c_TextureSlot = 0;
+    static constexpr i32 c_UniformBinding = 3;
     static inline std::once_flag s_InitializedFlag;
     static inline std::unique_ptr<eng::Shader> s_Shader = nullptr;
     static inline std::unique_ptr<eng::Uniform> s_Uniform = nullptr;
@@ -63,7 +63,7 @@ namespace lod
     MeshData primaryMesh{};
     std::array<MeshData, 6> transitionMeshes{};
 
-    uint8_t transitionFaces = 0;
+    u8 transitionFaces = 0;
     bool meshGenerated = false;
     bool needsUpdate = true;
   };
@@ -80,17 +80,17 @@ namespace lod
     {
       Node* const parent;
       std::array<Node*, 8> children;
-      const int depth;
+      const i32 depth;
 
       const GlobalIndex anchor;
       Data* data = nullptr;
 
-      Node(Node* parentNode, int nodeDepth, const GlobalIndex& anchorIndex);
+      Node(Node* parentNode, i32 nodeDepth, const GlobalIndex& anchorIndex);
       ~Node();
 
       bool isRoot() const;
       bool isLeaf() const;
-      int LODLevel() const;
+      i32 LODLevel() const;
 
       /*
         \returns Size of LOD in each direction, given in units of chunks.
@@ -151,11 +151,11 @@ namespace lod
     */
     Node* findLeaf(const GlobalIndex& index);
 
-    static constexpr int MaxNodeDepth() { return c_MaxNodeDepth; }
+    static constexpr i32 MaxNodeDepth() { return c_MaxNodeDepth; }
 
   private:
-    static constexpr int c_MaxNodeDepth = 12;
-    static constexpr uint64_t c_RootNodeSize = eng::pow2(c_MaxNodeDepth);
+    static constexpr i32 c_MaxNodeDepth = 12;
+    static constexpr u64 c_RootNodeSize = eng::pow2(c_MaxNodeDepth);
     static constexpr GlobalIndex c_RootNodeAnchor = -static_cast<globalIndex_t>(c_RootNodeSize / 2) * GlobalIndex(1, 1, 1);
 
     // Root node of the tree

@@ -10,7 +10,7 @@ namespace eng
   constexpr std::underlying_type_t<E> toUnderlying(E e) { return static_cast<std::underlying_type_t<E>>(e); }
 
   template<IterableEnum E>
-  constexpr int enumRange()
+  constexpr i32 enumRange()
   {
     static_assert(toUnderlying(E::Last) > toUnderlying(E::First), "First and Last enums are in incorrect order!");
     return 1 + toUnderlying(E::Last) - toUnderlying(E::First);

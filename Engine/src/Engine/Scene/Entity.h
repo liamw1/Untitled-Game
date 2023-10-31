@@ -1,5 +1,6 @@
 #pragma once
 #include <entt/entt.hpp>
+#include "Engine/Core/FixedWidthTypes.h"
 
 namespace eng
 {
@@ -43,7 +44,7 @@ namespace eng
       s_Registry.remove<T>(m_EntityID);
     }
 
-    uint32_t id() const { return static_cast<uint32_t>(m_EntityID); }
+    u32 id() const { return static_cast<u32>(m_EntityID); }
 
     bool isValid() const { return m_EntityID != entt::null; }
 

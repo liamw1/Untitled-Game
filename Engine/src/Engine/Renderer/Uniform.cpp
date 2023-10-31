@@ -7,7 +7,7 @@ namespace eng
 {
   Uniform::~Uniform() = default;
 
-  std::unique_ptr<Uniform> Uniform::Create(uint32_t binding, uint32_t size)
+  std::unique_ptr<Uniform> Uniform::Create(u32 binding, u32 size)
   {
     switch (RendererAPI::GetAPI())
     {

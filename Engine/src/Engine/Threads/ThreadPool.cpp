@@ -3,10 +3,10 @@
 
 namespace eng::threads
 {
-  ThreadPool::ThreadPool(int numThreads)
+  ThreadPool::ThreadPool(i32 numThreads)
     : m_Stop(false)
   {
-    for (int i = 0; i < numThreads; ++i)
+    for (i32 i = 0; i < numThreads; ++i)
       m_Threads.emplace_back(&ThreadPool::workerThread, this);
   }
 

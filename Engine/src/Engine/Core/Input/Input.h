@@ -13,6 +13,6 @@ namespace eng::input
   bool isMouseButtonPressed(Mouse button);
   
   math::Float2 getMousePosition();
-  float getMouseX();
-  float getMouseY();
+  f32 getMouseX();
+  f32 getMouseY();
 }

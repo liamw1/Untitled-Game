@@ -7,7 +7,7 @@
 namespace lod
 {
   // Number of cells in each direction
-  static constexpr int c_NumCells = Chunk::Size();
+  static constexpr i32 c_NumCells = Chunk::Size();
 
   // Width of a transition cell as a fraction of regular cell width
   static constexpr length_t c_TCFractionalWidth = 0.5f;
@@ -23,7 +23,7 @@ namespace lod
     terrain::CompoundSurfaceData surfaceData;
   };
 
-  Vertex::Vertex(const eng::math::Float3& position, const eng::math::Float3& isoNormal, const std::array<int, 2>& textureIndices, const eng::math::Float2& textureWeights, int quadIndex)
+  Vertex::Vertex(const eng::math::Float3& position, const eng::math::Float3& isoNormal, const std::array<i32, 2>& textureIndices, const eng::math::Float2& textureWeights, i32 quadIndex)
     : position(position), isoNormal(isoNormal), textureIndices(textureIndices), textureWeights(textureWeights), quadIndex(quadIndex) {}
 
   MeshData::MeshData()
@@ -33,14 +33,14 @@ namespace lod
     vertexArray->setLayout(s_VertexBufferLayout);
   }
 
-  Octree::Node::Node(Octree::Node* parentNode, int nodeDepth, const GlobalIndex& anchorIndex)
+  Octree::Node::Node(Octree::Node* parentNode, i32 nodeDepth, const GlobalIndex& anchorIndex)
     : parent(parentNode), depth(nodeDepth), anchor(anchorIndex) {}
 
   Octree::Node::~Node()
   {
     delete data;
     data = nullptr;
-    for (int i = 0; i < 8; ++i)
+    for (i32 i = 0; i < 8; ++i)
     {
       delete children[i];
       children[i] = nullptr;
@@ -49,7 +49,7 @@ namespace lod
 
   bool Octree::Node::isRoot() const { return parent == nullptr; }
   bool Octree::Node::isLeaf() const { return data != nullptr; }
-  int Octree::Node::LODLevel() const { return c_MaxNodeDepth - depth; }
+  i32 Octree::Node::LODLevel() const { return c_MaxNodeDepth - depth; }
 
   globalIndex_t Octree::Node::size() const
   {
@@ -95,11 +95,11 @@ namespace lod
     const globalIndex_t nodeChildSize = node->size() / 2;
 
     // Divide node into 8 equal-sized child nodes
-    for (int i = 0; i < 2; ++i)
-      for (int j = 0; j < 2; ++j)
-        for (int k = 0; k < 2; ++k)
+    for (i32 i = 0; i < 2; ++i)
+      for (i32 j = 0; j < 2; ++j)
+        for (i32 k = 0; k < 2; ++k)
         {
-          int childIndex = i * eng::u32Bit(2) + j * eng::u32Bit(1) + k * eng::u32Bit(0);
+          i32 childIndex = i * eng::u32Bit(2) + j * eng::u32Bit(1) + k * eng::u32Bit(0);
           ENG_ASSERT(node->children[childIndex] == nullptr, "Child node already exists!");
 
           GlobalIndex nodeChildAnchor = node->anchor + nodeChildSize * GlobalIndex(i, j, k);
@@ -121,7 +121,7 @@ namespace lod
       return;
 
     // Delete child nodes
-    for (int i = 0; i < 8; ++i)
+    for (i32 i = 0; i < 8; ++i)
     {
       delete node->children[i];
       node->children[i] = nullptr;
@@ -159,7 +159,7 @@ namespace lod
     if (branch->isLeaf())
       leaves.push_back(branch);
     else if (branch->depth < c_MaxNodeDepth)
-      for (int i = 0; i < 8; ++i)
+      for (i32 i = 0; i < 8; ++i)
         if (branch->children[i] != nullptr)
           getLeavesPriv(branch->children[i], leaves);
   }
@@ -170,10 +170,10 @@ namespace lod
       return branch;
     else
     {
-      int i = index.i >= branch->anchor.i + branch->size() / 2;
-      int j = index.j >= branch->anchor.j + branch->size() / 2;
-      int k = index.k >= branch->anchor.k + branch->size() / 2;
-      int childIndex = i * eng::u32Bit(2) + j * eng::u32Bit(1) + k * eng::u32Bit(0);
+      i32 i = index.i >= branch->anchor.i + branch->size() / 2;
+      i32 j = index.j >= branch->anchor.j + branch->size() / 2;
+      i32 k = index.k >= branch->anchor.k + branch->size() / 2;
+      i32 childIndex = i * eng::u32Bit(2) + j * eng::u32Bit(1) + k * eng::u32Bit(0);
 
       return findLeafPriv(branch->children[childIndex], index);
     }
@@ -209,7 +209,7 @@ namespace lod
 
   void draw(const Octree::Node* leaf)
   {
-    uint32_t primaryMeshIndexCount = static_cast<uint32_t>(leaf->data->primaryMesh.indices.size());
+    u32 primaryMeshIndexCount = static_cast<u32>(leaf->data->primaryMesh.indices.size());
 
     if (primaryMeshIndexCount == 0)
       return; // Nothing to draw
@@ -217,15 +217,15 @@ namespace lod
     // Set local anchor position and texture scaling
     UniformData uniformData{};
     uniformData.anchor = Chunk::Length() * static_cast<eng::math::Vec3>(leaf->anchor - player::originIndex());
-    uniformData.textureScaling = static_cast<float>(eng::bit(leaf->LODLevel()));
+    uniformData.textureScaling = static_cast<f32>(eng::bit(leaf->LODLevel()));
     MeshData::SetUniforms(uniformData);
 
     eng::render::command::drawIndexed(leaf->data->primaryMesh.vertexArray.get(), primaryMeshIndexCount);
     for (eng::math::Direction face : eng::math::Directions())
     {
-      int faceID = static_cast<int>(face);
+      i32 faceID = static_cast<i32>(face);
 
-      uint32_t transitionMeshIndexCount = static_cast<uint32_t>(leaf->data->transitionMeshes[faceID].indices.size());
+      u32 transitionMeshIndexCount = static_cast<u32>(leaf->data->transitionMeshes[faceID].indices.size());
 
       if (transitionMeshIndexCount == 0 || !(leaf->data->transitionFaces & eng::bit(faceID)))
         continue;
@@ -237,7 +237,7 @@ namespace lod
 
 
   // LOD smoothness parameter, must be in the range [0.0, 1.0]
-  static constexpr float smoothnessLevel(int LODLevel)
+  static constexpr f32 smoothnessLevel(i32 LODLevel)
   {
 #if 1
     return std::min(0.15f * (LODLevel)+0.3f, 1.0f);
@@ -249,7 +249,7 @@ namespace lod
   // Calculate quantity based on values at corners that compose an edge.  The smoothness parameter s is used to interpolate between 
   // roughest iso-surface (vertex is always chosen at edge midpoint) and the smooth iso-surface interpolation used by Paul Bourke.
   template<typename T>
-  static T LODInterpolation(float t, float s, const T& q0, const T& q1)
+  static T LODInterpolation(f32 t, f32 s, const T& q0, const T& q1)
   {
     return ((1 - s) / 2 + s * (1 - t)) * q0 + ((1 - s) / 2 + s * t) * q1;
   }
@@ -262,15 +262,15 @@ namespace lod
     eng::math::Vec2 LODAnchorXY = Chunk::Length() * static_cast<eng::math::Vec2>(node->anchor);
 
     BlockArrayRect<terrain::CompoundSurfaceData> noiseValues(c_LODBounds2D, eng::AllocationPolicy::ForOverwrite);
-    for (int i = 0; i < c_NumCells + 1; ++i)
-      for (int j = 0; j < c_NumCells + 1; ++j)
+    for (i32 i = 0; i < c_NumCells + 1; ++i)
+      for (i32 j = 0; j < c_NumCells + 1; ++j)
       {
         // Sample noise at cell corners
         eng::math::Vec2 pointXY = LODAnchorXY + cellLength * eng::math::Vec2(i, j);
 
         // TODO: Replace with new terrain system
         // noise::OctaveNoiseData<Biome::NumOctaves()> elevationData = terrain::GetElevationData(pointXY, s_DefaultBiome);
-        // float seaLevelTemperature = terrain::GetTemperatureData(pointXY, s_DefaultBiome);
+        // f32 seaLevelTemperature = terrain::GetTemperatureData(pointXY, s_DefaultBiome);
         // noiseValues[i][j] = terrain::GetSurfaceInfo(elevationData, seaLevelTemperature, s_DefaultBiome);
       }
     return noiseValues;
@@ -283,8 +283,8 @@ namespace lod
 
     // Check if LOD is fully below or above surface, if so, no need to generate mesh
     bool needsMesh = false;
-    for (int i = 0; i < c_NumCells + 1; ++i)
-      for (int j = 0; j < c_NumCells + 1; ++j)
+    for (i32 i = 0; i < c_NumCells + 1; ++i)
+      for (i32 j = 0; j < c_NumCells + 1; ++j)
       {
         length_t terrainHeight = noiseValues[i][j].getElevation();
 
@@ -306,8 +306,8 @@ namespace lod
 
     // Calculate normals using central differences
     BlockArrayRect<eng::math::Vec3> noiseNormals(c_LODBounds2D, eng::AllocationPolicy::ForOverwrite);
-    for (int i = 0; i < c_NumCells + 1; ++i)
-      for (int j = 0; j < c_NumCells + 1; ++j)
+    for (i32 i = 0; i < c_NumCells + 1; ++i)
+      for (i32 j = 0; j < c_NumCells + 1; ++j)
       {
         // Surface heights in adjacent positions.  L - lower, C - center, U - upper
         length_t fLC = 0_m, fUC = 0_m, fCL = 0_m, fCU = 0_m;
@@ -355,7 +355,7 @@ namespace lod
     return noiseNormals;
   }
 
-  static NoiseData interpolateNoiseData(Octree::Node* node, const BlockArrayRect<terrain::CompoundSurfaceData>& noiseValues, const BlockArrayRect<eng::math::Vec3>& noiseNormals, const BlockIndex& cornerA, const BlockIndex& cornerB, float s)
+  static NoiseData interpolateNoiseData(Octree::Node* node, const BlockArrayRect<terrain::CompoundSurfaceData>& noiseValues, const BlockArrayRect<eng::math::Vec3>& noiseNormals, const BlockIndex& cornerA, const BlockIndex& cornerB, f32 s)
   {
     length_t LODFloor = node->anchor.k * Chunk::Length();
     length_t cellLength = node->length() / c_NumCells;
@@ -375,7 +375,7 @@ namespace lod
     length_t tB = surfaceDataB.getElevation() - zB;
 
     // Fraction of distance along edge vertex should be placed
-    float t = static_cast<float>(tA / (tA - tB));
+    f32 t = static_cast<f32>(tA / (tA - tB));
 
     eng::math::Vec3 vertexPosition = LODInterpolation(t, s, posA, posB);
     terrain::CompoundSurfaceData surfaceData = LODInterpolation(t, s, surfaceDataA, surfaceDataB);
@@ -395,34 +395,34 @@ namespace lod
 
     struct VertexReuseData
     {
-      uint32_t baseMeshIndex = 0;
-      int8_t vertexOrder[4] = { -1, -1, -1, -1 };
+      u32 baseMeshIndex = 0;
+      i8 vertexOrder[4] = { -1, -1, -1, -1 };
     };
     using VertexLayer = eng::math::ArrayRect<VertexReuseData, blockIndex_t>;
 
     length_t LODFloor = node->anchor.k * Chunk::Length();
     length_t cellLength = node->length() / c_NumCells;
-    float smoothness = smoothnessLevel(node->LODLevel());
+    f32 smoothness = smoothnessLevel(node->LODLevel());
 
-    int vertexCount = 0;
-    std::vector<uint32_t> primaryMeshIndices{};
+    i32 vertexCount = 0;
+    std::vector<u32> primaryMeshIndices{};
     std::vector<Vertex> primaryMeshVertices{};
     VertexLayer prevLayer(Chunk::Bounds2D(), eng::AllocationPolicy::DefaultInitialize);
-    for (int i = 0; i < c_NumCells; ++i)
+    for (i32 i = 0; i < c_NumCells; ++i)
     {
       VertexLayer currLayer(Chunk::Bounds2D(), eng::AllocationPolicy::DefaultInitialize);
 
-      for (int j = 0; j < c_NumCells; ++j)
-        for (int k = 0; k < c_NumCells; ++k)
+      for (i32 j = 0; j < c_NumCells; ++j)
+        for (i32 k = 0; k < c_NumCells; ++k)
         {
           // Determine which of the 256 cases the cell belongs to
-          uint8_t cellCase = 0;
-          for (int v = 0; v < 8; ++v)
+          u8 cellCase = 0;
+          for (i32 v = 0; v < 8; ++v)
           {
             // Cell corner indices and z-position
-            int I = v & eng::bit(0) ? i + 1 : i;
-            int J = v & eng::bit(1) ? j + 1 : j;
-            int K = v & eng::bit(2) ? k + 1 : k;
+            i32 I = v & eng::bit(0) ? i + 1 : i;
+            i32 J = v & eng::bit(1) ? j + 1 : j;
+            i32 K = v & eng::bit(2) ? k + 1 : k;
             length_t Z = LODFloor + K * cellLength;
 
             if (noiseValues[I][J].getElevation() > Z)
@@ -434,19 +434,19 @@ namespace lod
           currLayer[j][k].baseMeshIndex = vertexCount;
 
           // Use lookup table to determine which of 15 equivalence classes the cell belongs to
-          uint8_t cellEquivClass = c_RegularCellClass[cellCase];
+          u8 cellEquivClass = c_RegularCellClass[cellCase];
           RegularCellData cellData = c_RegularCellData[cellEquivClass];
-          int triangleCount = cellData.getTriangleCount();
+          i32 triangleCount = cellData.getTriangleCount();
 
           // Loop over all triangles in cell
-          int cellVertexCount = 0;
-          std::array<uint32_t, c_MaxCellVertexCount> prevCellVertexIndices{};
-          for (int vert = 0; vert < 3 * triangleCount; ++vert)
+          i32 cellVertexCount = 0;
+          std::array<u32, c_MaxCellVertexCount> prevCellVertexIndices{};
+          for (i32 vert = 0; vert < 3 * triangleCount; ++vert)
           {
-            int edgeIndex = cellData.vertexIndex[vert];
+            i32 edgeIndex = cellData.vertexIndex[vert];
 
             // Check if vertex has already been created in this cell
-            int vertexIndex = prevCellVertexIndices[edgeIndex];
+            i32 vertexIndex = prevCellVertexIndices[edgeIndex];
             if (vertexIndex > 0)
             {
               primaryMeshIndices.push_back(vertexIndex);
@@ -454,9 +454,9 @@ namespace lod
             }
 
             // Lookup placement of corners A,B that form the cell edge new vertex lies on
-            uint16_t vertexData = c_RegularVertexData[cellCase][edgeIndex];
-            uint8_t sharedVertexIndex = (vertexData & 0x0F00) >> 8;
-            uint8_t sharedVertexDirection = (vertexData & 0xF000) >> 12;
+            u16 vertexData = c_RegularVertexData[cellCase][edgeIndex];
+            u8 sharedVertexIndex = (vertexData & 0x0F00) >> 8;
+            u8 sharedVertexDirection = (vertexData & 0xF000) >> 12;
             bool newVertex = sharedVertexDirection == 8;
 
             // If a new vertex must be created, store vertex index information for later reuse.  If not, attempt to reuse previous vertex
@@ -464,16 +464,16 @@ namespace lod
               currLayer[j][k].vertexOrder[sharedVertexIndex] = cellVertexCount;
             else
             {
-              int I = sharedVertexDirection & eng::bit(0) ? i - 1 : i;
-              int J = sharedVertexDirection & eng::bit(1) ? j - 1 : j;
-              int K = sharedVertexDirection & eng::bit(2) ? k - 1 : k;
+              i32 I = sharedVertexDirection & eng::bit(0) ? i - 1 : i;
+              i32 J = sharedVertexDirection & eng::bit(1) ? j - 1 : j;
+              i32 K = sharedVertexDirection & eng::bit(2) ? k - 1 : k;
 
               if (I >= 0 && J >= 0 && K >= 0)
               {
                 const auto& targetLayer = I == i ? currLayer : prevLayer;
 
-                int baseMeshIndex = targetLayer[J][K].baseMeshIndex;
-                int vertexOrder = targetLayer[J][K].vertexOrder[sharedVertexIndex];
+                i32 baseMeshIndex = targetLayer[J][K].baseMeshIndex;
+                i32 vertexOrder = targetLayer[J][K].vertexOrder[sharedVertexIndex];
                 if (baseMeshIndex > 0 && vertexOrder >= 0)
                 {
                   primaryMeshIndices.push_back(baseMeshIndex + vertexOrder);
@@ -483,8 +483,8 @@ namespace lod
               }
             }
 
-            uint8_t cornerIndexA = vertexData & 0x000F;
-            uint8_t cornerIndexB = (vertexData & 0x00F0) >> 4;
+            u8 cornerIndexA = vertexData & 0x000F;
+            u8 cornerIndexB = (vertexData & 0x00F0) >> 4;
 
             // Indices of corners A,B
             BlockIndex cornerA{};
@@ -520,8 +520,8 @@ namespace lod
 
     struct VertexReuseData
     {
-      uint32_t baseMeshIndex = 0;
-      int8_t vertexOrder[10] = { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 };
+      u32 baseMeshIndex = 0;
+      i8 vertexOrder[10] = { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 };
     };
 
     static constexpr eng::math::Vec3 normals[6] = { { -1, 0, 0}, { 1, 0, 0}, { 0, -1, 0}, { 0, 1, 0}, { 0, 0, -1}, { 0, 0, 1} };
@@ -533,28 +533,28 @@ namespace lod
 
     for (eng::math::Direction face : eng::math::Directions())
     {
-      int faceID = static_cast<int>(face);
+      i32 faceID = static_cast<i32>(face);
 
       // Relabel coordinates, u being the coordinate normal to face
       eng::math::Axis u = AxisOf(face);
       eng::math::Axis v = Cycle(u);
       eng::math::Axis w = Cycle(v);
-      int uIndex = IsUpstream(face) ? c_NumCells : 0;
+      i32 uIndex = IsUpstream(face) ? c_NumCells : 0;
 
       // Generate transition mesh using Transvoxel algorithm
-      int vertexCount = 0;
-      std::vector<uint32_t> transitionMeshIndices{};
+      i32 vertexCount = 0;
+      std::vector<u32> transitionMeshIndices{};
       std::vector<Vertex> transitionMeshVertices{};
       std::array<VertexReuseData, c_NumCells / 2> prevRow{};
-      for (int i = 0; i < c_NumCells; i += 2)
+      for (i32 i = 0; i < c_NumCells; i += 2)
       {
         std::array<VertexReuseData, c_NumCells / 2> currRow{};
 
-        for (int j = 0; j < c_NumCells; j += 2)
+        for (i32 j = 0; j < c_NumCells; j += 2)
         {
           // Determine which of the 512 cases the cell belongs to
-          uint16_t cellCase = 0;
-          for (int p = 0; p < 9; ++p)
+          u16 cellCase = 0;
+          for (i32 p = 0; p < 9; ++p)
           {
             BlockIndex sample{};
             sample[u] = uIndex;
@@ -565,9 +565,9 @@ namespace lod
             if (!IsUpstream(face))
               sample[v] = c_NumCells - sample[v];
 
-            const int& I = sample.i;
-            const int& J = sample.j;
-            const int& K = sample.k;
+            const i32& I = sample.i;
+            const i32& J = sample.j;
+            const i32& K = sample.k;
             length_t Z = LODFloor + K * cellLength;
 
             if (noiseValues[I][J].getElevation() > Z)
@@ -579,20 +579,20 @@ namespace lod
           currRow[j / 2].baseMeshIndex = vertexCount;
 
           // Use lookup table to determine which of 56 equivalence classes the cell belongs to
-          uint8_t cellEquivClass = c_TransitionCellClass[cellCase];
+          u8 cellEquivClass = c_TransitionCellClass[cellCase];
           bool reverseWindingOrder = cellEquivClass >> 7;
           TransitionCellData cellData = c_TransitionCellData[cellEquivClass & 0x7F];
-          int triangleCount = cellData.getTriangleCount();
+          i32 triangleCount = cellData.getTriangleCount();
 
           // Loop over all triangles in cell
-          int cellVertexCount = 0;
-          std::array<uint32_t, c_MaxCellVertexCount> prevCellVertexIndices{};
-          for (int vert = 0; vert < 3 * triangleCount; ++vert)
+          i32 cellVertexCount = 0;
+          std::array<u32, c_MaxCellVertexCount> prevCellVertexIndices{};
+          for (i32 vert = 0; vert < 3 * triangleCount; ++vert)
           {
-            int edgeIndex = cellData.vertexIndex[reverseWindingOrder ? 3 * triangleCount - 1 - vert : vert];
+            i32 edgeIndex = cellData.vertexIndex[reverseWindingOrder ? 3 * triangleCount - 1 - vert : vert];
 
             // Check if vertex has already been created in this cell
-            int vertexIndex = prevCellVertexIndices[edgeIndex];
+            i32 vertexIndex = prevCellVertexIndices[edgeIndex];
             if (vertexIndex > 0)
             {
               transitionMeshIndices.push_back(vertexIndex);
@@ -600,9 +600,9 @@ namespace lod
             }
 
             // Lookup indices of vertices A,B of the cell edge that vertex v lies on
-            uint16_t vertexData = c_TransitionVertexData[cellCase][edgeIndex];
-            uint8_t sharedVertexIndex = (vertexData & 0x0F00) >> 8;
-            uint8_t sharedVertexDirection = (vertexData & 0xF000) >> 12;
+            u16 vertexData = c_TransitionVertexData[cellCase][edgeIndex];
+            u8 sharedVertexIndex = (vertexData & 0x0F00) >> 8;
+            u8 sharedVertexDirection = (vertexData & 0xF000) >> 12;
             bool isReusable = sharedVertexDirection != 4;
             bool newVertex = sharedVertexDirection == 8;
 
@@ -611,15 +611,15 @@ namespace lod
               currRow[j / 2].vertexOrder[sharedVertexIndex] = cellVertexCount;
             else if (isReusable)
             {
-              int I = sharedVertexDirection & eng::bit(0) ? i / 2 - 1 : i / 2;
-              int J = sharedVertexDirection & eng::bit(1) ? j / 2 - 1 : j / 2;
+              i32 I = sharedVertexDirection & eng::bit(0) ? i / 2 - 1 : i / 2;
+              i32 J = sharedVertexDirection & eng::bit(1) ? j / 2 - 1 : j / 2;
 
               if (I >= 0 && J >= 0)
               {
                 const auto& targetRow = I == i / 2 ? currRow : prevRow;
 
-                int baseMeshIndex = targetRow[J].baseMeshIndex;
-                int vertexOrder = targetRow[J].vertexOrder[sharedVertexIndex];
+                i32 baseMeshIndex = targetRow[J].baseMeshIndex;
+                i32 vertexOrder = targetRow[J].vertexOrder[sharedVertexIndex];
                 if (baseMeshIndex > 0 && vertexOrder >= 0)
                 {
                   transitionMeshIndices.push_back(baseMeshIndex + vertexOrder);
@@ -629,8 +629,8 @@ namespace lod
               }
             }
 
-            uint8_t cornerIndexA = vertexData & 0x000F;
-            uint8_t cornerIndexB = (vertexData & 0x00F0) >> 4;
+            u8 cornerIndexA = vertexData & 0x000F;
+            u8 cornerIndexB = (vertexData & 0x00F0) >> 4;
             bool isOnLowResSide = cornerIndexB > 8;
 
             // Indices of samples A,B
@@ -651,7 +651,7 @@ namespace lod
             }
 
             // If vertex is on low-resolution side, use smoothness level of low-resolution LOD
-            float smoothness = isOnLowResSide ? smoothnessLevel(node->LODLevel() + 1) : smoothnessLevel(node->LODLevel());
+            f32 smoothness = isOnLowResSide ? smoothnessLevel(node->LODLevel() + 1) : smoothnessLevel(node->LODLevel());
 
             NoiseData noiseData = interpolateNoiseData(node, noiseValues, noiseNormals, sampleA, sampleB, smoothness);
             if (!isOnLowResSide)
@@ -722,14 +722,14 @@ namespace lod
                            -n.x * n.z, -n.y * n.z, 1 - n.z * n.z);
   }
 
-  static void adjustVertex(Vertex& vertex, length_t cellLength, uint8_t transitionFaces)
+  static void adjustVertex(Vertex& vertex, length_t cellLength, u8 transitionFaces)
   {
     eng::math::Vec3 vertexAdjustment{};
     bool isNearSameResolutionLOD = false;
     for (eng::math::Direction face : eng::math::Directions())
     {
-      int faceID = static_cast<int>(face);
-      int coordID = faceID / 2;
+      i32 faceID = static_cast<i32>(face);
+      i32 coordID = faceID / 2;
       bool facingPositiveDir = faceID % 2;
 
       if (isVertexNearFace(facingPositiveDir, vertex.position[coordID], cellLength))
@@ -770,8 +770,8 @@ namespace lod
   {
     static constexpr length_t small = 128 * std::numeric_limits<length_t>::epsilon();
 
-    int faceID = static_cast<int>(face);
-    int coordID = faceID / 2;
+    i32 faceID = static_cast<i32>(face);
+    i32 coordID = faceID / 2;
     bool facingPositiveDir = faceID % 2;
     length_t cellLength = node->length() / c_NumCells;
 
@@ -785,7 +785,7 @@ namespace lod
         if (vertex.position[coordID] < small * node->length() || vertex.position[coordID] > (1.0 - small) * node->length())
           continue;
         else
-          vertex.position[coordID] = static_cast<float>(facingPositiveDir ? node->length() : 0.0);
+          vertex.position[coordID] = static_cast<f32>(facingPositiveDir ? node->length() : 0.0);
 
         adjustVertex(vertex, cellLength, node->data->transitionFaces);
       }
@@ -802,10 +802,10 @@ namespace lod
                                 //       East               West              North              South               Top               Bottom
 
     // Determine which faces transition to a lower resolution LOD
-    uint8_t transitionFaces = 0;
+    u8 transitionFaces = 0;
     for (eng::math::Direction face : eng::math::Directions())
     {
-      int faceID = static_cast<int>(face);
+      i32 faceID = static_cast<i32>(face);
 
       Octree::Node* neighbor = tree.findLeaf(node->anchor + offsets[faceID]);
       if (neighbor == nullptr)
@@ -833,7 +833,7 @@ namespace lod
 
     for (eng::math::Direction face : eng::math::Directions())
     {
-      int faceID = static_cast<int>(face);
+      i32 faceID = static_cast<i32>(face);
 
       MeshData& transitionMesh = node->data->transitionMeshes[faceID];
       eng::render::uploadMesh(transitionMesh.vertexArray.get(), calcAdjustedTransitionMesh(node, face), transitionMesh.indices);
@@ -850,7 +850,7 @@ namespace lod
     // Tell LOD neighbors to update
     for (eng::math::Direction direction : eng::math::Directions())
     {
-      int directionID = static_cast<int>(direction);
+      i32 directionID = static_cast<i32>(direction);
 
       // Relabel coordinates, u being the coordinate normal to face
       eng::math::Axis u = AxisOf(direction);

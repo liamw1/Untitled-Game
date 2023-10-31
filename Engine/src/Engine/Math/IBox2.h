@@ -87,7 +87,7 @@ namespace eng::math
     /*
       \returns The number of integers contained within the box.
     */
-    constexpr int volume() const
+    constexpr i32 volume() const
     {
       if (!valid())
         return 0;
@@ -96,7 +96,7 @@ namespace eng::math
       return boxExtents.i * boxExtents.j;
     }
   
-    constexpr int linearIndexOf(const IVec2<T>& index) const
+    constexpr i32 linearIndexOf(const IVec2<T>& index) const
     {
       ENG_CORE_ASSERT(encloses(index), "Index is outside box!");
       IVec2<T> boxExtents = extents();

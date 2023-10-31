@@ -7,7 +7,7 @@
 class Biome
 {
 protected:
-  static constexpr int c_LocalElevationOctaves = 6;
+  static constexpr i32 c_LocalElevationOctaves = 6;
 
 public:
   using NoiseSamples = noise::OctaveNoiseData<c_LocalElevationOctaves>;
@@ -28,12 +28,12 @@ public:
 
   static const Biome* Get(Type biome);
 
-  static constexpr int LocalElevationOctaves() { return c_LocalElevationOctaves; }
-  static constexpr int Count() { return static_cast<int>(s_Biomes.size()); }
+  static constexpr i32 LocalElevationOctaves() { return c_LocalElevationOctaves; }
+  static constexpr i32 Count() { return static_cast<i32>(s_Biomes.size()); }
 
 protected:
-  static length_t CalculateOctaveNoise(const NoiseSamples& noiseSamples, length_t largestAmplitude, float persistence);
-  static void StandardColumnFill(BlockArrayBox<block::Type>::Strip column, length_t chunkFloor, length_t elevation, block::Type surfaceType, int surfaceDepth, block::Type soilType, int soilDepth);
+  static length_t CalculateOctaveNoise(const NoiseSamples& noiseSamples, length_t largestAmplitude, f32 persistence);
+  static void StandardColumnFill(BlockArrayBox<block::Type>::Strip column, length_t chunkFloor, length_t elevation, block::Type surfaceType, i32 surfaceDepth, block::Type soilType, i32 soilDepth);
 
 private:
   static eng::EnumArray<std::unique_ptr<Biome>, Type> s_Biomes;

@@ -5,8 +5,8 @@
 
 #include <glad/glad.h>
 
-static constexpr uint32_t c_MipmapLevels = 8;
-static constexpr float c_AnistropicFilteringAmount = 16.0f;
+static constexpr u32 c_MipmapLevels = 8;
+static constexpr f32 c_AnistropicFilteringAmount = 16.0f;
 
 namespace eng
 {
@@ -32,7 +32,7 @@ namespace eng
 
 
 
-  OpenGLTexture::OpenGLTexture(uint32_t width, uint32_t height)
+  OpenGLTexture::OpenGLTexture(u32 width, u32 height)
     : m_Width(width),
       m_Height(height),
       m_RendererID(0),
@@ -84,11 +84,11 @@ namespace eng
     glDeleteTextures(1, &m_RendererID);
   }
 
-  uint32_t OpenGLTexture::getWidth() const { return m_Width; }
-  uint32_t OpenGLTexture::getHeight() const { return m_Height; }
-  uint32_t OpenGLTexture::getRendererID() const { return m_RendererID; }
+  u32 OpenGLTexture::getWidth() const { return m_Width; }
+  u32 OpenGLTexture::getHeight() const { return m_Height; }
+  u32 OpenGLTexture::getRendererID() const { return m_RendererID; }
 
-  void OpenGLTexture::setData(void* data, uint32_t size)
+  void OpenGLTexture::setData(void* data, u32 size)
   {
     ENG_PROFILE_FUNCTION();
     ENG_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
@@ -97,7 +97,7 @@ namespace eng
     glTextureSubImage2D(m_RendererID, 0, 0, 0, m_Width, m_Height, m_DataFormat, GL_UNSIGNED_BYTE, data);
   }
 
-  void OpenGLTexture::bind(uint32_t slot) const
+  void OpenGLTexture::bind(u32 slot) const
   {
     ENG_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
     glBindTextureUnit(slot, m_RendererID);
@@ -110,7 +110,7 @@ namespace eng
 
 
 
-  OpenGLTextureArray::OpenGLTextureArray(uint32_t textureCount, uint32_t textureSize)
+  OpenGLTextureArray::OpenGLTextureArray(u32 textureCount, u32 textureSize)
     : m_MaxTextures(textureCount),
       m_TextureSize(textureSize),
       m_TextureCount(0),
@@ -133,7 +133,7 @@ namespace eng
     glDeleteTextures(1, &m_RendererID);
   }
 
-  void OpenGLTextureArray::bind(uint32_t slot) const
+  void OpenGLTextureArray::bind(u32 slot) const
   {
     ENG_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
     glBindTextureUnit(slot, m_RendererID);

@@ -17,9 +17,9 @@ namespace eng
   class MemoryPool
   {
   public:
-    using address_t = uint32_t;
+    using address_t = u32;
 
-    MemoryPool(StorageBuffer::Type bufferType, int initialCapacity = 64);
+    MemoryPool(StorageBuffer::Type bufferType, i32 initialCapacity = 64);
 
     void bind() const;
     void unBind() const;
@@ -30,7 +30,7 @@ namespace eng
       Uploads data to GPU. May trigger a resize.
       \returns If a resize was triggered and an address for the allocated memory.
     */
-    [[nodiscard]] std::pair<bool, address_t> add(const void* data, int size);
+    [[nodiscard]] std::pair<bool, address_t> add(const void* data, i32 size);
 
     /*
       Removes the memory at the specified address. Doesn't actually delete any memory.
@@ -48,26 +48,26 @@ namespace eng
     struct MemoryRegion
     {
       bool free;
-      int size;
+      i32 size;
 
-      MemoryRegion(int regionSize)
+      MemoryRegion(i32 regionSize)
         : free(true), size(regionSize) {}
     };
 
     using RegionsIterator = std::map<address_t, MemoryRegion>::iterator;
-    using FreeRegionsIterator = std::multimap<int, address_t>::iterator;
+    using FreeRegionsIterator = std::multimap<i32, address_t>::iterator;
 
-    static constexpr float c_CapacityIncreaseOnResize = 1.25f;
+    static constexpr f32 c_CapacityIncreaseOnResize = 1.25f;
 
     std::shared_ptr<StorageBuffer> m_Buffer;
     std::map<address_t, MemoryRegion> m_Regions;  // For fast access based on address
-    std::multimap<int, address_t> m_FreeRegions;  // For fast access based on free region size
-    int m_Capacity;
+    std::multimap<i32, address_t> m_FreeRegions;  // For fast access based on free region size
+    i32 m_Capacity;
 
     bool isFree(RegionsIterator region) const;
-    int& regionSize(RegionsIterator region);
+    i32& regionSize(RegionsIterator region);
 
-    void addFreeRegion(address_t offset, int size);
+    void addFreeRegion(address_t offset, i32 size);
     void removeFromFreeRegions(RegionsIterator it);
   };
 }

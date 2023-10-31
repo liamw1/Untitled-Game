@@ -34,16 +34,17 @@ namespace eng::event
   class WindowResize
   {
   public:
-    WindowResize(uint32_t width, uint32_t height);
+    WindowResize(u32 width, u32 height);
 
     EventCategory categoryFlags() const;
     const char* name() const;
     std::string toString() const;
 
-    uint32_t width() const;
-    uint32_t height() const;
+    u32 width() const;
+    u32 height() const;
 
   private:
-    uint32_t m_Width, m_Height;
+    u32 m_Width;
+    u32 m_Height;
   };
 }

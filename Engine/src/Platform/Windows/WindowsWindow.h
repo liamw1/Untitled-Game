@@ -14,8 +14,8 @@ namespace eng
 
     void onUpdate() override;
 
-    uint32_t getWidth() const override;
-    uint32_t getHeight() const override;
+    u32 getWidth() const override;
+    u32 getHeight() const override;
 
     // Window attributes
     void setEventCallback(const EventCallbackFn& callback) override;
@@ -31,8 +31,8 @@ namespace eng
     struct WindowData
     {
       std::string title;
-      uint32_t width = 0;
-      uint32_t height = 0;
+      u32 width = 0;
+      u32 height = 0;
       bool VSync = false;
 
       EventCallbackFn eventCallback;

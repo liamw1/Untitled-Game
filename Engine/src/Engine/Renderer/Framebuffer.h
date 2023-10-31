@@ -1,4 +1,5 @@
 #pragma once
+#include "Engine/Core/FixedWidthTypes.h"
 
 enum class FramebufferTextureFormat
 {
@@ -28,9 +29,9 @@ namespace eng
 
   struct FramebufferSpecification
   {
-    uint32_t width;
-    uint32_t height;
-    uint32_t samples;
+    u32 width;
+    u32 height;
+    u32 samples;
     bool swapChainTarget;
 
     std::vector<FramebufferTextureSpecification> attachments;
@@ -48,13 +49,13 @@ namespace eng
     virtual void unbind() = 0;
 
     virtual const FramebufferSpecification& specification() const = 0;
-    virtual uint32_t getColorAttachmentRendererID(uint32_t index = 0) const = 0;
+    virtual u32 getColorAttachmentRendererID(u32 index = 0) const = 0;
 
-    virtual void resize(uint32_t width, uint32_t height) = 0;
-    virtual int readPixel(uint32_t attachmentIndex, int x, int y) = 0;
+    virtual void resize(u32 width, u32 height) = 0;
+    virtual i32 readPixel(u32 attachmentIndex, i32 x, i32 y) = 0;
 
-    virtual void clearAttachment(uint32_t attachmentIndex, int value) = 0;
-    virtual void clearAttachment(uint32_t attachmentIndex, float value) = 0;
+    virtual void clearAttachment(u32 attachmentIndex, i32 value) = 0;
+    virtual void clearAttachment(u32 attachmentIndex, f32 value) = 0;
 
     static std::unique_ptr<Framebuffer> Create(const FramebufferSpecification& specification);
   };

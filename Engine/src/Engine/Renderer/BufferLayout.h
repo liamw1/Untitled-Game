@@ -1,4 +1,5 @@
 #pragma once
+#include "Engine/Core/FixedWidthTypes.h"
 #include "Engine/Utilities/BoilerplateReduction.h"
 
 namespace eng
@@ -14,7 +15,7 @@ namespace eng
     The beginning and ending of these groups are given their own identifier,
     which is used in the vertex array for differentiating between these types.
   */
-  enum class ShaderDataType : int
+  enum class ShaderDataType : i32
   {
     None,
     Bool,
@@ -32,8 +33,8 @@ namespace eng
   {
     std::string name;
     ShaderDataType type;
-    uint32_t size;
-    uint32_t offset;
+    u32 size;
+    u32 offset;
     bool normalized;
 
     BufferElement();
@@ -41,10 +42,10 @@ namespace eng
 
     /*
       Gets the number of components packed into the buffer element type.
-      Note that for mats, the underlying component is a float vector, so
+      Note that for mats, the underlying component is a f32 vector, so
       the component count of a mat4 is 4, not 16.
     */
-    int getComponentCount() const;
+    i32 getComponentCount() const;
   };
 
   class BufferLayout
@@ -53,12 +54,12 @@ namespace eng
     BufferLayout();
     BufferLayout(const std::initializer_list<BufferElement>& elements);
 
-    uint32_t stride() const;
+    u32 stride() const;
     const std::vector<BufferElement>& elements() const;
 
   private:
     std::vector<BufferElement> m_Elements;
-    uint32_t m_Stride;
+    u32 m_Stride;
 
     void calculateOffsetsAndStride();
 

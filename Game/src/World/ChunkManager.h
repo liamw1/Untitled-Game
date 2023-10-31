@@ -39,8 +39,8 @@ public:
 private:
   struct LightUniforms
   {
-    const float maxSunlight = static_cast<float>(block::Light::MaxValue());
-    float sunIntensity = 1.0f;
+    const f32 maxSunlight = static_cast<f32>(block::Light::MaxValue());
+    f32 sunIntensity = 1.0f;
   };
 
   // Rendering
@@ -50,9 +50,9 @@ private:
   static inline std::shared_ptr<eng::TextureArray> s_TextureArray;
   static inline const eng::BufferLayout s_VertexBufferLayout = { { eng::ShaderDataType::Uint32, "a_VertexData" },
                                                                  { eng::ShaderDataType::Uint32, "a_Lighting"   } };
-  static constexpr int c_TextureSlot = 0;
-  static constexpr int c_StorageBufferBinding = 0;
-  static constexpr uint32_t c_StorageBufferSize = static_cast<uint32_t>(eng::pow2(20));
+  static constexpr i32 c_TextureSlot = 0;
+  static constexpr i32 c_StorageBufferBinding = 0;
+  static constexpr u32 c_StorageBufferSize = static_cast<u32>(eng::pow2(20));
 
   eng::threads::UnorderedSet<ChunkDrawCommand> m_OpaqueCommandQueue;
   eng::threads::UnorderedSet<ChunkDrawCommand> m_TransparentCommandQueue;

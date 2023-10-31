@@ -15,7 +15,7 @@ namespace eng
   class MultiDrawCommand : private NonCopyable
   {
   public:
-    MultiDrawCommand(const Identifier& id, int vertexCount)
+    MultiDrawCommand(const Identifier& id, i32 vertexCount)
       : m_VertexCount(vertexCount),
         m_InstanceCount(1),
         m_FirstVertex(0),
@@ -23,13 +23,13 @@ namespace eng
         m_ID(id),
         m_CommandIndex(nullptr) {}
 
-    int vertexCount() const { return m_VertexCount; }
-    int firstVertex() const { return m_FirstVertex; }
+    i32 vertexCount() const { return m_VertexCount; }
+    i32 firstVertex() const { return m_FirstVertex; }
 
     const Identifier& id() const { return m_ID; }
     const std::shared_ptr<size_t>& commandIndex() const { return m_CommandIndex; }
 
-    void setPlacement(int firstVertex, size_t commandIndex)
+    void setPlacement(i32 firstVertex, size_t commandIndex)
     {
       m_FirstVertex = firstVertex;
       m_CommandIndex = std::make_shared<size_t>(commandIndex);
@@ -39,10 +39,10 @@ namespace eng
     void prune() { return static_cast<Derived*>(this)->prune(); }
 
   protected:
-    uint32_t m_VertexCount;
-    uint32_t m_InstanceCount;
-    uint32_t m_FirstVertex;
-    uint32_t m_BaseInstance;
+    u32 m_VertexCount;
+    u32 m_InstanceCount;
+    u32 m_FirstVertex;
+    u32 m_BaseInstance;
 
     Identifier m_ID;
     std::shared_ptr<size_t> m_CommandIndex;
@@ -57,7 +57,7 @@ namespace eng
   class MultiDrawIndexedCommand : private NonCopyable
   {
   public:
-    MultiDrawIndexedCommand(const Identifier& id, uint32_t indexCount)
+    MultiDrawIndexedCommand(const Identifier& id, u32 indexCount)
       : m_IndexCount(indexCount),
         m_InstanceCount(1),
         m_FirstIndex(0),
@@ -66,31 +66,31 @@ namespace eng
         m_ID(id),
         m_CommandIndex(nullptr) {}
 
-    uint32_t indexCount() const { return m_IndexCount; }
-    uint32_t firstIndex() const { return m_FirstIndex; }
-    int baseVertex() const { return m_BaseVertex; }
+    u32 indexCount() const { return m_IndexCount; }
+    u32 firstIndex() const { return m_FirstIndex; }
+    i32 baseVertex() const { return m_BaseVertex; }
 
     const Identifier& id() const { return m_ID; }
     const std::shared_ptr<size_t>& commandIndex() const { return m_CommandIndex; }
 
-    void setPlacement(uint32_t firstIndex, int baseVertex, size_t commandIndex)
+    void setPlacement(u32 firstIndex, i32 baseVertex, size_t commandIndex)
     {
       m_FirstIndex = firstIndex;
       m_BaseVertex = baseVertex;
       m_CommandIndex = std::make_shared<size_t>(commandIndex);
     }
 
-    int vertexCount() const { return static_cast<Derived*>(this)->vertexCount(); }
+    i32 vertexCount() const { return static_cast<Derived*>(this)->vertexCount(); }
     const void* indexData() { return static_cast<Derived*>(this)->indexData(); }
     const void* vertexData() { return static_cast<Derived*>(this)->vertexData(); }
     void prune() { return static_cast<Derived*>(this)->prune(); }
 
   protected:
-    uint32_t m_IndexCount;
-    uint32_t m_InstanceCount;
-    uint32_t m_FirstIndex;
-    int m_BaseVertex;
-    uint32_t m_BaseInstance;
+    u32 m_IndexCount;
+    u32 m_InstanceCount;
+    u32 m_FirstIndex;
+    i32 m_BaseVertex;
+    u32 m_BaseInstance;
 
     Identifier m_ID;
     std::shared_ptr<size_t> m_CommandIndex;
@@ -136,7 +136,7 @@ namespace eng
 
     void add(DrawCommandType&& drawCommand)
     {
-      int vertexCount = drawCommand.vertexCount();
+      i32 vertexCount = drawCommand.vertexCount();
       if (vertexCount == 0)
         return;
 
@@ -148,7 +148,7 @@ namespace eng
         m_VertexArray->setLayout(m_VertexArray->getLayout());
       drawCommand.prune();
 
-      int firstVertex = static_cast<int>(allocationAddress / m_Stride);
+      i32 firstVertex = static_cast<i32>(allocationAddress / m_Stride);
       drawCommand.setPlacement(firstVertex, m_DrawCommands.size());
 
       m_DrawCommandIndices.emplace(drawCommand.id(), drawCommand.commandIndex());
@@ -172,22 +172,22 @@ namespace eng
     }
 
     template<Predicate<Identifier> P>
-    int partition(P&& predicate)
+    i32 partition(P&& predicate)
     {
       DrawCommandIterator partitionEnd = partitionContainer(m_DrawCommands, [&predicate](const DrawCommandType& draw) { return predicate(draw.id()); });
       setDrawCommandIndices(0, m_DrawCommands.size());
-      return static_cast<int>(partitionEnd - m_DrawCommands.begin());
+      return static_cast<i32>(partitionEnd - m_DrawCommands.begin());
     }
 
     template<TransformToComarable<Identifier> F>
-    void sort(int drawCount, F&& transform, SortPolicy sortPolicy)
+    void sort(i32 drawCount, F&& transform, SortPolicy sortPolicy)
     {
       algo::sort(m_DrawCommands.begin(), m_DrawCommands.begin() + drawCount, [&transform](const DrawCommandType& draw) { return transform(draw.id()); }, sortPolicy);
       setDrawCommandIndices(0, drawCount);
     }
 
     template<BinaryComparison F>
-    void sort(int drawCount, F&& comparison)
+    void sort(i32 drawCount, F&& comparison)
     {
       std::sort(m_DrawCommands.begin(), m_DrawCommands.begin() + drawCount,
                 [&comparison](const DrawCommandType& drawA, const DrawCommandType& drawB) { return comparison(drawA.id(), drawB.id()); });
@@ -195,11 +195,11 @@ namespace eng
     }
 
     template<InvocableWithReturnType<bool, DrawCommandType&> F>
-    void amend(int drawCount, F&& function)
+    void amend(i32 drawCount, F&& function)
     {
       std::for_each_n(m_DrawCommands.begin(), drawCount, [this, &function](DrawCommandType& draw)
       {
-        uint32_t oldVertexCount = draw.vertexCount();
+        u32 oldVertexCount = draw.vertexCount();
         if (!function(draw))
           return;
 
@@ -219,7 +219,7 @@ namespace eng
     using DrawCommandIterator = std::vector<DrawCommandType>::iterator;
     using DrawCommandIndicesIterator = std::unordered_map<Identifier, std::shared_ptr<size_t>>::iterator;
 
-    int m_Stride;
+    i32 m_Stride;
     MemoryPool m_MemoryPool;
     std::unique_ptr<VertexArray> m_VertexArray;
     std::vector<DrawCommandType> m_DrawCommands;
@@ -265,22 +265,22 @@ namespace eng
 
     void add(DrawCommandType&& drawCommand)
     {
-      uint32_t indexCount = drawCommand.indexCount();
-      int vertexCount = drawCommand.vertexCount();
+      u32 indexCount = drawCommand.indexCount();
+      i32 vertexCount = drawCommand.vertexCount();
       if (vertexCount == 0 || indexCount == 0)
         return;
 
       ENG_CORE_ASSERT(m_DrawCommandIndices.find(drawCommand.id()) == m_DrawCommandIndices.end(), "Draw command with ID {0} has already been allocated!", drawCommand.id());
 
       // Add draw command data to memory pools. If a vertex buffer resize is triggered, vertex array needs to have layout set again.
-      auto [indexBufferResized, indexAllocationAddress] = m_IndexMemory.add(drawCommand.indexData(), indexCount * sizeof(uint32_t));
+      auto [indexBufferResized, indexAllocationAddress] = m_IndexMemory.add(drawCommand.indexData(), indexCount * sizeof(u32));
       auto [vertexBufferResized, vertexAllocationAddress] = m_VertexMemory.add(drawCommand.vertexData(), vertexCount * m_Stride);
       if (vertexBufferResized)
         m_VertexArray->setLayout(m_VertexArray->getLayout());
       drawCommand.prune();
 
-      uint32_t firstIndex = static_cast<uint32_t>(indexAllocationAddress / sizeof(uint32_t));
-      int baseVertex = static_cast<int>(vertexAllocationAddress / m_Stride);
+      u32 firstIndex = static_cast<u32>(indexAllocationAddress / sizeof(u32));
+      i32 baseVertex = static_cast<i32>(vertexAllocationAddress / m_Stride);
       drawCommand.setPlacement(firstIndex, baseVertex, m_DrawCommands.size());
 
       m_DrawCommandIndices.emplace(drawCommand.id(), drawCommand.commandIndex());
@@ -305,22 +305,22 @@ namespace eng
     }
 
     template<Predicate<Identifier> P>
-    int partition(P&& predicate)
+    i32 partition(P&& predicate)
     {
       DrawCommandIterator partitionEnd = algo::partition(m_DrawCommands, [&predicate](const DrawCommandType& draw) { return predicate(draw.id()); });
       setDrawCommandIndices(0, m_DrawCommands.size());
-      return static_cast<int>(partitionEnd - m_DrawCommands.begin());
+      return static_cast<i32>(partitionEnd - m_DrawCommands.begin());
     }
 
     template<TransformToComarable<Identifier> F>
-    void sort(int drawCount, F&& transform, SortPolicy sortPolicy)
+    void sort(i32 drawCount, F&& transform, SortPolicy sortPolicy)
     {
       algo::sort(m_DrawCommands.begin(), m_DrawCommands.begin() + drawCount, [&transform](const DrawCommandType& draw) { return transform(draw.id()); }, sortPolicy);
       setDrawCommandIndices(0, drawCount);
     }
 
     template<BinaryComparison<Identifier> F>
-    void sort(int drawCount, F&& comparison)
+    void sort(i32 drawCount, F&& comparison)
     {
       std::sort(m_DrawCommands.begin(), m_DrawCommands.begin() + drawCount,
                 [&comparison](const DrawCommandType& drawA, const DrawCommandType& drawB) { return comparison(drawA.id(), drawB.id()); });
@@ -328,11 +328,11 @@ namespace eng
     }
 
     template<InvocableWithReturnType<bool, DrawCommandType&> F>
-    void amend(int drawCount, F&& function)
+    void amend(i32 drawCount, F&& function)
     {
       std::for_each_n(m_DrawCommands.begin(), drawCount, [this, &function](DrawCommandType& draw)
       {
-        uint32_t oldIndexCount = draw.indexCount();
+        u32 oldIndexCount = draw.indexCount();
         if (!function(draw))
           return;
 
@@ -352,7 +352,7 @@ namespace eng
     using DrawCommandIterator = std::vector<DrawCommandType>::iterator;
     using DrawCommandIndicesIterator = std::unordered_map<Identifier, std::shared_ptr<size_t>>::iterator;
 
-    int m_Stride;
+    i32 m_Stride;
     MemoryPool m_IndexMemory;
     MemoryPool m_VertexMemory;
     std::unique_ptr<VertexArray> m_VertexArray;
@@ -361,7 +361,7 @@ namespace eng
 
     MemoryPool::address_t getDrawCommandIndicesAddress(const DrawCommandType& drawCommand)
     {
-      return drawCommand.firstIndex() * sizeof(uint32_t);
+      return drawCommand.firstIndex() * sizeof(u32);
     }
 
     MemoryPool::address_t getDrawCommandVerticesAddress(const DrawCommandType& drawCommand)

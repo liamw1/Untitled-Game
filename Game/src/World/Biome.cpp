@@ -21,11 +21,11 @@ const Biome* Biome::Get(Type biome)
   return s_Biomes[biome].get();
 }
 
-length_t Biome::CalculateOctaveNoise(const NoiseSamples& noiseSamples, length_t largestAmplitude, float persistence)
+length_t Biome::CalculateOctaveNoise(const NoiseSamples& noiseSamples, length_t largestAmplitude, f32 persistence)
 {
   length_t sum = 0_m;
   length_t amplitude = largestAmplitude;
-  for (int i = 0; i < NoiseSamples::Levels(); ++i)
+  for (i32 i = 0; i < NoiseSamples::Levels(); ++i)
   {
     sum += noiseSamples[i] * amplitude;
     amplitude *= persistence;
@@ -33,10 +33,10 @@ length_t Biome::CalculateOctaveNoise(const NoiseSamples& noiseSamples, length_t 
   return sum;
 }
 
-void Biome::StandardColumnFill(BlockArrayBox<block::Type>::Strip column, length_t chunkFloor, length_t elevation, block::Type surfaceType, int surfaceDepth, block::Type soilType, int soilDepth)
+void Biome::StandardColumnFill(BlockArrayBox<block::Type>::Strip column, length_t chunkFloor, length_t elevation, block::Type surfaceType, i32 surfaceDepth, block::Type soilType, i32 soilDepth)
 {
-  int terrainElevationIndex = static_cast<int>(std::ceil((elevation - chunkFloor) / block::length()));
-  int waterLevelIndex = static_cast<int>(std::ceil((0 - chunkFloor) / block::length()));
+  i32 terrainElevationIndex = static_cast<i32>(std::ceil((elevation - chunkFloor) / block::length()));
+  i32 waterLevelIndex = static_cast<i32>(std::ceil((0 - chunkFloor) / block::length()));
 
   blockIndex_t k = 0;
   while (k < terrainElevationIndex - soilDepth - surfaceDepth && k < Chunk::Size())

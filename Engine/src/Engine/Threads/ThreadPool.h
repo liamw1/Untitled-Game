@@ -8,7 +8,7 @@ namespace eng::threads
   class ThreadPool
   {
   public:
-    ThreadPool(int numThreads);
+    ThreadPool(i32 numThreads);
     ~ThreadPool();
 
     /*

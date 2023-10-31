@@ -3,22 +3,22 @@
 
 namespace eng
 {
-  static uint32_t shaderDataTypeSize(ShaderDataType type)
+  static u32 shaderDataTypeSize(ShaderDataType type)
   {
     switch (type)
     {
       case ShaderDataType::Bool:        return 1 * sizeof(bool);
-      case ShaderDataType::Uint32:      return 1 * sizeof(uint32_t);
-      case ShaderDataType::Int:         return 1 * sizeof(int);
-      case ShaderDataType::Int2:        return 2 * sizeof(int);
-      case ShaderDataType::Int3:        return 3 * sizeof(int);
-      case ShaderDataType::Int4:        return 4 * sizeof(int);
-      case ShaderDataType::Float:       return 1 * sizeof(float);
-      case ShaderDataType::Float2:      return 2 * sizeof(float);
-      case ShaderDataType::Float3:      return 3 * sizeof(float);
-      case ShaderDataType::Float4:      return 4 * sizeof(float);
-      case ShaderDataType::Mat3:        return 3 * 3 * sizeof(float);
-      case ShaderDataType::Mat4:        return 4 * 4 * sizeof(float);
+      case ShaderDataType::Uint32:      return 1 * sizeof(u32);
+      case ShaderDataType::Int:         return 1 * sizeof(i32);
+      case ShaderDataType::Int2:        return 2 * sizeof(i32);
+      case ShaderDataType::Int3:        return 3 * sizeof(i32);
+      case ShaderDataType::Int4:        return 4 * sizeof(i32);
+      case ShaderDataType::Float:       return 1 * sizeof(f32);
+      case ShaderDataType::Float2:      return 2 * sizeof(f32);
+      case ShaderDataType::Float3:      return 3 * sizeof(f32);
+      case ShaderDataType::Float4:      return 4 * sizeof(f32);
+      case ShaderDataType::Mat3:        return 3 * 3 * sizeof(f32);
+      case ShaderDataType::Mat4:        return 4 * 4 * sizeof(f32);
       default: throw std::invalid_argument("Unknown ShaderDataType!");
     }
   }
@@ -30,7 +30,7 @@ namespace eng
   BufferElement::BufferElement(ShaderDataType type, const std::string& name, bool normalized)
     : name(name), type(type), size(shaderDataTypeSize(type)), offset(0), normalized(normalized) {}
 
-  int BufferElement::getComponentCount() const
+  i32 BufferElement::getComponentCount() const
   {
     switch (type)
     {
@@ -57,7 +57,7 @@ namespace eng
   BufferLayout::BufferLayout(const std::initializer_list<BufferElement>& elements)
     : m_Elements(elements), m_Stride(0) { calculateOffsetsAndStride(); }
 
-  uint32_t BufferLayout::stride() const { return m_Stride; }
+  u32 BufferLayout::stride() const { return m_Stride; }
   const std::vector<BufferElement>& BufferLayout::elements() const { return m_Elements; }
 
   void BufferLayout::calculateOffsetsAndStride()

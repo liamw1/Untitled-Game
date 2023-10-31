@@ -3,7 +3,7 @@
 
 namespace eng::render::command
 {
-  void setViewport(uint32_t x, uint32_t y, uint32_t width, uint32_t height);
+  void setViewport(u32 x, u32 y, u32 width, u32 height);
   
   void clear(const math::Float4& color = { 0.0f, 0.0f, 0.0f, 1.0f });
   void clearDepthBuffer();
@@ -11,16 +11,16 @@ namespace eng::render::command
   void setBlendFunc();
   void setBlending(bool enableBlending);
   void setUseDepthOffset(bool enableDepthOffset);
-  void setDepthOffset(float factor, float units);
+  void setDepthOffset(f32 factor, f32 units);
   void setDepthTesting(bool enableDepthTesting);
   void setDepthWriting(bool enableDepthWriting);
   void setFaceCulling(bool enableFaceCulling);
   void setWireFrame(bool enableWireFrame);
   
-  void drawVertices(const VertexArray* vertexArray, uint32_t vertexCount);
-  void drawIndexed(const VertexArray* vertexArray, uint32_t indexCount = 0);
-  void drawIndexedLines(const VertexArray* vertexArray, uint32_t indexCount = 0);
+  void drawVertices(const VertexArray* vertexArray, u32 vertexCount);
+  void drawIndexed(const VertexArray* vertexArray, u32 indexCount = 0);
+  void drawIndexedLines(const VertexArray* vertexArray, u32 indexCount = 0);
 
-  void multiDrawVertices(const void* drawCommands, int drawCount, int stride);
-  void multiDrawIndexed(const void* drawCommands, int drawCount, int stride);
+  void multiDrawVertices(const void* drawCommands, i32 drawCount, i32 stride);
+  void multiDrawIndexed(const void* drawCommands, i32 drawCount, i32 stride);
 }

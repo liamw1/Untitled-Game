@@ -17,8 +17,8 @@ namespace eng::debug
   private:
     struct Counters
     {
-      std::atomic<int> moves = 0;
-      std::atomic<int> copies = 0;
+      std::atomic<i32> moves = 0;
+      std::atomic<i32> copies = 0;
 
       ~Counters()
       {

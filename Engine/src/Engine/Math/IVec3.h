@@ -84,8 +84,8 @@ namespace eng::math
     constexpr IVec3 operator*(T n) const { clone(*this) *= n; }
     constexpr IVec3 operator/(T n) const { clone(*this) /= n; }
   
-    constexpr int l1Norm() const { return std::abs(i) + std::abs(j) + std::abs(k); }
-    constexpr int dot(const IVec3& other) const { return i * other.i + j * other.j + k * other.k; }
+    constexpr i32 l1Norm() const { return std::abs(i) + std::abs(j) + std::abs(k); }
+    constexpr i32 dot(const IVec3& other) const { return i * other.i + j * other.j + k * other.k; }
   
     static constexpr IVec3 ToIndex(const Vec3& vec)
     {
@@ -138,17 +138,17 @@ namespace std
   template<std::integral T>
   inline ostream& operator<<(ostream& os, const eng::math::IVec3<T>& index)
   {
-    return os << '[' << static_cast<int64_t>(index.i) << ", " << static_cast<int64_t>(index.j) << ", " << static_cast<int64_t>(index.k) << ']';
+    return os << '[' << static_cast<i64>(index.i) << ", " << static_cast<i64>(index.j) << ", " << static_cast<i64>(index.k) << ']';
   }
 
   template<std::integral T>
   struct hash<eng::math::IVec3<T>>
   {
-    constexpr int operator()(const eng::math::IVec3<T>& index) const
+    constexpr size_t operator()(const eng::math::IVec3<T>& index) const
     {
-      return eng::u32Bit( 0) * (index.i % eng::u32Bit(10)) +
-             eng::u32Bit(10) * (index.j % eng::u32Bit(10)) +
-             eng::u32Bit(20) * (index.k % eng::u32Bit(10));
+      return eng::u32Bit( 0) * eng::math::mod(index.i, eng::u32Bit(10)) +
+             eng::u32Bit(10) * eng::math::mod(index.j, eng::u32Bit(10)) +
+             eng::u32Bit(20) * eng::math::mod(index.k, eng::u32Bit(10));
     }
   };
 }

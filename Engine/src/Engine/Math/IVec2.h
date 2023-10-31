@@ -1,7 +1,6 @@
 #pragma once
 #include "Direction.h"
-#include "Engine/Core/Concepts.h"
-#include "Engine/Utilities/Helpers.h"
+#include "Basics.h"
 
 namespace eng::math
 {
@@ -75,8 +74,8 @@ namespace eng::math
     constexpr IVec2 operator*(T n) const { return clone(*this) *= n; }
     constexpr IVec2 operator/(T n) const { return clone(*this) /= n; }
   
-    constexpr int l1Norm() const { return std::abs(i) + std::abs(j); }
-    constexpr int dot(const IVec2& other) const { return i * other.i + j * other.j; }
+    constexpr i32 l1Norm() const { return std::abs(i) + std::abs(j); }
+    constexpr i32 dot(const IVec2& other) const { return i * other.i + j * other.j; }
   
     static constexpr IVec2 ToIndex(const Vec2& vec)
     {
@@ -110,16 +109,16 @@ namespace std
   template<std::integral T>
   inline ostream& operator<<(ostream& os, const eng::math::IVec2<T>& index)
   {
-    return os << '[' << static_cast<int64_t>(index.i) << ", " << static_cast<int64_t>(index.j) << ']';
+    return os << '[' << static_cast<i64>(index.i) << ", " << static_cast<i64>(index.j) << ']';
   }
 
   template<std::integral T>
   struct hash<eng::math::IVec2<T>>
   {
-    constexpr int operator()(const eng::math::IVec2<T>& index) const
+    constexpr size_t operator()(const eng::math::IVec2<T>& index) const
     {
-      return eng::u32Bit( 0) * (index.i % eng::u32Bit(16)) +
-             eng::u32Bit(16) * (index.j % eng::u32Bit(16));
+      return eng::u32Bit( 0) * eng::math::mod(index.i, eng::u32Bit(16)) +
+             eng::u32Bit(16) * eng::math::mod(index.j, eng::u32Bit(16));
     }
   };
 }

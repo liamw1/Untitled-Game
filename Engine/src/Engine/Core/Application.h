@@ -11,10 +11,10 @@ namespace eng
 {
   struct ApplicationCommandLineArgs
   {
-    int count = 0;
+    i32 count = 0;
     char** args = nullptr;
 
-    const char* operator[](int index) const;
+    const char* operator[](i32 index) const;
   };
 
   class Application

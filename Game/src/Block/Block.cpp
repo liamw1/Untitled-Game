@@ -115,7 +115,7 @@ namespace block
 
   struct BlockUniformData
   {
-    const float blockLength = static_cast<float>(length());
+    const f32 blockLength = static_cast<f32>(length());
   };
 
   struct BlockProperties
@@ -133,7 +133,7 @@ namespace block
   };
   static BlockProperties s_Properties;
   
-  static constexpr int c_UniformBinding = 1;
+  static constexpr i32 c_UniformBinding = 1;
   static std::once_flag s_InitializedFlag;
 
   static eng::EnumArray<eng::math::Float4, TextureID> s_TextureAverageColors;
@@ -197,7 +197,7 @@ namespace block
 
   Light::Light()
     : Light(0) {}
-  Light::Light(int8_t sunlight)
+  Light::Light(i8 sunlight)
     : m_Sunlight(sunlight)
   {
     ENG_ASSERT(eng::debug::BoundsCheck(sunlight, 0, MaxValue() + 1), "Invalid value for sunlight!");
@@ -208,7 +208,7 @@ namespace block
     return m_Sunlight == other.m_Sunlight;
   }
 
-  int8_t Light::sunlight() const
+  i8 Light::sunlight() const
   {
     return m_Sunlight;
   }

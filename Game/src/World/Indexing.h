@@ -5,12 +5,12 @@
 // =========== Precision selection for Indices ============= //
 template <bool isDoublePrecision> struct GlobalIndexSelector;
 
-template<> struct GlobalIndexSelector<true> { using type = typename int64_t; };
-template<> struct GlobalIndexSelector<false> { using type = typename int32_t; };
+template<> struct GlobalIndexSelector<true> { using type = typename i64; };
+template<> struct GlobalIndexSelector<false> { using type = typename i32; };
 
-using blockIndex_t = int8_t;
-using localIndex_t = int16_t;
-using globalIndex_t = typename GlobalIndexSelector<std::is_same<double, length_t>::value>::type;
+using blockIndex_t = i8;
+using localIndex_t = i16;
+using globalIndex_t = typename GlobalIndexSelector<std::is_same<f64, length_t>::value>::type;
 
 using BlockIndex2D = eng::math::IVec2<blockIndex_t>;
 using LocalIndex2D = eng::math::IVec2<localIndex_t>;

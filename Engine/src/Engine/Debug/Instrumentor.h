@@ -28,7 +28,7 @@ namespace eng::debug
     void beginSession(const std::string& name, const std::string& filepath = "results.json");
     void endSession();
 
-    void writeProfile(const std::string& name, const std::chrono::steady_clock::time_point start, const std::chrono::duration<double, std::micro> elapsedTime, const std::thread::id threadID);
+    void writeProfile(const std::string& name, const std::chrono::steady_clock::time_point start, const std::chrono::duration<f64, std::micro> elapsedTime, const std::thread::id threadID);
 
     static Instrumentor& Get();
 

@@ -5,7 +5,7 @@
 
 namespace eng
 {
-  OpenGLUniform::OpenGLUniform(uint32_t binding, uint32_t size)
+  OpenGLUniform::OpenGLUniform(u32 binding, u32 size)
     : m_Binding(binding)
   {
     ENG_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
@@ -20,7 +20,7 @@ namespace eng
       return;
     }
 
-    uint32_t rendererID;
+    u32 rendererID;
     glCreateBuffers(1, &rendererID);
     glNamedBufferData(rendererID, size, nullptr, GL_DYNAMIC_DRAW);
     glBindBufferBase(GL_UNIFORM_BUFFER, m_Binding, rendererID);
@@ -53,7 +53,7 @@ namespace eng
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
   }
 
-  void OpenGLUniform::set(const void* data, uint32_t size)
+  void OpenGLUniform::set(const void* data, u32 size)
   {
     ENG_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
     ENG_CORE_ASSERT(m_Binding < c_MaxUniformBindings, "Binding exceeds maximum allowed uniform bindings!");

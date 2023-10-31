@@ -33,32 +33,33 @@ namespace eng::event
   class MouseMove
   {
   public:
-    MouseMove(float x, float y);
+    MouseMove(f32 x, f32 y);
 
     EventCategory categoryFlags() const;
     const char* name() const;
     std::string toString() const;
 
-    float x() const;
-    float y() const;
+    f32 x() const;
+    f32 y() const;
 
   private:
-    float m_MouseX, m_MouseY;
+    f32 m_MouseX, m_MouseY;
   };
 
   class MouseScroll
   {
   public:
-    MouseScroll(float xOffset, float yOffset);
+    MouseScroll(f32 xOffset, f32 yOffset);
 
     EventCategory categoryFlags() const;
     const char* name() const;
     std::string toString() const;
 
-    float xOffset() const;
-    float yOffset() const;
+    f32 xOffset() const;
+    f32 yOffset() const;
 
   private:
-    float m_XOffset, m_YOffset;
+    f32 m_XOffset;
+    f32 m_YOffset;
   };
 }

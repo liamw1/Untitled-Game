@@ -6,6 +6,7 @@
 #include "Engine/Core/Algorithm.h"
 #include "Engine/Core/Application.h"
 #include "Engine/Core/Concepts.h"
+#include "Engine/Core/FixedWidthTypes.h"
 #include "Engine/Core/Layer.h"
 #include "Engine/Core/Time.h"
 #include "Engine/Core/UID.h"
@@ -27,6 +28,7 @@
 
 #include "Engine/Math/ArrayBox.h"
 #include "Engine/Math/ArrayRect.h"
+#include "Engine/Math/Basics.h"
 #include "Engine/Math/Direction.h"
 #include "Engine/Math/IBox2.h"
 #include "Engine/Math/IBox3.h"

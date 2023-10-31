@@ -18,13 +18,13 @@ class ChunkVertex
 {
 public:
   ChunkVertex();
-  ChunkVertex(const BlockIndex& vertexPlacement, int quadIndex, block::TextureID texture, int sunlight, int ambientOcclusion);
+  ChunkVertex(const BlockIndex& vertexPlacement, i32 quadIndex, block::TextureID texture, i32 sunlight, i32 ambientOcclusion);
 
-  static const BlockIndex& GetOffset(eng::math::Direction face, int quadIndex);
+  static const BlockIndex& GetOffset(eng::math::Direction face, i32 quadIndex);
 
 private:
-  uint32_t m_VertexData;
-  uint32_t m_LightingData;
+  u32 m_VertexData;
+  u32 m_LightingData;
 };
 
 /*
@@ -34,7 +34,7 @@ private:
 class ChunkQuad
 {
 public:
-  ChunkQuad(const BlockIndex& blockIndex, eng::math::Direction face, block::TextureID texture, const std::array<int, 4>& sunlight, const std::array<int, 4>& ambientOcclusion);
+  ChunkQuad(const BlockIndex& blockIndex, eng::math::Direction face, block::TextureID texture, const std::array<i32, 4>& sunlight, const std::array<i32, 4>& ambientOcclusion);
 
 private:
   std::array<ChunkVertex, 4> m_Vertices;
@@ -47,16 +47,16 @@ private:
 class ChunkVoxel
 {
 public:
-  ChunkVoxel(const BlockIndex& blockIndex, eng::math::DirectionBitMask enabledFaces, int firstVertex);
+  ChunkVoxel(const BlockIndex& blockIndex, eng::math::DirectionBitMask enabledFaces, i32 firstVertex);
 
   const BlockIndex& index() const;
   bool faceEnabled(eng::math::Direction direction) const;
-  int baseVertex() const;
+  i32 baseVertex() const;
 
 private:
   BlockIndex m_Index;
   eng::math::DirectionBitMask m_EnabledFaces;
-  int m_BaseVertex;
+  i32 m_BaseVertex;
 };
 
 class ChunkDrawCommand : public eng::MultiDrawIndexedCommand<GlobalIndex, ChunkDrawCommand>
@@ -69,13 +69,13 @@ public:
 
   bool operator==(const ChunkDrawCommand& other) const;
 
-  int vertexCount() const;
+  i32 vertexCount() const;
 
   const void* indexData();
   const void* vertexData();
   void prune();
 
-  void addQuad(const BlockIndex& blockIndex, eng::math::Direction face, block::TextureID texture, const std::array<int, 4>& sunlight, const std::array<int, 4>& ambientOcclusion);
+  void addQuad(const BlockIndex& blockIndex, eng::math::Direction face, block::TextureID texture, const std::array<i32, 4>& sunlight, const std::array<i32, 4>& ambientOcclusion);
   void addVoxel(const BlockIndex& blockIndex, eng::math::DirectionBitMask enabledFaces);
 
   /*
@@ -88,13 +88,13 @@ public:
 private:
   std::vector<ChunkQuad> m_Quads;
   std::vector<ChunkVoxel> m_Voxels;
-  std::vector<uint32_t> m_Indices;
+  std::vector<u32> m_Indices;
   BlockIndex m_SortState;
   bool m_NeedsSorting;
 
-  int m_VoxelBaseVertex;
+  i32 m_VoxelBaseVertex;
 
-  void addQuadIndices(int baseVertex);
+  void addQuadIndices(i32 baseVertex);
   void reorderIndices(const GlobalIndex& originIndex, const eng::math::Vec3& viewPosition);
 };
 
@@ -103,7 +103,7 @@ namespace std
   template<>
   struct hash<ChunkDrawCommand>
   {
-    int operator()(const ChunkDrawCommand& drawCommand) const
+    size_t operator()(const ChunkDrawCommand& drawCommand) const
     {
       return std::hash<GlobalIndex>()(drawCommand.id());
     }

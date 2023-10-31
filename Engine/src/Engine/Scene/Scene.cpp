@@ -14,7 +14,7 @@ namespace eng
       ENG_CORE_ASSERT(Entity::Registry().valid(entityID), "Entity ID does not refer to a valid entity!");
       return Entity(entityID);
     }
-    static Entity GetEntity(uint32_t entityID) { return static_cast<entt::entity>(entityID); }
+    static Entity GetEntity(u32 entityID) { return static_cast<entt::entity>(entityID); }
 
     static entt::registry& Registry() { return Entity::Registry(); }
     static Entity Create() { return Entity::Registry().create(); }
@@ -49,7 +49,7 @@ namespace eng::scene
     ECS::Registry().destroy(entity);
   }
 
-  Entity GetEntity(uint32_t entityID)
+  Entity GetEntity(u32 entityID)
   {
     return ECS::GetEntity(entityID);
   }
@@ -114,7 +114,7 @@ namespace eng::scene
     return projection * viewMatrix;
   }
 
-  void OnViewportResize(uint32_t width, uint32_t height)
+  void OnViewportResize(u32 width, u32 height)
   {
     // Resize our non-fixed aspect ratio cameras
     auto view = ECS::Registry().view<component::Camera>();
@@ -131,7 +131,7 @@ namespace eng::scene
     const size_t numEntities = ECS::Registry().size();
     const entt::entity* entityIDs = ECS::Registry().data();
 
-    for (int i = 0; i < numEntities; ++i)
+    for (i32 i = 0; i < numEntities; ++i)
       func(ECS::GetEntity(entityIDs[i]));
   }
 }

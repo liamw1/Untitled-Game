@@ -11,14 +11,14 @@ namespace eng
   class IndexBuffer
   {
   public:
-    IndexBuffer(const uint32_t* indices, uint32_t count);
-    IndexBuffer(const std::vector<uint32_t>& indices);
+    IndexBuffer(const u32* indices, u32 count);
+    IndexBuffer(const std::vector<u32>& indices);
     IndexBuffer(const std::shared_ptr<StorageBuffer>& indexBufferStorage);
 
     void bind() const;
     void unBind() const;
 
-    uint32_t count() const;
+    u32 count() const;
 
   private:
     std::shared_ptr<StorageBuffer> m_Buffer;
@@ -44,10 +44,10 @@ namespace eng
       \param data Buffer of vertex data
       \param size Size of buffer in bytes
     */
-    virtual void setVertexBuffer(const void* data, uint32_t size) = 0;
+    virtual void setVertexBuffer(const void* data, u32 size) = 0;
     virtual void setVertexBuffer(const std::shared_ptr<StorageBuffer>& vertexBuffer) = 0;
-    virtual void updateVertexBuffer(const void* data, uint32_t offset, uint32_t size) const = 0;
-    virtual void resizeVertexBuffer(uint32_t newSize) = 0;
+    virtual void updateVertexBuffer(const void* data, u32 offset, u32 size) const = 0;
+    virtual void resizeVertexBuffer(u32 newSize) = 0;
 
     /*
       Sets an array of indices that represent the order in which vertices will be drawn.
@@ -60,7 +60,7 @@ namespace eng
     virtual const BufferLayout& getLayout() const = 0;
     virtual const std::optional<IndexBuffer>& getIndexBuffer() const = 0;
 
-    void setVertexBuffer(const void* data, uint64_t size);
+    void setVertexBuffer(const void* data, u64 size);
 
     static std::unique_ptr<VertexArray> Create();
   };
