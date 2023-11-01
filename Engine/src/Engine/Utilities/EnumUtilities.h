@@ -10,7 +10,7 @@ namespace eng
   constexpr std::underlying_type_t<E> toUnderlying(E e) { return static_cast<std::underlying_type_t<E>>(e); }
 
   template<IterableEnum E>
-  constexpr i32 enumRange()
+  constexpr std::underlying_type_t<E> enumRange()
   {
     static_assert(toUnderlying(E::Last) > toUnderlying(E::First), "First and Last enums are in incorrect order!");
     return 1 + toUnderlying(E::Last) - toUnderlying(E::First);
@@ -57,7 +57,7 @@ namespace eng
         operator[](index) = value;
     }
 
-    constexpr T& operator[](E index) { return ENG_MUTABLE_VERSION(operator[], index); }
+    constexpr T& operator[](E index) { ENG_MUTABLE_VERSION(operator[], index); }
     constexpr const T& operator[](E index) const { return m_Data[toUnderlying(index) - toUnderlying(E::First)]; }
 
     constexpr uSize size() { return m_Data.size(); }

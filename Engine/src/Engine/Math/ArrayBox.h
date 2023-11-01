@@ -16,7 +16,7 @@ namespace eng::math
     ArrayBoxStrip(T* begin, i32 offset)
       : m_Begin(begin), m_Offset(offset) {}
 
-    T& operator[](IntType index) { return ENG_MUTABLE_VERSION(operator[], index); }
+    T& operator[](IntType index) { ENG_MUTABLE_VERSION(operator[], index); }
     const T& operator[](IntType index) const { return m_Begin[index - m_Offset]; }
 
   private:
@@ -33,10 +33,10 @@ namespace eng::math
     ArrayBoxLayer(T* begin, const IBox2<IntType>& bounds)
       : m_Begin(begin), m_Bounds(bounds) {}
 
-    ArrayBoxStrip<T, IntType> operator[](IntType index) { return static_cast<const ArrayBoxLayer&>(*this).operator[](index); }
+    ArrayBoxStrip<T, IntType> operator[](IntType index) { ENG_MUTABLE_VERSION(operator[], index); }
     const ArrayBoxStrip<T, IntType> operator[](IntType index) const
     {
-      ENG_CORE_ASSERT(debug::BoundsCheck(index, m_Bounds.min.i, m_Bounds.max.i + 1), "Index is out of bounds!");
+      ENG_CORE_ASSERT(debug::boundsCheck(index, m_Bounds.min.i, m_Bounds.max.i + 1), "Index is out of bounds!");
       return ArrayBoxStrip<T, IntType>(m_Begin + m_Bounds.extents().j * (index - m_Bounds.min.i), m_Bounds.min.j);
     }
 
@@ -99,7 +99,7 @@ namespace eng::math
     operator bool() const { return m_Data; }
     const T* data() const { return m_Data; }
 
-    T& operator()(const IVec3<IntType>& index) { return ENG_MUTABLE_VERSION(operator(), index); }
+    T& operator()(const IVec3<IntType>& index) { ENG_MUTABLE_VERSION(operator(), index); }
     const T& operator()(const IVec3<IntType>& index) const
     {
       ENG_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
@@ -107,11 +107,11 @@ namespace eng::math
       return m_Data[m_Strides.i * index.i + m_Strides.j * index.j + index.k - m_Offset];
     }
 
-    Layer operator[](IntType index) { return static_cast<const ArrayBox*>(this)->operator[](index); }
+    Layer operator[](IntType index) { ENG_MUTABLE_VERSION(operator[], index); }
     const Layer operator[](IntType index) const
     {
       ENG_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
-      ENG_CORE_ASSERT(debug::BoundsCheck(index, m_Bounds.min.i, m_Bounds.max.i + 1), "Index is out of bounds!");
+      ENG_CORE_ASSERT(debug::boundsCheck(index, m_Bounds.min.i, m_Bounds.max.i + 1), "Index is out of bounds!");
       IBox2<IntType> layerBounds(m_Bounds.min.j, m_Bounds.min.k, m_Bounds.max.j, m_Bounds.max.k);
       return Layer(m_Data + m_Strides.i * (index - m_Bounds.min.i), layerBounds);
     }
@@ -221,7 +221,7 @@ namespace eng::math
     void setBounds(const IBox3<IntType>& bounds)
     {
       m_Bounds = bounds;
-      IVec3<i32> extents = static_cast<IVec3<i32>>(m_Bounds.extents());
+      IVec3<IntType> extents = m_Bounds.extents();
       m_Strides = IVec2<i32>(extents.j * extents.k, extents.k);
       m_Offset = m_Strides.i * m_Bounds.min.i + m_Strides.j * m_Bounds.min.j + m_Bounds.min.k;
     }

@@ -34,15 +34,14 @@ namespace eng::debug
 {
   // Returns true if value is on the interval [a, b).
   template<std::three_way_comparable T, std::convertible_to<T> A, std::convertible_to<T> B>
-  constexpr bool BoundsCheck(T value, A a, B b) { return a <= value && value < b; }
+  constexpr bool boundsCheck(T value, A a, B b) { return a <= value && value < b; }
 
   // Returns true if value is equal to one of the arguments.
-  template<std::equality_comparable T, std::convertible_to<T> Arg>
-  constexpr bool EqualsOneOf(T value, Arg arg) { return value == arg; }
-  template<std::equality_comparable T, std::convertible_to<T> F, std::convertible_to<T>... Args>
-  constexpr bool EqualsOneOf(T value, F first, Args... args) { return value == first || EqualsOneOf(value, args...); }
+  template<std::equality_comparable T, std::convertible_to<T>... Args>
+  constexpr bool equalsOneOf(T value, Args... args) { return ((value == args) || ...); }
 
   // Returns true if n doesn't overflow when multiplied by m.
+  // TODO: Remove
   template<std::integral IntType, std::convertible_to<IntType> OtherIntType>
-  constexpr bool OverflowCheck(IntType n, OtherIntType m) { return n == 0 || static_cast<IntType>(n * m) / n == m; }
+  constexpr bool overflowCheck(IntType n, OtherIntType m) { return n == 0 || static_cast<IntType>(n * m) / n == m; }
 }

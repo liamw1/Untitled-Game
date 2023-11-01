@@ -66,6 +66,7 @@
 #include "Engine/Utilities/BindMember.h"
 #include "Engine/Utilities/BitUtilities.h"
 #include "Engine/Utilities/BoilerplateReduction.h"
+#include "Engine/Utilities/Casting.h"
 #include "Engine/Utilities/Constraints.h"
 #include "Engine/Utilities/EnumUtilities.h"
 #include "Engine/Utilities/Helpers.h"

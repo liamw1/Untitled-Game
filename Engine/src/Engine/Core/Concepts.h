@@ -1,5 +1,4 @@
 #pragma once
-#include "FixedWidthTypes.h"
 
 namespace eng
 {
@@ -57,21 +56,8 @@ namespace eng
   template<typename F, typename R, typename T>
   concept BinaryOp = InvocableWithReturnType<F, R, T, T>;
 
-  template<typename T>
-  concept EqualityComparable = requires(T a, T b)
-  {
-    { a == b } -> std::same_as<bool>;
-    { a != b } -> std::same_as<bool>;
-  };
-
-  template<typename T>
-  concept LessThanComparable = requires(T a, T b)
-  {
-    { a < b } -> std::same_as<bool>;
-  };
-
   template<typename F, typename T>
-  concept TransformToComarable = std::invocable<F, T> && LessThanComparable<std::invoke_result_t<F, T>>;
+  concept TransformToComparable = std::invocable<F, T> && std::three_way_comparable<std::invoke_result_t<F, T>>;
 
   template<typename F, typename T>
   concept BinaryComparison = BinaryOp<F, bool, T>;

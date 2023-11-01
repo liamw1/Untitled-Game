@@ -1,5 +1,6 @@
 #include "ENpch.h"
 #include "Instrumentor.h"
+#include "Engine/Utilities/Casting.h"
 
 namespace eng::debug
 {
@@ -44,7 +45,7 @@ namespace eng::debug
     json << "\"ph\":\"X\",";
     json << "\"pid\":0,";
     json << "\"tid\":" << threadID << ",";
-    json << "\"ts\":" << static_cast<f64>(startTimeInNanoseconds) / 1e3;
+    json << "\"ts\":" << upCast<f64>(startTimeInNanoseconds) / 1e3;
     json << "}";
 
     if (m_CurrentSession)

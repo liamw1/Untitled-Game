@@ -31,7 +31,7 @@ namespace eng::math
     template<std::integral U>
     explicit constexpr operator IVec3<U>() const { return { static_cast<U>(i), static_cast<U>(j), static_cast<U>(k) }; }
   
-    constexpr T& operator[](Axis axis) { return ENG_MUTABLE_VERSION(operator[], axis); }
+    constexpr T& operator[](Axis axis) { ENG_MUTABLE_VERSION(operator[], axis); }
     constexpr const T& operator[](Axis axis) const
     {
       switch (axis)
@@ -59,7 +59,7 @@ namespace eng::math
   
     constexpr IVec3& operator*=(T n)
     {
-      ENG_CORE_ASSERT(debug::OverflowCheck(n, i) && debug::OverflowCheck(n, j) && debug::OverflowCheck(n, k), "Integer overflow!");
+      ENG_CORE_ASSERT(debug::overflowCheck(n, i) && debug::overflowCheck(n, j) && debug::overflowCheck(n, k), "Integer overflow!");
       i *= n;
       j *= n;
       k *= n;

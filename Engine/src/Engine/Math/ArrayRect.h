@@ -55,7 +55,7 @@ namespace eng::math
     operator bool() const { return m_Data; }
     const T* data() const { return m_Data; }
 
-    T& operator()(const IVec2<IntType>& index) { return ENG_MUTABLE_VERSION(operator(), index); }
+    T& operator()(const IVec2<IntType>& index) { ENG_MUTABLE_VERSION(operator(), index); }
     const T& operator()(const IVec2<IntType>& index) const
     {
       ENG_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
@@ -63,11 +63,11 @@ namespace eng::math
       return m_Data[m_Stride * index.i + index.j - m_Offset];
     }
 
-    Strip operator[](IntType index) { return static_cast<const ArrayRect&>(*this).operator[](index); }
+    Strip operator[](IntType index) { ENG_MUTABLE_VERSION(operator[], index); }
     const Strip operator[](IntType index) const
     {
       ENG_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
-      ENG_CORE_ASSERT(debug::BoundsCheck(index, m_Bounds.min.i, m_Bounds.max.i + 1), "Index is out of bounds!");
+      ENG_CORE_ASSERT(debug::boundsCheck(index, m_Bounds.min.i, m_Bounds.max.i + 1), "Index is out of bounds!");
       return Strip(m_Data + m_Stride * (index - m_Bounds.min.i), m_Bounds.min.j);
     }
 

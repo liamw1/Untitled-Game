@@ -200,7 +200,7 @@ namespace block
   Light::Light(i8 sunlight)
     : m_Sunlight(sunlight)
   {
-    ENG_ASSERT(eng::debug::BoundsCheck(sunlight, 0, MaxValue() + 1), "Invalid value for sunlight!");
+    ENG_ASSERT(eng::debug::boundsCheck(sunlight, 0, MaxValue() + 1), "Invalid value for sunlight!");
   }
 
   bool Light::operator==(Light other) const

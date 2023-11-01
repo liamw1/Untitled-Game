@@ -1,10 +1,5 @@
 #pragma once
 
-// Detail
-#define __OBJECT_TYPE std::remove_reference_t<decltype(*this)>
-#define __CONST_OBJECT_POINTER static_cast<const __OBJECT_TYPE*>(this)
-#define __RETURN_TYPE(functionName, ...) decltype(__CONST_OBJECT_POINTER->functionName(__VA_ARGS__))
-
 /*
   Used for creating const and mutable overloads of a member function without code duplication.
   Only for use in the definition of the mutable version of the function.
@@ -16,14 +11,23 @@
       i32 m_Value;
 
     public:
-      i32& get() { return ENG_MUTABLE_VERSION(get); }
+      i32& get() { ENG_MUTABLE_VERSION(get); }
       const i32& get() const { return m_Value; }
     }
 
   Ideally, this wouldn't be a macro, but a function version of this is more verbose than manual casting.
   NOTE: If an argument of the function is a temporary, you must std::move the argument into the macro.
 */
-#define ENG_MUTABLE_VERSION(functionName, ...) const_cast<::eng::removeConst<__RETURN_TYPE(functionName, __VA_ARGS__)>>(__CONST_OBJECT_POINTER->functionName(__VA_ARGS__))
+#define ENG_MUTABLE_VERSION(functionName, ...)                                                        \
+using ObjectType = std::remove_reference_t<decltype(*this)>;                                          \
+const ObjectType* constObjectPointer = static_cast<const ObjectType*>(this);                          \
+                                                                                                      \
+using ReturnType = decltype(constObjectPointer->functionName(__VA_ARGS__));                           \
+if constexpr (std::is_reference_v<ReturnType>)                                                        \
+  return const_cast<std::remove_cvref_t<ReturnType>&>(constObjectPointer->functionName(__VA_ARGS__)); \
+else                                                                                                  \
+  return constObjectPointer->functionName(__VA_ARGS__);                                               \
+static_assert(true)
 
 
 

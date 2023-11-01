@@ -65,7 +65,7 @@ namespace eng
   {
     ENG_PROFILE_FUNCTION();
     ENG_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
-    ENG_CORE_ASSERT(debug::BoundsCheck(shaderSources.size(), 0, c_MaxShaders + 1), "A maximum of {0} shaders is supported", c_MaxShaders);
+    ENG_CORE_ASSERT(debug::boundsCheck(shaderSources.size(), 0, c_MaxShaders + 1), "A maximum of {0} shaders is supported", c_MaxShaders);
 
     GLuint program = glCreateProgram();
     std::vector<GLenum> glShaderIDs(shaderSources.size());

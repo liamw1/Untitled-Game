@@ -33,19 +33,19 @@ namespace eng::algo
     return std::find_if(std::begin(container), std::end(container), std::forward<P>(predicate));
   }
 
-  template<std::forward_iterator I, TransformToComarable<detail::underlyingType<I>> F>
+  template<std::forward_iterator I, TransformToComparable<detail::underlyingType<I>> F>
   void sort(I first, I last, F&& transform, SortPolicy sortPolicy)
   {
     using UnderlyingType = detail::underlyingType<I>;
     switch (sortPolicy)
     {
-      case SortPolicy::Ascending:   std::sort(first, last, [&transform](const UnderlyingType& a, const UnderlyingType& b) { return   transform(a) < transform(b);  }); break;
-      case SortPolicy::Descending:  std::sort(first, last, [&transform](const UnderlyingType& a, const UnderlyingType& b) { return !(transform(a) < transform(b)); }); break;
+      case SortPolicy::Ascending:   std::sort(first, last, [&transform](const UnderlyingType& a, const UnderlyingType& b) { return transform(a) < transform(b); }); break;
+      case SortPolicy::Descending:  std::sort(first, last, [&transform](const UnderlyingType& a, const UnderlyingType& b) { return transform(a) > transform(b); }); break;
       default:                      throw std::invalid_argument("Unknown sort policy!");
     }
   }
 
-  template<Iterable C, TransformToComarable<detail::containedType<C>> F>
+  template<Iterable C, TransformToComparable<detail::containedType<C>> F>
   void sort(C& container, F&& transform, SortPolicy sortPolicy)
   {
     sort(std::begin(container), std::end(container), std::forward<F>(transform), sortPolicy);

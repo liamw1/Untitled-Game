@@ -174,9 +174,9 @@ namespace eng::math
     template<std::integral IndexType>
     constexpr IBox3 corner(const IVec3<IndexType>& offset) const
     {
-      ENG_CORE_ASSERT(debug::EqualsOneOf(offset.i, -1, 1)
-                  && debug::EqualsOneOf(offset.j, -1, 1)
-                  && debug::EqualsOneOf(offset.k, -1, 1), "Offset IVec3 must contains values of -1 or 1!");
+      ENG_CORE_ASSERT(debug::equalsOneOf(offset.i, -1, 1) &&
+                      debug::equalsOneOf(offset.j, -1, 1) &&
+                      debug::equalsOneOf(offset.k, -1, 1), "Offset IVec3 must contains values of -1 or 1!");
   
       IVec3<T> cornerIndex(offset.i > 0 ? max.i : min.i, offset.j > 0 ? max.j : min.j, offset.k > 0 ? max.k : min.k);
       return { cornerIndex, cornerIndex };

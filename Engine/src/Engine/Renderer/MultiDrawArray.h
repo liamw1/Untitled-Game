@@ -187,7 +187,7 @@ namespace eng
       return static_cast<i32>(partitionEnd - m_DrawCommands.begin());
     }
 
-    template<TransformToComarable<Identifier> F>
+    template<TransformToComparable<Identifier> F>
     void sort(i32 drawCount, F&& transform, SortPolicy sortPolicy)
     {
       algo::sort(m_DrawCommands.begin(), m_DrawCommands.begin() + drawCount, [&transform](const DrawCommandType& draw) { return transform(draw.id()); }, sortPolicy);
@@ -323,7 +323,7 @@ namespace eng
       return static_cast<i32>(partitionEnd - m_DrawCommands.begin());
     }
 
-    template<TransformToComarable<Identifier> F>
+    template<TransformToComparable<Identifier> F>
     void sort(i32 drawCount, F&& transform, SortPolicy sortPolicy)
     {
       algo::sort(m_DrawCommands.begin(), m_DrawCommands.begin() + drawCount, [&transform](const DrawCommandType& draw) { return transform(draw.id()); }, sortPolicy);
