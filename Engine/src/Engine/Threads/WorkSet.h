@@ -1,7 +1,7 @@
 #pragma once
 #include "ThreadPool.h"
 
-namespace eng::threads
+namespace eng::thread
 {
   template<Hashable Identifier, typename ReturnType>
   class WorkSet

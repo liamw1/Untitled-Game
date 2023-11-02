@@ -1,7 +1,7 @@
 #pragma once
+#include "Engine/Core/Casting.h"
 #include "Engine/Utilities/BitUtilities.h"
 #include "Engine/Utilities/EnumUtilities.h"
-#include "Engine/Utilities/Casting.h"
 
 namespace eng::math
 {

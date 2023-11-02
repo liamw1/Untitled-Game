@@ -11,7 +11,7 @@ namespace eng
     m_Buffer->set(indices, count * sizeof(u32));
   }
   IndexBuffer::IndexBuffer(const std::vector<u32>& indices)
-    : IndexBuffer(indices.data(), static_cast<u32>(indices.size())) {}
+    : IndexBuffer(indices.data(), arithmeticCast<u32>(indices.size())) {}
   IndexBuffer::IndexBuffer(const std::shared_ptr<StorageBuffer>& indexBufferStorage)
     : m_Buffer(indexBufferStorage) {}
 
@@ -33,13 +33,12 @@ namespace eng
     {
       case RendererAPI::API::OpenGL:        return std::make_unique<OpenGLVertexArray>();
       case RendererAPI::API::OpenGL_Legacy: return std::make_unique<OpenGLVertexArray>();
-      default:                              throw  std::invalid_argument("Unknown RendererAPI!");
     }
+    throw std::invalid_argument("Invalid RendererAPI!");
   }
 
   void VertexArray::setVertexBuffer(const void* data, u64 size)
   {
-    ENG_ASSERT(size < std::numeric_limits<u32>::max(), "Requested vertex buffer size is greater than 32-bit unsigned integer limit!");
-    setVertexBuffer(data, static_cast<u32>(size));
+    setVertexBuffer(data, arithmeticCast<u32>(size));
   }
 }

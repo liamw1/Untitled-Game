@@ -19,8 +19,8 @@ namespace eng
       case ShaderDataType::Float4:      return 4 * sizeof(f32);
       case ShaderDataType::Mat3:        return 3 * 3 * sizeof(f32);
       case ShaderDataType::Mat4:        return 4 * 4 * sizeof(f32);
-      default: throw std::invalid_argument("Unknown ShaderDataType!");
     }
+    throw std::invalid_argument("Invalid ShaderDataType!");
   }
 
 
@@ -46,8 +46,8 @@ namespace eng
       case ShaderDataType::Float4:      return 4;
       case ShaderDataType::Mat3:        return 3;
       case ShaderDataType::Mat4:        return 4;
-      default: throw std::invalid_argument("Unknown ShaderDataType!");
     }
+    throw std::invalid_argument("Invalid ShaderDataType!");
   }
 
 

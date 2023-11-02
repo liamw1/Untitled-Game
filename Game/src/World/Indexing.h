@@ -30,4 +30,4 @@ using GlobalBox = eng::math::IBox3<globalIndex_t>;
 
 template<typename T> using BlockArrayRect = eng::math::ArrayRect<T, blockIndex_t>;
 template<typename T> using BlockArrayBox = eng::math::ArrayBox<T, blockIndex_t>;
-template<typename T> using ProtectedBlockArrayBox = eng::threads::ProtectedArrayBox<T, blockIndex_t>;
+template<typename T> using ProtectedBlockArrayBox = eng::thread::ProtectedArrayBox<T, blockIndex_t>;

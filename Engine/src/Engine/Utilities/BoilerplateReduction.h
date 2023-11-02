@@ -3,7 +3,7 @@
 /*
   Used for creating const and mutable overloads of a member function without code duplication.
   Only for use in the definition of the mutable version of the function.
-  Equivalent to const_cast<NonConstReturnType>(static_cast<const ClassType*>(this)->functionName(args...)
+  Equivalent to 'return const_cast<NonConstReturnType>(static_cast<const ClassType*>(this)->functionName(args...)'
 
   Example:
     class i32

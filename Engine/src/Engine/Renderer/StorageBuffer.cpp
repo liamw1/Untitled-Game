@@ -13,7 +13,7 @@ namespace eng
     {
       case RendererAPI::API::OpenGL:          return std::make_unique<OpenGLStorageBuffer>(type, binding);
       case RendererAPI::API::OpenGL_Legacy:   return std::make_unique<OpenGLStorageBuffer>(type, binding);
-      default:                                throw  std::invalid_argument("Unknown RendererAPI!");
     }
+    throw std::invalid_argument("Invalid RendererAPI!");
   }
 }

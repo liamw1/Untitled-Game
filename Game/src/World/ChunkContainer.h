@@ -12,13 +12,13 @@ constexpr i32 c_UnloadDistance = c_LoadDistance;
 */
 class ChunkContainer
 {
-  eng::threads::UnorderedMap<GlobalIndex, Chunk> m_Chunks;
-  eng::threads::UnorderedSet<GlobalIndex> m_BoundaryIndices;
+  eng::thread::UnorderedMap<GlobalIndex, Chunk> m_Chunks;
+  eng::thread::UnorderedSet<GlobalIndex> m_BoundaryIndices;
 
 public:
   ChunkContainer();
 
-  const eng::threads::UnorderedMap<GlobalIndex, Chunk>& chunks() const;
+  const eng::thread::UnorderedMap<GlobalIndex, Chunk>& chunks() const;
 
   /*
     Scans boundary for places where new chunks can be loaded and returns possible locations

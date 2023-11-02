@@ -9,7 +9,7 @@ extern eng::Application* eng::createApplication(ApplicationCommandLineArgs args)
 
 int main(int argc, char** argv)
 {
-  eng::threads::setAsMainThread();
+  eng::thread::setAsMainThread();
 
   ENG_PROFILE_BEGIN_SESSION("Startup", "EngineProfile-Startup.json");
   eng::Application* app = eng::createApplication({ argc, argv });

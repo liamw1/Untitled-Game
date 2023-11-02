@@ -13,7 +13,7 @@ namespace eng
     {
       case RendererAPI::API::OpenGL:        return std::make_unique<OpenGLUniform>(binding, size);
       case RendererAPI::API::OpenGL_Legacy: return std::make_unique<OpenGLUniform>(binding, size);
-      default:                              throw  std::invalid_argument("Unknown RendererAPI!");
     }
+    throw std::invalid_argument("Invalid RendererAPI!");
   }
 }

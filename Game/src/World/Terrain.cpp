@@ -73,7 +73,7 @@ struct SurfaceData
 };
 
 static constexpr i32 c_CacheSize = (2 * c_UnloadDistance + 5) * (2 * c_UnloadDistance + 5);
-static eng::threads::LRUCache<GlobalIndex2D, SurfaceData> s_SurfaceDataCache(c_CacheSize);
+static eng::thread::LRUCache<GlobalIndex2D, SurfaceData> s_SurfaceDataCache(c_CacheSize);
 static std::mutex s_Mutex;
 
 // From https://stackoverflow.com/questions/664014/what-integer-hash-function-are-good-that-accepts-an-integer-hash-key

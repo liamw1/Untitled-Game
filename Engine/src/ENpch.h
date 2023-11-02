@@ -1,21 +1,12 @@
 #pragma once
 
-// ========================= Logging ========================== //
-#include <codeanalysis\warnings.h> // Disable intellisense warnings
-#pragma warning(push, 0)
-#pragma warning(disable : ALL_CODE_ANALYSIS_WARNINGS)
-#include <spdlog/spdlog.h>
-#include <spdlog/fmt/ostr.h>
-#include <spdlog/sinks/stdout_color_sinks.h>
-#pragma warning(pop)
-
-#include "Engine/Core/Log/Log.h"
-#include "Engine/Debug/Assert.h"
-
-// ============================ Math ========================== //
-#include "Engine/Math/Vec.h"
+// ================= Preprocessor Definitions ================= //
+#define NOMINMAX
+#define GLM_ENABLE_EXPERIMENTAL
 
 // ========================= Platform ========================= //
+#include "Engine/Core/PlatformDetection.h"
+
 #ifdef ENG_PLATFORM_WINDOWS
   #include <Windows.h>
 #endif
@@ -69,3 +60,6 @@
 #include <memory>
 #include <optional>
 #include <variant>
+
+// ======================= Custom Types ======================= //
+#include "Engine/Core/FixedWidthTypes.h"

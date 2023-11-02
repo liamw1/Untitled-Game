@@ -34,7 +34,7 @@ namespace eng
       ++m_Value;
       return *this;
     }
-    constexpr E operator*() const { return static_cast<E>(m_Value); }
+    constexpr E operator*() const { return enumCastUnchecked<E>(m_Value); }
     constexpr bool operator!=(const EnumIterator& other) const { return m_Value != other.m_Value; }
 
     constexpr EnumIterator begin() const { return EnumIterator(E::First); }
@@ -69,7 +69,7 @@ namespace eng
 
 
 // ==================== Enabling Bitmasking for Enum Classes ==================== //
-#define ENG_ENABLE_BITMASK_OPERATORS(x)  \
+#define ENG_ENABLE_BITMASK_OPERATORS(x) \
 template<>                              \
 struct EnableBitMaskOperators<x> { static const bool enable = true; };
 

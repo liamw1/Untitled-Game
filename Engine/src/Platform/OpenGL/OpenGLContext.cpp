@@ -1,8 +1,9 @@
 #include "ENpch.h"
 #include "OpenGLContext.h"
+#include "Engine/Debug/Assert.h"
+#include "Engine/Debug/Instrumentor.h"
 #include "Engine/Renderer/GraphicsContext.h"
 #include "Engine/Threads/Threads.h"
-#include "Engine/Debug/Instrumentor.h"
 
 #include <GLFW/glfw3.h>
 #include <glad/glad.h>
@@ -16,11 +17,11 @@ namespace eng
     switch (severity)
     {
       case GL_DEBUG_SEVERITY_NOTIFICATION:  if (c_VerboseOpenGLDebugLog) ENG_CORE_TRACE(message); return;
-      case GL_DEBUG_SEVERITY_LOW:           ENG_CORE_INFO(message);  return;
-      case GL_DEBUG_SEVERITY_MEDIUM:        ENG_CORE_WARN(message);  return;
-      case GL_DEBUG_SEVERITY_HIGH:          ENG_CORE_ERROR(message); return;
-      default:                              ENG_CORE_ASSERT(false, "OpenGL message \"{0}\" has unknown severity level", message); return;
+      case GL_DEBUG_SEVERITY_LOW:           ENG_CORE_INFO(message);                               return;
+      case GL_DEBUG_SEVERITY_MEDIUM:        ENG_CORE_WARN(message);                               return;
+      case GL_DEBUG_SEVERITY_HIGH:          ENG_CORE_ERROR(message);                              return;
     }
+    throw std::invalid_argument("OpenGL message has unknown severity level!");
   }
 
   OpenGLContext::OpenGLContext(GLFWwindow* windowHandle)
@@ -32,7 +33,7 @@ namespace eng
   void OpenGLContext::initialize()
   {
     ENG_PROFILE_FUNCTION();
-    ENG_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
+    ENG_CORE_ASSERT(thread::isMainThread(), "OpenGL calls must be made on the main thread!");
 
     glfwMakeContextCurrent(m_WindowHandle);
     i32 status = gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
@@ -56,7 +57,7 @@ namespace eng
   void OpenGLContext::swapBuffers()
   {
     ENG_PROFILE_FUNCTION();
-    ENG_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
+    ENG_CORE_ASSERT(thread::isMainThread(), "OpenGL calls must be made on the main thread!");
 
     glfwSwapBuffers(m_WindowHandle);
   }

@@ -3,7 +3,7 @@
 #include "Engine/Utilities/EnumUtilities.h"
 #include "Engine/Utilities/MoveOnlyFunction.h"
 
-namespace eng::threads
+namespace eng::thread
 {
   class ThreadPool
   {

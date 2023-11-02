@@ -1,6 +1,7 @@
 #pragma once
 #include "VertexArray.h"
 #include "MultiDrawArray.h"
+#include "Engine/Math/Vec.h"
 
 /*
   API for basic renderer commands.

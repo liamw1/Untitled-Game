@@ -39,10 +39,10 @@ namespace eng::algo
     using UnderlyingType = detail::underlyingType<I>;
     switch (sortPolicy)
     {
-      case SortPolicy::Ascending:   std::sort(first, last, [&transform](const UnderlyingType& a, const UnderlyingType& b) { return transform(a) < transform(b); }); break;
-      case SortPolicy::Descending:  std::sort(first, last, [&transform](const UnderlyingType& a, const UnderlyingType& b) { return transform(a) > transform(b); }); break;
-      default:                      throw std::invalid_argument("Unknown sort policy!");
+      case SortPolicy::Ascending:   std::sort(first, last, [&transform](const UnderlyingType& a, const UnderlyingType& b) { return transform(a) < transform(b); }); return;
+      case SortPolicy::Descending:  std::sort(first, last, [&transform](const UnderlyingType& a, const UnderlyingType& b) { return transform(a) > transform(b); }); return;
     }
+    throw std::invalid_argument("Invalid sort policy!");
   }
 
   template<Iterable C, TransformToComparable<detail::containedType<C>> F>

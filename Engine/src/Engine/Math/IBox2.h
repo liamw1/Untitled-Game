@@ -78,30 +78,29 @@ namespace eng::math
     /*
       \returns The box dimensions.
     */
-    constexpr IVec2<T> extents() const
+    constexpr IVec2<std::make_unsigned_t<T>> extents() const
     {
       ENG_CORE_ASSERT(valid(), "Box is not valid!");
-      return IVec2<T>(max.i - min.i + 1, max.j - min.j + 1);
+      return IVec2<std::make_unsigned_t<T>>(max.i - min.i + 1, max.j - min.j + 1);
     }
   
     /*
       \returns The number of integers contained within the box.
     */
-    constexpr i32 volume() const
+    constexpr uSize volume() const
     {
       if (!valid())
         return 0;
   
-      IVec2<T> boxExtents = extents();
+      IVec2<uSize> boxExtents = extents().upcast<uSize>();
       return boxExtents.i * boxExtents.j;
     }
   
-    constexpr i32 linearIndexOf(const IVec2<T>& index) const
+    constexpr uSize linearIndexOf(const IVec2<T>& index) const
     {
-      ENG_CORE_ASSERT(encloses(index), "Index is outside box!");
-      IVec2<T> boxExtents = extents();
-      IVec2<T> strides(boxExtents.j, 1);
-      IVec2<T> indexRelativeToBase = index - min;
+      IVec2<uSize> boxExtents = extents().upcast<uSize>();
+      IVec2<uSize> strides(boxExtents.j, 1);
+      IVec2<uSize> indexRelativeToBase = (index - min).checkedCast<uSize>();
       return strides.dot(indexRelativeToBase);
     }
   

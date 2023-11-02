@@ -1,7 +1,7 @@
 #pragma once
 #include "Engine/Utilities/LRUCache.h"
 
-namespace eng::threads
+namespace eng::thread
 {
   template<Hashable K, typename V>
   class LRUCache : private NonCopyable, NonMovable

@@ -16,19 +16,19 @@ class ChunkManager
   static constexpr i32 c_StorageBufferBinding = 0;
   static constexpr u32 c_StorageBufferSize = static_cast<u32>(eng::pow2(20));
 
-  eng::threads::UnorderedSet<ChunkDrawCommand> m_OpaqueCommandQueue;
-  eng::threads::UnorderedSet<ChunkDrawCommand> m_TransparentCommandQueue;
+  eng::thread::UnorderedSet<ChunkDrawCommand> m_OpaqueCommandQueue;
+  eng::thread::UnorderedSet<ChunkDrawCommand> m_TransparentCommandQueue;
   std::unique_ptr<eng::MultiDrawIndexedArray<ChunkDrawCommand>> m_OpaqueMultiDrawArray;
   std::unique_ptr<eng::MultiDrawIndexedArray<ChunkDrawCommand>> m_TransparentMultiDrawArray;
 
   // Multi-threading
   ChunkContainer m_ChunkContainer;
-  std::shared_ptr<eng::threads::ThreadPool> m_ThreadPool;
-  eng::threads::WorkSet<GlobalIndex, std::shared_ptr<Chunk>> m_LoadWork;
-  eng::threads::WorkSet<GlobalIndex, void> m_CleanWork;
-  eng::threads::WorkSet<GlobalIndex, void> m_LightingWork;
-  eng::threads::WorkSet<GlobalIndex, void> m_LazyMeshingWork;
-  eng::threads::WorkSet<GlobalIndex, void> m_ForceMeshingWork;
+  std::shared_ptr<eng::thread::ThreadPool> m_ThreadPool;
+  eng::thread::WorkSet<GlobalIndex, std::shared_ptr<Chunk>> m_LoadWork;
+  eng::thread::WorkSet<GlobalIndex, void> m_CleanWork;
+  eng::thread::WorkSet<GlobalIndex, void> m_LightingWork;
+  eng::thread::WorkSet<GlobalIndex, void> m_LazyMeshingWork;
+  eng::thread::WorkSet<GlobalIndex, void> m_ForceMeshingWork;
 
 public:
   ChunkManager();
@@ -83,7 +83,7 @@ private:
   */
   void sendBlockUpdate(const GlobalIndex& chunkIndex, const BlockIndex& blockIndex);
 
-  void uploadMeshes(eng::threads::UnorderedSet<ChunkDrawCommand>& commandQueue, std::unique_ptr<eng::MultiDrawIndexedArray<ChunkDrawCommand>>& multiDrawArray);
+  void uploadMeshes(eng::thread::UnorderedSet<ChunkDrawCommand>& commandQueue, std::unique_ptr<eng::MultiDrawIndexedArray<ChunkDrawCommand>>& multiDrawArray);
 
   /*
     Generates simplistic mesh in a compressed format based on chunk compostion.

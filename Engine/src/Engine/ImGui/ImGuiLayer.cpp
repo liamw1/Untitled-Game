@@ -1,9 +1,9 @@
 #include "ENpch.h"
 #include "ImGuiLayer.h"
 #include "Engine/Core/Application.h"
+#include "Engine/Core/Casting.h"
 #include "Engine/Core/Window.h"
 #include "Engine/Debug/Instrumentor.h"
-#include "Engine/Utilities/Casting.h"
 
 #include <imgui.h>
 #include <backends/imgui_impl_glfw.h>
@@ -92,7 +92,7 @@ namespace eng
 
     ImGuiIO& io = ImGui::GetIO();
     Application& app = Application::Get();
-    io.DisplaySize = ImVec2(upCast<f32>(app.getWindow().getWidth()), upCast<f32>(app.getWindow().getHeight()));
+    io.DisplaySize = ImVec2(arithmeticUpcast<f32>(app.getWindow().getWidth()), arithmeticUpcast<f32>(app.getWindow().getHeight()));
 
     // Rendering
     ImGui::Render();

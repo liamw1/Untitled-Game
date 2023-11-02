@@ -15,8 +15,8 @@ namespace eng
     {
       case RendererAPI::API::OpenGL:          return std::make_unique<OpenGLShader>(filepath, preprocessorDefinitions);
       case RendererAPI::API::OpenGL_Legacy:   return std::make_unique<OpenGL_LegacyShader>(filepath, preprocessorDefinitions);
-      default:                                throw  std::invalid_argument("Unknown RendererAPI!");
     }
+    throw std::invalid_argument("Invalid RendererAPI!");
   }
 
   std::string Shader::ReadFile(const std::string& filepath)

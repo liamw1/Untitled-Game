@@ -1,6 +1,8 @@
 #pragma once
 #include "Engine/Core/Time.h"
 #include "Engine/Events/Event.h"
+#include "Engine/Math/Angle.h"
+#include "Engine/Math/Vec.h"
 
 namespace eng::DevCamera
 {

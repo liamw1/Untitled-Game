@@ -1,5 +1,4 @@
 #pragma once
-#include "Engine/Core/FixedWidthTypes.h"
 #include "Engine/Utilities/BoilerplateReduction.h"
 
 namespace eng

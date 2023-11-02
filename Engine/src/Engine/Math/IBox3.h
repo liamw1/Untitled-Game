@@ -81,10 +81,10 @@ namespace eng::math
     /*
       \returns The box dimensions.
     */
-    constexpr IVec3<T> extents() const
+    constexpr IVec3<std::make_unsigned_t<T>> extents() const
     {
       ENG_CORE_ASSERT(valid(), "Box is not valid!");
-      return IVec3<T>(max.i - min.i + 1, max.j - min.j + 1, max.k - min.k + 1);
+      return IVec3<std::make_unsigned_t<T>>(max.i - min.i + 1, max.j - min.j + 1, max.k - min.k + 1);
     }
   
     /*
@@ -95,16 +95,15 @@ namespace eng::math
       if (!valid())
         return 0;
   
-      IVec3<uSize> boxExtents = static_cast<IVec3<uSize>>(extents());
+      IVec3<uSize> boxExtents = extents().upcast<uSize>();
       return boxExtents.i * boxExtents.j * boxExtents.k;
     }
   
-    constexpr i32 linearIndexOf(const IVec3<T>& index) const
+    constexpr uSize linearIndexOf(const IVec3<T>& index) const
     {
-      ENG_CORE_ASSERT(encloses(index), "Index is outside box!");
-      IVec3<T> boxExtents = extents();
-      IVec3<T> strides(boxExtents.j * boxExtents.k, boxExtents.k, 1);
-      IVec3<T> indexRelativeToBase = index - min;
+      IVec3<uSize> boxExtents = extents().upcast<uSize>();
+      IVec3<uSize> strides(boxExtents.j * boxExtents.k, boxExtents.k, 1);
+      IVec3<uSize> indexRelativeToBase = (index - min).checkedCast<uSize>();
       return strides.dot(indexRelativeToBase);
     }
   
@@ -284,7 +283,7 @@ namespace eng::math
     {
       std::array<BoxFace<T>, 6> faces;
       for (Direction side : Directions())
-        faces[static_cast<i32>(side)] = BoxFace(side, interiorOnly ? box.faceInterior(side) : box.face(side));
+        faces[toUnderlying(side)] = BoxFace(side, interiorOnly ? box.faceInterior(side) : box.face(side));
       return faces;
     }
   

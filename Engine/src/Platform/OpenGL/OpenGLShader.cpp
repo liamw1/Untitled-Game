@@ -1,8 +1,10 @@
 #include "ENpch.h"
 #include "OpenGLShader.h"
+#include "Engine/Core/Casting.h"
+#include "Engine/Debug/Assert.h"
+#include "Engine/Debug/Instrumentor.h"
 #include "Engine/Debug/Timer.h"
 #include "Engine/Threads/Threads.h"
-#include "Engine/Debug/Instrumentor.h"
 
 #include <glad/glad.h>
 #include <glm/gtc/type_ptr.hpp>
@@ -20,9 +22,7 @@ namespace eng
       return GL_GEOMETRY_SHADER;
     if (type == "fragment" || type == "pixel")
       return GL_FRAGMENT_SHADER;
-
-    ENG_CORE_ASSERT(false, "Unknown shader type {0}!", type);
-    return 0;
+    throw std::invalid_argument("Invalid shader type!");
   }
 
   static shaderc_shader_kind openGLShaderStageToShaderC(GLenum stage)
@@ -32,8 +32,8 @@ namespace eng
       case GL_VERTEX_SHADER:    return shaderc_glsl_vertex_shader;
       case GL_GEOMETRY_SHADER:  return shaderc_glsl_geometry_shader;
       case GL_FRAGMENT_SHADER:  return shaderc_glsl_fragment_shader;
-      default: ENG_CORE_ERROR("Invalid openGL shader stage!");  return static_cast<shaderc_shader_kind>(0);
     }
+    throw std::invalid_argument("Invalid openGL shader stage!");
   }
 
   static const char* openGLShaderStageToString(GLenum stage)
@@ -43,8 +43,8 @@ namespace eng
       case GL_VERTEX_SHADER:    return "GL_VERTEX_SHADER";
       case GL_GEOMETRY_SHADER:  return "GL_GEOMETRY_SHADER";
       case GL_FRAGMENT_SHADER:  return "GL_FRAGMENT_SHADER";
-      default: ENG_CORE_ERROR("Invalid openGL shader stage!");  return nullptr;
     }
+    throw std::invalid_argument("Invalid openGL shader stage!");
   }
 
 
@@ -77,7 +77,7 @@ namespace eng
   OpenGLShader::~OpenGLShader()
   {
     ENG_PROFILE_FUNCTION();
-    ENG_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
+    ENG_CORE_ASSERT(thread::isMainThread(), "OpenGL calls must be made on the main thread!");
 
     glDeleteProgram(m_RendererID);
   }
@@ -89,19 +89,19 @@ namespace eng
 
   void OpenGLShader::bind() const
   {
-    ENG_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
+    ENG_CORE_ASSERT(thread::isMainThread(), "OpenGL calls must be made on the main thread!");
     glUseProgram(m_RendererID);
   }
 
   void OpenGLShader::unBind() const
   {
-    ENG_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
+    ENG_CORE_ASSERT(thread::isMainThread(), "OpenGL calls must be made on the main thread!");
     glUseProgram(0);
   }
 
   void OpenGLShader::compileVulkanBinaries(const std::unordered_map<std::string, std::string>& shaderSources)
   {
-    ENG_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
+    ENG_CORE_ASSERT(thread::isMainThread(), "OpenGL calls must be made on the main thread!");
 
     static constexpr bool optimize = true;
 
@@ -160,7 +160,7 @@ namespace eng
 
   void OpenGLShader::createProgram()
   {
-    ENG_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
+    ENG_CORE_ASSERT(thread::isMainThread(), "OpenGL calls must be made on the main thread!");
 
     GLuint program = glCreateProgram();
 
@@ -168,7 +168,7 @@ namespace eng
     for (auto&& [stage, spirv] : m_OpenGLSPIRV)
     {
       GLuint shaderID = shaderIDs.emplace_back(glCreateShader(stage));
-      glShaderBinary(1, &shaderID, GL_SHADER_BINARY_FORMAT_SPIR_V, spirv.data(), sizeof(u32) * static_cast<GLsizei>(spirv.size()));
+      glShaderBinary(1, &shaderID, GL_SHADER_BINARY_FORMAT_SPIR_V, spirv.data(), sizeof(u32) * arithmeticCast<GLsizei>(spirv.size()));
       glSpecializeShader(shaderID, "main", 0, nullptr, nullptr);
       glAttachShader(program, shaderID);
     }
@@ -216,7 +216,7 @@ namespace eng
       const spirv_cross::SPIRType& bufferType = compiler.get_type(uniform.base_type_id);
       uSize bufferSize = compiler.get_declared_struct_size(bufferType);
       u32 binding = compiler.get_decoration(uniform.id, spv::DecorationBinding);
-      i32 memberCount = static_cast<i32>(bufferType.member_types.size());
+      i32 memberCount = arithmeticCast<i32>(bufferType.member_types.size());
 
       ENG_CORE_TRACE("  {0}", uniform.name);
       ENG_CORE_TRACE("    Size = {0}", bufferSize);

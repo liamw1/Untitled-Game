@@ -5,7 +5,7 @@
 
 ChunkContainer::ChunkContainer() = default;
 
-const eng::threads::UnorderedMap<GlobalIndex, Chunk>& ChunkContainer::chunks() const
+const eng::thread::UnorderedMap<GlobalIndex, Chunk>& ChunkContainer::chunks() const
 {
   return m_Chunks;
 }

@@ -27,13 +27,13 @@ namespace eng
 
   void OpenGLRendererAPI::setViewport(u32 x, u32 y, u32 width, u32 height)
   {
-    ENG_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
+    ENG_CORE_ASSERT(thread::isMainThread(), "OpenGL calls must be made on the main thread!");
     glViewport(x, y, width, height);
   }
 
   void OpenGLRendererAPI::clear(const math::Float4& color)
   {
-    ENG_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
+    ENG_CORE_ASSERT(thread::isMainThread(), "OpenGL calls must be made on the main thread!");
 
     glClearColor(color.r, color.g, color.b, color.a);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -41,7 +41,7 @@ namespace eng
 
   void OpenGLRendererAPI::clearDepthBuffer()
   {
-    ENG_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
+    ENG_CORE_ASSERT(thread::isMainThread(), "OpenGL calls must be made on the main thread!");
     glClear(GL_DEPTH_BUFFER_BIT);
   }
 
@@ -52,19 +52,19 @@ namespace eng
 
   void OpenGLRendererAPI::setBlending(bool enableBlending)
   {
-    ENG_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
+    ENG_CORE_ASSERT(thread::isMainThread(), "OpenGL calls must be made on the main thread!");
     set(GL_BLEND, m_BlendingEnabled, enableBlending);
   }
 
   void OpenGLRendererAPI::setUseDepthOffset(bool enableDepthOffset)
   {
-    ENG_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
+    ENG_CORE_ASSERT(thread::isMainThread(), "OpenGL calls must be made on the main thread!");
     set(GL_POLYGON_OFFSET_FILL, m_DepthOffsetEnabled, enableDepthOffset);
   }
 
   void OpenGLRendererAPI::setDepthOffset(f32 factor, f32 units)
   {
-    ENG_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
+    ENG_CORE_ASSERT(thread::isMainThread(), "OpenGL calls must be made on the main thread!");
 
     if (factor == m_DepthOffsetFactor && units == m_DepthOffsetUnits)
       return;
@@ -76,13 +76,13 @@ namespace eng
 
   void OpenGLRendererAPI::setDepthTesting(bool enableDepthTesting)
   {
-    ENG_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
+    ENG_CORE_ASSERT(thread::isMainThread(), "OpenGL calls must be made on the main thread!");
     set(GL_DEPTH_TEST, m_DepthTestingEnabled, enableDepthTesting);
   }
 
   void OpenGLRendererAPI::setDepthWriting(bool enableDepthWriting)
   {
-    ENG_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
+    ENG_CORE_ASSERT(thread::isMainThread(), "OpenGL calls must be made on the main thread!");
 
     if (enableDepthWriting == m_DepthWritingEnabled)
       return;
@@ -93,13 +93,13 @@ namespace eng
 
   void OpenGLRendererAPI::setFaceCulling(bool enableFaceCulling)
   {
-    ENG_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
+    ENG_CORE_ASSERT(thread::isMainThread(), "OpenGL calls must be made on the main thread!");
     set(GL_CULL_FACE, m_FaceCullingEnabled, enableFaceCulling);
   }
 
   void OpenGLRendererAPI::setWireFrame(bool enableWireFrame)
   {
-    ENG_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
+    ENG_CORE_ASSERT(thread::isMainThread(), "OpenGL calls must be made on the main thread!");
 
     if (enableWireFrame == m_WireFrameEnabled)
       return;
@@ -110,7 +110,7 @@ namespace eng
 
   void OpenGLRendererAPI::drawVertices(const VertexArray* vertexArray, u32 vertexCount)
   {
-    ENG_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
+    ENG_CORE_ASSERT(thread::isMainThread(), "OpenGL calls must be made on the main thread!");
     ENG_CORE_ASSERT(vertexArray, "Vertex array has not been initialized!");
 
     vertexArray->bind();
@@ -119,7 +119,7 @@ namespace eng
 
   void OpenGLRendererAPI::drawIndexed(const VertexArray* vertexArray, u32 indexCount)
   {
-    ENG_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
+    ENG_CORE_ASSERT(thread::isMainThread(), "OpenGL calls must be made on the main thread!");
     ENG_CORE_ASSERT(vertexArray, "Vertex array has not been initialized!");
 
     vertexArray->bind();
@@ -129,7 +129,7 @@ namespace eng
 
   void OpenGLRendererAPI::drawIndexedLines(const VertexArray* vertexArray, u32 indexCount)
   {
-    ENG_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
+    ENG_CORE_ASSERT(thread::isMainThread(), "OpenGL calls must be made on the main thread!");
     ENG_CORE_ASSERT(vertexArray, "Vertex array has not been initialized!");
 
     vertexArray->bind();
@@ -139,13 +139,13 @@ namespace eng
 
   void OpenGLRendererAPI::multiDrawVertices(const void* drawCommands, i32 drawCount, i32 stride)
   {
-    ENG_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
-    glMultiDrawArraysIndirect(GL_TRIANGLES, drawCommands, static_cast<GLsizei>(drawCount), stride);
+    ENG_CORE_ASSERT(thread::isMainThread(), "OpenGL calls must be made on the main thread!");
+    glMultiDrawArraysIndirect(GL_TRIANGLES, drawCommands, arithmeticCast<GLsizei>(drawCount), stride);
   }
 
   void OpenGLRendererAPI::multiDrawIndexed(const void* drawCommands, i32 drawCount, i32 stride)
   {
-    ENG_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
-    glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, drawCommands, static_cast<GLsizei>(drawCount), stride);
+    ENG_CORE_ASSERT(thread::isMainThread(), "OpenGL calls must be made on the main thread!");
+    glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, drawCommands, arithmeticCast<GLsizei>(drawCount), stride);
   }
 }

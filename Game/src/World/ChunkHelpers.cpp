@@ -129,7 +129,8 @@ void ChunkDrawCommand::addVoxel(const BlockIndex& blockIndex, eng::math::Directi
 
 bool ChunkDrawCommand::sort(const GlobalIndex& originIndex, const eng::math::Vec3& viewPosition)
 {
-  static constexpr i32 c_MaxL1Distance = 3 * (Chunk::Size() - 1);
+  using keyType = std::make_unsigned_t<blockIndex_t>;
+  static constexpr keyType c_MaxL1Distance = 3 * (Chunk::Size() - 1);
 
   // Find block index that is closest to the specified position
   BlockIndex originBlock = BlockIndex::ToIndex(viewPosition / block::length());
@@ -146,20 +147,22 @@ bool ChunkDrawCommand::sort(const GlobalIndex& originIndex, const eng::math::Vec
   if (originBlock == m_SortState)
     return false;
 
+  ENG_PROFILE_FUNCTION();
+
   // Perform an in-place counting sort on L1 distance to originBlock, from highest to lowest
-  std::array<i32, c_MaxL1Distance + 1> counts{};
+  std::array<i16, c_MaxL1Distance + 1> counts{};
   for (ChunkVoxel voxel : m_Voxels)
   {
-    i32 key = c_MaxL1Distance - (voxel.index() - originBlock).l1Norm();
+    keyType key = c_MaxL1Distance - (voxel.index() - originBlock).l1Norm();
     counts[key]++;
   }
   std::partial_sum(counts.begin(), counts.end(), counts.begin());
 
-  std::array<i32, c_MaxL1Distance + 1> placements = counts;
+  std::array<i16, c_MaxL1Distance + 1> placements = counts;
   for (uSize i = 0; i < m_Voxels.size();)
   {
-    i32 key = c_MaxL1Distance - (m_Voxels[i].index() - originBlock).l1Norm();
-    i32 prevCount = key > 0 ? counts[key - 1] : 0;
+    keyType key = c_MaxL1Distance - (m_Voxels[i].index() - originBlock).l1Norm();
+    keyType prevCount = key > 0 ? counts[key - 1] : 0;
 
     if (prevCount <= i && i < counts[key])
       i++;

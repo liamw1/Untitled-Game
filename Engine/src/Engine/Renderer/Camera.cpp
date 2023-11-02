@@ -1,5 +1,6 @@
 #include "ENpch.h"
 #include "Camera.h"
+#include "Engine/Debug/Assert.h"
 #include <glm/gtc/matrix_transform.hpp>
 
 namespace eng
@@ -28,20 +29,20 @@ namespace eng
 
   math::Angle Camera::fov() const
   {
-    ENG_ASSERT(m_ProjectionType == ProjectionType::Perspective, "An orthographic camera does not have a FOV!");
+    ENG_CORE_ASSERT(m_ProjectionType == ProjectionType::Perspective, "An orthographic camera does not have a FOV!");
     return m_FOV;
   }
 
   void Camera::setFov(math::Angle fov)
   {
-    ENG_ASSERT(m_ProjectionType == ProjectionType::Perspective, "An orthographic camera does not have a FOV!");
+    ENG_CORE_ASSERT(m_ProjectionType == ProjectionType::Perspective, "An orthographic camera does not have a FOV!");
     m_FOV = fov;
     recalculatePerspectiveProjection();
   }
 
   f32 Camera::orthographicSize() const
   {
-    ENG_ASSERT(m_ProjectionType == ProjectionType::Orthographic, "A perspective camera does not have an orthographic size!");
+    ENG_CORE_ASSERT(m_ProjectionType == ProjectionType::Orthographic, "A perspective camera does not have an orthographic size!");
     return m_OrthographicSize;
   }
 
@@ -69,7 +70,7 @@ namespace eng
 
   void Camera::setViewportSize(u32 width, u32 height)
   {
-    m_AspectRatio = height > 0 ? static_cast<f32>(width) / height : 0.0f;
+    m_AspectRatio = height > 0 ? arithmeticUpcast<f32>(width) / height : 0.0f;
     recalculateProjection();
   }
 
@@ -77,10 +78,10 @@ namespace eng
   {
     switch (m_ProjectionType)
     {
-      case ProjectionType::Orthographic: recalculateOrthographicProjection(); break;
-      case ProjectionType::Perspective:  recalculatePerspectiveProjection();  break;
-      default: ENG_CORE_ERROR("Unknown projection type!");
+      case ProjectionType::Orthographic: recalculateOrthographicProjection(); return;
+      case ProjectionType::Perspective:  recalculatePerspectiveProjection();  return;
     }
+    throw std::invalid_argument("Invalid projection type!");
   }
 
   void Camera::recalculateOrthographicProjection()

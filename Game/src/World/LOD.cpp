@@ -768,7 +768,7 @@ namespace lod
 
   static std::vector<Vertex> calcAdjustedTransitionMesh(Octree::Node* node, eng::math::Direction face)
   {
-    static constexpr length_t small = 128 * std::numeric_limits<length_t>::epsilon();
+    static constexpr length_t tolerance = 128 * std::numeric_limits<length_t>::epsilon();
 
     i32 faceID = static_cast<i32>(face);
     i32 coordID = faceID / 2;
@@ -782,7 +782,7 @@ namespace lod
       for (Vertex& vertex : LODMesh)
       {
         // If Vertex is on low-resolution side, skip.  If on high-resolution side, move vertex to LOD face
-        if (vertex.position[coordID] < small * node->length() || vertex.position[coordID] > (1.0 - small) * node->length())
+        if (vertex.position[coordID] < tolerance * node->length() || vertex.position[coordID] > (1.0 - tolerance) * node->length())
           continue;
         else
           vertex.position[coordID] = static_cast<f32>(facingPositiveDir ? node->length() : 0.0);

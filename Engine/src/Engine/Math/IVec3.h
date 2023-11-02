@@ -26,10 +26,16 @@ namespace eng::math
     explicit constexpr operator Vec3() const { return Vec3(i, j, k); }
   
     template<std::integral U>
-    explicit constexpr operator IVec2<U>() const { return { static_cast<U>(i), static_cast<U>(j) }; }
+    explicit constexpr operator IVec2<U>() const { return {arithmeticCastUnchecked<U>(i), arithmeticCastUnchecked<U>(j)}; }
   
     template<std::integral U>
-    explicit constexpr operator IVec3<U>() const { return { static_cast<U>(i), static_cast<U>(j), static_cast<U>(k) }; }
+    explicit constexpr operator IVec3<U>() const { return {arithmeticCastUnchecked<U>(i), arithmeticCastUnchecked<U>(j), arithmeticCastUnchecked<U>(k)}; }
+
+    template<std::integral U>
+    constexpr IVec3<U> upcast() const { return {arithmeticUpcast<U>(i), arithmeticUpcast<U>(j), arithmeticUpcast<U>(k)}; }
+
+    template<std::integral U>
+    constexpr IVec3<U> checkedCast() const { return {arithmeticCast<U>(i), arithmeticCast<U>(j), arithmeticCast<U>(k)}; }
   
     constexpr T& operator[](Axis axis) { ENG_MUTABLE_VERSION(operator[], axis); }
     constexpr const T& operator[](Axis axis) const
@@ -39,8 +45,8 @@ namespace eng::math
         case Axis::X: return i;
         case Axis::Y: return j;
         case Axis::Z: return k;
-        default:      throw std::invalid_argument("Invalid axis!");
       }
+      throw std::invalid_argument("Invalid axis!");
     }
   
     // Define lexicographical ordering on 3D indices
@@ -84,12 +90,12 @@ namespace eng::math
     constexpr IVec3 operator*(T n) const { clone(*this) *= n; }
     constexpr IVec3 operator/(T n) const { clone(*this) /= n; }
   
-    constexpr i32 l1Norm() const { return std::abs(i) + std::abs(j) + std::abs(k); }
-    constexpr i32 dot(const IVec3& other) const { return i * other.i + j * other.j + k * other.k; }
+    constexpr T l1Norm() const { return std::abs(i) + std::abs(j) + std::abs(k); }
+    constexpr T dot(const IVec3& other) const { return i * other.i + j * other.j + k * other.k; }
   
     static constexpr IVec3 ToIndex(const Vec3& vec)
     {
-      return IVec3(static_cast<T>(std::floor(vec.x)), static_cast<T>(std::floor(vec.y)), static_cast<T>(std::floor(vec.z)));
+      return IVec3(arithmeticCast<T>(std::floor(vec.x)), arithmeticCast<T>(std::floor(vec.y)), arithmeticCast<T>(std::floor(vec.z)));
     }
   
     static constexpr const IVec3& Dir(Direction direction)
@@ -107,8 +113,8 @@ namespace eng::math
         case Axis::X: return IVec3(i, j, k);
         case Axis::Y: return IVec3(k, i, j);
         case Axis::Z: return IVec3(j, k, i);
-        default:      throw std::invalid_argument("Invalid permutation!");
       }
+      throw std::invalid_argument("Invalid permutation!");
     }
   };
   
@@ -138,7 +144,10 @@ namespace std
   template<std::integral T>
   inline ostream& operator<<(ostream& os, const eng::math::IVec3<T>& index)
   {
-    return os << '[' << static_cast<i64>(index.i) << ", " << static_cast<i64>(index.j) << ", " << static_cast<i64>(index.k) << ']';
+    using promotedType = std::conditional_t<std::is_signed_v<T>, iMax, uMax>;
+    return os << '[' << eng::arithmeticUpcast<promotedType>(index.i) << ", "
+                     << eng::arithmeticUpcast<promotedType>(index.j) << ", "
+                     << eng::arithmeticUpcast<promotedType>(index.k) << ']';
   }
 
   template<std::integral T>

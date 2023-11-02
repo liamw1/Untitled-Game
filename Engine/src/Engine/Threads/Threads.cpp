@@ -1,9 +1,10 @@
 #include "ENpch.h"
 #include "Threads.h"
+#include "Engine/Debug/Assert.h"
 
 static std::thread::id mainThreadID;
 
-namespace eng::threads
+namespace eng::thread
 {
   void setAsMainThread()
   {

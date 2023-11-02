@@ -1,7 +1,7 @@
 #include "ENpch.h"
 #include "ThreadPool.h"
 
-namespace eng::threads
+namespace eng::thread
 {
   ThreadPool::ThreadPool(i32 numThreads)
     : m_Stop(false)

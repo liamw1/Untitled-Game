@@ -27,7 +27,7 @@ namespace eng
     {
       case RendererAPI::API::OpenGL:        return std::make_unique<OpenGLFramebuffer>(specification);
       case RendererAPI::API::OpenGL_Legacy: return std::make_unique<OpenGLFramebuffer>(specification);
-      default:                              throw  std::invalid_argument("Unknown RendererAPI!");
     }
+    throw std::invalid_argument("Invalid RendererAPI!");
   }
 }

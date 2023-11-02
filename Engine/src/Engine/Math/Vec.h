@@ -1,8 +1,6 @@
 #pragma once
-#include "Units.h"
+#include "Engine/Core/Casting.h"
 #include <glm/glm.hpp>
-
-#define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/quaternion.hpp>
 
 namespace eng::math
@@ -29,29 +27,29 @@ namespace eng::math
 }
 
 // Missing operators for glm vectors
-constexpr glm::vec2 operator*(f64 x, glm::vec2 v) { return v *= static_cast<f32>(x); }
-constexpr glm::vec2 operator*(glm::vec2 v, f64 x) { return v *= static_cast<f32>(x); }
-constexpr glm::vec2 operator/(glm::vec2 v, f64 x) { return v /= static_cast<f32>(x); }
+constexpr glm::vec2 operator*(f64 x, glm::vec2 v) { return v *= eng::arithmeticCastUnchecked<f32>(x); }
+constexpr glm::vec2 operator*(glm::vec2 v, f64 x) { return v *= eng::arithmeticCastUnchecked<f32>(x); }
+constexpr glm::vec2 operator/(glm::vec2 v, f64 x) { return v /= eng::arithmeticCastUnchecked<f32>(x); }
 
-constexpr glm::vec3 operator*(f64 x, glm::vec3 v) { return v *= static_cast<f32>(x); }
-constexpr glm::vec3 operator*(glm::vec3 v, f64 x) { return v *= static_cast<f32>(x); }
-constexpr glm::vec3 operator/(glm::vec3 v, f64 x) { return v /= static_cast<f32>(x); }
+constexpr glm::vec3 operator*(f64 x, glm::vec3 v) { return v *= eng::arithmeticCastUnchecked<f32>(x); }
+constexpr glm::vec3 operator*(glm::vec3 v, f64 x) { return v *= eng::arithmeticCastUnchecked<f32>(x); }
+constexpr glm::vec3 operator/(glm::vec3 v, f64 x) { return v /= eng::arithmeticCastUnchecked<f32>(x); }
 
-constexpr glm::vec4 operator*(f64 x, glm::vec4 v) { return v *= static_cast<f32>(x); }
-constexpr glm::vec4 operator*(glm::vec4 v, f64 x) { return v *= static_cast<f32>(x); }
-constexpr glm::vec4 operator/(glm::vec4 v, f64 x) { return v /= static_cast<f32>(x); }
+constexpr glm::vec4 operator*(f64 x, glm::vec4 v) { return v *= eng::arithmeticCastUnchecked<f32>(x); }
+constexpr glm::vec4 operator*(glm::vec4 v, f64 x) { return v *= eng::arithmeticCastUnchecked<f32>(x); }
+constexpr glm::vec4 operator/(glm::vec4 v, f64 x) { return v /= eng::arithmeticCastUnchecked<f32>(x); }
 
-constexpr glm::dvec2 operator*(f32 x, glm::dvec2 v) { return v *= static_cast<f64>(x); }
-constexpr glm::dvec2 operator*(glm::dvec2 v, f32 x) { return v *= static_cast<f64>(x); }
-constexpr glm::dvec2 operator/(glm::dvec2 v, f32 x) { return v /= static_cast<f64>(x); }
+constexpr glm::dvec2 operator*(f32 x, glm::dvec2 v) { return v *= eng::arithmeticUpcast<f64>(x); }
+constexpr glm::dvec2 operator*(glm::dvec2 v, f32 x) { return v *= eng::arithmeticUpcast<f64>(x); }
+constexpr glm::dvec2 operator/(glm::dvec2 v, f32 x) { return v /= eng::arithmeticUpcast<f64>(x); }
 
-constexpr glm::dvec3 operator*(f32 x, glm::dvec3 v) { return v *= static_cast<f64>(x); }
-constexpr glm::dvec3 operator*(glm::dvec3 v, f32 x) { return v *= static_cast<f64>(x); }
-constexpr glm::dvec3 operator/(glm::dvec3 v, f32 x) { return v /= static_cast<f64>(x); }
+constexpr glm::dvec3 operator*(f32 x, glm::dvec3 v) { return v *= eng::arithmeticUpcast<f64>(x); }
+constexpr glm::dvec3 operator*(glm::dvec3 v, f32 x) { return v *= eng::arithmeticUpcast<f64>(x); }
+constexpr glm::dvec3 operator/(glm::dvec3 v, f32 x) { return v /= eng::arithmeticUpcast<f64>(x); }
 
-constexpr glm::dvec4 operator*(f32 x, glm::dvec4 v) { return v *= static_cast<f64>(x); }
-constexpr glm::dvec4 operator*(glm::dvec4 v, f32 x) { return v *= static_cast<f64>(x); }
-constexpr glm::dvec4 operator/(glm::dvec4 v, f32 x) { return v /= static_cast<f64>(x); }
+constexpr glm::dvec4 operator*(f32 x, glm::dvec4 v) { return v *= eng::arithmeticUpcast<f64>(x); }
+constexpr glm::dvec4 operator*(glm::dvec4 v, f32 x) { return v *= eng::arithmeticUpcast<f64>(x); }
+constexpr glm::dvec4 operator/(glm::dvec4 v, f32 x) { return v /= eng::arithmeticUpcast<f64>(x); }
 
 // Operator overloads for ostream
 namespace std

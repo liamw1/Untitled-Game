@@ -101,7 +101,7 @@ namespace eng
         if (RendererAPI::GetAPI() == RendererAPI::API::OpenGL || RendererAPI::GetAPI() == RendererAPI::API::OpenGL_Legacy)
           glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
       #endif
-      m_Window = glfwCreateWindow(static_cast<i32>(properties.width), static_cast<i32>(properties.height), m_Data.title.c_str(), nullptr, nullptr);
+      m_Window = glfwCreateWindow(arithmeticCast<i32>(properties.width), arithmeticCast<i32>(properties.height), m_Data.title.c_str(), nullptr, nullptr);
       ++GLFWWindowCount;
     }
 
@@ -139,19 +139,19 @@ namespace eng
       {
         case GLFW_PRESS:
         {
-          event::Event event = event::KeyPress(static_cast<input::Key>(keyCode), false);
+          event::Event event = event::KeyPress(enumCast<input::Key>(keyCode), false);
           data.eventCallback(event);
           break;
         }
         case GLFW_RELEASE:
         {
-          event::Event event = event::KeyRelease(static_cast<input::Key>(keyCode));
+          event::Event event = event::KeyRelease(enumCast<input::Key>(keyCode));
           data.eventCallback(event);
           break;
         }
         case GLFW_REPEAT:
         {
-          event::Event event = event::KeyPress(static_cast<input::Key>(keyCode));
+          event::Event event = event::KeyPress(enumCast<input::Key>(keyCode));
           data.eventCallback(event);
           break;
         }
@@ -162,7 +162,7 @@ namespace eng
     auto charCallback = [](GLFWwindow* window, u32 keyCode)
     {
       WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
-      event::Event event = event::KeyType(static_cast<input::Key>(keyCode));
+      event::Event event = event::KeyType(enumCast<input::Key>(keyCode));
       data.eventCallback(event);
     };
     glfwSetCharCallback(m_Window, charCallback);
@@ -175,13 +175,13 @@ namespace eng
       {
         case GLFW_PRESS:
         {
-          event::Event event = event::MouseButtonPress(static_cast<input::Mouse>(button));
+          event::Event event = event::MouseButtonPress(enumCast<input::Mouse>(button));
           data.eventCallback(event);
           break;
         }
         case GLFW_RELEASE:
         {
-          event::Event event = event::MouseButtonRelease(static_cast<input::Mouse>(button));
+          event::Event event = event::MouseButtonRelease(enumCast<input::Mouse>(button));
           data.eventCallback(event);
           break;
         }
@@ -192,7 +192,7 @@ namespace eng
     auto mouseScrollCallback = [](GLFWwindow* window, f64 xOffset, f64 yOffset)
     {
       WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
-      event::Event event = event::MouseScroll(static_cast<f32>(xOffset), static_cast<f32>(yOffset));
+      event::Event event = event::MouseScroll(arithmeticCastUnchecked<f32>(xOffset), arithmeticCastUnchecked<f32>(yOffset));
       data.eventCallback(event);
     };
     glfwSetScrollCallback(m_Window, mouseScrollCallback);
@@ -200,7 +200,7 @@ namespace eng
     auto cursorPosCallback = [](GLFWwindow* window, f64 xPos, f64 yPos)
     {
       WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
-      event::Event event = event::MouseMove(static_cast<f32>(xPos), static_cast<f32>(yPos));
+      event::Event event = event::MouseMove(arithmeticCastUnchecked<f32>(xPos), arithmeticCastUnchecked<f32>(yPos));
       data.eventCallback(event);
     };
     glfwSetCursorPosCallback(m_Window, cursorPosCallback);

@@ -17,6 +17,8 @@ namespace eng::input
     ButtonLast = Button7,
     ButtonLeft = Button0,
     ButtonRight = Button1,
-    ButtonMiddle = Button2
+    ButtonMiddle = Button2,
+
+    First = Button0, Last = Button7
   };
 }

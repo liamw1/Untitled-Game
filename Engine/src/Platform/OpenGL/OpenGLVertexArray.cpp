@@ -1,5 +1,7 @@
 #include "ENpch.h"
 #include "OpenGLVertexArray.h"
+#include "Engine/Core/Casting.h"
+#include "Engine/Debug/Assert.h"
 #include "Engine/Threads/Threads.h"
 #include <glad/glad.h>
 
@@ -21,13 +23,13 @@ namespace eng
       case ShaderDataType::Float4:      return GL_FLOAT;
       case ShaderDataType::Mat3:        return GL_FLOAT;
       case ShaderDataType::Mat4:        return GL_FLOAT;
-      default: ENG_CORE_ASSERT(false, "Unknown ShaderDataType!"); return 0;
     }
+    throw std::invalid_argument("Invalid ShaderDataType!");
   }
 
   OpenGLVertexArray::OpenGLVertexArray()
   {
-    ENG_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
+    ENG_CORE_ASSERT(thread::isMainThread(), "OpenGL calls must be made on the main thread!");
 
     glCreateVertexArrays(1, &m_RendererID);
     m_VertexBuffer = StorageBuffer::Create(StorageBuffer::Type::VertexBuffer);
@@ -35,13 +37,13 @@ namespace eng
 
   OpenGLVertexArray::~OpenGLVertexArray()
   {
-    ENG_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
+    ENG_CORE_ASSERT(thread::isMainThread(), "OpenGL calls must be made on the main thread!");
     glDeleteVertexArrays(1, &m_RendererID);
   }
 
   void OpenGLVertexArray::bind() const
   {
-    ENG_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
+    ENG_CORE_ASSERT(thread::isMainThread(), "OpenGL calls must be made on the main thread!");
 
     glBindVertexArray(m_RendererID);
 
@@ -51,7 +53,7 @@ namespace eng
 
   void OpenGLVertexArray::unBind() const
   {
-    ENG_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
+    ENG_CORE_ASSERT(thread::isMainThread(), "OpenGL calls must be made on the main thread!");
 
     glBindVertexArray(0);
 
@@ -63,7 +65,7 @@ namespace eng
 
   void OpenGLVertexArray::setLayout(const BufferLayout& layout)
   {
-    ENG_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
+    ENG_CORE_ASSERT(thread::isMainThread(), "OpenGL calls must be made on the main thread!");
 
     m_VertexBufferLayout = layout;
 
@@ -73,9 +75,9 @@ namespace eng
     u32 vertexBufferIndex = 0;
     for (const BufferElement& element : layout)
     {
-      const i32 dataTypeID = static_cast<i32>(element.type);
+      std::underlying_type_t<ShaderDataType> dataTypeID = toUnderlying(element.type);
 
-      if (dataTypeID >= static_cast<i32>(ShaderDataType::FloatTypeBegin) && dataTypeID <= static_cast<i32>(ShaderDataType::FloatTypeEnd))
+      if (dataTypeID >= toUnderlying(ShaderDataType::FloatTypeBegin) && dataTypeID <= toUnderlying(ShaderDataType::FloatTypeEnd))
       {
         glEnableVertexAttribArray(vertexBufferIndex);
         glVertexAttribPointer(vertexBufferIndex,
@@ -83,20 +85,20 @@ namespace eng
           convertToOpenGLBaseType(element.type),
           element.normalized ? GL_TRUE : GL_FALSE,
           layout.stride(),
-          std::bit_cast<const void*>(static_cast<uSize>(element.offset)));
+          std::bit_cast<const void*>(arithmeticUpcast<uSize>(element.offset)));
         vertexBufferIndex++;
       }
-      else if (dataTypeID >= static_cast<i32>(ShaderDataType::IntTypeBegin) && dataTypeID <= static_cast<i32>(ShaderDataType::IntTypeEnd))
+      else if (dataTypeID >= toUnderlying(ShaderDataType::IntTypeBegin) && dataTypeID <= toUnderlying(ShaderDataType::IntTypeEnd))
       {
         glEnableVertexAttribArray(vertexBufferIndex);
         glVertexAttribIPointer(vertexBufferIndex,
           element.getComponentCount(),
           convertToOpenGLBaseType(element.type),
           layout.stride(),
-          std::bit_cast<const void*>(static_cast<uSize>(element.offset)));
+          std::bit_cast<const void*>(arithmeticUpcast<uSize>(element.offset)));
         vertexBufferIndex++;
       }
-      else if (dataTypeID >= static_cast<i32>(ShaderDataType::MatTypeBegin) && dataTypeID <= static_cast<i32>(ShaderDataType::MatTypeEnd))
+      else if (dataTypeID >= toUnderlying(ShaderDataType::MatTypeBegin) && dataTypeID <= toUnderlying(ShaderDataType::MatTypeEnd))
       {
         i32 count = element.getComponentCount();
         for (i32 i = 0; i < count; ++i)
@@ -107,7 +109,7 @@ namespace eng
             convertToOpenGLBaseType(element.type),
             element.normalized ? GL_TRUE : GL_FALSE,
             layout.stride(),
-            std::bit_cast<const void*>(static_cast<uSize>(element.offset + sizeof(f32) * count * i)));
+            std::bit_cast<const void*>(arithmeticUpcast<uSize>(element.offset + sizeof(f32) * count * i)));
           glVertexAttribDivisor(vertexBufferIndex, 1);
           vertexBufferIndex++;
         }
@@ -157,7 +159,7 @@ namespace eng
 
   void OpenGLVertexArray::setIndexBuffer(const IndexBuffer& indexBuffer)
   {
-    ENG_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
+    ENG_CORE_ASSERT(thread::isMainThread(), "OpenGL calls must be made on the main thread!");
 
     m_IndexBuffer = indexBuffer;
 
@@ -168,7 +170,7 @@ namespace eng
 
   void OpenGLVertexArray::setIndexBuffer(const std::shared_ptr<StorageBuffer>& indexBufferStorage)
   {
-    ENG_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
+    ENG_CORE_ASSERT(thread::isMainThread(), "OpenGL calls must be made on the main thread!");
     ENG_CORE_ASSERT(indexBufferStorage->type() == StorageBuffer::Type::IndexBuffer, "Submitted buffer is not an index buffer!");
 
     m_IndexBuffer = IndexBuffer(indexBufferStorage);

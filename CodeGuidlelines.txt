@@ -1,0 +1,66 @@
+============================= Hard Rules =============================
+Naming Conventions:
+  Classes should be PascalCase.
+  Enums should be PascalCase.
+  Static member functions should be PascalCase.
+  Namespaces should be camelCase.
+  Non-static member functions should be camelCase.
+  Public member variables should be camelCase.
+  Free-floating functions should be camelCase.
+  Macros should be written in UPPER_CASE.
+  
+  Compile-time constant member variables should be preceeded with "c_", i.e c_ConstexprVariable.
+    - This also applies to const shader variables
+  Private/protected static variables should be preceeded with "s_", i.e. s_StaticVariable.
+    - This also applies to globally inaccessible static variables in .cpp files
+  Private/protected thread local variables should be preceeded with "tl_", i.e. tl_ThreadLocalVariable.
+    - This also applies to globally inaccessible thread local variables in .cpp files
+  Private/protected non-static variables should be preceeded with "m_", i.e. m_Variable.
+  Shader uniforms should be preceeded with "u_", i.e. u_Uniform.
+  Vertex buffer attributes should be preceeded with "a_", i.e. a_Attribute.
+  Variables sent by or received from vertex shaders should be preceeded with "v_", i.e. v_VertexData.
+  Variables sent by or received from geometry shaders should be preceeded with "g_", i.e. g_GeomData.
+  Fragment shader outputs should be preceeded with "o_", i.e. o_FragOutput.
+  Asides from the above prefixes, underscores should not appear in variable names.
+
+Class Structure:
+  Class/structs should begin with public aliases and subclass definitions.
+  Next go all member variables in order of: static constexpr, static, non-static.
+  If defining a class with only private members, the 'private:' access specifier can be omitted.
+  Then go member function declarations in the order of: public, protected, private.
+
+Brackets and spacing:
+  Identation should consist of two spaces.
+  Curly brackets should always be on their own lines, except in the cases of empty constructors or simple one-line functions.
+  Omit brackets whenever possible from if/else blocks and for/while loops.
+  The body of if/else/for/while blocks should never appear on the same line.
+
+Includes:
+  Use angular brackets when including libraries, i.e. #include <string>. Quotes for everything else, i.e. #include "MyFile.h".
+
+
+========================= Strong Preferences =========================
+Software Design:
+  Don't repeat yourself: refactor repeated code into functions.
+  Prefer composition over inheritance.
+  Prefer return/break/continue over nesting.
+  Prefer to keep function definitions out of header files, including trivial cases like Constructor() = default;.
+
+Language Features:
+  Avoid implicit conversions. User-defined conversions should be marked explicit. Implicit onversions to bool are ok.
+  Avoid using goto. One notable exception is to use goto to break out of nested loops.
+  Avoid throwing in destructors.
+  Avoid using anonymous namespaces. Mark static variables/functions with 'static' instead.
+
+Custom Constructs:
+  Prefer to use our custom fixed-width types, i8, i16, i32, etc., in place of char, short, int, etc.
+  If a class needs to be non-copyable or non-movable, use constraints found in Engine/Utilities/Constraints
+
+
+========================== Weak Preferences ==========================
+Language Features:
+  Avoid using auto. Prefer to instead explicitly write type.
+
+Custom Constructs:
+  Where possible, use more specific casts found in Engine/Core/Casting.h instead of static_cast.
+  Where possible, use container-based algorithms found in Engine/Core/Algorithm.h instead of C++ algorithm library.

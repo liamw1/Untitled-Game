@@ -1,5 +1,6 @@
 #include "ENpch.h"
 #include "OpenGLUniform.h"
+#include "Engine/Debug/Assert.h"
 #include "Engine/Threads/Threads.h"
 #include <glad/glad.h>
 
@@ -8,7 +9,7 @@ namespace eng
   OpenGLUniform::OpenGLUniform(u32 binding, u32 size)
     : m_Binding(binding)
   {
-    ENG_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
+    ENG_CORE_ASSERT(thread::isMainThread(), "OpenGL calls must be made on the main thread!");
     ENG_CORE_ASSERT(m_Binding < c_MaxUniformBindings, "Binding exceeds maximum allowed uniform bindings!");
 
     if (s_RendererIDs[m_Binding] != 0)
@@ -31,7 +32,7 @@ namespace eng
 
   OpenGLUniform::~OpenGLUniform()
   {
-    ENG_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
+    ENG_CORE_ASSERT(thread::isMainThread(), "OpenGL calls must be made on the main thread!");
     ENG_CORE_ASSERT(m_Binding < c_MaxUniformBindings, "Binding exceeds maximum allowed uniform bindings!");
 
     glDeleteBuffers(1, &s_RendererIDs[m_Binding]);
@@ -41,7 +42,7 @@ namespace eng
 
   void OpenGLUniform::bind() const
   {
-    ENG_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
+    ENG_CORE_ASSERT(thread::isMainThread(), "OpenGL calls must be made on the main thread!");
     ENG_CORE_ASSERT(m_Binding < c_MaxUniformBindings, "Binding exceeds maximum allowed uniform bindings!");
 
     glBindBuffer(GL_UNIFORM_BUFFER, s_RendererIDs[m_Binding]);
@@ -49,13 +50,13 @@ namespace eng
 
   void OpenGLUniform::unBind() const
   {
-    ENG_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
+    ENG_CORE_ASSERT(thread::isMainThread(), "OpenGL calls must be made on the main thread!");
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
   }
 
   void OpenGLUniform::set(const void* data, u32 size)
   {
-    ENG_CORE_ASSERT(threads::isMainThread(), "OpenGL calls must be made on the main thread!");
+    ENG_CORE_ASSERT(thread::isMainThread(), "OpenGL calls must be made on the main thread!");
     ENG_CORE_ASSERT(m_Binding < c_MaxUniformBindings, "Binding exceeds maximum allowed uniform bindings!");
     ENG_CORE_ASSERT(size <= s_BufferSizes[m_Binding], "Data exceeds uniform buffer size!");
 

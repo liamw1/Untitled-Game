@@ -1,5 +1,7 @@
 #include "ENpch.h"
 #include "MemoryPool.h"
+#include "Engine/Core/Casting.h"
+#include "Engine/Debug/Assert.h"
 
 namespace eng
 {
@@ -61,7 +63,7 @@ namespace eng
       while (regionSize(bestRegionPosition) < size)
       {
         i32 oldCapacity = m_Capacity;
-        m_Capacity = static_cast<i32>(c_CapacityIncreaseOnResize * m_Capacity);
+        m_Capacity = arithmeticCast<i32>(c_CapacityIncreaseOnResize * m_Capacity);
         regionSize(bestRegionPosition) += m_Capacity - oldCapacity;
       }
 

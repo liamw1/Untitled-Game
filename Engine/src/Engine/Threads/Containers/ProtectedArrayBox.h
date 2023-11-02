@@ -1,7 +1,7 @@
 #pragma once
 #include "Engine/Math/ArrayBox.h"
 
-namespace eng::threads
+namespace eng::thread
 {
   /*
     Thread-safe version of the ArrayBox.

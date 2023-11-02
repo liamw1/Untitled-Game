@@ -1,5 +1,6 @@
 #pragma once
-#include "Engine/Core/FixedWidthTypes.h"
+#include "Engine/Math/Angle.h"
+#include "Engine/Math/Vec.h"
 
 namespace eng
 {

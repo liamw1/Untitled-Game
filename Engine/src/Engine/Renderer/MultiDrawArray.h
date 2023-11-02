@@ -2,6 +2,7 @@
 #include "VertexArray.h"
 #include "MemoryPool.h"
 #include "Engine/Core/Algorithm.h"
+#include "Engine/Core/Log/Log.h"
 #include "Engine/Utilities/Constraints.h"
 
 namespace eng
@@ -156,7 +157,7 @@ namespace eng
         m_VertexArray->setLayout(m_VertexArray->getLayout());
       drawCommand.prune();
 
-      i32 firstVertex = static_cast<i32>(allocationAddress / m_Stride);
+      i32 firstVertex = arithmeticCast<i32>(allocationAddress / m_Stride);
       drawCommand.setPlacement(firstVertex, m_DrawCommands.size());
 
       m_DrawCommandIndices.emplace(drawCommand.id(), drawCommand.commandIndex());
@@ -184,7 +185,7 @@ namespace eng
     {
       DrawCommandIterator partitionEnd = partitionContainer(m_DrawCommands, [&predicate](const DrawCommandType& draw) { return predicate(draw.id()); });
       setDrawCommandIndices(0, m_DrawCommands.size());
-      return static_cast<i32>(partitionEnd - m_DrawCommands.begin());
+      return arithmeticCast<i32>(partitionEnd - m_DrawCommands.begin());
     }
 
     template<TransformToComparable<Identifier> F>
@@ -290,8 +291,8 @@ namespace eng
         m_VertexArray->setLayout(m_VertexArray->getLayout());
       drawCommand.prune();
 
-      u32 firstIndex = static_cast<u32>(indexAllocationAddress / sizeof(u32));
-      i32 baseVertex = static_cast<i32>(vertexAllocationAddress / m_Stride);
+      u32 firstIndex = arithmeticCast<u32>(indexAllocationAddress / sizeof(u32));
+      i32 baseVertex = arithmeticCast<i32>(vertexAllocationAddress / m_Stride);
       drawCommand.setPlacement(firstIndex, baseVertex, m_DrawCommands.size());
 
       m_DrawCommandIndices.emplace(drawCommand.id(), drawCommand.commandIndex());
@@ -320,7 +321,7 @@ namespace eng
     {
       DrawCommandIterator partitionEnd = algo::partition(m_DrawCommands, [&predicate](const DrawCommandType& draw) { return predicate(draw.id()); });
       setDrawCommandIndices(0, m_DrawCommands.size());
-      return static_cast<i32>(partitionEnd - m_DrawCommands.begin());
+      return arithmeticCast<i32>(partitionEnd - m_DrawCommands.begin());
     }
 
     template<TransformToComparable<Identifier> F>

@@ -5,12 +5,12 @@
 #include "Util/Util.h"
 
 ChunkManager::ChunkManager()
-  : m_ThreadPool(std::make_shared<eng::threads::ThreadPool>(1)),
-    m_LoadWork(m_ThreadPool, eng::threads::Priority::Normal),
-    m_CleanWork(m_ThreadPool, eng::threads::Priority::High),
-    m_LightingWork(m_ThreadPool, eng::threads::Priority::Normal),
-    m_LazyMeshingWork(m_ThreadPool, eng::threads::Priority::Normal),
-    m_ForceMeshingWork(m_ThreadPool, eng::threads::Priority::Immediate) {}
+  : m_ThreadPool(std::make_shared<eng::thread::ThreadPool>(1)),
+    m_LoadWork(m_ThreadPool, eng::thread::Priority::Normal),
+    m_CleanWork(m_ThreadPool, eng::thread::Priority::High),
+    m_LightingWork(m_ThreadPool, eng::thread::Priority::Normal),
+    m_LazyMeshingWork(m_ThreadPool, eng::thread::Priority::Normal),
+    m_ForceMeshingWork(m_ThreadPool, eng::thread::Priority::Immediate) {}
 
 ChunkManager::~ChunkManager()
 {
@@ -161,10 +161,10 @@ void ChunkManager::loadNewChunks()
     m_LoadWork.waitAndDiscardSaved();
 
   std::chrono::duration<seconds> timeSinceLastSearch = std::chrono::steady_clock::now() - lastSearchTimePoint;
-  if (timeSinceLastSearch < searchInterval || (future.valid() && !eng::threads::isReady(future)))
+  if (timeSinceLastSearch < searchInterval || (future.valid() && !eng::thread::isReady(future)))
     return;
 
-  future = m_ThreadPool->submit(eng::threads::Priority::High, [this]()
+  future = m_ThreadPool->submit(eng::thread::Priority::High, [this]()
     {
       std::unordered_set<GlobalIndex> newChunkIndices = m_ChunkContainer.findAllLoadableIndices();
 
@@ -195,10 +195,10 @@ void ChunkManager::clean()
     m_CleanWork.waitAndDiscardSaved();
 
   std::chrono::duration<seconds> timeSinceLastSearch = std::chrono::steady_clock::now() - lastSearchTimePoint;
-  if (timeSinceLastSearch < searchInterval || previousPlayerOriginIndex == player::originIndex() || (future.valid() && !eng::threads::isReady(future)))
+  if (timeSinceLastSearch < searchInterval || previousPlayerOriginIndex == player::originIndex() || (future.valid() && !eng::thread::isReady(future)))
     return;
 
-  future = m_ThreadPool->submit(eng::threads::Priority::High, [this]()
+  future = m_ThreadPool->submit(eng::thread::Priority::High, [this]()
     {
       GlobalIndex originIndex = player::originIndex();
       std::vector<GlobalIndex> chunksMarkedForDeletion = m_ChunkContainer.chunks().getKeys([&originIndex](const GlobalIndex& chunkIndex)
@@ -359,7 +359,7 @@ void ChunkManager::sendBlockUpdate(const GlobalIndex& chunkIndex, const BlockInd
     });
 }
 
-void ChunkManager::uploadMeshes(eng::threads::UnorderedSet<ChunkDrawCommand>& commandQueue, std::unique_ptr<eng::MultiDrawIndexedArray<ChunkDrawCommand>>& multiDrawArray)
+void ChunkManager::uploadMeshes(eng::thread::UnorderedSet<ChunkDrawCommand>& commandQueue, std::unique_ptr<eng::MultiDrawIndexedArray<ChunkDrawCommand>>& multiDrawArray)
 {
   std::unordered_set<ChunkDrawCommand> drawCommands = commandQueue.removeAll();
   while (!drawCommands.empty())

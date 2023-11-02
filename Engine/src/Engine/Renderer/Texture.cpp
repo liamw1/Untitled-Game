@@ -67,8 +67,8 @@ namespace eng
     {
       case RendererAPI::API::OpenGL:        return std::make_unique<OpenGLTexture>(width, height);
       case RendererAPI::API::OpenGL_Legacy: return std::make_unique<OpenGLTexture>(width, height);
-      default:                              throw  std::invalid_argument("Unknown RendererAPI!");
     }
+    throw std::invalid_argument("Invalid RendererAPI!");
   }
 
   std::unique_ptr<Texture> Texture::Create(const std::filesystem::path& path)
@@ -77,8 +77,8 @@ namespace eng
     {
       case RendererAPI::API::OpenGL:        return std::make_unique<OpenGLTexture>(path);
       case RendererAPI::API::OpenGL_Legacy: return std::make_unique<OpenGLTexture>(path);
-      default:                              throw  std::invalid_argument("Unknown RendererAPI!");
     }
+    throw std::invalid_argument("Invalid RendererAPI!");
   }
 
 
@@ -91,7 +91,7 @@ namespace eng
     {
       case RendererAPI::API::OpenGL:        return std::make_unique<OpenGLTextureArray>(textureCount, textureSize);
       case RendererAPI::API::OpenGL_Legacy: return std::make_unique<OpenGLTextureArray>(textureCount, textureSize);
-      default:                              throw  std::invalid_argument("Unknown RendererAPI!");
     }
+    throw std::invalid_argument("Invalid RendererAPI!");
   }
 }

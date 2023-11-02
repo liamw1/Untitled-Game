@@ -1,6 +1,8 @@
 #pragma once
 #include "Direction.h"
 #include "Basics.h"
+#include "Vec.h"
+#include "Engine/Debug/Assert.h"
 
 namespace eng::math
 {
@@ -23,7 +25,13 @@ namespace eng::math
     explicit constexpr operator Vec2() const { return Vec2(i, j); }
   
     template<std::integral U>
-    explicit constexpr operator IVec2<U>() const { return { static_cast<U>(i), static_cast<U>(j) }; }
+    explicit constexpr operator IVec2<U>() const { return { arithmeticCastUnchecked<U>(i), arithmeticCastUnchecked<U>(j) }; }
+
+    template<std::integral U>
+    constexpr IVec2<U> upcast() const { return {arithmeticUpcast<U>(i), arithmeticUpcast<U>(j)}; }
+
+    template<std::integral U>
+    constexpr IVec2<U> checkedCast() const { return {arithmeticCast<U>(i), arithmeticCast<U>(j)}; }
   
     constexpr T& operator[](Axis axis) { ENG_MUTABLE_VERSION(operator[], axis); }
     constexpr const T& operator[](Axis axis) const
@@ -32,8 +40,8 @@ namespace eng::math
       {
         case Axis::X: return i;
         case Axis::Y: return j;
-        default:      throw std::invalid_argument("Invalid axis!");
       }
+      throw std::invalid_argument("Invalid axis!");
     }
   
     // Define lexicographical ordering on 2D indices
@@ -74,12 +82,12 @@ namespace eng::math
     constexpr IVec2 operator*(T n) const { return clone(*this) *= n; }
     constexpr IVec2 operator/(T n) const { return clone(*this) /= n; }
   
-    constexpr i32 l1Norm() const { return std::abs(i) + std::abs(j); }
-    constexpr i32 dot(const IVec2& other) const { return i * other.i + j * other.j; }
+    constexpr T l1Norm() const { return std::abs(i) + std::abs(j); }
+    constexpr T dot(const IVec2& other) const { return i * other.i + j * other.j; }
   
     static constexpr IVec2 ToIndex(const Vec2& vec)
     {
-      return IVec2(static_cast<T>(std::floor(vec.x)), static_cast<T>(std::floor(vec.y)));
+      return IVec2(arithmeticCast<T>(std::floor(vec.x)), arithmeticCast<T>(std::floor(vec.y)));
     }
   };
   
@@ -109,7 +117,9 @@ namespace std
   template<std::integral T>
   inline ostream& operator<<(ostream& os, const eng::math::IVec2<T>& index)
   {
-    return os << '[' << static_cast<i64>(index.i) << ", " << static_cast<i64>(index.j) << ']';
+    using promotedType = std::conditional_t<std::is_signed_v<T>, iMax, uMax>;
+    return os << '[' << eng::arithmeticUpcast<promotedType>(index.i) << ", "
+                     << eng::arithmeticUpcast<promotedType>(index.j) << ']';
   }
 
   template<std::integral T>

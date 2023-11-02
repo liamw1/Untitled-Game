@@ -1,6 +1,7 @@
 #pragma once
+#include "Engine\Utilities\EnumUtilities.h"
 
-namespace eng::threads
+namespace eng::thread
 {
   enum class Priority
   {
@@ -11,7 +12,6 @@ namespace eng::threads
 
     First = 0, Last = Low
   };
-  static constexpr i32 c_PriorityCount = 1 + static_cast<i32>(Priority::Last) - static_cast<i32>(Priority::First);
 
   void setAsMainThread();
   bool isMainThread();

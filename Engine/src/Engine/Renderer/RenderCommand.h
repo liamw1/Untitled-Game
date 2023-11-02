@@ -1,5 +1,6 @@
 #pragma once
 #include "VertexArray.h"
+#include "Engine/Math/Vec.h"
 
 namespace eng::render::command
 {

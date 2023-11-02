@@ -33,7 +33,7 @@ namespace eng
 
 	static void updateProjection()
 	{
-		s_AspectRatio = static_cast<f32>(s_ViewportWidth) / s_ViewportHeight;
+		s_AspectRatio = arithmeticUpcast<f32>(s_ViewportWidth) / s_ViewportHeight;
 		s_Projection = glm::perspective(s_FOV.radf(), s_AspectRatio, s_NearClip, s_FarClip);
 	}
 
@@ -60,7 +60,7 @@ namespace eng
 
 	static f32 zoomSpeed()
 	{
-		f32 distance = static_cast<f32>(s_Distance) * 0.2f;
+		f32 distance = arithmeticCast<f32>(s_Distance) * 0.2f;
 		distance = std::max(distance, 0.0f);
 
     f32 speed = distance * distance;

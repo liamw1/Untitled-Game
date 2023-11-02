@@ -59,8 +59,8 @@ namespace eng::math
   class ArrayBox : private NonCopyable
   {
     IBox3<IntType> m_Bounds;
-    IVec2<i32> m_Strides;
-    i32 m_Offset;
+    IVec2<iSize> m_Strides;
+    iSize m_Offset;
     T* m_Data;
 
   public:
@@ -221,8 +221,8 @@ namespace eng::math
     void setBounds(const IBox3<IntType>& bounds)
     {
       m_Bounds = bounds;
-      IVec3<IntType> extents = m_Bounds.extents();
-      m_Strides = IVec2<i32>(extents.j * extents.k, extents.k);
+      IVec3<iSize> extents = m_Bounds.extents().upcast<iSize>();
+      m_Strides = IVec2<iSize>(extents.j * extents.k, extents.k);
       m_Offset = m_Strides.i * m_Bounds.min.i + m_Strides.j * m_Bounds.min.j + m_Bounds.min.k;
     }
 

@@ -2,6 +2,7 @@
 #include "Entity.h"
 #include "Engine/Core/Time.h"
 #include "Engine/Events/Event.h"
+#include "Engine/Math/Vec.h"
 
 // TODO: Turn into class
 namespace eng::scene

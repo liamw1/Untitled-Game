@@ -1,5 +1,5 @@
 #pragma once
-#include "Engine/Core/PlatformDetection.h"
+#include "Engine/Core/Log/Log.h"
 
 // ======================== Debug Macros ======================== //
 #ifdef ENG_DEBUG

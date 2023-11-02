@@ -1,4 +1,5 @@
 #pragma once
+#include "Engine/Math/Vec.h"
 
 namespace noise
 {
