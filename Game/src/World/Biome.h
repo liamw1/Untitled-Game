@@ -33,7 +33,7 @@ public:
   static const Biome* Get(Type biome);
 
   static constexpr i32 LocalElevationOctaves() { return c_LocalElevationOctaves; }
-  static constexpr i32 Count() { return static_cast<i32>(s_Biomes.size()); }
+  static constexpr uSize Count() { return s_Biomes.size(); }
 
 protected:
   static length_t CalculateOctaveNoise(const NoiseSamples& noiseSamples, length_t largestAmplitude, f32 persistence);

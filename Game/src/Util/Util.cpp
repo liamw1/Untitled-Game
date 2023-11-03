@@ -50,8 +50,8 @@ namespace util
     LocalBox localBox = blockBoxToLocalBox(box);
     localBox.forEach([&box, &origin, &boxDecomposition](const LocalIndex& localIndex)
       {
-        GlobalIndex chunkIndex = origin + static_cast<GlobalIndex>(localIndex);
-        BlockBox localIntersection = BlockBox::Intersection(Chunk::Bounds(), box - Chunk::Size() * static_cast<BlockIndex>(localIndex));
+        GlobalIndex chunkIndex = origin + localIndex.upcast<globalIndex_t>();
+        BlockBox localIntersection = BlockBox::Intersection(Chunk::Bounds(), box - Chunk::Size() * localIndex.checkedCast<blockIndex_t>());
         boxDecomposition[chunkIndex] = localIntersection;
       });
   

@@ -115,7 +115,7 @@ namespace block
 
   struct BlockUniformData
   {
-    const f32 blockLength = static_cast<f32>(length());
+    const f32 blockLength = eng::arithmeticCastUnchecked<f32>(length());
   };
 
   struct BlockProperties

@@ -21,9 +21,12 @@ namespace eng::math
       : min(minCorner), max(maxCorner) {}
     constexpr IBox2(T iMin, T jMin, T iMax, T jMax)
       : min(iMin, jMin), max(iMax, jMax) {}
-  
+
     template<std::integral U>
-    explicit constexpr operator IBox2<U>() const { return IBox2<U>(static_cast<IVec2<U>>(min), static_cast<IVec2<U>>(max)); }
+    constexpr IBox2<U> upcast() const { return {min.upcast<U>(), max.upcast<U>()}; }
+
+    template<std::integral U>
+    constexpr IBox2<U> checkedCast() const { return {min.checkedCast<U>(), max.checkedCast<U>()}; }
   
     // Define lexicographical ordering on stored IVec2s
     constexpr std::strong_ordering operator<=>(const IBox2& other) const = default;
@@ -162,7 +165,7 @@ namespace eng::math
   
     static constexpr IBox2 VoidBox()
     {
-      return { std::numeric_limits<T>::max(), std::numeric_limits<T>::min() };
+      return { std::numeric_limits<T>::max(), std::numeric_limits<T>::lowest() };
     }
   };
 }

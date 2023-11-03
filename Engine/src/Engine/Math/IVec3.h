@@ -24,12 +24,7 @@ namespace eng::math
   
     explicit constexpr operator Vec2() const { return Vec2(i, j); }
     explicit constexpr operator Vec3() const { return Vec3(i, j, k); }
-  
-    template<std::integral U>
-    explicit constexpr operator IVec2<U>() const { return {arithmeticCastUnchecked<U>(i), arithmeticCastUnchecked<U>(j)}; }
-  
-    template<std::integral U>
-    explicit constexpr operator IVec3<U>() const { return {arithmeticCastUnchecked<U>(i), arithmeticCastUnchecked<U>(j), arithmeticCastUnchecked<U>(k)}; }
+    explicit constexpr operator IVec2<T>() const { return IVec2<T>(i, j); }
 
     template<std::integral U>
     constexpr IVec3<U> upcast() const { return {arithmeticUpcast<U>(i), arithmeticUpcast<U>(j), arithmeticUpcast<U>(k)}; }
@@ -65,7 +60,7 @@ namespace eng::math
   
     constexpr IVec3& operator*=(T n)
     {
-      ENG_CORE_ASSERT(debug::overflowCheck(n, i) && debug::overflowCheck(n, j) && debug::overflowCheck(n, k), "Integer overflow!");
+      ENG_CORE_ASSERT(debug::productOverflowCheck(n, i) && debug::productOverflowCheck(n, j) && debug::productOverflowCheck(n, k), "Integer overflow!");
       i *= n;
       j *= n;
       k *= n;

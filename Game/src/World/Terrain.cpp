@@ -41,8 +41,8 @@ std::array<i32, 2> terrain::CompoundSurfaceData::getTextureIndices() const
 {
   std::array<i32, 2> textureIndices{};
 
-  textureIndices[0] = static_cast<i32>(m_Components[0].type.texture(eng::math::Direction::Top));
-  textureIndices[1] = static_cast<i32>(m_Components[1].type.texture(eng::math::Direction::Top));
+  textureIndices[0] = eng::toUnderlying(m_Components[0].type.texture(eng::math::Direction::Top));
+  textureIndices[1] = eng::toUnderlying(m_Components[1].type.texture(eng::math::Direction::Top));
 
   return textureIndices;
 }
@@ -87,13 +87,13 @@ static u32 hash(u32 n)
 // Returns a random f32 in the range [0.0, 1.0] based determinisitically on the input n
 static f32 random(u32 n)
 {
-  return static_cast<f32>(hash(n)) / std::numeric_limits<u32>::max();
+  return eng::arithmeticUpcast<f32>(hash(n)) / std::numeric_limits<u32>::max();
 }
 
 // Returns a biome type based determinisitically on the input n
 static Biome::Type randomBiome(u32 n)
 {
-  return static_cast<Biome::Type>(hash(n) % Biome::Count());
+  return eng::enumCastUnchecked<Biome::Type>(hash(n) % Biome::Count());
 }
 
 static std::pair<Biome::Type, eng::math::Float2> getRegionVoronoiPoint(const GlobalIndex2D& regionIndex)
@@ -249,7 +249,7 @@ static void foliageStage(BlockArrayBox<block::Type>& composition, const BlockArr
           if (random % 101 == 0)
           {
             block::ID leafType = random % 2 == 0 ? block::ID::OakLeaves : block::ID::FallLeaves;
-            blockIndex_t k = static_cast<blockIndex_t>(std::ceil(heightInChunk / block::length()));
+            blockIndex_t k = eng::arithmeticCastUnchecked<blockIndex_t>(std::ceil(heightInChunk / block::length()));
             createTree(composition, { i, j, k }, leafType);
           }
         }

@@ -24,7 +24,7 @@ namespace block
   };
   using IDs = eng::EnumIterator<ID>;
 
-  enum class TextureID : u32
+  enum class TextureID
   {
     GrassTop,
     GrassSide,

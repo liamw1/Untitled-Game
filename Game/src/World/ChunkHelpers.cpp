@@ -16,15 +16,15 @@ ChunkVertex::ChunkVertex(const BlockIndex& vertexPlacement, i32 quadIndex, block
 
 const BlockIndex& ChunkVertex::GetOffset(eng::math::Direction face, i32 quadIndex)
 {
-  static constexpr BlockIndex offsets[6][4]
-    = { { {0, 1, 0}, {0, 0, 0}, {0, 1, 1}, {0, 0, 1} },    /*  West Face   */
-        { {1, 0, 0}, {1, 1, 0}, {1, 0, 1}, {1, 1, 1} },    /*  East Face   */
-        { {0, 0, 0}, {1, 0, 0}, {0, 0, 1}, {1, 0, 1} },    /*  South Face  */
-        { {1, 1, 0}, {0, 1, 0}, {1, 1, 1}, {0, 1, 1} },    /*  North Face  */
-        { {0, 1, 0}, {1, 1, 0}, {0, 0, 0}, {1, 0, 0} },    /*  Bottom Face */
-        { {0, 0, 1}, {1, 0, 1}, {0, 1, 1}, {1, 1, 1} } };  /*  Top Face    */
+  static constexpr eng::EnumArray<std::array<BlockIndex, 4>, eng::math::Direction> offsets =
+    {{eng::math::Direction::West,   {{{0, 1, 0}, {0, 0, 0}, {0, 1, 1}, {0, 0, 1}}}},
+     {eng::math::Direction::East,   {{{1, 0, 0}, {1, 1, 0}, {1, 0, 1}, {1, 1, 1}}}},
+     {eng::math::Direction::South,  {{{0, 0, 0}, {1, 0, 0}, {0, 0, 1}, {1, 0, 1}}}},
+     {eng::math::Direction::North,  {{{1, 1, 0}, {0, 1, 0}, {1, 1, 1}, {0, 1, 1}}}},
+     {eng::math::Direction::Bottom, {{{0, 1, 0}, {1, 1, 0}, {0, 0, 0}, {1, 0, 0}}}},
+     {eng::math::Direction::Top,    {{{0, 0, 1}, {1, 0, 1}, {0, 1, 1}, {1, 1, 1}}}} };
 
-  return offsets[static_cast<i32>(face)][quadIndex];
+  return offsets[face][quadIndex];
 }
 
 
@@ -90,7 +90,7 @@ bool ChunkDrawCommand::operator==(const ChunkDrawCommand& other) const
 
 i32 ChunkDrawCommand::vertexCount() const
 {
-  return static_cast<i32>(4 * m_Quads.size());
+  return eng::arithmeticCast<i32>(4 * m_Quads.size());
 }
 
 const void* ChunkDrawCommand::indexData()
@@ -146,8 +146,6 @@ bool ChunkDrawCommand::sort(const GlobalIndex& originIndex, const eng::math::Vec
   // If this block index is the same as the previous sort, no need to sort
   if (originBlock == m_SortState)
     return false;
-
-  ENG_PROFILE_FUNCTION();
 
   // Perform an in-place counting sort on L1 distance to originBlock, from highest to lowest
   std::array<i16, c_MaxL1Distance + 1> counts{};
@@ -213,7 +211,7 @@ void ChunkDrawCommand::reorderIndices(const GlobalIndex& originIndex, const eng:
     // Add back-facing quads
     for (eng::math::Axis axis : eng::math::Axes())
     {
-      eng::math::Direction face = ToDirection(axis, toBlock[static_cast<i32>(axis)] > 0);
+      eng::math::Direction face = ToDirection(axis, toBlock[eng::toUnderlying(axis)] > 0);
       if (quadVertexOffsets[face] >= 0)
         addQuadIndices(voxel.baseVertex() + quadVertexOffsets[face]);
     }
@@ -221,7 +219,7 @@ void ChunkDrawCommand::reorderIndices(const GlobalIndex& originIndex, const eng:
     // Add front-facing quads
     for (eng::math::Axis axis : eng::math::Axes())
     {
-      eng::math::Direction face = ToDirection(axis, toBlock[static_cast<i32>(axis)] <= 0);
+      eng::math::Direction face = ToDirection(axis, toBlock[eng::toUnderlying(axis)] <= 0);
       if (quadVertexOffsets[face] >= 0)
         addQuadIndices(voxel.baseVertex() + quadVertexOffsets[face]);
     }

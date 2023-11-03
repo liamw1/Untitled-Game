@@ -79,7 +79,7 @@ void ChunkManager::render()
       storageBufferData.emplace_back(chunkAnchor, 0);
     }
 
-    u32 bufferDataSize = static_cast<u32>(storageBufferData.size() * sizeof(eng::math::Float4));
+    u32 bufferDataSize = eng::arithmeticCast<u32>(storageBufferData.size() * sizeof(eng::math::Float4));
     if (bufferDataSize > c_StorageBufferSize)
       ENG_ERROR("Chunk anchor data exceeds SSBO size!");
 
@@ -124,7 +124,7 @@ void ChunkManager::render()
       storageBufferData.emplace_back(chunkAnchor, 0);
     }
 
-    u32 bufferDataSize = static_cast<u32>(storageBufferData.size() * sizeof(eng::math::Float4));
+    u32 bufferDataSize = eng::arithmeticCast<u32>(storageBufferData.size() * sizeof(eng::math::Float4));
     if (bufferDataSize > c_StorageBufferSize)
       ENG_ERROR("Chunk anchor data exceeds SSBO size!");
 
@@ -222,10 +222,12 @@ std::shared_ptr<const Chunk> ChunkManager::getChunk(const LocalIndex& chunkIndex
 
 void ChunkManager::placeBlock(GlobalIndex chunkIndex, BlockIndex blockIndex, eng::math::Direction face, block::Type blockType)
 {
+  static constexpr blockIndex_t endOfChunk = Chunk::Size() - 1;
+
   if (util::blockNeighborIsInAnotherChunk(blockIndex, face))
   {
     chunkIndex += GlobalIndex::Dir(face);
-    blockIndex -= static_cast<blockIndex_t>(Chunk::Size() - 1) * BlockIndex::Dir(face);
+    blockIndex -= endOfChunk * BlockIndex::Dir(face);
   }
   else
     blockIndex += BlockIndex::Dir(face);
@@ -349,7 +351,7 @@ void ChunkManager::sendBlockUpdate(const GlobalIndex& chunkIndex, const BlockInd
   LocalBox affectedChunks = util::blockBoxToLocalBox(affectedBlocks);
   affectedChunks.forEach([this, &chunkIndex](const LocalIndex& localIndex)
     {
-      GlobalIndex neighborIndex = chunkIndex + static_cast<GlobalIndex>(localIndex);
+      GlobalIndex neighborIndex = chunkIndex + localIndex.upcast<globalIndex_t>();
 
       // Chunk and its face neighbors get queued for immediate meshing
       if (localIndex.l1Norm() <= 1)
@@ -444,7 +446,7 @@ static void retrieveNeighborData(BlockArrayBox<T>& blockData, const ChunkContain
   if (accessPattern == AccessPattern::Boundary)
     for (const auto& [offset, corner] : Corners(BlockData::Bounds()))
     {
-      std::shared_ptr<const Chunk> neighbor = chunkContainer.chunks().get(chunkIndex + static_cast<GlobalIndex>(offset));
+      std::shared_ptr<const Chunk> neighbor = chunkContainer.chunks().get(chunkIndex + offset.upcast<globalIndex_t>());
       if (!neighbor)
         continue;
 
@@ -681,7 +683,7 @@ void ChunkManager::updateLighting(const std::shared_ptr<Chunk>& chunk)
         if (lighting.contentsEqual(corner, newLighting, corner, defaultValue))
           continue;
 
-        GlobalIndex cornerNeighbor = chunkIndex + static_cast<GlobalIndex>(offset);
+        GlobalIndex cornerNeighbor = chunkIndex + offset.upcast<globalIndex_t>();
         GlobalBox updateBox = GlobalBox::VoidBox().expandToEnclose(chunkIndex).expandToEnclose(cornerNeighbor);
         updateBox.forEach([&additionalLightingUpdates](const GlobalIndex& updateIndex)
           {

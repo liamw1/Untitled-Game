@@ -20,8 +20,3 @@ using iSize = std::ptrdiff_t;
 using f32 = float;
 using f64 = double;
 using fMax = long double;
-
-// Custom units
-using length_t = f32;
-using rad_t = f32;
-using seconds = f32;

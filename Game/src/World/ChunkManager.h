@@ -14,7 +14,7 @@ class ChunkManager
                                                                 { eng::ShaderDataType::Uint32, "a_Lighting"   }};
   static constexpr i32 c_TextureSlot = 0;
   static constexpr i32 c_StorageBufferBinding = 0;
-  static constexpr u32 c_StorageBufferSize = static_cast<u32>(eng::pow2(20));
+  static constexpr u32 c_StorageBufferSize = eng::arithmeticCast<u32>(eng::pow2(20));
 
   eng::thread::UnorderedSet<ChunkDrawCommand> m_OpaqueCommandQueue;
   eng::thread::UnorderedSet<ChunkDrawCommand> m_TransparentCommandQueue;
@@ -64,7 +64,7 @@ public:
 private:
   struct LightUniforms
   {
-    const f32 maxSunlight = static_cast<f32>(block::Light::MaxValue());
+    const f32 maxSunlight = eng::arithmeticUpcast<f32>(block::Light::MaxValue());
     f32 sunIntensity = 1.0f;
   };
 

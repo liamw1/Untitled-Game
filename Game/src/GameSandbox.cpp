@@ -31,25 +31,25 @@ void GameSandbox::onUpdate(eng::Timestep timestep)
   {
     static constexpr i32 framerateWindowSize = 100;
 
-    f32 frameTime = timestep.sec();
+    seconds frameTime = timestep.sec();
     m_FrameTimeWindow.push_front(frameTime);
     if (m_FrameTimeWindow.size() > framerateWindowSize)
       m_FrameTimeWindow.pop_back();
 
     if (m_PrintFrameRate)
     {
-      f32 averageFrameTime = std::accumulate(m_FrameTimeWindow.begin(), m_FrameTimeWindow.end(), 0.0f) / m_FrameTimeWindow.size();
-      ENG_TRACE("FPS: {0}", static_cast<i32>(1.0f / averageFrameTime));
+      seconds averageFrameTime = std::accumulate(m_FrameTimeWindow.begin(), m_FrameTimeWindow.end(), 0_s) / m_FrameTimeWindow.size();
+      ENG_TRACE("FPS: {0}", eng::arithmeticCast<i32>(1 / averageFrameTime));
     }
     else
     {
-      f32 maxFrameTime = *std::max_element(m_FrameTimeWindow.begin(), m_FrameTimeWindow.end());
-      ENG_TRACE("Min FPS: {0}", static_cast<i32>(1.0f / maxFrameTime));
+      seconds maxFrameTime = *std::max_element(m_FrameTimeWindow.begin(), m_FrameTimeWindow.end());
+      ENG_TRACE("Min FPS: {0}", eng::arithmeticCast<i32>(1 / maxFrameTime));
     }
   }
   else if (m_PrintPlayerPosition)
   {
-    GlobalIndex position = static_cast<globalIndex_t>(Chunk::Size()) * player::originIndex() + GlobalIndex::ToIndex(player::position());
+    GlobalIndex position = eng::arithmeticUpcast<globalIndex_t>(Chunk::Size()) * player::originIndex() + GlobalIndex::ToIndex(player::position());
     ENG_TRACE("Position: {0}", position);
   }
 

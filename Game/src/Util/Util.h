@@ -27,7 +27,7 @@ namespace util
 
   constexpr LocalBox blockBoxToLocalBox(const BlockBox& box)
   {
-    LocalBox chunkBox = static_cast<LocalBox>(box) / Chunk::Size();
+    LocalBox chunkBox = box.upcast<localIndex_t>() / Chunk::Size();
     for (eng::math::Axis axis : eng::math::Axes())
     {
       if (box.min[axis] < 0)

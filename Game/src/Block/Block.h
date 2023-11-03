@@ -5,7 +5,7 @@
 namespace block
 {
   constexpr length_t length() { return 0.5_m; }
-  constexpr f32 lengthF() { return static_cast<f32>(length()); }
+  constexpr f32 lengthF() { return eng::arithmeticCastUnchecked<f32>(length()); }
 
   std::shared_ptr<eng::TextureArray> getTextureArray();
 

@@ -2,12 +2,6 @@
 #include "World.h"
 #include "Player/Player.h"
 
-static constexpr blockIndex_t modulo(globalIndex_t a, blockIndex_t b)
-{
-  const i32 result = a % b;
-  return static_cast<blockIndex_t>(result >= 0 ? result : result + b);
-}
-
 void World::initialize()
 {
   player::initialize(GlobalIndex(0, 0, 2), block::length() * eng::math::Vec3(16.0));
@@ -45,20 +39,20 @@ RayIntersection World::castRaySegment(const eng::math::Vec3& pointA, const eng::
   RayIntersection firstIntersection{};
   for (eng::math::Axis axis : eng::math::Axes())
   {
-    i32 axisID = static_cast<i32>(axis);
+    i32 axisID = eng::toUnderlying(axis);
     bool pointedUpstream = rayDirection[axisID] > 0.0;
 
     // Global indices of first and last planes that segment will intersect in direction i
     globalIndex_t n0, nf;
     if (pointedUpstream)
     {
-      n0 = static_cast<globalIndex_t>(ceil(pointA[axisID] / block::length()));
-      nf = static_cast<globalIndex_t>(ceil(pointB[axisID] / block::length()));
+      n0 = eng::arithmeticCast<globalIndex_t>(ceil(pointA[axisID] / block::length()));
+      nf = eng::arithmeticCast<globalIndex_t>(ceil(pointB[axisID] / block::length()));
     }
     else
     {
-      n0 = static_cast<globalIndex_t>(floor(pointA[axisID] / block::length()));
-      nf = static_cast<globalIndex_t>(floor(pointB[axisID] / block::length()));
+      n0 = eng::arithmeticCast<globalIndex_t>(floor(pointA[axisID] / block::length()));
+      nf = eng::arithmeticCast<globalIndex_t>(floor(pointB[axisID] / block::length()));
     }
 
     // n increases to nf if ray is aligned with positive i-axis and decreases to nf otherwise
@@ -85,16 +79,16 @@ RayIntersection World::castRaySegment(const eng::math::Vec3& pointA, const eng::
           N--;
 
         // Get index of chunk in which intersection took place
-        LocalIndex chunkIndex = LocalIndex::CreatePermuted(static_cast<localIndex_t>(N / Chunk::Size()),
-                                                           static_cast<localIndex_t>(floor(intersection[v] / Chunk::Length())),
-                                                           static_cast<localIndex_t>(floor(intersection[w] / Chunk::Length())), axis);
+        LocalIndex chunkIndex = LocalIndex::CreatePermuted(eng::arithmeticCastUnchecked<localIndex_t>(N / Chunk::Size()),
+                                                           eng::arithmeticCastUnchecked<localIndex_t>(floor(intersection[v] / Chunk::Length())),
+                                                           eng::arithmeticCastUnchecked<localIndex_t>(floor(intersection[w] / Chunk::Length())), axis);
         if (N < 0 && N % Chunk::Size() != 0)
-          chunkIndex[static_cast<eng::math::Axis>(u)]--;
+          chunkIndex[axis]--;
 
         // Get local index of block that was hit by ray
-        BlockIndex blockIndex = BlockIndex::CreatePermuted(modulo(N, Chunk::Size()),
-                                                           modulo(static_cast<globalIndex_t>(floor(intersection[v] / block::length())), Chunk::Size()),
-                                                           modulo(static_cast<globalIndex_t>(floor(intersection[w] / block::length())), Chunk::Size()), axis);
+        BlockIndex blockIndex = BlockIndex::CreatePermuted(eng::math::mod(N, Chunk::Size()),
+                                                           eng::math::mod(eng::arithmeticCastUnchecked<globalIndex_t>(floor(intersection[v] / block::length())), Chunk::Size()),
+                                                           eng::math::mod(eng::arithmeticCastUnchecked<globalIndex_t>(floor(intersection[w] / block::length())), Chunk::Size()), axis);
 
         // Search to see if chunk is loaded
         std::shared_ptr<const Chunk> chunk = m_ChunkManager.getChunk(chunkIndex);
@@ -107,7 +101,7 @@ RayIntersection World::castRaySegment(const eng::math::Vec3& pointA, const eng::
           i32 faceID = 2 * u + !pointedUpstream;
           tmin = t;
 
-          firstIntersection.face = static_cast<eng::math::Direction>(faceID);
+          firstIntersection.face = eng::enumCastUnchecked<eng::math::Direction>(faceID);
           firstIntersection.blockIndex = blockIndex;
           firstIntersection.chunkIndex = chunkIndex;
         }
@@ -134,8 +128,8 @@ void World::playerCollisionHandling(eng::Timestep timestep) const
   static constexpr i32 maxIterations = 100;
 
   // Player width and height in blocks
-  static const i32 playerWidth = static_cast<i32>(ceil(player::width() / block::length()));
-  static const i32 playerHeight = static_cast<i32>(ceil(player::height() / block::length()));
+  static const i32 playerWidth = eng::arithmeticCast<i32>(ceil(player::width() / block::length()));
+  static const i32 playerHeight = eng::arithmeticCast<i32>(ceil(player::height() / block::length()));
   static const length_t widthInterval = player::width() / playerWidth;
   static const length_t heightInterval = player::height() / playerHeight;
   seconds dt = timestep.sec();  // Time between frames in seconds

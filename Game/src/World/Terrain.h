@@ -24,7 +24,7 @@ namespace terrain
     eng::math::Float2 getTextureWeights() const;
   };
 
-  inline CompoundSurfaceData operator*(length_t x, const CompoundSurfaceData& other) { return other * static_cast<f32>(x); }
+  inline CompoundSurfaceData operator*(length_t x, const CompoundSurfaceData& other) { return other * eng::arithmeticCastUnchecked<f32>(x); }
 
   struct SurfaceInfo
   {

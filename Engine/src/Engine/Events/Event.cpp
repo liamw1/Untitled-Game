@@ -34,5 +34,5 @@ namespace eng::event
 
   bool Event::handled() const { return m_Handled; }
   void Event::flagAsHandled() { m_Handled = true; }
-  bool Event::isInCategory(EventCategory category) { return static_cast<bool>(categoryFlags() & category); }
+  bool Event::isInCategory(EventCategory category) { return (categoryFlags() & category) != EventCategory::None; }
 }

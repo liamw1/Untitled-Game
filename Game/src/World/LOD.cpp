@@ -51,15 +51,8 @@ namespace lod
   bool Octree::Node::isLeaf() const { return data != nullptr; }
   i32 Octree::Node::LODLevel() const { return c_MaxNodeDepth - depth; }
 
-  globalIndex_t Octree::Node::size() const
-  {
-    return static_cast<globalIndex_t>(eng::pow2(LODLevel()));
-  }
-
-  length_t Octree::Node::length() const
-  {
-    return size() * Chunk::Length();
-  }
+  globalIndex_t Octree::Node::size() const { return eng::arithmeticCast<globalIndex_t>(eng::pow2(LODLevel())); }
+  length_t Octree::Node::length() const { return size() * Chunk::Length(); }
 
   eng::math::Vec3 Octree::Node::anchorPosition() const
   {
@@ -67,24 +60,14 @@ namespace lod
     return Chunk::Length() * static_cast<eng::math::Vec3>(relativeIndex);
   }
 
-  eng::math::Vec3 Octree::Node::center() const
-  {
-    return anchorPosition() + length() / 2;
-  }
-
-  GlobalBox Octree::Node::boundingBox() const
-  {
-    return { anchor, anchor + size() };
-  }
+  eng::math::Vec3 Octree::Node::center() const { return anchorPosition() + length() / 2; }
+  GlobalBox Octree::Node::boundingBox() const { return { anchor, anchor + size() }; }
 
 
 
 
   Octree::Octree()
-    : m_Root(Node(nullptr, 0, c_RootNodeAnchor))
-  {
-    m_Root.data = new Data();
-  }
+    : m_Root(Node(nullptr, 0, c_RootNodeAnchor)) { m_Root.data = new Data(); }
 
   void Octree::splitNode(Node* node)
   {
@@ -209,7 +192,7 @@ namespace lod
 
   void draw(const Octree::Node* leaf)
   {
-    u32 primaryMeshIndexCount = static_cast<u32>(leaf->data->primaryMesh.indices.size());
+    u32 primaryMeshIndexCount = eng::arithmeticCast<u32>(leaf->data->primaryMesh.indices.size());
 
     if (primaryMeshIndexCount == 0)
       return; // Nothing to draw
@@ -217,20 +200,17 @@ namespace lod
     // Set local anchor position and texture scaling
     UniformData uniformData{};
     uniformData.anchor = Chunk::Length() * static_cast<eng::math::Vec3>(leaf->anchor - player::originIndex());
-    uniformData.textureScaling = static_cast<f32>(eng::bit(leaf->LODLevel()));
+    uniformData.textureScaling = eng::arithmeticUpcast<f32>(eng::bit(leaf->LODLevel()));
     MeshData::SetUniforms(uniformData);
 
     eng::render::command::drawIndexed(leaf->data->primaryMesh.vertexArray.get(), primaryMeshIndexCount);
     for (eng::math::Direction face : eng::math::Directions())
     {
-      i32 faceID = static_cast<i32>(face);
-
-      u32 transitionMeshIndexCount = static_cast<u32>(leaf->data->transitionMeshes[faceID].indices.size());
-
-      if (transitionMeshIndexCount == 0 || !(leaf->data->transitionFaces & eng::bit(faceID)))
+      u32 transitionMeshIndexCount = eng::arithmeticCast<u32>(leaf->data->transitionMeshes[face].indices.size());
+      if (transitionMeshIndexCount == 0 || !(leaf->data->transitionFaces & eng::bit(eng::toUnderlying(face))))
         continue;
 
-      eng::render::command::drawIndexed(leaf->data->transitionMeshes[faceID].vertexArray.get(), transitionMeshIndexCount);
+      eng::render::command::drawIndexed(leaf->data->transitionMeshes[face].vertexArray.get(), transitionMeshIndexCount);
     }
   }
 
@@ -375,7 +355,7 @@ namespace lod
     length_t tB = surfaceDataB.getElevation() - zB;
 
     // Fraction of distance along edge vertex should be placed
-    f32 t = static_cast<f32>(tA / (tA - tB));
+    f32 t = eng::arithmeticCastUnchecked<f32>(tA / (tA - tB));
 
     eng::math::Vec3 vertexPosition = LODInterpolation(t, s, posA, posB);
     terrain::CompoundSurfaceData surfaceData = LODInterpolation(t, s, surfaceDataA, surfaceDataB);
@@ -524,8 +504,13 @@ namespace lod
       i8 vertexOrder[10] = { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 };
     };
 
-    static constexpr eng::math::Vec3 normals[6] = { { -1, 0, 0}, { 1, 0, 0}, { 0, -1, 0}, { 0, 1, 0}, { 0, 0, -1}, { 0, 0, 1} };
-                                               //       West        East        South        North       Bottom        Top
+    static constexpr eng::EnumArray<eng::math::Vec3, eng::math::Direction> normals = 
+      {{eng::math::Direction::West,   {-1,  0,  0}},
+       {eng::math::Direction::East,   { 1,  0,  0}},
+       {eng::math::Direction::South,  { 0, -1,  0}},
+       {eng::math::Direction::North,  { 0,  1,  0}},
+       {eng::math::Direction::Bottom, { 0,  0, -1}},
+       {eng::math::Direction::Top,    { 0,  0,  1}} };
 
     length_t LODFloor = node->anchor.k * Chunk::Length();
     length_t cellLength = node->length() / c_NumCells;
@@ -533,8 +518,6 @@ namespace lod
 
     for (eng::math::Direction face : eng::math::Directions())
     {
-      i32 faceID = static_cast<i32>(face);
-
       // Relabel coordinates, u being the coordinate normal to face
       eng::math::Axis u = AxisOf(face);
       eng::math::Axis v = Cycle(u);
@@ -655,7 +638,7 @@ namespace lod
 
             NoiseData noiseData = interpolateNoiseData(node, noiseValues, noiseNormals, sampleA, sampleB, smoothness);
             if (!isOnLowResSide)
-              noiseData.position -= transitionCellWidth * normals[faceID];
+              noiseData.position -= transitionCellWidth * normals[face];
 
             transitionMeshVertices.emplace_back(noiseData.position, noiseData.normal, noiseData.surfaceData.getTextureIndices(), noiseData.surfaceData.getTextureWeights(), vert % 3);
             transitionMeshIndices.push_back(vertexCount);
@@ -669,8 +652,8 @@ namespace lod
         prevRow = std::move(currRow);
       }
 
-      node->data->transitionMeshes[faceID].vertices = std::move(transitionMeshVertices);
-      node->data->transitionMeshes[faceID].indices = std::move(transitionMeshIndices);
+      node->data->transitionMeshes[face].vertices = std::move(transitionMeshVertices);
+      node->data->transitionMeshes[face].indices = std::move(transitionMeshIndices);
     }
   }
 
@@ -728,14 +711,11 @@ namespace lod
     bool isNearSameResolutionLOD = false;
     for (eng::math::Direction face : eng::math::Directions())
     {
-      i32 faceID = static_cast<i32>(face);
-      i32 coordID = faceID / 2;
-      bool facingPositiveDir = faceID % 2;
-
-      if (isVertexNearFace(facingPositiveDir, vertex.position[coordID], cellLength))
+      i32 axisID = eng::toUnderlying(eng::math::AxisOf(face));
+      if (isVertexNearFace(eng::math::IsUpstream(face), vertex.position[axisID], cellLength))
       {
-        if (transitionFaces & eng::bit(faceID))
-          vertexAdjustment[coordID] = vertexAdjustment1D(facingPositiveDir, vertex.position[coordID], cellLength);
+        if (transitionFaces & eng::bit(eng::toUnderlying(face)))
+          vertexAdjustment[axisID] = vertexAdjustment1D(eng::math::IsUpstream(face), vertex.position[axisID], cellLength);
         else
         {
           isNearSameResolutionLOD = true;
@@ -770,22 +750,20 @@ namespace lod
   {
     static constexpr length_t tolerance = 128 * std::numeric_limits<length_t>::epsilon();
 
-    i32 faceID = static_cast<i32>(face);
-    i32 coordID = faceID / 2;
-    bool facingPositiveDir = faceID % 2;
+    i32 axisID = eng::toUnderlying(eng::math::AxisOf(face));
     length_t cellLength = node->length() / c_NumCells;
 
-    std::vector<Vertex> LODMesh = node->data->transitionMeshes[faceID].vertices;
+    std::vector<Vertex> LODMesh = node->data->transitionMeshes[face].vertices;
 
     // Adjust coorindates of boundary cells on transition mesh
     if (node->data->transitionFaces != 0)
       for (Vertex& vertex : LODMesh)
       {
         // If Vertex is on low-resolution side, skip.  If on high-resolution side, move vertex to LOD face
-        if (vertex.position[coordID] < tolerance * node->length() || vertex.position[coordID] > (1.0 - tolerance) * node->length())
+        if (vertex.position[axisID] < tolerance * node->length() || vertex.position[axisID] > (1.0 - tolerance) * node->length())
           continue;
         else
-          vertex.position[coordID] = static_cast<f32>(facingPositiveDir ? node->length() : 0.0);
+          vertex.position[axisID] = eng::arithmeticCastUnchecked<f32>(eng::math::IsUpstream(face) ? node->length() : 0.0);
 
         adjustVertex(vertex, cellLength, node->data->transitionFaces);
       }
@@ -798,23 +776,26 @@ namespace lod
   */
   static void determineTransitionFaces(Octree& tree, Octree::Node* node)
   {
-    const GlobalIndex offsets[6] = { { -1, 0, 0 }, { node->size(), 0, 0 }, { 0, -1, 0 }, { 0, node->size(), 0 }, { 0, 0, -1 }, { 0, 0, node->size() } };
-                                //       East               West              North              South               Top               Bottom
+    const eng::EnumArray<GlobalIndex, eng::math::Direction> offsets =
+      {{eng::math::Direction::West,   {-1,            0,            0}},
+       {eng::math::Direction::East,   {node->size(),  0,            0}},
+       {eng::math::Direction::South,  { 0,           -1,            0}},
+       {eng::math::Direction::North,  { 0, node->size(),            0}},
+       {eng::math::Direction::Bottom, { 0,            0,           -1}},
+       {eng::math::Direction::Top,    { 0,            0, node->size()}}};
 
     // Determine which faces transition to a lower resolution LOD
     u8 transitionFaces = 0;
     for (eng::math::Direction face : eng::math::Directions())
     {
-      i32 faceID = static_cast<i32>(face);
-
-      Octree::Node* neighbor = tree.findLeaf(node->anchor + offsets[faceID]);
+      Octree::Node* neighbor = tree.findLeaf(node->anchor + offsets[face]);
       if (neighbor == nullptr)
         continue;
 
       if (node->LODLevel() == neighbor->LODLevel())
         continue;
       else if (neighbor->LODLevel() - node->LODLevel() == 1)
-        transitionFaces |= eng::bit(faceID);
+        transitionFaces |= eng::bit(eng::toUnderlying(face));
       else if (neighbor->LODLevel() - node->LODLevel() > 1)
         ENG_WARN("LOD neighbor is more than one level lower resolution");
     }
@@ -833,9 +814,7 @@ namespace lod
 
     for (eng::math::Direction face : eng::math::Directions())
     {
-      i32 faceID = static_cast<i32>(face);
-
-      MeshData& transitionMesh = node->data->transitionMeshes[faceID];
+      MeshData& transitionMesh = node->data->transitionMeshes[face];
       eng::render::uploadMesh(transitionMesh.vertexArray.get(), calcAdjustedTransitionMesh(node, face), transitionMesh.indices);
     }
 
@@ -844,21 +823,24 @@ namespace lod
 
   void messageNeighbors(Octree& tree, Octree::Node* node)
   {
-    const GlobalIndex offsets[6] = { { -1, 0, 0 }, { node->size(), 0, 0 }, { 0, -1, 0 }, { 0, node->size(), 0 }, { 0, 0, -1 }, { 0, 0, node->size() } };
-                                //       East               West              North              South               Top               Bottom
+    const eng::EnumArray<GlobalIndex, eng::math::Direction> offsets =
+      {{eng::math::Direction::West,   {-1,            0,            0}},
+       {eng::math::Direction::East,   {node->size(),  0,            0}},
+       {eng::math::Direction::South,  { 0,           -1,            0}},
+       {eng::math::Direction::North,  { 0, node->size(),            0}},
+       {eng::math::Direction::Bottom, { 0,            0,           -1}},
+       {eng::math::Direction::Top,    { 0,            0, node->size()}}};
 
     // Tell LOD neighbors to update
     for (eng::math::Direction direction : eng::math::Directions())
     {
-      i32 directionID = static_cast<i32>(direction);
-
       // Relabel coordinates, u being the coordinate normal to face
       eng::math::Axis u = AxisOf(direction);
       eng::math::Axis v = Cycle(u);
       eng::math::Axis w = Cycle(v);
 
       globalIndex_t neighborSize = node->size();
-      GlobalIndex neighborIndexBase = node->anchor + offsets[directionID];
+      GlobalIndex neighborIndexBase = node->anchor + offsets[direction];
       for (globalIndex_t i = 0; i < node->size(); i += neighborSize)
         for (globalIndex_t j = 0; j < node->size(); j += neighborSize)
         {

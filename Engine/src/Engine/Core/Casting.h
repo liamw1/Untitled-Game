@@ -22,11 +22,12 @@ namespace eng
     template<Arithmetic C, Arithmetic T>
     constexpr bool alwaysSafe()
     {
-      return rank<T>() < rank<C>() && (std::is_unsigned_v<T> || std::is_signed_v<C>) || std::is_same_v<C, T>;
+      return static_cast<fMax>(std::numeric_limits<C>::lowest()) <= static_cast<fMax>(std::numeric_limits<T>::lowest()) &&
+             static_cast<fMax>(std::numeric_limits<C>::max()) >= static_cast<fMax>(std::numeric_limits<T>::max());
     }
 
     template<Arithmetic C, Arithmetic T>
-    constexpr bool canSafelyCast(T value, C min = std::numeric_limits<C>::min(), C max = std::numeric_limits<C>::max())
+    constexpr bool canSafelyCast(T value, C min = std::numeric_limits<C>::lowest(), C max = std::numeric_limits<C>::max())
     {
       if constexpr (std::is_floating_point_v<T> || std::is_floating_point_v<C>)
         return min <= value && value <= max;

@@ -41,7 +41,8 @@ Includes:
 
 ========================= Strong Preferences =========================
 Software Design:
-  Don't repeat yourself: refactor repeated code into functions.
+  Don't Repeat Yourself: refactor repeated code into functions. Never copy and paste more than a few lines.
+  Keep It Simple Stupid: use the simplest tools required to accomplish a task. Don't over-engineer.
   Prefer composition over inheritance.
   Prefer return/break/continue over nesting.
   Prefer to keep function definitions out of header files, including trivial cases like Constructor() = default;.

@@ -41,7 +41,6 @@ namespace eng::debug
   constexpr bool equalsOneOf(T value, Args... args) { return ((value == args) || ...); }
 
   // Returns true if n doesn't overflow when multiplied by m.
-  // TODO: Remove
   template<std::integral IntType, std::convertible_to<IntType> OtherIntType>
-  constexpr bool overflowCheck(IntType n, OtherIntType m) { return n == 0 || static_cast<IntType>(n * m) / n == m; }
+  constexpr bool productOverflowCheck(IntType n, OtherIntType m) { return n == 0 || static_cast<IntType>(n * m) / n == m; }
 }

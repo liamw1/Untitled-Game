@@ -36,7 +36,7 @@ const ProtectedBlockArrayBox<block::Light>& Chunk::lighting() const
 bool Chunk::isFaceOpaque(eng::math::Direction face) const
 {
   u16 nonOpaqueFaces = m_NonOpaqueFaces.load();
-  return !(nonOpaqueFaces & eng::bit(static_cast<i32>(face)));
+  return !(nonOpaqueFaces & eng::bit(eng::toUnderlying(face)));
 }
 
 void Chunk::setComposition(BlockArrayBox<block::Type>&& composition)
@@ -65,7 +65,7 @@ void Chunk::determineOpacity()
       {
         BlockBox face = Bounds().face(direction);
         if (arrayBox.anyOf(face, [](block::Type blockType) { return blockType.hasTransparency(); }))
-          nonOpaqueFaces |= eng::bit(static_cast<i32>(direction));
+          nonOpaqueFaces |= eng::bit(eng::toUnderlying(direction));
       }
       m_NonOpaqueFaces.store(nonOpaqueFaces);
     });
