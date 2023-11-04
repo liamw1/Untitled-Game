@@ -24,9 +24,6 @@ namespace eng
   // Return type must match exactly. If merely convertible to return type is desired, use std::is_invocable_r_v.
   template<typename F, typename ReturnType, typename... Args>
   concept InvocableWithReturnType = std::is_invocable_v<F, Args...> && std::same_as<ReturnType, std::invoke_result_t<F, Args...>>;
-
-  template<typename F, typename... Args>
-  concept Predicate = InvocableWithReturnType<F, bool, Args...>;
   
   template<typename F>
   concept MemberFunction = std::is_member_function_pointer_v<F>;
@@ -43,11 +40,28 @@ namespace eng
   template <typename T, typename ReturnType, typename IndexType>
   concept Indexable = requires(T t) { { t(IndexType()) } -> DecaysTo<ReturnType>; };
 
+  template<typename I, typename T>
+  concept IteratorWithValueType = std::same_as<std::iter_value_t<I>, T>;
+
   template<typename T>
   concept Iterable = requires(T t)
   {
     { std::begin(t) } -> std::forward_iterator;
     { std::end(t)   } -> std::forward_iterator;
+  };
+
+  template<typename T>
+  concept IterableContainer = Iterable<T> && requires(T t)
+  {
+    { std::begin(t) } -> std::indirectly_writable<std::remove_cvref_t<decltype(*std::begin(t))>>;
+    { std::end(t)   } -> std::indirectly_writable<std::remove_cvref_t<decltype(*std::end(t))>>;
+  };
+
+  template<typename T>
+  concept Incrementable = requires(T t)
+  {
+    { ++t } -> std::same_as<T>;
+    { t++ } -> std::same_as<T>;
   };
 
   template<typename F, typename R, typename T>
@@ -57,10 +71,10 @@ namespace eng
   concept BinaryOp = InvocableWithReturnType<F, R, T, T>;
 
   template<typename F, typename T>
-  concept TransformToComparable = std::invocable<F, T> && std::three_way_comparable<std::invoke_result_t<F, T>>;
+  concept BinaryRelation = std::relation<F, T, T>;
 
   template<typename F, typename T>
-  concept BinaryComparison = BinaryOp<F, bool, T>;
+  concept TransformToComparable = std::invocable<F, T> && std::three_way_comparable<std::invoke_result_t<F, T>>;
 
   template<typename T>
   concept Addable = requires(T a, T b)

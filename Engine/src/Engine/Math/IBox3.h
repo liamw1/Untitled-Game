@@ -75,10 +75,7 @@ namespace eng::math
     */
     constexpr bool encloses(const IVec3<T>& iVec3) const
     {
-      for (Axis axis : Axes())
-        if (iVec3[axis] < min[axis] || iVec3[axis] > max[axis])
-          return false;
-      return true;
+      return algo::noneOf(Axes(), [this, &iVec3](Axis axis) { return iVec3[axis] < min[axis] || iVec3[axis] > max[axis]; });
     }
   
     /*

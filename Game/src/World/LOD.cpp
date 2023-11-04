@@ -40,10 +40,10 @@ namespace lod
   {
     delete data;
     data = nullptr;
-    for (i32 i = 0; i < 8; ++i)
+    for (Node*& child : children)
     {
-      delete children[i];
-      children[i] = nullptr;
+      delete child;
+      child = nullptr;
     }
   }
 
@@ -104,10 +104,10 @@ namespace lod
       return;
 
     // Delete child nodes
-    for (i32 i = 0; i < 8; ++i)
+    for (Node*& child : node->children)
     {
-      delete node->children[i];
-      node->children[i] = nullptr;
+      delete child;
+      child = nullptr;
     }
 
     // Node becomes new leaf node
@@ -142,9 +142,9 @@ namespace lod
     if (branch->isLeaf())
       leaves.push_back(branch);
     else if (branch->depth < c_MaxNodeDepth)
-      for (i32 i = 0; i < 8; ++i)
-        if (branch->children[i] != nullptr)
-          getLeavesPriv(branch->children[i], leaves);
+      for (Node* child : branch->children)
+        if (child != nullptr)
+          getLeavesPriv(child, leaves);
   }
 
   Octree::Node* Octree::findLeafPriv(Node* branch, const GlobalIndex& index)
@@ -505,12 +505,12 @@ namespace lod
     };
 
     static constexpr eng::EnumArray<eng::math::Vec3, eng::math::Direction> normals = 
-      {{eng::math::Direction::West,   {-1,  0,  0}},
-       {eng::math::Direction::East,   { 1,  0,  0}},
-       {eng::math::Direction::South,  { 0, -1,  0}},
-       {eng::math::Direction::North,  { 0,  1,  0}},
-       {eng::math::Direction::Bottom, { 0,  0, -1}},
-       {eng::math::Direction::Top,    { 0,  0,  1}} };
+      { { eng::math::Direction::West,   {-1,  0,  0} },
+        { eng::math::Direction::East,   { 1,  0,  0} },
+        { eng::math::Direction::South,  { 0, -1,  0} },
+        { eng::math::Direction::North,  { 0,  1,  0} },
+        { eng::math::Direction::Bottom, { 0,  0, -1} },
+        { eng::math::Direction::Top,    { 0,  0,  1} } };
 
     length_t LODFloor = node->anchor.k * Chunk::Length();
     length_t cellLength = node->length() / c_NumCells;
@@ -777,12 +777,12 @@ namespace lod
   static void determineTransitionFaces(Octree& tree, Octree::Node* node)
   {
     const eng::EnumArray<GlobalIndex, eng::math::Direction> offsets =
-      {{eng::math::Direction::West,   {-1,            0,            0}},
-       {eng::math::Direction::East,   {node->size(),  0,            0}},
-       {eng::math::Direction::South,  { 0,           -1,            0}},
-       {eng::math::Direction::North,  { 0, node->size(),            0}},
-       {eng::math::Direction::Bottom, { 0,            0,           -1}},
-       {eng::math::Direction::Top,    { 0,            0, node->size()}}};
+      { { eng::math::Direction::West,   {-1,            0,            0} },
+        { eng::math::Direction::East,   {node->size(),  0,            0} },
+        { eng::math::Direction::South,  { 0,           -1,            0} },
+        { eng::math::Direction::North,  { 0, node->size(),            0} },
+        { eng::math::Direction::Bottom, { 0,            0,           -1} },
+        { eng::math::Direction::Top,    { 0,            0, node->size()} } };
 
     // Determine which faces transition to a lower resolution LOD
     u8 transitionFaces = 0;
@@ -824,12 +824,12 @@ namespace lod
   void messageNeighbors(Octree& tree, Octree::Node* node)
   {
     const eng::EnumArray<GlobalIndex, eng::math::Direction> offsets =
-      {{eng::math::Direction::West,   {-1,            0,            0}},
-       {eng::math::Direction::East,   {node->size(),  0,            0}},
-       {eng::math::Direction::South,  { 0,           -1,            0}},
-       {eng::math::Direction::North,  { 0, node->size(),            0}},
-       {eng::math::Direction::Bottom, { 0,            0,           -1}},
-       {eng::math::Direction::Top,    { 0,            0, node->size()}}};
+      { { eng::math::Direction::West,   {-1,            0,            0} },
+        { eng::math::Direction::East,   {node->size(),  0,            0} },
+        { eng::math::Direction::South,  { 0,           -1,            0} },
+        { eng::math::Direction::North,  { 0, node->size(),            0} },
+        { eng::math::Direction::Bottom, { 0,            0,           -1} },
+        { eng::math::Direction::Top,    { 0,            0, node->size()} } };
 
     // Tell LOD neighbors to update
     for (eng::math::Direction direction : eng::math::Directions())

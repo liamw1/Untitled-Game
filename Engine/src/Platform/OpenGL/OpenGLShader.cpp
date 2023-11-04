@@ -144,7 +144,7 @@ namespace eng
 
     shaderData.clear();
     m_OpenGLSourceCode.clear();
-    for (auto&& [stage, spirv] : m_VulkanSPIRV)
+    for (const auto& [stage, spirv] : m_VulkanSPIRV)
     {
       spirv_cross::CompilerGLSL glslCompiler(spirv);
       m_OpenGLSourceCode[stage] = glslCompiler.compile();
@@ -165,7 +165,7 @@ namespace eng
     GLuint program = glCreateProgram();
 
     std::vector<GLuint> shaderIDs;
-    for (auto&& [stage, spirv] : m_OpenGLSPIRV)
+    for (const auto& [stage, spirv] : m_OpenGLSPIRV)
     {
       GLuint shaderID = shaderIDs.emplace_back(glCreateShader(stage));
       glShaderBinary(1, &shaderID, GL_SHADER_BINARY_FORMAT_SPIR_V, spirv.data(), sizeof(u32) * arithmeticCast<GLsizei>(spirv.size()));

@@ -100,22 +100,22 @@ namespace eng
       }
       else if (dataTypeID >= toUnderlying(ShaderDataType::MatTypeBegin) && dataTypeID <= toUnderlying(ShaderDataType::MatTypeEnd))
       {
-        i32 count = element.getComponentCount();
-        for (i32 i = 0; i < count; ++i)
+        i32 componentCount = element.getComponentCount();
+        for (i32 i = 0; i < componentCount; ++i)
         {
           glEnableVertexAttribArray(vertexBufferIndex);
           glVertexAttribPointer(vertexBufferIndex,
-            count,
-            convertToOpenGLBaseType(element.type),
-            element.normalized ? GL_TRUE : GL_FALSE,
-            layout.stride(),
-            std::bit_cast<const void*>(arithmeticUpcast<uSize>(element.offset + sizeof(f32) * count * i)));
+                                componentCount,
+                                convertToOpenGLBaseType(element.type),
+                                element.normalized ? GL_TRUE : GL_FALSE,
+                                layout.stride(),
+                                std::bit_cast<const void*>(arithmeticUpcast<uSize>(element.offset + sizeof(f32) * componentCount * i)));
           glVertexAttribDivisor(vertexBufferIndex, 1);
           vertexBufferIndex++;
         }
       }
       else
-        ENG_CORE_ASSERT(false, ("Unknown shader data type!"));
+        throw std::invalid_argument("Invalid shader data type!");
     }
 
 #if ENG_DEBUG

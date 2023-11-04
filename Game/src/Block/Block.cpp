@@ -5,7 +5,7 @@ namespace block
 {
   static eng::EnumArray<bool, ID> computeTransparencies()
   {
-    eng::EnumArray<bool, ID> transparencies;
+    eng::EnumArray<bool, ID> transparencies{};
     for (ID blockID : IDs())
     {
       switch (blockID)
@@ -25,7 +25,7 @@ namespace block
 
   static eng::EnumArray<bool, ID> computeCollisionalities()
   {
-    eng::EnumArray<bool, ID> collisionalities;
+    eng::EnumArray<bool, ID> collisionalities{};
     for (ID blockID : IDs())
     {
       switch (blockID)
@@ -44,9 +44,9 @@ namespace block
                                                                              TextureID southTexture,  TextureID northTexture,
                                                                              TextureID bottomTexture, TextureID topTexture)
   {
-    return {{eng::math::Direction::West,   westTexture  }, {eng::math::Direction::East,  eastTexture },
-            {eng::math::Direction::South,  southTexture }, {eng::math::Direction::North, northTexture},
-            {eng::math::Direction::Bottom, bottomTexture}, {eng::math::Direction::Top,   topTexture  }};
+    return { { eng::math::Direction::West,   westTexture   }, { eng::math::Direction::East,  eastTexture  },
+             { eng::math::Direction::South,  southTexture  }, { eng::math::Direction::North, northTexture },
+             { eng::math::Direction::Bottom, bottomTexture }, { eng::math::Direction::Top,   topTexture   } };
   }
 
   static eng::EnumArray<TextureID, eng::math::Direction> createBlockTextures(TextureID topTexture, TextureID sideTextures, TextureID bottomTexture)

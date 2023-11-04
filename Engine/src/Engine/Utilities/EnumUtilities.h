@@ -17,10 +17,15 @@ namespace eng
   }
 
   // ==================== Enabling Iteration for Enum Classes ==================== //
-  // Code borrowed from: https://stackoverflow.com/questions/261963/how-can-i-iterate-over-an-enum
   template<IterableEnum E>
   class EnumIterator
   {
+  public:
+    // These aliases are needed to satisfy requirements of std::forward_iterator
+    using value_type = E;
+    using difference_type = std::underlying_type_t<E>;
+
+  private:
     std::underlying_type_t<E> m_Value;
 
   public:
@@ -34,8 +39,16 @@ namespace eng
       ++m_Value;
       return *this;
     }
+    constexpr EnumIterator operator++(int)
+    {
+      EnumIterator tmp = *this;
+      ++(*this);
+      return tmp;
+    }
+
     constexpr E operator*() const { return enumCastUnchecked<E>(m_Value); }
-    constexpr bool operator!=(const EnumIterator& other) const { return m_Value != other.m_Value; }
+
+    constexpr std::strong_ordering operator<=>(const EnumIterator& other) const = default;
 
     constexpr EnumIterator begin() const { return EnumIterator(E::First); }
     constexpr EnumIterator next() const { return ++clone(*this); }
@@ -57,12 +70,12 @@ namespace eng
         operator[](index) = value;
     }
 
+    ENG_DEFINE_CONSTEXPR_ITERATORS(m_Data);
+
     constexpr T& operator[](E index) { ENG_MUTABLE_VERSION(operator[], index); }
     constexpr const T& operator[](E index) const { return m_Data[toUnderlying(index) - toUnderlying(E::First)]; }
 
     constexpr uSize size() { return m_Data.size(); }
-
-    ENG_DEFINE_CONSTEXPR_ITERATORS(m_Data);
   };
 }
 

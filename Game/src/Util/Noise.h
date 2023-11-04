@@ -1,5 +1,7 @@
 #pragma once
+#include "Engine/Core/Algorithm.h"
 #include "Engine/Math/Vec.h"
+#include "Engine/Utilities/EnumUtilities.h"
 
 namespace noise
 {
@@ -9,22 +11,18 @@ namespace noise
     std::array<length_t, N> m_Octaves;
 
   public:
-    OctaveNoiseData() = default;
-    OctaveNoiseData(const std::array<length_t, N>& noiseData)
+    constexpr OctaveNoiseData() = default;
+    constexpr OctaveNoiseData(const std::array<length_t, N>& noiseData)
       : m_Octaves(noiseData) {}
 
-    length_t operator[](i32 octave) const { return m_Octaves[octave]; }
-    length_t& operator[](i32 octave) { return m_Octaves[octave]; }
+    ENG_DEFINE_CONSTEXPR_ITERATORS(m_Octaves);
 
-    length_t sum() const
-    {
-      length_t result = 0.0;
-      for (length_t x : m_Octaves)
-        result += x;
-      return result;
-    }
+    constexpr length_t operator[](i32 octave) const { return m_Octaves[octave]; }
+    constexpr length_t& operator[](i32 octave) { return m_Octaves[octave]; }
 
-    static i32 Levels() { return N; }
+    constexpr length_t sum() const { return eng::algo::sum(m_Octaves, [](length_t x) { return x; }, 0_m); }
+
+    static constexpr i32 Levels() { return N; }
   };
 
   /*

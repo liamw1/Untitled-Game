@@ -95,9 +95,9 @@ namespace eng::math
   
     static constexpr const IVec3& Dir(Direction direction)
     {
-      static constexpr EnumArray<IVec3, Direction> directions = {{Direction::West,   IVec3(-1, 0, 0)}, {Direction::East,  IVec3(1, 0, 0)},
-                                                                 {Direction::South,  IVec3(0, -1, 0)}, {Direction::North, IVec3(0, 1, 0)},
-                                                                 {Direction::Bottom, IVec3(0, 0, -1)}, {Direction::Top,   IVec3(0, 0, 1)}};
+      static constexpr EnumArray<IVec3, Direction> directions = { { Direction::West,   IVec3(-1, 0, 0) }, { Direction::East,  IVec3(1, 0, 0) },
+                                                                  { Direction::South,  IVec3(0, -1, 0) }, { Direction::North, IVec3(0, 1, 0) },
+                                                                  { Direction::Bottom, IVec3(0, 0, -1) }, { Direction::Top,   IVec3(0, 0, 1) } };
       return directions[direction];
     }
   

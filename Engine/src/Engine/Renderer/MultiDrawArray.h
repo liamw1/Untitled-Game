@@ -180,7 +180,7 @@ namespace eng
       m_DrawCommands.pop_back();
     }
 
-    template<Predicate<Identifier> P>
+    template<std::predicate<Identifier> P>
     i32 partition(P&& predicate)
     {
       DrawCommandIterator partitionEnd = partitionContainer(m_DrawCommands, [&predicate](const DrawCommandType& draw) { return predicate(draw.id()); });
@@ -195,7 +195,7 @@ namespace eng
       setDrawCommandIndices(0, drawCount);
     }
 
-    template<BinaryComparison F>
+    template<BinaryRelation<Identifier> F>
     void sort(i32 drawCount, F&& comparison)
     {
       std::sort(m_DrawCommands.begin(), m_DrawCommands.begin() + drawCount,
@@ -316,7 +316,7 @@ namespace eng
       m_DrawCommands.pop_back();
     }
 
-    template<Predicate<Identifier> P>
+    template<std::predicate<Identifier> P>
     i32 partition(P&& predicate)
     {
       DrawCommandIterator partitionEnd = algo::partition(m_DrawCommands, [&predicate](const DrawCommandType& draw) { return predicate(draw.id()); });
@@ -331,7 +331,7 @@ namespace eng
       setDrawCommandIndices(0, drawCount);
     }
 
-    template<BinaryComparison<Identifier> F>
+    template<BinaryRelation<Identifier> F>
     void sort(i32 drawCount, F&& comparison)
     {
       std::sort(m_DrawCommands.begin(), m_DrawCommands.begin() + drawCount,

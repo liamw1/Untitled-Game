@@ -30,14 +30,6 @@ namespace eng::thread
       m_Data.insert(std::forward<T>(value));
     }
 
-    void insertAll(const std::vector<V>& values)
-    {
-      std::lock_guard lock(m_Mutex);
-
-      for (const V& value : values)
-        m_Data.insert(value);
-    }
-
     template<typename... Args>
     bool emplace(Args&&... args)
     {
@@ -52,14 +44,6 @@ namespace eng::thread
       std::lock_guard lock(m_Mutex);
       uSize elementsErased = m_Data.erase(value);
       return elementsErased > 0;
-    }
-
-    void eraseAll(const std::vector<V>& values)
-    {
-      std::lock_guard lock(m_Mutex);
-
-      for (const V& value : values)
-        m_Data.erase(value);
     }
 
     std::optional<V> tryRemoveAny()

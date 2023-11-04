@@ -53,22 +53,22 @@ void Chunk::setLighting(BlockArrayBox<block::Light>&& lighting)
 void Chunk::determineOpacity()
 {
   m_Composition.readOperation([this](const BlockArrayBox<block::Type>& arrayBox)
+  {
+    if (!arrayBox)
     {
-      if (!arrayBox)
-      {
-        m_NonOpaqueFaces.store(0x3F);
-        return;
-      }
+      m_NonOpaqueFaces.store(0x3F);
+      return;
+    }
 
-      u16 nonOpaqueFaces = 0;
-      for (eng::math::Direction direction : eng::math::Directions())
-      {
-        BlockBox face = Bounds().face(direction);
-        if (arrayBox.anyOf(face, [](block::Type blockType) { return blockType.hasTransparency(); }))
-          nonOpaqueFaces |= eng::bit(eng::toUnderlying(direction));
-      }
-      m_NonOpaqueFaces.store(nonOpaqueFaces);
-    });
+    u16 nonOpaqueFaces = 0;
+    for (eng::math::Direction direction : eng::math::Directions())
+    {
+      BlockBox face = Bounds().face(direction);
+      if (arrayBox.anyOf(face, [](block::Type blockType) { return blockType.hasTransparency(); }))
+        nonOpaqueFaces |= eng::bit(eng::toUnderlying(direction));
+    }
+    m_NonOpaqueFaces.store(nonOpaqueFaces);
+  });
 }
 
 void Chunk::update()

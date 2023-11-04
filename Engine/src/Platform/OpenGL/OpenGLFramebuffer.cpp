@@ -161,12 +161,8 @@ namespace eng
         bindTexture(multiSample, m_ColorAttachments[i]);
         switch (m_ColorAttachmentSpecifications[i].textureFormat)
         {
-          case FramebufferTextureFormat::RED_INTEGER:
-            attachColorTexture(m_ColorAttachments[i], m_Specification, GL_R32I, GL_RED_INTEGER, i);
-            break;
-          case FramebufferTextureFormat::RGBA8: 
-            attachColorTexture(m_ColorAttachments[i], m_Specification, GL_RGBA8, GL_RGBA, i);
-            break;
+          case FramebufferTextureFormat::RED_INTEGER: attachColorTexture(m_ColorAttachments[i], m_Specification, GL_R32I, GL_RED_INTEGER, i); break;
+          case FramebufferTextureFormat::RGBA8:       attachColorTexture(m_ColorAttachments[i], m_Specification, GL_RGBA8, GL_RGBA, i);       break;
         }
       }
     }

@@ -14,17 +14,9 @@ private:
   std::array<Component, ComponentCount> m_Components{};
 
 public:
-  constexpr CompoundType()
-  {
-    for (Component& component : m_Components)
-      component = { ComponentType(), 0.0f};
-  }
+  constexpr CompoundType() { eng::algo::fill(m_Components, Component()); }
   constexpr CompoundType(ComponentType initialValue)
-  {
-    m_Components.front() = { initialValue, 1.0f };
-    for (i32 i = 1; i < ComponentCount; ++i)
-      m_Components[i] = { ComponentType(), 0.0f};
-  }
+    : CompoundType() { m_Components.front() = { initialValue, 1.0f }; }
 
   template<i32 N>
   CompoundType(const std::array<Component, N>& components)

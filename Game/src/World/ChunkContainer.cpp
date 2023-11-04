@@ -46,31 +46,29 @@ bool ChunkContainer::erase(const GlobalIndex& chunkIndex)
 bool ChunkContainer::hasBoundaryNeighbors(const GlobalIndex& chunkIndex)
 {
   return !Chunk::Stencil(chunkIndex).noneOf([this](const GlobalIndex& stencilIndex)
-    {
-      return m_BoundaryIndices.contains(stencilIndex);
-    });
+  {
+    return m_BoundaryIndices.contains(stencilIndex);
+  });
 }
 
 
 
 bool ChunkContainer::isOnBoundary(const GlobalIndex& chunkIndex) const
 {
-  for (eng::math::Direction direction : eng::math::Directions())
+  return eng::algo::anyOf(eng::math::Directions(), [this, &chunkIndex](eng::math::Direction direction)
   {
     std::shared_ptr<Chunk> cardinalNeighbor = m_Chunks.get(chunkIndex + GlobalIndex::Dir(direction));
-    if (cardinalNeighbor && !cardinalNeighbor->isFaceOpaque(!direction))
-      return true;
-  }
-  return false;
+    return cardinalNeighbor && !cardinalNeighbor->isFaceOpaque(!direction);
+  });
 }
 
 void ChunkContainer::boundaryUpdate(const GlobalIndex& chunkIndex)
 {
   Chunk::Stencil(chunkIndex).forEach([this](const GlobalIndex& neighborIndex)
-    {
-      if (m_Chunks.contains(neighborIndex) || !isOnBoundary(neighborIndex))
-        m_BoundaryIndices.erase(neighborIndex);
-      else
-        m_BoundaryIndices.insert(neighborIndex);
-    });
+  {
+    if (m_Chunks.contains(neighborIndex) || !isOnBoundary(neighborIndex))
+      m_BoundaryIndices.erase(neighborIndex);
+    else
+      m_BoundaryIndices.insert(neighborIndex);
+  });
 }

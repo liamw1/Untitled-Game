@@ -17,12 +17,12 @@ ChunkVertex::ChunkVertex(const BlockIndex& vertexPlacement, i32 quadIndex, block
 const BlockIndex& ChunkVertex::GetOffset(eng::math::Direction face, i32 quadIndex)
 {
   static constexpr eng::EnumArray<std::array<BlockIndex, 4>, eng::math::Direction> offsets =
-    {{eng::math::Direction::West,   {{{0, 1, 0}, {0, 0, 0}, {0, 1, 1}, {0, 0, 1}}}},
-     {eng::math::Direction::East,   {{{1, 0, 0}, {1, 1, 0}, {1, 0, 1}, {1, 1, 1}}}},
-     {eng::math::Direction::South,  {{{0, 0, 0}, {1, 0, 0}, {0, 0, 1}, {1, 0, 1}}}},
-     {eng::math::Direction::North,  {{{1, 1, 0}, {0, 1, 0}, {1, 1, 1}, {0, 1, 1}}}},
-     {eng::math::Direction::Bottom, {{{0, 1, 0}, {1, 1, 0}, {0, 0, 0}, {1, 0, 0}}}},
-     {eng::math::Direction::Top,    {{{0, 0, 1}, {1, 0, 1}, {0, 1, 1}, {1, 1, 1}}}} };
+  { { eng::math::Direction::West,   { { {0, 1, 0}, {0, 0, 0}, {0, 1, 1}, {0, 0, 1} } } },
+    { eng::math::Direction::East,   { { {1, 0, 0}, {1, 1, 0}, {1, 0, 1}, {1, 1, 1} } } },
+    { eng::math::Direction::South,  { { {0, 0, 0}, {1, 0, 0}, {0, 0, 1}, {1, 0, 1} } } },
+    { eng::math::Direction::North,  { { {1, 1, 0}, {0, 1, 0}, {1, 1, 1}, {0, 1, 1} } } },
+    { eng::math::Direction::Bottom, { { {0, 1, 0}, {1, 1, 0}, {0, 0, 0}, {1, 0, 0} } } },
+    { eng::math::Direction::Top,    { { {0, 0, 1}, {1, 0, 1}, {0, 1, 1}, {1, 1, 1} } } } };
 
   return offsets[face][quadIndex];
 }
@@ -154,7 +154,7 @@ bool ChunkDrawCommand::sort(const GlobalIndex& originIndex, const eng::math::Vec
     keyType key = c_MaxL1Distance - (voxel.index() - originBlock).l1Norm();
     counts[key]++;
   }
-  std::partial_sum(counts.begin(), counts.end(), counts.begin());
+  eng::algo::partialSum(counts, counts.begin());
 
   std::array<i16, c_MaxL1Distance + 1> placements = counts;
   for (uSize i = 0; i < m_Voxels.size();)

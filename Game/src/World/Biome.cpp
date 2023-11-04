@@ -23,11 +23,11 @@ const Biome* Biome::Get(Type biome)
 
 length_t Biome::CalculateOctaveNoise(const NoiseSamples& noiseSamples, length_t largestAmplitude, f32 persistence)
 {
-  length_t sum = 0_m;
+  length_t sum = 0;
   length_t amplitude = largestAmplitude;
-  for (i32 i = 0; i < NoiseSamples::Levels(); ++i)
+  for (length_t noiseValue : noiseSamples)
   {
-    sum += noiseSamples[i] * amplitude;
+    sum += noiseValue * amplitude;
     amplitude *= persistence;
   }
   return sum;

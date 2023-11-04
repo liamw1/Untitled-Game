@@ -36,11 +36,7 @@ namespace util
   
   bool isInFrustum(const eng::math::Vec3& point, const std::array<eng::math::Vec4, 6>& frustumPlanes)
   {
-    for (i32 planeID = 0; planeID < 5; ++planeID) // Skip far plane
-      if (glm::dot(eng::math::Vec4(point, 1.0), frustumPlanes[planeID]) < 0)
-        return false;
-  
-    return true;
+    return eng::algo::noneOf(frustumPlanes, [&point](const eng::math::Vec4& plane) { return glm::dot(eng::math::Vec4(point, 1), plane) < 0; });
   }
   
   std::unordered_map<GlobalIndex, BlockBox> partitionBlockBox(const BlockBox& box, const GlobalIndex& origin)
@@ -49,11 +45,11 @@ namespace util
   
     LocalBox localBox = blockBoxToLocalBox(box);
     localBox.forEach([&box, &origin, &boxDecomposition](const LocalIndex& localIndex)
-      {
-        GlobalIndex chunkIndex = origin + localIndex.upcast<globalIndex_t>();
-        BlockBox localIntersection = BlockBox::Intersection(Chunk::Bounds(), box - Chunk::Size() * localIndex.checkedCast<blockIndex_t>());
-        boxDecomposition[chunkIndex] = localIntersection;
-      });
+    {
+      GlobalIndex chunkIndex = origin + localIndex.upcast<globalIndex_t>();
+      BlockBox localIntersection = BlockBox::Intersection(Chunk::Bounds(), box - Chunk::Size() * localIndex.checkedCast<blockIndex_t>());
+      boxDecomposition[chunkIndex] = localIntersection;
+    });
   
     return boxDecomposition;
   }
