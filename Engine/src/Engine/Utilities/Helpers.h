@@ -6,7 +6,7 @@
 namespace eng
 {
   template<typename T1, typename T2>
-  using largest = std::conditional_t<sizeof(T1) < sizeof(T2), T2, T1>;
+  using largestType = std::conditional_t<sizeof(T1) < sizeof(T2), T2, T1>;
 
   template<typename>
   [[maybe_unused]] constexpr bool AlwaysFalse = false;

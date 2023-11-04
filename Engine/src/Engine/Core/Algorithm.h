@@ -10,7 +10,7 @@ namespace eng::algo
     using containedType = std::iter_value_t<decltype(std::begin(std::declval<C>()))>;
   }
 
-  template<Iterable C, typename R, InvocableWithReturnType<R, detail::containedType<C>> F, BinaryOp<R, detail::containedType<C>> Op>
+  template<Iterable C, typename R, UnaryOp<R, detail::containedType<C>> F, BinaryOp<R, R> Op>
   constexpr R accumulate(const C& container, F&& transform, Op&& operation, R initialValue)
   {
     using ValueType = detail::containedType<C>;
@@ -20,8 +20,7 @@ namespace eng::algo
   template<Iterable C, typename R, TransformToAddable<R, detail::containedType<C>> F>
   constexpr R sum(const C& container, F&& transform, R initialValue)
   {
-    using ValueType = detail::containedType<C>;
-    return std::accumulate(std::begin(container), std::end(container), initialValue, [&transform](const R& a, const ValueType& b) { return a + transform(b); });
+    return accumulate(container, std::forward<F>(transform), std::plus<R>(), initialValue);
   }
 
   template<Iterable C, std::predicate<detail::containedType<C>> P>
