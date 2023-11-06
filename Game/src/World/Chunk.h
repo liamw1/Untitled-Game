@@ -27,7 +27,7 @@ public:
   const ProtectedBlockArrayBox<block::Light>& lighting() const;
 
   /*
-    \return Whether or not a given chunk face has transparent blocks. Useful for deciding which chunks should be loaded
+    \returns Whether or not a given chunk face has transparent blocks. Useful for deciding which chunks should be loaded
     into memory.
 
     WARNING: This function only reflects the opacity state of the chunk when determineOpacity() was last called. If any

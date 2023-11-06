@@ -64,11 +64,11 @@ namespace eng
     { t++ } -> std::same_as<T>;
   };
 
-  template<typename F, typename R, typename T>
-  concept UnaryOp = InvocableWithReturnType<F, R, T>;
+  template<typename F, typename T>
+  concept UnaryOperationOn = InvocableWithReturnType<F, T, T>;
 
-  template<typename F, typename R, typename T>
-  concept BinaryOp = InvocableWithReturnType<F, R, T, T>;
+  template<typename F, typename T>
+  concept BinaryOperationOn = InvocableWithReturnType<F, T, T, T>;
 
   template<typename F, typename T>
   concept BinaryRelation = std::relation<F, T, T>;
@@ -82,6 +82,6 @@ namespace eng
     { a + b } -> std::same_as<T>;
   };
 
-  template<typename F, typename ReturnType, typename T>
-  concept TransformToAddable = UnaryOp<F, ReturnType, T> && Addable<ReturnType>;
+  template<typename F, typename T>
+  concept TransformToAddable = std::invocable<F, T> && Addable<std::invoke_result_t<F, T>>;
 }

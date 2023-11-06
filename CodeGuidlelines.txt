@@ -3,10 +3,12 @@ Naming Conventions:
   Classes should be PascalCase.
   Enums should be PascalCase.
   Static member functions should be PascalCase.
+  Template typenames should be PascalCase.
   Namespaces should be camelCase.
   Non-static member functions should be camelCase.
   Public member variables should be camelCase.
   Free-floating functions should be camelCase.
+  Local variables should be camelCase.
   Macros should be written in UPPER_CASE.
   
   Compile-time constant member variables should be preceeded with "c_", i.e c_ConstexprVariable.
@@ -50,12 +52,14 @@ Software Design:
 Language Features:
   Avoid implicit conversions. User-defined conversions should be marked explicit. Implicit onversions to bool are ok.
   Avoid using goto. One notable exception is to use goto to break out of nested loops.
-  Avoid throwing in destructors.
   Avoid using anonymous namespaces. Mark static variables/functions with 'static' instead.
+  Avoid throwing in destructors.
 
 Custom Constructs:
   Prefer to use our custom fixed-width types, i8, i16, i32, etc., in place of char, short, int, etc.
-  If a class needs to be non-copyable or non-movable, use constraints found in Engine/Utilities/Constraints
+  If a class needs to be non-copyable or non-movable, have it privately inherit eng::NonCopyable or eng::NonMovable.
+  If a class wraps an STL container and needs public iterators defined, use ENG_DEFINE_ITERATORS or ENG_DEFINE_CONSTEXPR_ITERATORS.
+  If a function needs both mutable and non-mutable overloads, use ENG_MUTABLE_VERSION to define the mutable overload.
 
 
 ========================== Weak Preferences ==========================
@@ -64,4 +68,4 @@ Language Features:
 
 Custom Constructs:
   Where possible, use more specific casts found in Engine/Core/Casting.h instead of static_cast.
-  Where possible, use container-based algorithms found in Engine/Core/Algorithm.h instead of C++ algorithm library.
+  Where possible, use container-based algorithms found in Engine/Core/Algorithm.h instead of STL algorithms.

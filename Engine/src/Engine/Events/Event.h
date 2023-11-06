@@ -16,8 +16,8 @@ namespace eng::event
   class Event : private NonCopyable, NonMovable
   {
     using EventVariant = std::variant<AppRender, AppTick, AppUpdate, WindowClose, WindowResize,
-      KeyPress, KeyRelease, KeyType,
-      MouseButtonPress, MouseButtonRelease, MouseMove, MouseScroll>;
+                                      MouseButtonPress, MouseButtonRelease, MouseMove, MouseScroll,
+                                      KeyPress, KeyRelease, KeyType>;
 
     EventVariant m_Event;
     bool m_Handled;

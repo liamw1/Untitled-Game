@@ -46,7 +46,7 @@ static_assert(true)
     
       VectorWrapper() = default;
     
-      bool remove(iterator removalPosition);
+      void push_back(const T& newElement);
     }
 */
 #define ENG_DEFINE_ITERATORS(container)           __DEFINE_ITERATORS(container,)

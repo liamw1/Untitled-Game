@@ -18,7 +18,7 @@ namespace eng::thread
   uSize ThreadPool::queuedTasks() const
   {
     std::lock_guard lock(m_Mutex);
-    return algo::sum(m_Work, [](const std::queue<MoveOnlyFunction>& workQueue) { return workQueue.size(); }, uSize());
+    return algo::reduce(m_Work, [](const std::queue<MoveOnlyFunction>& workQueue) { return workQueue.size(); });
   }
 
   bool ThreadPool::running() const

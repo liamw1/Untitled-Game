@@ -20,7 +20,7 @@ namespace noise
     constexpr length_t operator[](i32 octave) const { return m_Octaves[octave]; }
     constexpr length_t& operator[](i32 octave) { return m_Octaves[octave]; }
 
-    constexpr length_t sum() const { return eng::algo::sum(m_Octaves, [](length_t x) { return x; }, 0_m); }
+    constexpr length_t sum() const { return eng::algo::accumulate(m_Octaves, [](length_t x) { return x; }); }
 
     static constexpr i32 Levels() { return N; }
   };

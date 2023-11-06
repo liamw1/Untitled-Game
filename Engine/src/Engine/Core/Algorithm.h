@@ -2,25 +2,118 @@
 #include "Concepts.h"
 #include "Policy.h"
 
+/*
+  Container-based versions of std algorithms.
+*/
 namespace eng::algo
 {
   namespace detail
   {
     template<Iterable C>
     using containedType = std::iter_value_t<decltype(std::begin(std::declval<C>()))>;
+
+    template<Iterable C, std::invocable<detail::containedType<C>> F>
+    using transformResult = std::invoke_result_t<F, detail::containedType<C>>;
   }
 
-  template<Iterable C, typename R, UnaryOp<R, detail::containedType<C>> F, BinaryOp<R, R> Op>
-  constexpr R accumulate(const C& container, F&& transform, Op&& operation, R initialValue)
+  /*
+    \returns The accumulated transformed elements of the given container with an initial value, i.e. the result of
+    initialValue operation transform(a_1) operation transform(a_2) operation ... operation transform(a_n).
+  */
+  template<Iterable C, std::invocable<detail::containedType<C>> F, BinaryOperationOn<detail::transformResult<C, F>> Op>
+  constexpr detail::transformResult<C, F> accumulate(const C& container, F&& transform, Op&& operation, detail::transformResult<C, F> initialValue)
   {
-    using ValueType = detail::containedType<C>;
-    return std::accumulate(std::begin(container), std::end(container), initialValue, [&transform, &operation](const R& a, const ValueType& b) { return operation(a, transform(b)); });
+    return std::accumulate(std::begin(container), std::end(container), initialValue, [&transform, &operation](const detail::transformResult<C, F>& a, const detail::containedType<C>& b)
+    {
+      return operation(a, transform(b));
+    });
   }
 
-  template<Iterable C, typename R, TransformToAddable<R, detail::containedType<C>> F>
-  constexpr R sum(const C& container, F&& transform, R initialValue)
+  /*
+    \returns The accumulated transformed elements of the given container, i.e. the result of
+    transform(a_1) operation transform(a_2) operation ... operation transform(a_n).
+  */
+  template<Iterable C, std::invocable<detail::containedType<C>> F, BinaryOperationOn<detail::transformResult<C, F>> Op>
+  constexpr detail::transformResult<C, F> accumulate(const C& container, F&& transform, Op&& operation)
   {
+    using R = detail::transformResult<C, F>;
+    return accumulate(container, std::forward<F>(transform), std::forward<Op>(operation), R());
+  }
+
+  /*
+    \returns The sum of transformed elements of the given container with an initial value, i.e. the result of
+    initialValue + transform(a_1) + transform(a_2) + ... + transform(a_n).
+  */
+  template<Iterable C, TransformToAddable<detail::containedType<C>> F>
+  constexpr detail::transformResult<C, F> accumulate(const C& container, F&& transform, detail::transformResult<C, F> initialValue)
+  {
+    using R = detail::transformResult<C, F>;
     return accumulate(container, std::forward<F>(transform), std::plus<R>(), initialValue);
+  }
+
+  /*
+    \returns The sum of transformed elements of the given container, i.e. the result of
+    transform(a_1) + transform(a_2) + ... + transform(a_n).
+  */
+  template<Iterable C, TransformToAddable<detail::containedType<C>> F>
+  constexpr detail::transformResult<C, F> accumulate(const C& container, F&& transform)
+  {
+    using R = detail::transformResult<C, F>;
+    return accumulate(container, std::forward<F>(transform), std::plus<R>(), R());
+  }
+
+  /*
+    \returns A generalized accumulation of transformed elements of the given container with an initial vaue.
+
+    WARNING: Behavior is non-deterministic if given operation is not associative or not commutative,
+             which includes subtraction, division, and most floating-point arithmetic operations.
+  */
+  template<Iterable C, std::invocable<detail::containedType<C>> F, BinaryOperationOn<detail::transformResult<C, F>> Op>
+  constexpr detail::transformResult<C, F> reduce(const C& container, F&& transform, Op&& operation, detail::transformResult<C, F> initialValue)
+  {
+    return std::reduce(std::begin(container), std::end(container), initialValue, [&transform, &operation](const detail::transformResult<C, F>& a, const detail::containedType<C>& b)
+    {
+      return operation(a, transform(b));
+    });
+  }
+
+  /*
+    \returns A generalized accumulation of transformed elements of the given container.
+
+    WARNING: Behavior is non-deterministic if given operation is not associative or not commutative,
+             which includes subtraction, division, and most floating-point arithmetic operations.
+  */
+  template<Iterable C, std::invocable<detail::containedType<C>> F, BinaryOperationOn<detail::transformResult<C, F>> Op>
+  constexpr detail::transformResult<C, F> reduce(const C& container, F&& transform, Op&& operation)
+  {
+    using R = detail::transformResult<C, F>;
+    return reduce(container, std::forward<F>(transform), std::forward<Op>(operation), R());
+  }
+
+  /*
+    \returns A generalized sum of transformed elements of the given container with an initial value.
+
+    WARNING: Behavior is non-deterministic if addition on the transformed type is not associative or not commutative,
+             which includes floating-point addition.
+  */
+  template<Iterable C, TransformToAddable<detail::containedType<C>> F>
+  constexpr detail::transformResult<C, F> reduce(const C& container, F&& transform, detail::transformResult<C, F> initialValue)
+  {
+    using R = detail::transformResult<C, F>;
+    return reduce(container, std::forward<F>(transform), std::plus<R>(), initialValue);
+  }
+
+  /*
+    \returns A generalized sum of transformed elements of the given container.
+
+    WARNING: Behavior is non-deterministic if addition on the transformed type is not associative or not commutative,
+             which includes floating-point addition.
+  */
+  template<Iterable C, TransformToAddable<detail::containedType<C>> F>
+  constexpr detail::transformResult<C, F> reduce(const C& container, F&& transform)
+  {
+    using R = detail::transformResult<C, F>;
+    return reduce(container, std::forward<F>(transform), std::plus<R>(), R());
   }
 
   template<Iterable C, std::predicate<detail::containedType<C>> P>

@@ -2,6 +2,14 @@
 #include "Engine/Utilities/BitUtilities.h"
 #include "Engine/Utilities/EnumUtilities.h"
 
+/*
+  A enum that denotes the category of an engine event.
+  Multiple categories can be specified by bit-masking.
+
+  Example:
+    EventCategory keyboardInput = EventCategory::Input | EventCategory::Keyboard;
+    bool isKeyboardEvent = keyboardInput & EventCategory::Keyboard;
+*/
 namespace eng::event
 {
   enum class EventCategory

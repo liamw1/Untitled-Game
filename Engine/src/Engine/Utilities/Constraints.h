@@ -12,8 +12,8 @@ namespace eng
     NonCopyable() = default;
     ~NonCopyable() = default;
 
-    NonCopyable(NonCopyable&& other) = default;
-    NonCopyable& operator=(NonCopyable&& other) = default;
+    NonCopyable(NonCopyable&& other) noexcept = default;
+    NonCopyable& operator=(NonCopyable&& other) noexcept = default;
 
     NonCopyable(const NonCopyable& other) = delete;
     NonCopyable& operator=(const NonCopyable& other) = delete;
