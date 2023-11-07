@@ -54,7 +54,7 @@ namespace eng::thread
       setIfNecessary(index, value);
     }
 
-    template<InvocableWithReturnType<bool, T> F>
+    template<std::predicate<T> F>
     bool setIf(const math::IVec3<IntType>& index, const T& value, const F& condition)
     {
       std::lock_guard lock(m_Mutex);

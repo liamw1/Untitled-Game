@@ -56,7 +56,7 @@ namespace eng::thread
       return copy;
     }
 
-    template<InvocableWithReturnType<bool, const K&> F>
+    template<std::predicate<const K&> F>
     std::vector<K> getKeys(const F& condition) const
     {
       std::vector<K> keysMatchingCondition;

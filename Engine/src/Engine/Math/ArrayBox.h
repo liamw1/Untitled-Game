@@ -155,7 +155,7 @@ namespace eng::math
       });
     }
 
-    template<InvocableWithReturnType<bool, T> F>
+    template<std::predicate<T> F>
     bool allOf(const IBox3<IntType>& section, F&& condition) const
     {
       ENG_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
@@ -165,7 +165,7 @@ namespace eng::math
       });
     }
 
-    template<InvocableWithReturnType<bool, T> F>
+    template<std::predicate<T> F>
     bool anyOf(const IBox3<IntType>& section, F&& condition) const
     {
       ENG_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
@@ -175,7 +175,7 @@ namespace eng::math
       });
     }
 
-    template<InvocableWithReturnType<bool, T> F>
+    template<std::predicate<T> F>
     bool noneOf(const IBox3<IntType>& section, F&& condition) const
     {
       ENG_CORE_ASSERT(m_Data, "Data has not yet been allocated!");

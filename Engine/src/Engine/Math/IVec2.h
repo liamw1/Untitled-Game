@@ -3,6 +3,7 @@
 #include "Basics.h"
 #include "Vec.h"
 #include "Engine/Debug/Assert.h"
+#include "Engine/Utilities/EnumUtilities.h"
 
 namespace eng::math
 {

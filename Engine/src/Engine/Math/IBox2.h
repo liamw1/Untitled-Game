@@ -6,6 +6,8 @@ namespace eng::math
 {
   /*
     Represents a box on a 2D integer lattice. Min and max bounds are both inclusive.
+
+    TODO: Create iterators that loop over integers contained in box.
   */
   template<std::integral T>
   struct IBox2
@@ -115,13 +117,13 @@ namespace eng::math
     }
     constexpr IBox2& shrink(T n = 1) { return expand(-n); }
   
-    template<InvocableWithReturnType<bool, const IVec2<T>&> F>
+    template<std::predicate<const IVec2<T>&> F>
     bool allOf(const F& condition) const
     {
       return noneOf([&condition](const IVec2<T>& index) { return !condition(index); });
     }
   
-    template<InvocableWithReturnType<bool, const IVec2<T>&> F>
+    template<std::predicate<const IVec2<T>&> F>
     bool anyOf(const F& condition) const
     {
       ENG_CORE_ASSERT(valid(), "Box is not valid!");
@@ -134,7 +136,7 @@ namespace eng::math
       return false;
     }
   
-    template<InvocableWithReturnType<bool, const IVec2<T>&> F>
+    template<std::predicate<const IVec2<T>&> F>
     bool noneOf(const F& condition) const
     {
       ENG_CORE_ASSERT(valid(), "Box is not valid!");
