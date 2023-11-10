@@ -40,10 +40,10 @@ namespace lod
   {
     delete data;
     data = nullptr;
-    for (Node*& child : children)
+    for (int i = 0; i < 8; ++i)
     {
-      delete child;
-      child = nullptr;
+      delete children[i];
+      children[i] = nullptr;
     }
   }
 
@@ -104,10 +104,10 @@ namespace lod
       return;
 
     // Delete child nodes
-    for (Node*& child : node->children)
+    for (int i = 0; i < 8; ++i)
     {
-      delete child;
-      child = nullptr;
+      delete node->children[i];
+      node->children[i] = nullptr;
     }
 
     // Node becomes new leaf node
@@ -247,11 +247,7 @@ namespace lod
       {
         // Sample noise at cell corners
         eng::math::Vec2 pointXY = LODAnchorXY + cellLength * eng::math::Vec2(i, j);
-
-        // TODO: Replace with new terrain system
-        // noise::OctaveNoiseData<Biome::NumOctaves()> elevationData = terrain::GetElevationData(pointXY, s_DefaultBiome);
-        // f32 seaLevelTemperature = terrain::GetTemperatureData(pointXY, s_DefaultBiome);
-        // noiseValues[i][j] = terrain::GetSurfaceInfo(elevationData, seaLevelTemperature, s_DefaultBiome);
+        noiseValues[i][j] = terrain::getSurfaceInfo(pointXY);
       }
     return noiseValues;
   }
@@ -296,7 +292,7 @@ namespace lod
         if (i == 0)
         {
           eng::math::Vec2 pointXY = LODAnchorXY + cellLength * eng::math::Vec2(i - 1, j);
-          // fLC = terrain::GetElevationData(pointXY, s_DefaultBiome).sum();
+          fLC = terrain::getElevation(pointXY);
         }
         else
           fLC = noiseValues[i - 1][j].getElevation();
@@ -304,7 +300,7 @@ namespace lod
         if (i == c_NumCells)
         {
           eng::math::Vec2 pointXY = LODAnchorXY + cellLength * eng::math::Vec2(i + 1, j);
-          // fUC = terrain::GetElevationData(pointXY, s_DefaultBiome).sum();
+          fUC = terrain::getElevation(pointXY);
         }
         else
           fUC = noiseValues[i + 1][j].getElevation();
@@ -312,7 +308,7 @@ namespace lod
         if (j == 0)
         {
           eng::math::Vec2 pointXY = LODAnchorXY + cellLength * eng::math::Vec2(i, j - 1);
-          // fCL = terrain::GetElevationData(pointXY, s_DefaultBiome).sum();
+          fCL = terrain::getElevation(pointXY);
         }
         else
           fCL = noiseValues[i][j - 1].getElevation();
@@ -320,7 +316,7 @@ namespace lod
         if (j == c_NumCells)
         {
           eng::math::Vec2 pointXY = LODAnchorXY + cellLength * eng::math::Vec2(i, j + 1);
-          // fCU = terrain::GetElevationData(pointXY, s_DefaultBiome).sum();
+          fCU = terrain::getElevation(pointXY);
         }
         else
           fCU = noiseValues[i][j + 1].getElevation();

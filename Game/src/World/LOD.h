@@ -78,7 +78,7 @@ namespace lod
     struct Node
     {
       Node* const parent;
-      std::array<Node*, 8> children;
+      std::array<Node*, 8> children{};
       const i32 depth;
 
       const GlobalIndex anchor;
@@ -124,7 +124,7 @@ namespace lod
     };
 
   private:
-    static constexpr i32 c_MaxNodeDepth = 12;
+    static constexpr i32 c_MaxNodeDepth = 8;
     static constexpr u64 c_RootNodeSize = eng::pow2(c_MaxNodeDepth);
     static constexpr GlobalIndex c_RootNodeAnchor = -eng::arithmeticCast<globalIndex_t>(c_RootNodeSize / 2) * GlobalIndex(1, 1, 1);
 

@@ -21,9 +21,9 @@ namespace eng::math
 
   bool isInFrustum(const eng::math::Vec3& point, const EnumArray<Vec4, FrustumPlane>& frustumPlanes)
   {
-    return eng::algo::noneOf(frustumPlanes, [&point](const eng::math::Vec4& plane)
-    {
-      return glm::dot(eng::math::Vec4(point, 1), plane) < 0;
-    });
+    for (FrustumPlane planeID : FrustumPlanes())
+      if (planeID != FrustumPlane::Far && glm::dot(eng::math::Vec4(point, 1), frustumPlanes[planeID]) < 0)
+        return false;
+    return true;
   }
 }

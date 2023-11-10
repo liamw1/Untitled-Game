@@ -10,6 +10,7 @@ namespace eng::math
 
     First = 0, Last = Far
   };
+  using FrustumPlanes = EnumIterator<FrustumPlane>;
 
   /*
   Uses algorithm described in

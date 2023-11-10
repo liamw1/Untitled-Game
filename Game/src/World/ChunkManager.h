@@ -2,6 +2,7 @@
 #include "Chunk.h"
 #include "ChunkContainer.h"
 #include "ChunkHelpers.h"
+#include "LOD.h"
 
 class ChunkManager
 {
@@ -29,6 +30,9 @@ class ChunkManager
   eng::thread::WorkSet<GlobalIndex, void> m_LightingWork;
   eng::thread::WorkSet<GlobalIndex, void> m_LazyMeshingWork;
   eng::thread::WorkSet<GlobalIndex, void> m_ForceMeshingWork;
+
+  // LOD data
+  lod::Octree m_LODTree;
 
 public:
   ChunkManager();
@@ -60,6 +64,10 @@ public:
 
   // Debug
   void loadChunk(const GlobalIndex& chunkIndex, block::ID blockType);
+
+  void initializeLODs();
+  void renderLODs();
+  void manageLODs();
 
 private:
   struct LightUniforms
@@ -97,4 +105,8 @@ private:
   void lightingPacket(const GlobalIndex& chunkIndex);
   void lazyMeshingPacket(const GlobalIndex& chunkIndex);
   void forceMeshingPacket(const GlobalIndex& chunkIndex);
+
+  bool splitLODs(std::vector<lod::Octree::Node*>& leaves);
+  bool combineLODs(std::vector<lod::Octree::Node*>& leaves);
+  bool splitAndCombineLODs(std::vector<lod::Octree::Node*>& leaves);
 };

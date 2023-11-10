@@ -59,7 +59,7 @@ namespace eng
   template<typename T, IterableEnum E>
   class EnumArray
   {
-    std::array<T, enumRange<E>()> m_Data;
+    std::array<T, enumRange<E>()> m_Data{};
 
   public:
     constexpr EnumArray() = default;

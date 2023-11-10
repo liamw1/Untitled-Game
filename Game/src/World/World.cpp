@@ -2,10 +2,15 @@
 #include "World.h"
 #include "Player/Player.h"
 
+static constexpr bool useLODs = true;
+
 void World::initialize()
 {
   player::initialize(GlobalIndex(0, 0, 2), block::length() * eng::math::Vec3(16.0));
   m_ChunkManager.initialize();
+
+  if constexpr (useLODs)
+    m_ChunkManager.initializeLODs();
 }
 
 void World::onUpdate(eng::Timestep timestep)
@@ -19,6 +24,13 @@ void World::onUpdate(eng::Timestep timestep)
 
   /* Rendering stage */
   eng::render::beginScene(eng::scene::ActiveCamera());
+
+  if constexpr (useLODs)
+  {
+    m_ChunkManager.manageLODs();
+    m_ChunkManager.renderLODs();
+    eng::render::command::clearDepthBuffer();
+  }
 
   playerWorldInteraction();
   m_ChunkManager.update();

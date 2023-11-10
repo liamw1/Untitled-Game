@@ -5,7 +5,7 @@
 #include "Indexing/Operations.h"
 
 ChunkManager::ChunkManager()
-  : m_ThreadPool(std::make_shared<eng::thread::ThreadPool>(6)),
+  : m_ThreadPool(std::make_shared<eng::thread::ThreadPool>(1)),
     m_LoadWork(m_ThreadPool, eng::thread::Priority::Normal),
     m_CleanWork(m_ThreadPool, eng::thread::Priority::High),
     m_LightingWork(m_ThreadPool, eng::thread::Priority::Normal),
@@ -41,7 +41,7 @@ void ChunkManager::render()
 
   m_ThreadPool->queuedTasks();
 
-  const eng::math::Mat4& viewProjection = eng::scene::CalculateViewProjection(eng::scene::ActiveCamera());
+  eng::math::Mat4 viewProjection = eng::scene::CalculateViewProjection(eng::scene::ActiveCamera());
   eng::EnumArray<eng::math::Vec4, eng::math::FrustumPlane> frustumPlanes = eng::math::calculateViewFrustumPlanes(viewProjection);
 
   // Shift each plane by distance equal to radius of sphere that circumscribes chunk
@@ -292,6 +292,80 @@ void ChunkManager::loadChunk(const GlobalIndex& chunkIndex, block::ID blockType)
   }
 
   m_ChunkContainer.insert(chunkIndex, std::move(chunk));
+}
+
+void ChunkManager::initializeLODs()
+{
+  ENG_PROFILE_FUNCTION();
+
+  std::vector<lod::Octree::Node*> leaves{};
+
+  bool treeModified = true;
+  while (treeModified)
+  {
+    leaves = m_LODTree.getLeaves();
+    treeModified = splitAndCombineLODs(leaves);
+  }
+
+  // Generate meshes for all LODs
+  leaves = m_LODTree.getLeaves();
+  for (lod::Octree::Node* leaf : leaves)
+  {
+    lod::generateMesh(leaf);
+
+    if (leaf->data->primaryMesh.vertices.size() > 0)
+      lod::updateMesh(m_LODTree, leaf);
+  }
+}
+
+void ChunkManager::renderLODs()
+{
+  ENG_PROFILE_FUNCTION();
+
+  std::vector<lod::Octree::Node*> leaves = m_LODTree.getLeaves();
+  eng::math::Mat4 viewProjection = eng::scene::CalculateViewProjection(eng::scene::ActiveCamera());
+
+  eng::EnumArray<eng::math::Vec4, eng::math::FrustumPlane> frustumPlanes = eng::math::calculateViewFrustumPlanes(viewProjection);
+  eng::EnumArray<eng::math::Vec4, eng::math::FrustumPlane> shiftedFrustumPlanes = frustumPlanes;
+  eng::EnumArray<length_t, eng::math::FrustumPlane> planeNormalMags;
+
+  for (eng::math::FrustumPlane plane : eng::math::FrustumPlanes())
+    planeNormalMags[plane] = glm::length(static_cast<eng::math::Vec3>(frustumPlanes[plane]));
+
+  lod::MeshData::BindBuffers();
+  for (lod::Octree::Node* leaf : leaves)
+    if (leaf->data->primaryMesh.vertexArray != nullptr)
+    {
+      // Shift each plane by distance equal to radius of sphere that circumscribes LOD
+      static constexpr float sqrt3 = 1.732050807568877f;
+      const length_t LODSphereRadius = sqrt3 * leaf->length() / 2;
+      for (eng::math::FrustumPlane plane : eng::math::FrustumPlanes())
+        shiftedFrustumPlanes[plane].w = frustumPlanes[plane].w + LODSphereRadius * planeNormalMags[plane];
+
+      if (eng::math::isInFrustum(leaf->center(), shiftedFrustumPlanes) && !isInRange(leaf->anchor, player::originIndex(), c_RenderDistance - 1))
+        lod::draw(leaf);
+    }
+}
+
+void ChunkManager::manageLODs()
+{
+  ENG_PROFILE_FUNCTION();
+
+  std::vector<lod::Octree::Node*> leaves = m_LODTree.getLeaves();
+  bool treeModified = splitAndCombineLODs(leaves);
+
+  if (treeModified)
+  {
+    std::vector<lod::Octree::Node*> leaves = m_LODTree.getLeaves();
+    for (lod::Octree::Node* leaf : leaves)
+    {
+      if (!leaf->data->meshGenerated)
+        lod::generateMesh(leaf);
+
+      if (leaf->data->needsUpdate && leaf->data->primaryMesh.vertices.size() > 0)
+        lod::updateMesh(m_LODTree, leaf);
+    }
+  }
 }
 
 
@@ -635,4 +709,65 @@ void ChunkManager::forceMeshingPacket(const GlobalIndex& chunkIndex)
 
   meshChunk(*chunk);
   chunk->update();
+}
+
+bool ChunkManager::splitLODs(std::vector<lod::Octree::Node*>& leaves)
+{
+  bool treeModified = false;
+  for (auto it = leaves.begin(); it != leaves.end();)
+  {
+    lod::Octree::Node* node = *it;
+
+    if (node->LODLevel() > 0)
+    {
+      globalIndex_t splitRange = 2 * node->size() - 1 + c_RenderDistance;
+      GlobalBox splitRangeBoundingBox(player::originIndex() - splitRange, player::originIndex() + splitRange);
+
+      GlobalBox intersection = GlobalBox::Intersection(splitRangeBoundingBox, node->boundingBox());
+      if (intersection.valid())
+      {
+        m_LODTree.splitNode(node);
+        lod::messageNeighbors(m_LODTree, node);
+
+        it = leaves.erase(it);
+        treeModified = true;
+        continue;
+      }
+    }
+
+    it++;
+  }
+
+  return treeModified;
+}
+
+bool ChunkManager::combineLODs(std::vector<lod::Octree::Node*>& leaves)
+{
+  // Search for nodes to combine
+  std::vector<lod::Octree::Node*> cannibalNodes{};
+  for (lod::Octree::Node* node : leaves)
+    if (node->depth > 0)
+    {
+      globalIndex_t combineRange = 4 * node->size() - 1 + c_RenderDistance;
+      GlobalBox rangeBoundingBox(player::originIndex() - combineRange, player::originIndex() + combineRange);
+
+      if (!GlobalBox::Intersection(rangeBoundingBox, node->parent->boundingBox()).valid())
+        cannibalNodes.push_back(node->parent);
+    }
+
+  // Combine nodes
+  for (lod::Octree::Node* node : cannibalNodes)
+  {
+    m_LODTree.combineChildren(node);
+    lod::messageNeighbors(m_LODTree, node);
+  }
+
+  return cannibalNodes.size() > 0;
+}
+
+bool ChunkManager::splitAndCombineLODs(std::vector<lod::Octree::Node*>& leaves)
+{
+  bool nodesSplit = splitLODs(leaves);
+  bool nodesCombined = combineLODs(leaves);
+  return nodesSplit || nodesCombined;
 }
