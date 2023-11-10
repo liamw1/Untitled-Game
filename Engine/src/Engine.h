@@ -40,6 +40,7 @@
 #include "Engine/Math/IVec2.h"
 #include "Engine/Math/IVec3.h"
 #include "Engine/Math/Vec.h"
+#include "Engine/Math/ViewFrustum.h"
 
 #include "Engine/Renderer/BufferLayout.h"
 #include "Engine/Renderer/Camera.h"

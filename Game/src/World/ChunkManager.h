@@ -83,16 +83,16 @@ private:
   */
   void sendBlockUpdate(const GlobalIndex& chunkIndex, const BlockIndex& blockIndex);
 
-  void uploadMeshes(eng::thread::UnorderedSet<ChunkDrawCommand>& commandQueue, std::unique_ptr<eng::MultiDrawIndexedArray<ChunkDrawCommand>>& multiDrawArray);
+  void uploadMeshes(eng::thread::UnorderedSet<ChunkDrawCommand>& commandQueue, eng::MultiDrawIndexedArray<ChunkDrawCommand>& multiDrawArray);
 
   /*
     Generates simplistic mesh in a compressed format based on chunk compostion.
     Block faces covered by opaque blocks will not be added to mesh.
     Uses AO algorithm outlined in https://0fps.net/2013/07/03/ambient-occlusion-for-minecraft-like-worlds/
   */
-  void meshChunk(const std::shared_ptr<Chunk>& chunk);
+  void meshChunk(const Chunk& chunk);
 
-  void updateLighting(const std::shared_ptr<Chunk>& chunk);
+  void updateLighting(Chunk& chunk);
 
   void lightingPacket(const GlobalIndex& chunkIndex);
   void lazyMeshingPacket(const GlobalIndex& chunkIndex);

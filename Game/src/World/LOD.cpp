@@ -519,10 +519,10 @@ namespace lod
     for (eng::math::Direction face : eng::math::Directions())
     {
       // Relabel coordinates, u being the coordinate normal to face
-      eng::math::Axis u = AxisOf(face);
-      eng::math::Axis v = Cycle(u);
-      eng::math::Axis w = Cycle(v);
-      i32 uIndex = IsUpstream(face) ? c_NumCells : 0;
+      eng::math::Axis u = axisOf(face);
+      eng::math::Axis v = cycle(u);
+      eng::math::Axis w = cycle(v);
+      i32 uIndex = isUpstream(face) ? c_NumCells : 0;
 
       // Generate transition mesh using Transvoxel algorithm
       i32 vertexCount = 0;
@@ -545,7 +545,7 @@ namespace lod
             sample[w] = j + p / 3;
 
             // If block face normal along negative axis, we must reverse v coordinate-axis to ensure correct orientation
-            if (!IsUpstream(face))
+            if (!isUpstream(face))
               sample[v] = c_NumCells - sample[v];
 
             const i32& I = sample.i;
@@ -627,7 +627,7 @@ namespace lod
             sampleB[w] = j + c_CornerIndexToSampleIndex[cornerIndexB] / 3;
 
             // If block face normal along negative axis, we must reverse v coordinate-axis to ensure correct orientation
-            if (!IsUpstream(face))
+            if (!isUpstream(face))
             {
               sampleA[v] = c_NumCells - sampleA[v];
               sampleB[v] = c_NumCells - sampleB[v];
@@ -711,11 +711,11 @@ namespace lod
     bool isNearSameResolutionLOD = false;
     for (eng::math::Direction face : eng::math::Directions())
     {
-      i32 axisID = eng::toUnderlying(eng::math::AxisOf(face));
-      if (isVertexNearFace(eng::math::IsUpstream(face), vertex.position[axisID], cellLength))
+      i32 axisID = eng::toUnderlying(eng::math::axisOf(face));
+      if (isVertexNearFace(eng::math::isUpstream(face), vertex.position[axisID], cellLength))
       {
         if (transitionFaces & eng::bit(eng::toUnderlying(face)))
-          vertexAdjustment[axisID] = vertexAdjustment1D(eng::math::IsUpstream(face), vertex.position[axisID], cellLength);
+          vertexAdjustment[axisID] = vertexAdjustment1D(eng::math::isUpstream(face), vertex.position[axisID], cellLength);
         else
         {
           isNearSameResolutionLOD = true;
@@ -750,7 +750,7 @@ namespace lod
   {
     static constexpr length_t tolerance = 128 * std::numeric_limits<length_t>::epsilon();
 
-    i32 axisID = eng::toUnderlying(eng::math::AxisOf(face));
+    i32 axisID = eng::toUnderlying(eng::math::axisOf(face));
     length_t cellLength = node->length() / c_NumCells;
 
     std::vector<Vertex> LODMesh = node->data->transitionMeshes[face].vertices;
@@ -763,7 +763,7 @@ namespace lod
         if (vertex.position[axisID] < tolerance * node->length() || vertex.position[axisID] > (1.0 - tolerance) * node->length())
           continue;
         else
-          vertex.position[axisID] = eng::arithmeticCastUnchecked<f32>(eng::math::IsUpstream(face) ? node->length() : 0.0);
+          vertex.position[axisID] = eng::arithmeticCastUnchecked<f32>(eng::math::isUpstream(face) ? node->length() : 0.0);
 
         adjustVertex(vertex, cellLength, node->data->transitionFaces);
       }
@@ -835,9 +835,9 @@ namespace lod
     for (eng::math::Direction direction : eng::math::Directions())
     {
       // Relabel coordinates, u being the coordinate normal to face
-      eng::math::Axis u = AxisOf(direction);
-      eng::math::Axis v = Cycle(u);
-      eng::math::Axis w = Cycle(v);
+      eng::math::Axis u = axisOf(direction);
+      eng::math::Axis v = cycle(u);
+      eng::math::Axis w = cycle(v);
 
       globalIndex_t neighborSize = node->size();
       GlobalIndex neighborIndexBase = node->anchor + offsets[direction];

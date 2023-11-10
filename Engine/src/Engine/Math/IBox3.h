@@ -10,8 +10,9 @@ namespace eng::math
     TODO: Create iterators that loop over integers contained in box.
   */
   template<std::integral T>
-  struct IBox3
+  class IBox3
   {
+  public:
     IVec3<T> min;
     IVec3<T> max;
   
@@ -25,10 +26,10 @@ namespace eng::math
       : min(iMin, jMin, kMin), max(iMax, jMax, kMax) {}
 
     template<std::integral U>
-    constexpr IBox3<U> upcast() const { return {min.upcast<U>(), max.upcast<U>()}; }
+    constexpr IBox3<U> upcast() const { return { min.upcast<U>(), max.upcast<U>() }; }
 
     template<std::integral U>
-    constexpr IBox3<U> checkedCast() const { return {min.checkedCast<U>(), max.checkedCast<U>()}; }
+    constexpr IBox3<U> checkedCast() const { return { min.checkedCast<U>(), max.checkedCast<U>() }; }
   
     // Define lexicographical ordering on stored IVec3s
     constexpr std::strong_ordering operator<=>(const IBox3& other) const = default;
@@ -115,30 +116,47 @@ namespace eng::math
         expandAlongAxis(axis, n);
       return *this;
     }
+    [[nodiscard]] constexpr IBox3 expand(T n = 1) const { return eng::clone(*this).expand(n); }
+
     constexpr IBox3& expandAlongAxis(Axis axis, T n = 1)
     {
       min[axis] -= n;
       max[axis] += n;
       return *this;
     }
+    [[nodiscard]] constexpr IBox3 expandAlongAxis(Axis axis, T n = 1) const { return eng::clone(*this).expandAlongAxis(axis, n); }
+
     constexpr IBox3& expandToEnclose(const IVec3<T>& iVec3)
     {
       min = ComponentWiseMin(min, iVec3);
-      max = ComponentWiseMax(max, iVec3 + 1);
+      max = ComponentWiseMax(max, iVec3);
       return *this;
     }
+    [[nodiscard]] constexpr IBox3 expandToEnclose(const IVec3<T>& iVec3) const { return eng::clone(*this).expandToEnclose(iVec3); }
+
+    constexpr IBox3& expandToEnclose(const IBox3& box)
+    {
+      expandToEnclose(box.min);
+      expandToEnclose(box.max);
+      return *this;
+    }
+    [[nodiscard]] constexpr IBox3 expandToEnclose(const IBox3& box) const { return eng::clone(*this).expandToEnclose(box); }
+
     constexpr IBox3& shrink(T n = 1) { return expand(-n); }
+    [[nodiscard]] constexpr IBox3 shrink(T n = 1) const { return eng::clone(*this).shrink(n); }
+
     constexpr IBox3& shrinkAlongAxis(Axis axis, T n = 1) { return expandAlongAxis(axis, -n); }
+    [[nodiscard]] constexpr IBox3 shrinkAlongAxis(Axis axis, T n = 1) const { return eng::clone(*this).shrinkAlongAxis(axis, n); }
   
     constexpr T limitAlongDirection(Direction direction) const
     {
-      const IVec3<T>& limit = IsUpstream(direction) ? max : min;
-      return limit[AxisOf(direction)];
+      const IVec3<T>& limit = isUpstream(direction) ? max : min;
+      return limit[axisOf(direction)];
     }
   
     constexpr IBox3 face(Direction side) const
     {
-      Axis axis = AxisOf(side);
+      Axis axis = axisOf(side);
       T faceNormalLimit = limitAlongDirection(side);
   
       IVec3<T> faceLower = min;
@@ -151,9 +169,9 @@ namespace eng::math
     }
     constexpr IBox3 faceInterior(Direction side) const
     {
-      Axis u = AxisOf(side);
-      Axis v = Cycle(u);
-      Axis w = Cycle(v);
+      Axis u = axisOf(side);
+      Axis v = cycle(u);
+      Axis w = cycle(v);
   
       return face(side).shrinkAlongAxis(v).shrinkAlongAxis(w);
     }
@@ -168,7 +186,7 @@ namespace eng::math
     }
     constexpr IBox3 edgeInterior(Direction sideA, Direction sideB) const
     {
-      Axis edgeAxis = GetMissing(AxisOf(sideA), AxisOf(sideB));
+      Axis edgeAxis = getMissing(axisOf(sideA), axisOf(sideB));
       return edge(sideA, sideB).shrinkAlongAxis(edgeAxis);
     }
   
@@ -184,13 +202,13 @@ namespace eng::math
     }
   
     template<std::predicate<const IVec3<T>&> F>
-    bool allOf(const F& condition) const
+    constexpr bool allOf(const F& condition) const
     {
       return noneOf([&condition](const IVec3<T>& index) { return !condition(index); });
     }
   
     template<std::predicate<const IVec3<T>&> F>
-    bool anyOf(const F& condition) const
+    constexpr bool anyOf(const F& condition) const
     {
       ENG_CORE_ASSERT(valid(), "Box is not valid!");
   
@@ -204,7 +222,7 @@ namespace eng::math
     }
   
     template<std::predicate<const IVec3<T>&> F>
-    bool noneOf(const F& condition) const
+    constexpr bool noneOf(const F& condition) const
     {
       ENG_CORE_ASSERT(valid(), "Box is not valid!");
   
@@ -218,7 +236,7 @@ namespace eng::math
     }
   
     template<InvocableWithReturnType<void, const IVec3<T>&> F>
-    void forEach(const F& function) const
+    constexpr void forEach(const F& function) const
     {
       ENG_CORE_ASSERT(valid(), "Box is not valid!");
   
@@ -242,58 +260,22 @@ namespace eng::math
   
   
   
-  template<std::integral T>
-  struct BoxFace
-  {
-    Direction side;
-    IBox3<T> bounds;
-  
-    constexpr BoxFace()
-      : BoxFace(Direction::First, {}) {}
-    constexpr BoxFace(Direction faceSide, const IBox3<T>& faceBounds)
-      : side(faceSide), bounds(faceBounds) {}
-  };
-  
-  template<std::integral T>
-  struct BoxEdge
-  {
-    Direction sideA;
-    Direction sideB;
-    IBox3<T> bounds;
-  
-    constexpr BoxEdge()
-      : BoxEdge(Direction::First, Direction::First, {}) {}
-    constexpr BoxEdge(Direction edgeSideA, Direction edgeSideB, const IBox3<T>& edgeBounds)
-      : sideA(edgeSideA), sideB(edgeSideB), bounds(edgeBounds) {}
-  };
-  
-  template<std::integral T>
-  struct BoxCorner
-  {
-    IVec3<T> offset;
-    IBox3<T> bounds;
-  
-    constexpr BoxCorner() = default;
-    constexpr BoxCorner(const IVec3<T>& cornerOffset, const IBox3<T>& cornerBounds)
-      : offset(cornerOffset), bounds(cornerBounds) {}
-  };
-  
   namespace detail
   {
     template<std::integral T>
-    constexpr std::array<BoxFace<T>, 6> ConstructFaces(const IBox3<T>& box, bool interiorOnly)
+    constexpr std::array<IBox3<T>, 6> ConstructFaces(const IBox3<T>& box, bool interiorOnly)
     {
-      std::array<BoxFace<T>, 6> faces;
+      std::array<IBox3<T>, 6> faces;
       for (Direction side : Directions())
-        faces[toUnderlying(side)] = BoxFace(side, interiorOnly ? box.faceInterior(side) : box.face(side));
+        faces[toUnderlying(side)] = interiorOnly ? box.faceInterior(side) : box.face(side);
       return faces;
     }
   
     template<std::integral T>
-    constexpr std::array<BoxEdge<T>, 12> ConstructEdges(const IBox3<T>& box, bool interiorOnly)
+    constexpr std::array<IBox3<T>, 12> ConstructEdges(const IBox3<T>& box, bool interiorOnly)
     {
       i32 edgeIndex = 0;
-      std::array<BoxEdge<T>, 12> edges;
+      std::array<IBox3<T>, 12> edges;
       for (auto itA = Directions().begin(); itA != Directions().end(); ++itA)
         for (auto itB = itA.next(); itB != Directions().end(); ++itB)
         {
@@ -304,57 +286,34 @@ namespace eng::math
           if (sideA == !sideB)
             continue;
   
-          edges[edgeIndex] = BoxEdge(sideA, sideB, interiorOnly ? box.edgeInterior(sideA, sideB) : box.edge(sideA, sideB));
-          edgeIndex++;
+          edges[edgeIndex++] = interiorOnly ? box.edgeInterior(sideA, sideB) : box.edge(sideA, sideB);
         }
       return edges;
     }
-  
-    template<std::integral T>
-    constexpr std::array<BoxCorner<T>, 8> ConstructCorners(const IBox3<T>& box)
-    {
-      i32 cornerIndex = 0;
-      std::array<BoxCorner<T>, 8> corners;
-      for (i32 i = -1; i < 2; i += 2)
-        for (i32 j = -1; j < 2; j += 2)
-          for (i32 k = -1; k < 2; k += 2)
-          {
-            IVec3<T> offset(i, j, k);
-            corners[cornerIndex] = BoxCorner(offset, box.corner(offset));
-            cornerIndex++;
-          }
-      return corners;
-    }
   }
   
   template<std::integral T>
-  constexpr std::array<BoxFace<T>, 6> Faces(const IBox3<T>& box)
-  {
-    return detail::ConstructFaces(box, false);
-  }
+  constexpr std::array<IBox3<T>, 6> Faces(const IBox3<T>& box) { return detail::ConstructFaces(box, false); }
+
+  template<std::integral T>
+  constexpr std::array<IBox3<T>, 6> FaceInteriors(const IBox3<T>& box) { return detail::ConstructFaces(box, true); }
   
   template<std::integral T>
-  constexpr std::array<BoxFace<T>, 6> FaceInteriors(const IBox3<T>& box)
-  {
-    return detail::ConstructFaces(box, true);
-  }
+  constexpr std::array<IBox3<T>, 12> Edges(const IBox3<T>& box) { return detail::ConstructEdges(box, false); }
   
   template<std::integral T>
-  constexpr std::array<BoxEdge<T>, 12> Edges(const IBox3<T>& box)
-  {
-    return detail::ConstructEdges(box, false);
-  }
+  constexpr std::array<IBox3<T>, 12> EdgeInteriors(const IBox3<T>& box) { return detail::ConstructEdges(box, true); }
   
   template<std::integral T>
-  constexpr std::array<BoxEdge<T>, 12> EdgeInteriors(const IBox3<T>& box)
+  constexpr std::array<IBox3<T>, 8> Corners(const IBox3<T>& box)
   {
-    return detail::ConstructEdges(box, true);
-  }
-  
-  template<std::integral T>
-  constexpr std::array<BoxCorner<T>, 8> Corners(const IBox3<T>& box)
-  {
-    return detail::ConstructCorners(box);
+    i32 cornerIndex = 0;
+    std::array<IBox3<T>, 8> corners;
+    for (i32 i = -1; i < 2; i += 2)
+      for (i32 j = -1; j < 2; j += 2)
+        for (i32 k = -1; k < 2; k += 2)
+          corners[cornerIndex++] = box.corner(IVec3<T>(i, j, k));
+    return corners;
   }
 }
 

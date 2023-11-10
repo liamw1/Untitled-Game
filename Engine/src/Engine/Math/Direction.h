@@ -13,12 +13,12 @@ namespace eng::math
   };
   using Axes = EnumIterator<Axis>;
 
-  constexpr Axis Cycle(Axis axis)
+  constexpr Axis cycle(Axis axis)
   {
     return enumCastUnchecked<Axis>((toUnderlying(axis) + 1) % 3);
   }
 
-  constexpr Axis GetMissing(Axis axisA, Axis axisB)
+  constexpr Axis getMissing(Axis axisA, Axis axisB)
   {
     return enumCastUnchecked<Axis>(2 * (toUnderlying(axisA) + toUnderlying(axisB)) % 3);
   }
@@ -48,9 +48,9 @@ namespace eng::math
     return oppositeDirection;
   }
 
-  constexpr bool IsUpstream(Direction direction) { return toUnderlying(direction) % 2; }
-  constexpr Axis AxisOf(Direction direction) { return enumCastUnchecked<Axis>(toUnderlying(direction) / 2); }
-  constexpr Direction ToDirection(Axis axis, bool isUpstream) { return enumCastUnchecked<Direction>(2 * toUnderlying(axis) + isUpstream); }
+  constexpr bool isUpstream(Direction direction) { return toUnderlying(direction) % 2; }
+  constexpr Axis axisOf(Direction direction) { return enumCastUnchecked<Axis>(toUnderlying(direction) / 2); }
+  constexpr Direction toDirection(Axis axis, bool isUpstream) { return enumCastUnchecked<Direction>(2 * toUnderlying(axis) + isUpstream); }
 
   class DirectionBitMask
   {

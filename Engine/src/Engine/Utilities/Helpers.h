@@ -13,4 +13,10 @@ namespace eng
 
   template<std::copyable T>
   constexpr T clone(const T& obj) { return obj; }
+
+  template<std::copyable T>
+  struct Identity
+  {
+    T operator()(const T& obj) const { return obj; } 
+  };
 }

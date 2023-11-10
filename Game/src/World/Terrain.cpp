@@ -2,7 +2,6 @@
 #include "Terrain.h"
 #include "ChunkContainer.h"
 #include "Util/Noise.h"
-#include "Util/Util.h"
 #include "Player/Player.h"
 
 terrain::CompoundSurfaceData::CompoundSurfaceData() = default;

@@ -211,7 +211,7 @@ void ChunkDrawCommand::reorderIndices(const GlobalIndex& originIndex, const eng:
     // Add back-facing quads
     for (eng::math::Axis axis : eng::math::Axes())
     {
-      eng::math::Direction face = ToDirection(axis, toBlock[eng::toUnderlying(axis)] > 0);
+      eng::math::Direction face = toDirection(axis, toBlock[eng::toUnderlying(axis)] > 0);
       if (quadVertexOffsets[face] >= 0)
         addQuadIndices(voxel.baseVertex() + quadVertexOffsets[face]);
     }
@@ -219,7 +219,7 @@ void ChunkDrawCommand::reorderIndices(const GlobalIndex& originIndex, const eng:
     // Add front-facing quads
     for (eng::math::Axis axis : eng::math::Axes())
     {
-      eng::math::Direction face = ToDirection(axis, toBlock[eng::toUnderlying(axis)] <= 0);
+      eng::math::Direction face = toDirection(axis, toBlock[eng::toUnderlying(axis)] <= 0);
       if (quadVertexOffsets[face] >= 0)
         addQuadIndices(voxel.baseVertex() + quadVertexOffsets[face]);
     }

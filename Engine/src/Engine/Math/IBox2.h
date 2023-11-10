@@ -10,8 +10,9 @@ namespace eng::math
     TODO: Create iterators that loop over integers contained in box.
   */
   template<std::integral T>
-  struct IBox2
+  class IBox2
   {
+  public:
     IVec2<T> min;
     IVec2<T> max;
   
@@ -25,10 +26,10 @@ namespace eng::math
       : min(iMin, jMin), max(iMax, jMax) {}
 
     template<std::integral U>
-    constexpr IBox2<U> upcast() const { return {min.upcast<U>(), max.upcast<U>()}; }
+    constexpr IBox2<U> upcast() const { return { min.upcast<U>(), max.upcast<U>() }; }
 
     template<std::integral U>
-    constexpr IBox2<U> checkedCast() const { return {min.checkedCast<U>(), max.checkedCast<U>()}; }
+    constexpr IBox2<U> checkedCast() const { return { min.checkedCast<U>(), max.checkedCast<U>() }; }
   
     // Define lexicographical ordering on stored IVec2s
     constexpr std::strong_ordering operator<=>(const IBox2& other) const = default;

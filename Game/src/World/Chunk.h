@@ -1,5 +1,5 @@
 #pragma once
-#include "Indexing.h"
+#include "Indexing/Definitions.h"
 #include "Block/Block.h"
 
 /*
@@ -16,7 +16,7 @@ class Chunk : private eng::NonCopyable, eng::NonMovable
 
 public:
   Chunk() = delete;
-  Chunk(const GlobalIndex& chunkIndex);
+  explicit Chunk(const GlobalIndex& chunkIndex);
 
   const GlobalIndex& globalIndex() const;
 
@@ -25,6 +25,17 @@ public:
 
   ProtectedBlockArrayBox<block::Light>& lighting();
   const ProtectedBlockArrayBox<block::Light>& lighting() const;
+
+  template<typename T>
+  const ProtectedBlockArrayBox<T>& data() const
+  {
+    if constexpr (std::is_same_v<T, block::Type>)
+      return composition();
+    else if constexpr (std::is_same_v<T, block::Light>)
+      return lighting();
+    else
+      static_assert(eng::AlwaysFalse<T>, "Chunk does not store type!");
+  }
 
   /*
     \returns Whether or not a given chunk face has transparent blocks. Useful for deciding which chunks should be loaded

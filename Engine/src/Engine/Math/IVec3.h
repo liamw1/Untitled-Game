@@ -27,10 +27,10 @@ namespace eng::math
     explicit constexpr operator IVec2<T>() const { return IVec2<T>(i, j); }
 
     template<std::integral U>
-    constexpr IVec3<U> upcast() const { return {arithmeticUpcast<U>(i), arithmeticUpcast<U>(j), arithmeticUpcast<U>(k)}; }
+    constexpr IVec3<U> upcast() const { return { arithmeticUpcast<U>(i), arithmeticUpcast<U>(j), arithmeticUpcast<U>(k) }; }
 
     template<std::integral U>
-    constexpr IVec3<U> checkedCast() const { return {arithmeticCast<U>(i), arithmeticCast<U>(j), arithmeticCast<U>(k)}; }
+    constexpr IVec3<U> checkedCast() const { return { arithmeticCast<U>(i), arithmeticCast<U>(j), arithmeticCast<U>(k) }; }
   
     constexpr T& operator[](Axis axis) { ENG_MUTABLE_VERSION(operator[], axis); }
     constexpr const T& operator[](Axis axis) const
@@ -93,12 +93,10 @@ namespace eng::math
       return IVec3(arithmeticCast<T>(std::floor(vec.x)), arithmeticCast<T>(std::floor(vec.y)), arithmeticCast<T>(std::floor(vec.z)));
     }
   
-    static constexpr const IVec3& Dir(Direction direction)
+    static constexpr IVec3 Dir(Direction direction)
     {
-      static constexpr EnumArray<IVec3, Direction> directions = { { Direction::West,   IVec3(-1, 0, 0) }, { Direction::East,  IVec3(1, 0, 0) },
-                                                                  { Direction::South,  IVec3(0, -1, 0) }, { Direction::North, IVec3(0, 1, 0) },
-                                                                  { Direction::Bottom, IVec3(0, 0, -1) }, { Direction::Top,   IVec3(0, 0, 1) } };
-      return directions[direction];
+      T value = isUpstream(direction) ? 1 : -1;
+      return CreatePermuted(value, 0, 0, axisOf(direction));
     }
   
     static constexpr IVec3 CreatePermuted(T i, T j, T k, Axis permutation)

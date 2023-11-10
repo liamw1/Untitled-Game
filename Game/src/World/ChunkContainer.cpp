@@ -1,13 +1,63 @@
 #include "GMpch.h"
 #include "ChunkContainer.h"
 #include "Player/Player.h"
-#include "Util/Util.h"
+#include "Indexing/Operations.h"
+
+template<typename T>
+static void fill(BlockArrayBox<T>& arrayBox, const Chunk& chunk, const std::vector<BlockBox>& chunkSections, const LocalIndex& relativeIndex)
+{
+  BlockIndex offset = Chunk::Size() * relativeIndex.checkedCast<blockIndex_t>();
+  chunk.data<T>().readOperation([&arrayBox, &offset, &chunkSections](const BlockArrayBox<T>& chunkArrayBox, const T& defaultValue)
+  {
+    for (const BlockBox& chunkSection : chunkSections)
+    {
+      BlockBox fillSection = chunkSection + offset;
+      arrayBox.fill(fillSection, chunkArrayBox, chunkSection, defaultValue);
+    }
+  });
+}
+
+template<typename T>
+static BlockArrayBox<T> retrieveData(const Chunk& chunk, const std::vector<BlockBox>& regions, const eng::thread::UnorderedMap<GlobalIndex, Chunk>& chunkMap)
+{
+  BlockBox arrayBoxSize = eng::algo::accumulate(regions, eng::Identity<BlockBox>(), [](const BlockBox& boxSize, const BlockBox& box)
+  {
+    return eng::clone(boxSize).expandToEnclose(box);
+  });
+  BlockArrayBox<T> arrayBox(arrayBoxSize, eng::AllocationPolicy::DefaultInitialize);
+
+  std::unordered_map<LocalIndex, std::vector<BlockBox>> partitionedRegions;
+  for (const BlockBox& region : regions)
+    for (const auto& [relativeIndex, partitionedRegion] : partitionBlockBox(region))
+      partitionedRegions[relativeIndex].push_back(partitionedRegion);
+
+  for (const auto& [relativeIndex, chunkSections] : partitionedRegions)
+  {
+    if (relativeIndex == LocalIndex(0))
+      fill(arrayBox, chunk, chunkSections, relativeIndex);
+    else if (std::shared_ptr<const Chunk> neighbor = chunkMap.get(chunk.globalIndex() + relativeIndex.upcast<globalIndex_t>()))
+      fill(arrayBox, *neighbor, chunkSections, relativeIndex);
+  }
+  return arrayBox;
+}
+
+
 
 ChunkContainer::ChunkContainer() = default;
 
 const eng::thread::UnorderedMap<GlobalIndex, Chunk>& ChunkContainer::chunks() const
 {
   return m_Chunks;
+}
+
+BlockArrayBox<block::Type> ChunkContainer::retrieveTypeData(const Chunk& chunk, const std::vector<BlockBox>& regions) const
+{
+  return retrieveData<block::Type>(chunk, regions, m_Chunks);
+}
+
+BlockArrayBox<block::Light> ChunkContainer::retrieveLightingData(const Chunk& chunk, const std::vector<BlockBox>& regions) const
+{
+  return retrieveData<block::Light>(chunk, regions, m_Chunks);
 }
 
 std::unordered_set<GlobalIndex> ChunkContainer::findAllLoadableIndices() const
@@ -17,7 +67,7 @@ std::unordered_set<GlobalIndex> ChunkContainer::findAllLoadableIndices() const
   GlobalIndex originIndex = player::originIndex();
   std::unordered_set<GlobalIndex> newChunkIndices;
   for (const GlobalIndex& boundaryIndex : boundaryIndices)
-    if (util::isInRange(boundaryIndex, originIndex, c_LoadDistance))
+    if (isInRange(boundaryIndex, originIndex, c_LoadDistance))
       newChunkIndices.insert(boundaryIndex);
 
   return newChunkIndices;

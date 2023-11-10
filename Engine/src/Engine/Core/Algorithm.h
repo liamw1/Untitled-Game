@@ -16,6 +16,12 @@ namespace eng::algo
     using transformResult = std::invoke_result_t<F, detail::containedType<C>>;
   }
 
+  template<Iterable C>
+  constexpr std::vector<detail::containedType<C>> asVector(const C& container)
+  {
+    return std::vector<detail::containedType<C>>(std::begin(container), std::end(container));
+  }
+
   /*
     \returns The accumulated transformed elements of the given container with an initial value, i.e. the result of
     initialValue operation transform(a_1) operation transform(a_2) operation ... operation transform(a_n).

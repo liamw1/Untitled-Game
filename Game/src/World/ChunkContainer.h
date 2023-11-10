@@ -20,9 +20,13 @@ public:
 
   const eng::thread::UnorderedMap<GlobalIndex, Chunk>& chunks() const;
 
+  BlockArrayBox<block::Type> retrieveTypeData(const Chunk& chunk, const std::vector<BlockBox>& regions) const;
+  BlockArrayBox<block::Light> retrieveLightingData(const Chunk& chunk, const std::vector<BlockBox>& regions) const;
+
   /*
-    Scans boundary for places where new chunks can be loaded and returns possible locations
-    as an unordered set.
+    Scans boundary for places where new chunks can be loaded.
+
+    \returns Possible locations a chunk can be loaded as an unordered set.
   */
   std::unordered_set<GlobalIndex> findAllLoadableIndices() const;
 

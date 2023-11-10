@@ -11,8 +11,9 @@ namespace eng::math
     Represents a point on a 2D integer lattice.
   */
   template<std::integral T>
-  struct IVec2
+  class IVec2
   {
+  public:
     T i;
     T j;
   
@@ -26,10 +27,10 @@ namespace eng::math
     explicit constexpr operator Vec2() const { return Vec2(i, j); }
 
     template<std::integral U>
-    constexpr IVec2<U> upcast() const { return {arithmeticUpcast<U>(i), arithmeticUpcast<U>(j)}; }
+    constexpr IVec2<U> upcast() const { return { arithmeticUpcast<U>(i), arithmeticUpcast<U>(j) }; }
 
     template<std::integral U>
-    constexpr IVec2<U> checkedCast() const { return {arithmeticCast<U>(i), arithmeticCast<U>(j)}; }
+    constexpr IVec2<U> checkedCast() const { return { arithmeticCast<U>(i), arithmeticCast<U>(j) }; }
   
     constexpr T& operator[](Axis axis) { ENG_MUTABLE_VERSION(operator[], axis); }
     constexpr const T& operator[](Axis axis) const

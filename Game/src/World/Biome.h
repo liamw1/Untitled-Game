@@ -1,5 +1,4 @@
 #pragma once
-#include "Indexing.h"
 #include "Chunk.h"
 #include "Block/Block.h"
 #include "Util/Noise.h"

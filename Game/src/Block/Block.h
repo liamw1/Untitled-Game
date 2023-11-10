@@ -1,6 +1,6 @@
 #pragma once
 #include "BlockIDs.h"
-#include "World/Indexing.h"
+#include "Indexing/Definitions.h"
 
 namespace block
 {
