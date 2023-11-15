@@ -2,7 +2,7 @@
 #include "World.h"
 #include "Player/Player.h"
 
-static constexpr bool useLODs = true;
+static constexpr bool useLODs = false;
 
 void World::initialize()
 {

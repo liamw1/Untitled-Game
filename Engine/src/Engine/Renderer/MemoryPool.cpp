@@ -5,7 +5,8 @@
 
 namespace eng
 {
-  MemoryPool::MemoryPool() = default;
+  MemoryPool::MemoryPool()
+    : m_Capacity(0) {}
   MemoryPool::MemoryPool(StorageBuffer::Type bufferType, i32 initialCapacity)
     : m_Capacity(initialCapacity)
   {

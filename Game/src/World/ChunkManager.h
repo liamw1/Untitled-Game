@@ -17,10 +17,8 @@ class ChunkManager
   static inline const eng::BufferLayout s_VertexBufferLayout = {{ eng::ShaderDataType::Uint32, "a_VertexData" },
                                                                 { eng::ShaderDataType::Uint32, "a_Lighting"   }};
 
-  eng::thread::UnorderedSet<ChunkDrawCommand> m_OpaqueCommandQueue;
-  eng::thread::UnorderedSet<ChunkDrawCommand> m_TransparentCommandQueue;
-  eng::MultiDrawIndexedArray<ChunkDrawCommand> m_OpaqueMultiDrawArray;
-  eng::MultiDrawIndexedArray<ChunkDrawCommand> m_TransparentMultiDrawArray;
+  eng::thread::AsyncMultiDrawIndexedArray<ChunkDrawCommand> m_OpaqueAsyncMultiDrawArray;
+  eng::thread::AsyncMultiDrawIndexedArray<ChunkDrawCommand> m_TransparentAsyncMultiDrawArray;
 
   // Multi-threading
   std::shared_ptr<eng::thread::ThreadPool> m_ThreadPool;
@@ -81,7 +79,7 @@ private:
   void addToLightingUpdateQueue(const GlobalIndex& chunkIndex);
   void addToLazyMeshUpdateQueue(const GlobalIndex& chunkIndex);
   void addToForceMeshUpdateQueue(const GlobalIndex& chunkIndex);
-  void addToMeshRemovalQueue(const GlobalIndex& chunkIndex);
+  void removeMeshes(const GlobalIndex& chunkIndex);
 
   std::shared_ptr<Chunk> generateNewChunk(const GlobalIndex& chunkIndex);
   void eraseChunk(const GlobalIndex& chunkIndex);
@@ -92,8 +90,6 @@ private:
     while edge and corner neighbors are queued for later.
   */
   void sendBlockUpdate(const GlobalIndex& chunkIndex, const BlockIndex& blockIndex);
-
-  void uploadMeshes(eng::thread::UnorderedSet<ChunkDrawCommand>& commandQueue, eng::MultiDrawIndexedArray<ChunkDrawCommand>& multiDrawArray);
 
   /*
     Generates simplistic mesh in a compressed format based on chunk compostion.
