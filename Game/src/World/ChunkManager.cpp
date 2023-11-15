@@ -27,8 +27,8 @@ void ChunkManager::initialize()
   s_SSBO->set(nullptr, c_StorageBufferSize);
   s_SSBO->bind();
 
-  m_OpaqueMultiDrawArray = std::make_unique<eng::MultiDrawIndexedArray<ChunkDrawCommand>>(s_VertexBufferLayout);
-  m_TransparentMultiDrawArray = std::make_unique<eng::MultiDrawIndexedArray<ChunkDrawCommand>>(s_VertexBufferLayout);
+  m_OpaqueMultiDrawArray = eng::MultiDrawIndexedArray<ChunkDrawCommand>(s_VertexBufferLayout);
+  m_TransparentMultiDrawArray = eng::MultiDrawIndexedArray<ChunkDrawCommand>(s_VertexBufferLayout);
 
   LightUniforms lightUniforms;
   lightUniforms.sunIntensity = 1.0f;
@@ -62,7 +62,7 @@ void ChunkManager::render()
     eng::render::command::setDepthWriting(true);
     eng::render::command::setUseDepthOffset(false);
 
-    i32 commandCount = m_OpaqueMultiDrawArray->partition([&originIndex, &frustumPlanes](const GlobalIndex& chunkIndex)
+    i32 commandCount = m_OpaqueMultiDrawArray.partition([&originIndex, &frustumPlanes](const GlobalIndex& chunkIndex)
     {
       eng::math::Vec3 anchorPosition = Chunk::AnchorPosition(chunkIndex, originIndex);
       eng::math::Vec3 chunkCenter = Chunk::Center(anchorPosition);
@@ -71,7 +71,7 @@ void ChunkManager::render()
 
     std::vector<eng::math::Float4> storageBufferData;
     storageBufferData.reserve(commandCount);
-    const std::vector<ChunkDrawCommand>& drawCommands = m_OpaqueMultiDrawArray->getDrawCommandBuffer();
+    const std::vector<ChunkDrawCommand>& drawCommands = m_OpaqueMultiDrawArray.getDrawCommandBuffer();
     for (i32 i = 0; i < commandCount; ++i)
     {
       const GlobalIndex& chunkIndex = drawCommands[i].id();
@@ -83,7 +83,7 @@ void ChunkManager::render()
     if (bufferDataSize > c_StorageBufferSize)
       ENG_ERROR("Chunk anchor data exceeds SSBO size!");
 
-    m_OpaqueMultiDrawArray->bind();
+    m_OpaqueMultiDrawArray.bind();
     s_SSBO->update(storageBufferData.data(), 0, bufferDataSize);
     eng::render::command::multiDrawIndexed(drawCommands.data(), commandCount, sizeof(ChunkDrawCommand));
   }
@@ -95,20 +95,20 @@ void ChunkManager::render()
     eng::render::command::setUseDepthOffset(true);
     eng::render::command::setDepthOffset(-1.0f, -1.0f);
 
-    i32 commandCount = m_TransparentMultiDrawArray->partition([&originIndex, &frustumPlanes](const GlobalIndex& chunkIndex)
+    i32 commandCount = m_TransparentMultiDrawArray.partition([&originIndex, &frustumPlanes](const GlobalIndex& chunkIndex)
     {
       eng::math::Vec3 anchorPosition = Chunk::AnchorPosition(chunkIndex, originIndex);
       eng::math::Vec3 chunkCenter = Chunk::Center(anchorPosition);
       return isInRange(chunkIndex, originIndex, c_RenderDistance) && eng::math::isInFrustum(chunkCenter, frustumPlanes);
     });
-    m_TransparentMultiDrawArray->sort(commandCount, [&originIndex, &playerCameraPosition](const GlobalIndex& chunk)
+    m_TransparentMultiDrawArray.sort(commandCount, [&originIndex, &playerCameraPosition](const GlobalIndex& chunk)
     {
       // NOTE: Maybe measure min distance to chunk faces instead
       eng::math::Vec3 chunkCenter = Chunk::Center(Chunk::AnchorPosition(chunk, originIndex));
       length_t dist = glm::length2(chunkCenter - playerCameraPosition);
       return dist;
     }, eng::SortPolicy::Descending);
-    m_TransparentMultiDrawArray->amend(commandCount, [&originIndex, &playerCameraPosition](ChunkDrawCommand& drawCommand)
+    m_TransparentMultiDrawArray.amend(commandCount, [&originIndex, &playerCameraPosition](ChunkDrawCommand& drawCommand)
     {
       bool orderModified = drawCommand.sort(originIndex, playerCameraPosition);
       return orderModified;
@@ -116,7 +116,7 @@ void ChunkManager::render()
 
     std::vector<eng::math::Float4> storageBufferData;
     storageBufferData.reserve(commandCount);
-    const std::vector<ChunkDrawCommand>& drawCommands = m_TransparentMultiDrawArray->getDrawCommandBuffer();
+    const std::vector<ChunkDrawCommand>& drawCommands = m_TransparentMultiDrawArray.getDrawCommandBuffer();
     for (i32 i = 0; i < commandCount; ++i)
     {
       const GlobalIndex& chunkIndex = drawCommands[i].id();
@@ -128,7 +128,7 @@ void ChunkManager::render()
     if (bufferDataSize > c_StorageBufferSize)
       ENG_ERROR("Chunk anchor data exceeds SSBO size!");
 
-    m_TransparentMultiDrawArray->bind();
+    m_TransparentMultiDrawArray.bind();
     s_SSBO->update(storageBufferData.data(), 0, bufferDataSize);
     eng::render::command::multiDrawIndexed(drawCommands.data(), commandCount, sizeof(ChunkDrawCommand));
   }
@@ -141,9 +141,9 @@ void ChunkManager::update()
   m_ForceMeshingWork.waitAndDiscardSaved();
 
   if (!m_OpaqueCommandQueue.empty())
-    uploadMeshes(m_OpaqueCommandQueue, *m_OpaqueMultiDrawArray);
+    uploadMeshes(m_OpaqueCommandQueue, m_OpaqueMultiDrawArray);
   if (!m_TransparentCommandQueue.empty())
-    uploadMeshes(m_TransparentCommandQueue, *m_TransparentMultiDrawArray);
+    uploadMeshes(m_TransparentCommandQueue, m_TransparentMultiDrawArray);
 }
 
 void ChunkManager::loadNewChunks()

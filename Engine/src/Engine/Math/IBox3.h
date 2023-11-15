@@ -101,7 +101,11 @@ namespace eng::math
       IVec3<uSize> boxExtents = extents().upcast<uSize>();
       return boxExtents.i * boxExtents.j * boxExtents.k;
     }
-  
+
+    /*
+      \returns The 1D index for a point inside of the box, with the 0th index
+               at min and the final index at max.
+    */
     constexpr uSize linearIndexOf(const IVec3<T>& index) const
     {
       IVec3<uSize> boxExtents = extents().upcast<uSize>();

@@ -8,6 +8,12 @@ namespace eng
   template<typename T, typename DecayedType>
   concept DecaysTo = std::same_as<std::decay_t<T>, DecayedType>;
 
+  template<typename T, typename AssignedType>
+  concept AssignableTo = requires(AssignedType lhs, T rhs)
+  {
+    { lhs = std::forward<T>(rhs) } -> DecaysTo<AssignedType>;
+  };
+
   template<typename T>
   concept Arithmetic = std::is_arithmetic_v<T>;
   

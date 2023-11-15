@@ -1,6 +1,5 @@
 #pragma once
-#include <Engine/Math/ArrayRect.h>
-#include <Engine/Threads/Containers/ProtectedArrayBox.h>
+#include <Engine.h>
 
 // =========== Precision selection for Indices ============= //
 template <bool isDoublePrecision> struct GlobalIndexSelector;

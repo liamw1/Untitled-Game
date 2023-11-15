@@ -60,6 +60,7 @@
 #include "Engine/Scene/Scene.h"
 #include "Engine/Scene/Scripting.h"
 
+#include "Engine/Threads/AsyncMultiDrawArray.h"
 #include "Engine/Threads/ThreadPool.h"
 #include "Engine/Threads/Threads.h"
 #include "Engine/Threads/WorkSet.h"

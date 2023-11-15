@@ -48,6 +48,7 @@ Software Design:
   Prefer composition over inheritance.
   Prefer return/break/continue over nesting.
   Prefer to keep function definitions out of header files, including trivial cases like Constructor() = default;.
+  Prefer to initialize member variables in constructor rather than in class definition.
 
 Language Features:
   Avoid implicit conversions. User-defined conversions should be marked explicit. Implicit onversions to bool are ok.

@@ -5,6 +5,7 @@
 
 namespace eng
 {
+  MemoryPool::MemoryPool() = default;
   MemoryPool::MemoryPool(StorageBuffer::Type bufferType, i32 initialCapacity)
     : m_Capacity(initialCapacity)
   {
@@ -14,20 +15,9 @@ namespace eng
     addFreeRegion(0, m_Capacity);
   }
 
-  void MemoryPool::bind() const
-  {
-    m_Buffer->bind();
-  }
-
-  void MemoryPool::unBind() const
-  {
-    m_Buffer->unBind();
-  }
-
-  const std::shared_ptr<StorageBuffer>& MemoryPool::buffer()
-  {
-    return m_Buffer;
-  }
+  void MemoryPool::bind() const { m_Buffer->bind(); }
+  void MemoryPool::unBind() const { m_Buffer->unBind(); }
+  const std::shared_ptr<StorageBuffer>& MemoryPool::buffer() { return m_Buffer; }
 
   std::pair<bool, MemoryPool::address_t> MemoryPool::add(const void* data, i32 size)
   {

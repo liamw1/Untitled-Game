@@ -51,7 +51,7 @@ namespace lod
   bool Octree::Node::isLeaf() const { return data != nullptr; }
   i32 Octree::Node::LODLevel() const { return c_MaxNodeDepth - depth; }
 
-  globalIndex_t Octree::Node::size() const { return eng::arithmeticCast<globalIndex_t>(eng::pow2(LODLevel())); }
+  globalIndex_t Octree::Node::size() const { return eng::math::pow2<globalIndex_t>(LODLevel()); }
   length_t Octree::Node::length() const { return size() * Chunk::Length(); }
 
   eng::math::Vec3 Octree::Node::anchorPosition() const
@@ -236,8 +236,6 @@ namespace lod
 
   static BlockArrayRect<terrain::CompoundSurfaceData> generateNoise(Octree::Node* node)
   {
-    ENG_PROFILE_FUNCTION();
-
     length_t cellLength = node->length() / c_NumCells;
     eng::math::Vec2 LODAnchorXY = Chunk::Length() * static_cast<eng::math::Vec2>(node->anchor);
 

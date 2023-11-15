@@ -35,6 +35,7 @@ namespace eng
     i32 m_Capacity;
 
   public:
+    MemoryPool();
     MemoryPool(StorageBuffer::Type bufferType, i32 initialCapacity = 64);
 
     void bind() const;

@@ -7,29 +7,31 @@
 class ChunkManager
 {
   // Rendering
+  static constexpr i32 c_TextureSlot = 0;
+  static constexpr i32 c_StorageBufferBinding = 0;
+  static constexpr u32 c_StorageBufferSize = eng::math::pow2<u32>(20);
   static inline std::unique_ptr<eng::Shader> s_Shader;
   static inline std::unique_ptr<eng::Uniform> s_LightUniform;
   static inline std::unique_ptr<eng::StorageBuffer> s_SSBO;
   static inline std::shared_ptr<eng::TextureArray> s_TextureArray;
   static inline const eng::BufferLayout s_VertexBufferLayout = {{ eng::ShaderDataType::Uint32, "a_VertexData" },
                                                                 { eng::ShaderDataType::Uint32, "a_Lighting"   }};
-  static constexpr i32 c_TextureSlot = 0;
-  static constexpr i32 c_StorageBufferBinding = 0;
-  static constexpr u32 c_StorageBufferSize = eng::arithmeticCast<u32>(eng::pow2(20));
 
   eng::thread::UnorderedSet<ChunkDrawCommand> m_OpaqueCommandQueue;
   eng::thread::UnorderedSet<ChunkDrawCommand> m_TransparentCommandQueue;
-  std::unique_ptr<eng::MultiDrawIndexedArray<ChunkDrawCommand>> m_OpaqueMultiDrawArray;
-  std::unique_ptr<eng::MultiDrawIndexedArray<ChunkDrawCommand>> m_TransparentMultiDrawArray;
+  eng::MultiDrawIndexedArray<ChunkDrawCommand> m_OpaqueMultiDrawArray;
+  eng::MultiDrawIndexedArray<ChunkDrawCommand> m_TransparentMultiDrawArray;
 
   // Multi-threading
-  ChunkContainer m_ChunkContainer;
   std::shared_ptr<eng::thread::ThreadPool> m_ThreadPool;
   eng::thread::WorkSet<GlobalIndex, std::shared_ptr<Chunk>> m_LoadWork;
   eng::thread::WorkSet<GlobalIndex, void> m_CleanWork;
   eng::thread::WorkSet<GlobalIndex, void> m_LightingWork;
   eng::thread::WorkSet<GlobalIndex, void> m_LazyMeshingWork;
   eng::thread::WorkSet<GlobalIndex, void> m_ForceMeshingWork;
+
+  // Chunk data
+  ChunkContainer m_ChunkContainer;
 
   // LOD data
   lod::Octree m_LODTree;

@@ -67,7 +67,7 @@ class ChunkDrawCommand : public eng::MultiDrawIndexedCommand<GlobalIndex, ChunkD
   i32 m_VoxelBaseVertex;
 
 public:
-  ChunkDrawCommand(const GlobalIndex& chunkIndex, bool needsSorting);
+  ChunkDrawCommand(const GlobalIndex& chunkIndex, bool needsSorting = false);
 
   ChunkDrawCommand(ChunkDrawCommand&& other) noexcept;
   ChunkDrawCommand& operator=(ChunkDrawCommand&& other) noexcept;
@@ -94,15 +94,3 @@ private:
   void addQuadIndices(i32 baseVertex);
   void reorderIndices(const GlobalIndex& originIndex, const eng::math::Vec3& viewPosition);
 };
-
-namespace std
-{
-  template<>
-  struct hash<ChunkDrawCommand>
-  {
-    uSize operator()(const ChunkDrawCommand& drawCommand) const
-    {
-      return std::hash<GlobalIndex>()(drawCommand.id());
-    }
-  };
-}

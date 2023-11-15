@@ -22,7 +22,7 @@ static BlockArrayBox<T> retrieveData(const Chunk& chunk, const std::vector<Block
 {
   BlockBox arrayBoxSize = eng::algo::accumulate(regions, eng::Identity<BlockBox>(), [](const BlockBox& boxSize, const BlockBox& box)
   {
-    return eng::clone(boxSize).expandToEnclose(box);
+    return boxSize.expandToEnclose(box);
   });
   BlockArrayBox<T> arrayBox(arrayBoxSize, eng::AllocationPolicy::DefaultInitialize);
 

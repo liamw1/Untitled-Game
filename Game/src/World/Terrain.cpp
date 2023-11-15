@@ -311,11 +311,23 @@ namespace terrain
     return std::make_shared<Chunk>(chunkIndex);
   }
 
+
+
+  static length_t calculateElevation(const CompoundBiome& biomeData, const eng::math::Vec2& pointXY)
+  {
+    Biome::NoiseSamples noise = noise::octaveNoise2D<Biome::LocalElevationOctaves()>(pointXY, 1_m / c_LargestNoiseScale, c_NoiseLacunarity);
+
+    length_t elevation = 0;
+    for (int i = 0; i < c_MaxCompoundBiomes; ++i)
+      if (biomeData[i].type != Biome::Type::Null)
+        elevation += biomeData[i].weight * Biome::Get(biomeData[i].type)->localSurfaceElevation(noise);
+    return elevation;
+  }
+
   CompoundSurfaceData getSurfaceInfo(const eng::math::Vec2& pointXY)
   {
     CompoundBiome biomeData = getBiomeData(pointXY);
-    Biome::NoiseSamples noise = noise::octaveNoise2D<Biome::LocalElevationOctaves()>(pointXY, 1_m / c_LargestNoiseScale, c_NoiseLacunarity);
-    length_t elevation = Biome::Get(biomeData.getPrimary())->localSurfaceElevation(noise);
+    length_t elevation = calculateElevation(biomeData, pointXY);
 
     block::ID blockType = block::ID::Null;
     switch (biomeData.getPrimary())
@@ -330,8 +342,6 @@ namespace terrain
 
   length_t getElevation(const eng::math::Vec2& pointXY)
   {
-    CompoundBiome biomeData = getBiomeData(pointXY);
-    Biome::NoiseSamples noise = noise::octaveNoise2D<Biome::LocalElevationOctaves()>(pointXY, 1_m / c_LargestNoiseScale, c_NoiseLacunarity);
-    return Biome::Get(biomeData.getPrimary())->localSurfaceElevation(noise);
+    return calculateElevation(getBiomeData(pointXY), pointXY);
   }
 }

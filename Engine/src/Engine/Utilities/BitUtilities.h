@@ -8,5 +8,4 @@ namespace eng
   constexpr u64 u64Bit(i32 n) { return 1Ui64 << n; }
 
   constexpr u64 bit (i32 n) { return u64Bit(n); }
-  constexpr u64 pow2(i32 n) { return u64Bit(n); }
 }

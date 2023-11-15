@@ -12,7 +12,7 @@ class Chunk : private eng::NonCopyable, eng::NonMovable
   ProtectedBlockArrayBox<block::Type> m_Composition;
   ProtectedBlockArrayBox<block::Light> m_Lighting;
   std::atomic<u16> m_NonOpaqueFaces;
-  const GlobalIndex m_GlobalIndex;
+  GlobalIndex m_GlobalIndex;
 
 public:
   Chunk() = delete;
@@ -34,7 +34,7 @@ public:
     else if constexpr (std::is_same_v<T, block::Light>)
       return lighting();
     else
-      static_assert(eng::AlwaysFalse<T>, "Chunk does not store type!");
+      static_assert(eng::AlwaysFalse<T>, "Chunk does not store this type!");
   }
 
   /*

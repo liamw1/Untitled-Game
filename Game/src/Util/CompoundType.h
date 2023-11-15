@@ -11,7 +11,7 @@ public:
   };
 
 private:
-  std::array<Component, ComponentCount> m_Components{};
+  std::array<Component, ComponentCount> m_Components;
 
 public:
   constexpr CompoundType() { eng::algo::fill(m_Components, Component()); }

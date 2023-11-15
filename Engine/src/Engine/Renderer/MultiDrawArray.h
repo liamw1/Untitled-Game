@@ -104,10 +104,10 @@ namespace eng
   }
 
   template<typename T>
-  concept DrawCommand = std::derived_from<T, MultiDrawCommand<detail::IDType<T>, T>>;
+  concept DrawCommand = std::derived_from<T, MultiDrawCommand<detail::IDType<T>, T>> && std::constructible_from<T, detail::IDType<T>>;
 
   template<typename T>
-  concept DrawIndexedCommand = std::derived_from<T, MultiDrawIndexedCommand<detail::IDType<T>, T>>;
+  concept DrawIndexedCommand = std::derived_from<T, MultiDrawIndexedCommand<detail::IDType<T>, T>> && std::constructible_from<T, detail::IDType<T>>;
 
 
 
@@ -131,6 +131,7 @@ namespace eng
     std::unordered_map<Identifier, std::shared_ptr<uSize>> m_DrawCommandIndices;
 
   public:
+    MultiDrawArray() = default;
     MultiDrawArray(const BufferLayout& layout)
       : m_Stride(layout.stride()),
         m_MemoryPool(StorageBuffer::Type::VertexBuffer)
@@ -261,6 +262,7 @@ namespace eng
     std::unordered_map<Identifier, std::shared_ptr<uSize>> m_DrawCommandIndices;
 
   public:
+    MultiDrawIndexedArray() = default;
     MultiDrawIndexedArray(const BufferLayout& layout)
       : m_Stride(layout.stride()),
         m_IndexMemory(StorageBuffer::Type::IndexBuffer),
@@ -378,6 +380,30 @@ namespace eng
     {
       for (uSize i = begin; i < end; ++i)
         *m_DrawCommands[i].commandIndex() = i;
+    }
+  };
+}
+
+
+
+// Specialize std::hash for draw command types
+namespace std
+{
+  template<eng::DrawCommand T>
+  struct hash<T>
+  {
+    uSize operator()(const T& drawCommand) const
+    {
+      return std::hash<eng::detail::IDType<T>>()(drawCommand.id());
+    }
+  };
+
+  template<eng::DrawIndexedCommand T>
+  struct hash<T>
+  {
+    uSize operator()(const T& drawCommand) const
+    {
+      return std::hash<eng::detail::IDType<T>>()(drawCommand.id());
     }
   };
 }

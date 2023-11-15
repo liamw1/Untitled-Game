@@ -10,6 +10,9 @@ namespace eng::math
   template<Arithmetic T>
   [[nodiscard]] constexpr T cube(T value) noexcept { return value * square(value); }
 
+  template<std::integral T>
+  [[nodiscard]] constexpr T pow2(T n) noexcept { return static_cast<T>(1) << n; }
+
   template<Arithmetic T>
   [[nodiscard]] constexpr T abs(T value) noexcept
   {
