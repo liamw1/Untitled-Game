@@ -28,6 +28,9 @@ namespace eng
 
   /*
     A CRTP class that represents a single multi-draw command.
+    Derived classes must provided vertexData() and clearData() functions.
+    Derived classes of the indexed variant must also provide vertexCount()
+    and indexData() functions.
   */
   template<typename Derived, Hashable Identifier, bool IsIndexed>
   class GenericDrawCommand : private NonCopyable

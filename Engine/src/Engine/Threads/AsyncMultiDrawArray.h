@@ -4,8 +4,9 @@
 
 namespace eng::thread
 {
+  // Idea: store weak pointers to resources?
   template<DrawCommandType T>
-  class AsyncMultiDrawIndexedArray
+  class AsyncMultiDrawArray
   {
     using Identifier = T::IDType;
 
@@ -13,10 +14,10 @@ namespace eng::thread
     MultiDrawArray<T> m_MultiDrawArray;
 
   public:
-    AsyncMultiDrawIndexedArray() = default;
-    AsyncMultiDrawIndexedArray(const BufferLayout& layout)
+    AsyncMultiDrawArray(const BufferLayout& layout)
       : m_MultiDrawArray(layout) {}
 
+    // TODO: Remove
     MultiDrawArray<T>& multiDrawArray()
     {
       return m_MultiDrawArray;
