@@ -48,13 +48,4 @@ namespace newLod
 
   Octree::Octree()
     : m_Root(c_RootNodeAnchor, 0) {}
-
-
-
-  DrawCommand::DrawCommand(const GlobalIndex& anchor)
-    : eng::MultiDrawIndexedCommand<GlobalIndex, DrawCommand>(anchor, 0) {}
-
-  i32 DrawCommand::vertexCount() const { return 0; }
-  const void* DrawCommand::indexData() { return nullptr; }
-  const void* DrawCommand::vertexData() { return nullptr; }
 }

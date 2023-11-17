@@ -47,19 +47,4 @@ namespace newLod
   public:
     Octree();
   };
-
-
-
-  class DrawCommand : public eng::MultiDrawIndexedCommand<GlobalIndex, DrawCommand>
-  {
-  public:
-    DrawCommand(const GlobalIndex& anchor);
-
-    i32 vertexCount() const;
-    const void* indexData();
-    const void* vertexData();
-    void prune() {}
-
-  private:
-  };
 }

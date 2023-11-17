@@ -75,38 +75,34 @@ i32 ChunkVoxel::baseVertex() const
 
 
 ChunkDrawCommand::ChunkDrawCommand(const GlobalIndex& chunkIndex, bool needsSorting)
-  : eng::MultiDrawIndexedCommand<GlobalIndex, ChunkDrawCommand>(chunkIndex, 0),
+  : eng::GenericDrawCommand<ChunkDrawCommand, GlobalIndex, true>(chunkIndex),
     m_SortState(-1, -1, -1),
     m_NeedsSorting(needsSorting),
     m_VoxelBaseVertex(0) {}
-
-ChunkDrawCommand::ChunkDrawCommand(ChunkDrawCommand&& other) noexcept = default;
-ChunkDrawCommand& ChunkDrawCommand::operator=(ChunkDrawCommand&& other) noexcept = default;
 
 bool ChunkDrawCommand::operator==(const ChunkDrawCommand& other) const
 {
   return m_ID == other.m_ID;
 }
 
-i32 ChunkDrawCommand::vertexCount() const
+u32 ChunkDrawCommand::vertexCount() const
 {
-  return eng::arithmeticCast<i32>(4 * m_Quads.size());
+  return eng::arithmeticCast<u32>(4 * m_Quads.size());
 }
 
-const void* ChunkDrawCommand::indexData()
+const void* ChunkDrawCommand::indexData() const
 {
   return m_Indices.data();
 }
 
-const void* ChunkDrawCommand::vertexData()
+const void* ChunkDrawCommand::vertexData() const
 {
   return m_Quads.data();
 }
 
-void ChunkDrawCommand::prune()
+void ChunkDrawCommand::clearData()
 {
-  m_Quads.clear();
-  m_Quads.shrink_to_fit();
+  m_Quads = {};
   if (!m_NeedsSorting)
   {
     m_Voxels = {};
@@ -117,7 +113,7 @@ void ChunkDrawCommand::prune()
 void ChunkDrawCommand::addQuad(const BlockIndex& blockIndex, eng::math::Direction face, block::TextureID texture, const std::array<i32, 4>& sunlight, const std::array<i32, 4>& ambientOcclusion)
 {
   addQuadIndices(vertexCount());
-  m_IndexCount += 6;
+  m_CommandData.indexCount += 6;
   m_Quads.emplace_back(blockIndex, face, texture, sunlight, ambientOcclusion);
 }
 

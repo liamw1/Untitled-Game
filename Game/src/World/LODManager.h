@@ -16,9 +16,6 @@ namespace newLod
                                                                    { eng::ShaderDataType::Float2, "a_TextureWeighs"   },
                                                                    { eng::ShaderDataType::Int,    "a_QuadIndex"       } };
 
-    eng::thread::UnorderedSet<DrawCommand> m_CommandQueue;
-    eng::MultiDrawIndexedArray<DrawCommand> m_MultiDrawArray;
-
     // LOD data
     Octree m_LODs;
 

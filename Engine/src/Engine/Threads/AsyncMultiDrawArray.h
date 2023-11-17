@@ -4,41 +4,41 @@
 
 namespace eng::thread
 {
-  template<DrawIndexedCommand DrawCommandType>
+  template<DrawCommandType T>
   class AsyncMultiDrawIndexedArray
   {
-    using Identifier = detail::IDType<DrawCommandType>;
+    using Identifier = T::IDType;
 
-    UnorderedSet<DrawCommandType> m_CommandQueue;
-    MultiDrawIndexedArray<DrawCommandType> m_MultiDrawArray;
+    UnorderedSet<T> m_CommandQueue;
+    MultiDrawArray<T> m_MultiDrawArray;
 
   public:
     AsyncMultiDrawIndexedArray() = default;
     AsyncMultiDrawIndexedArray(const BufferLayout& layout)
       : m_MultiDrawArray(layout) {}
 
-    MultiDrawIndexedArray<DrawCommandType>& multiDrawArray()
+    MultiDrawArray<T>& multiDrawArray()
     {
       return m_MultiDrawArray;
     }
 
-    void queueCommand(DrawCommandType&& drawCommand)
+    void queueCommand(T&& drawCommand)
     {
       m_CommandQueue.insertOrReplace(std::move(drawCommand));
     }
 
     void removeCommand(const Identifier& id)
     {
-      m_CommandQueue.insertOrReplace(DrawCommandType(id));
+      m_CommandQueue.insertOrReplace(T(id));
     }
 
     template<std::predicate<Identifier> P>
     void uploadQueuedCommandsIf(P&& predicate)
     {
-      std::unordered_set<DrawCommandType> drawCommands = m_CommandQueue.removeAll();
+      std::unordered_set<T> drawCommands = m_CommandQueue.removeAll();
       for (auto it = drawCommands.begin(); it != drawCommands.end();)
       {
-        DrawCommandType drawCommand = std::move(drawCommands.extract(it++).value());
+        T drawCommand = std::move(drawCommands.extract(it++).value());
 
         m_MultiDrawArray.remove(drawCommand.id());
         if (predicate(drawCommand.id()))

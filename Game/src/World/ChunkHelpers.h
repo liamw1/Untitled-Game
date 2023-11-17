@@ -56,7 +56,7 @@ public:
   i32 baseVertex() const;
 };
 
-class ChunkDrawCommand : public eng::MultiDrawIndexedCommand<GlobalIndex, ChunkDrawCommand>
+class ChunkDrawCommand : public eng::IndexedDrawCommand<ChunkDrawCommand, GlobalIndex>
 {
   std::vector<ChunkQuad> m_Quads;
   std::vector<ChunkVoxel> m_Voxels;
@@ -69,16 +69,13 @@ class ChunkDrawCommand : public eng::MultiDrawIndexedCommand<GlobalIndex, ChunkD
 public:
   ChunkDrawCommand(const GlobalIndex& chunkIndex, bool needsSorting = false);
 
-  ChunkDrawCommand(ChunkDrawCommand&& other) noexcept;
-  ChunkDrawCommand& operator=(ChunkDrawCommand&& other) noexcept;
-
   bool operator==(const ChunkDrawCommand& other) const;
 
-  i32 vertexCount() const;
+  u32 vertexCount() const;
 
-  const void* indexData();
-  const void* vertexData();
-  void prune();
+  const void* indexData() const;
+  const void* vertexData() const;
+  void clearData();
 
   void addQuad(const BlockIndex& blockIndex, eng::math::Direction face, block::TextureID texture, const std::array<i32, 4>& sunlight, const std::array<i32, 4>& ambientOcclusion);
   void addVoxel(const BlockIndex& blockIndex, eng::math::DirectionBitMask enabledFaces);
