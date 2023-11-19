@@ -26,12 +26,12 @@ void ChunkManager::initialize()
   s_TextureArray = block::getTextureArray();
 
   s_SSBO = eng::StorageBuffer::Create(eng::StorageBuffer::Type::SSBO, c_StorageBufferBinding);
-  s_SSBO->set(nullptr, c_StorageBufferSize);
+  s_SSBO->resize(c_StorageBufferSize);
   s_SSBO->bind();
 
   LightUniforms lightUniforms;
   lightUniforms.sunIntensity = 1.0f;
-  s_LightUniform->set(&lightUniforms, sizeof(LightUniforms));
+  s_LightUniform->set(lightUniforms);
 }
 
 void ChunkManager::render()
@@ -78,13 +78,9 @@ void ChunkManager::render()
       storageBufferData.emplace_back(chunkAnchor, 0);
     }
 
-    u32 bufferDataSize = eng::arithmeticCast<u32>(storageBufferData.size() * sizeof(eng::math::Float4));
-    if (bufferDataSize > c_StorageBufferSize)
-      ENG_ERROR("Chunk anchor data exceeds SSBO size!");
-
     m_OpaqueMultiDrawArray.multiDrawArray().bind();
-    s_SSBO->update(storageBufferData.data(), 0, bufferDataSize);
-    eng::render::command::multiDrawIndexed(drawCommands.data(), commandCount, sizeof(ChunkDrawCommand));
+    s_SSBO->update(0, storageBufferData);
+    eng::render::command::multiDrawIndexed(drawCommands, commandCount);
   }
 
   {
@@ -123,13 +119,9 @@ void ChunkManager::render()
       storageBufferData.emplace_back(chunkAnchor, 0);
     }
 
-    u32 bufferDataSize = eng::arithmeticCast<u32>(storageBufferData.size() * sizeof(eng::math::Float4));
-    if (bufferDataSize > c_StorageBufferSize)
-      ENG_ERROR("Chunk anchor data exceeds SSBO size!");
-
     m_TransparentMultiDrawArray.multiDrawArray().bind();
-    s_SSBO->update(storageBufferData.data(), 0, bufferDataSize);
-    eng::render::command::multiDrawIndexed(drawCommands.data(), commandCount, sizeof(ChunkDrawCommand));
+    s_SSBO->update(0, storageBufferData);
+    eng::render::command::multiDrawIndexed(drawCommands, commandCount);
   }
 }
 
@@ -392,11 +384,39 @@ void ChunkManager::removeMeshes(const GlobalIndex& chunkIndex)
   m_TransparentMultiDrawArray.removeCommand(chunkIndex);
 }
 
+// TODO: Remove
+static BlockArrayBox<block::Light> calculateLighting(const BlockArrayBox<block::Type>& composition)
+{
+  BlockArrayBox<block::Light> lighting(Chunk::Bounds(), eng::AllocationPolicy::Deferred);
+  if (!composition)
+    return lighting;
+
+  lighting.allocate();
+  for (blockIndex_t i = 0; i < Chunk::Size(); ++i)
+    for (blockIndex_t j = 0; j < Chunk::Size(); ++j)
+    {
+      blockIndex_t k = 0;
+      while (k < Chunk::Size() && !composition[i][j][k].hasTransparency())
+      {
+        lighting[i][j][k] = block::Light(0);
+        k++;
+      }
+      for (; k < Chunk::Size(); ++k)
+        lighting[i][j][k] = block::Light(block::Light::MaxValue());
+    }
+  return lighting;
+}
+
 std::shared_ptr<Chunk> ChunkManager::generateNewChunk(const GlobalIndex& chunkIndex)
 {
   ENG_PROFILE_FUNCTION();
 
-  std::shared_ptr<Chunk> chunk = terrain::generateNew(chunkIndex);
+  BlockArrayBox<block::Type> composition = terrain::generateNew(chunkIndex);
+  BlockArrayBox<block::Light> lighting = calculateLighting(composition);
+
+  std::shared_ptr chunk = std::make_shared<Chunk>(chunkIndex);
+  chunk->setComposition(std::move(composition));
+  chunk->setLighting(std::move(lighting));
 
   bool insertionSuccess = m_ChunkContainer.insert(chunkIndex, std::move(chunk));
   if (insertionSuccess)

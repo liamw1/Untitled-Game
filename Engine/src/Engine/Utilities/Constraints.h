@@ -35,4 +35,21 @@ namespace eng
     NonMovable(const NonMovable& other) = default;
     NonMovable& operator=(const NonMovable& other) = default;
   };
+
+  /*
+    A constraint on classes that prevents move AND copy construction/assignment.
+    Meant to be privately inherited by non-copyable non-movable classes.
+  */
+  class SetInStone
+  {
+  protected:
+    SetInStone() = default;
+    ~SetInStone() = default;
+
+    SetInStone(SetInStone&& other) = delete;
+    SetInStone& operator=(SetInStone&& other) = delete;
+
+    SetInStone(const SetInStone& other) = delete;
+    SetInStone& operator=(const SetInStone& other) = delete;
+  };
 }

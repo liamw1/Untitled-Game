@@ -11,7 +11,7 @@ namespace eng
     : m_Capacity(initialCapacity)
   {
     m_Buffer = StorageBuffer::Create(bufferType);
-    m_Buffer->set(nullptr, m_Capacity);
+    m_Buffer->resize(m_Capacity);
 
     addFreeRegion(0, m_Capacity);
   }
@@ -20,10 +20,12 @@ namespace eng
   void MemoryPool::unBind() const { m_Buffer->unBind(); }
   const std::shared_ptr<StorageBuffer>& MemoryPool::buffer() { return m_Buffer; }
 
-  std::pair<bool, MemoryPool::address_t> MemoryPool::add(const void* data, i32 size)
+  std::pair<bool, MemoryPool::address_t> MemoryPool::malloc(const mem::Data& data)
   {
-    if (size <= 0)
+    if (data.size() == 0)
       return { false, -1 };
+
+    i32 size = arithmeticCast<i32>(data.size());
 
     // Find the smallest free region that can fit the data. If no such region can be found, resize.
     bool triggeredResize = false;
@@ -72,11 +74,11 @@ namespace eng
     allocationRegion.size = size;
 
     // Upload data to GPU
-    m_Buffer->update(data, allocationAddress, size);
+    m_Buffer->update(allocationAddress, data);
     return { triggeredResize, allocationAddress };
   }
 
-  void MemoryPool::remove(address_t address)
+  void MemoryPool::free(address_t address)
   {
     RegionsIterator allocationPosition = m_Regions.find(address);
     ENG_CORE_ASSERT(allocationPosition != m_Regions.end(), "No memory region was found at adress {0}!", address);
@@ -119,10 +121,11 @@ namespace eng
     addFreeRegion(freedRegionAddress, freedRegionSize);
   }
 
-  void MemoryPool::amend(const void* data, address_t address)
+  void MemoryPool::realloc(address_t address, const mem::Data& data)
   {
-    RegionsIterator allocationPosition = m_Regions.find(address);
-    m_Buffer->update(data, address, regionSize(allocationPosition));
+    // RegionsIterator allocationPosition = m_Regions.find(address);
+    // regionSize(allocationPosition)
+    m_Buffer->update(address, data);
   }
 
   bool MemoryPool::isFree(RegionsIterator regionIterator) const

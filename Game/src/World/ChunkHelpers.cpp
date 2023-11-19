@@ -80,25 +80,12 @@ ChunkDrawCommand::ChunkDrawCommand(const GlobalIndex& chunkIndex, bool needsSort
     m_NeedsSorting(needsSorting),
     m_VoxelBaseVertex(0) {}
 
-bool ChunkDrawCommand::operator==(const ChunkDrawCommand& other) const
-{
-  return m_ID == other.m_ID;
-}
+bool ChunkDrawCommand::operator==(const ChunkDrawCommand& other) const { return m_ID == other.m_ID; }
 
-u32 ChunkDrawCommand::vertexCount() const
-{
-  return eng::arithmeticCast<u32>(4 * m_Quads.size());
-}
+u32 ChunkDrawCommand::vertexCount() const { return eng::arithmeticCast<u32>(4 * m_Quads.size()); }
 
-const void* ChunkDrawCommand::indexData() const
-{
-  return m_Indices.data();
-}
-
-const void* ChunkDrawCommand::vertexData() const
-{
-  return m_Quads.data();
-}
+eng::mem::IndexData ChunkDrawCommand::indexData() const { return m_Indices; }
+eng::mem::Data ChunkDrawCommand::vertexData() const { return m_Quads; }
 
 void ChunkDrawCommand::clearData()
 {

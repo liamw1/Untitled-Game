@@ -7,7 +7,7 @@ namespace eng::thread
     Thread-safe version of the ArrayBox.
   */
   template<typename T, std::integral IntType>
-  class ProtectedArrayBox : private NonCopyable, NonMovable
+  class ProtectedArrayBox : private SetInStone
   {
     mutable std::shared_mutex m_Mutex;
     math::ArrayBox<T, IntType> m_ArrayBox;

@@ -29,6 +29,8 @@ namespace eng
         : free(true), size(regionSize) {}
     };
 
+    static constexpr f32 c_CapacityIncreaseOnResize = 1.25f;
+
     std::shared_ptr<StorageBuffer> m_Buffer;
     std::map<address_t, MemoryRegion> m_Regions;  // For fast access based on address
     std::multimap<i32, address_t> m_FreeRegions;  // For fast access based on free region size
@@ -47,25 +49,25 @@ namespace eng
       Uploads data to GPU. May trigger a resize.
       \returns If a resize was triggered and an address for the allocated memory.
     */
-    [[nodiscard]] std::pair<bool, address_t> add(const void* data, i32 size);
+    [[nodiscard]] std::pair<bool, address_t> malloc(const mem::Data& data);
 
     /*
       Removes the memory at the specified address. Doesn't actually delete any memory.
       Instead, the memory is just no longer indexed by the memory pool and may be overwritten.
     */
-    void remove(address_t address);
+    void free(address_t address);
 
     /*
       Overwrites memory at the given address. Assumes data is the same size as the original
       allocation. Horrifically unsafe.
+
+      TODO: Fix this function.
     */
-    void amend(const void* data, address_t address);
+    void realloc(address_t address, const mem::Data& data);
 
   private:
     using RegionsIterator = std::map<address_t, MemoryRegion>::iterator;
     using FreeRegionsIterator = std::multimap<i32, address_t>::iterator;
-
-    static constexpr f32 c_CapacityIncreaseOnResize = 1.25f;
 
     bool isFree(RegionsIterator region) const;
     i32& regionSize(RegionsIterator region);

@@ -54,12 +54,12 @@ namespace eng
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
   }
 
-  void OpenGLUniform::set(const void* data, u32 size)
+  void OpenGLUniform::set(const mem::UniformData& uniformData)
   {
     ENG_CORE_ASSERT(thread::isMainThread(), "OpenGL calls must be made on the main thread!");
     ENG_CORE_ASSERT(m_Binding < c_MaxUniformBindings, "Binding exceeds maximum allowed uniform bindings!");
-    ENG_CORE_ASSERT(size <= s_BufferSizes[m_Binding], "Data exceeds uniform buffer size!");
+    ENG_CORE_ASSERT(uniformData.size() <= s_BufferSizes[m_Binding], "Data exceeds uniform buffer size!");
 
-    glNamedBufferSubData(s_RendererIDs[m_Binding], 0, size, data);
+    glNamedBufferSubData(s_RendererIDs[m_Binding], 0, uniformData.size(), uniformData.raw());
   }
 }

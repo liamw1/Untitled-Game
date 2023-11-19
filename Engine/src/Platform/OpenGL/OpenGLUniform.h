@@ -20,6 +20,6 @@ namespace eng
     void bind() const override;
     void unBind() const override;
 
-    void set(const void* data, u32 size) override;
+    void set(const mem::UniformData& uniformData) override;
   };
 }

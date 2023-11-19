@@ -88,13 +88,13 @@ namespace eng
   u32 OpenGLTexture::getHeight() const { return m_Height; }
   u32 OpenGLTexture::getRendererID() const { return m_RendererID; }
 
-  void OpenGLTexture::setData(void* data, u32 size)
+  void OpenGLTexture::setData(const mem::Data& textureData)
   {
     ENG_PROFILE_FUNCTION();
     ENG_CORE_ASSERT(thread::isMainThread(), "OpenGL calls must be made on the main thread!");
 
-    ENG_CORE_ASSERT(size == m_Width * m_Height * (m_DataFormat == GL_RGBA ? 4 : 3), "Data must be entire texture!");
-    glTextureSubImage2D(m_RendererID, 0, 0, 0, m_Width, m_Height, m_DataFormat, GL_UNSIGNED_BYTE, data);
+    ENG_CORE_ASSERT(textureData.size() == m_Width * m_Height * (m_DataFormat == GL_RGBA ? 4 : 3), "Data must be entire texture!");
+    glTextureSubImage2D(m_RendererID, 0, 0, 0, m_Width, m_Height, m_DataFormat, GL_UNSIGNED_BYTE, textureData.raw());
   }
 
   void OpenGLTexture::bind(u32 slot) const

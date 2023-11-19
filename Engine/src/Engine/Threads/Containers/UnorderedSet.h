@@ -4,7 +4,7 @@ namespace eng::thread
 {
   template<Hashable V>
     requires std::movable<V>
-  class UnorderedSet : private NonCopyable, NonMovable
+  class UnorderedSet : private SetInStone
   {
     mutable std::shared_mutex m_Mutex;
     std::unordered_set<V> m_Data;

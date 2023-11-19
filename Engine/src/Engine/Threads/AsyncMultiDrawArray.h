@@ -12,6 +12,7 @@ namespace eng::thread
 
     UnorderedSet<T> m_CommandQueue;
     MultiDrawArray<T> m_MultiDrawArray;
+    std::mutex m_Mutex;
 
   public:
     AsyncMultiDrawArray(const BufferLayout& layout)
@@ -21,6 +22,13 @@ namespace eng::thread
     MultiDrawArray<T>& multiDrawArray()
     {
       return m_MultiDrawArray;
+    }
+
+    template<std::invocable<eng::MultiDrawArray<T>&> F>
+    void drawOperation(F&& operation)
+    {
+      std::lock_guard lock(m_Mutex);
+      operation(m_MultiDrawArray);
     }
 
     void queueCommand(T&& drawCommand)
@@ -36,6 +44,8 @@ namespace eng::thread
     template<std::predicate<Identifier> P>
     void uploadQueuedCommandsIf(P&& predicate)
     {
+      std::lock_guard lock(m_Mutex);
+
       std::unordered_set<T> drawCommands = m_CommandQueue.removeAll();
       for (auto it = drawCommands.begin(); it != drawCommands.end();)
       {

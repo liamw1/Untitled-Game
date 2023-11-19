@@ -6,7 +6,8 @@
 
 namespace terrain
 {
-  CompoundSurfaceData::CompoundSurfaceData() = default;
+  CompoundSurfaceData::CompoundSurfaceData()
+    : CompoundSurfaceData(0, block::ID::Null) {}
   CompoundSurfaceData::CompoundSurfaceData(length_t surfaceElevation, block::ID blockType)
     : m_Elevation(surfaceElevation), m_Components(blockType)
   { }
@@ -265,23 +266,7 @@ namespace terrain
       }
   }
 
-  static void lightingStage(BlockArrayBox<block::Light>& lighting, const BlockArrayBox<block::Type>& composition)
-  {
-    for (blockIndex_t i = 0; i < Chunk::Size(); ++i)
-      for (blockIndex_t j = 0; j < Chunk::Size(); ++j)
-      {
-        blockIndex_t k = 0;
-        while (k < Chunk::Size() && !composition[i][j][k].hasTransparency())
-        {
-          lighting[i][j][k] = block::Light(0);
-          k++;
-        }
-        for (; k < Chunk::Size(); ++k)
-          lighting[i][j][k] = block::Light(block::Light::MaxValue());
-      }
-  }
-
-  std::shared_ptr<Chunk> generateNew(const GlobalIndex& chunkIndex)
+  BlockArrayBox<block::Type> generateNew(const GlobalIndex& chunkIndex)
   {
     BlockArrayRect<length_t> heightMap(Chunk::Bounds2D(), eng::AllocationPolicy::ForOverwrite);
     BlockArrayBox<block::Type> composition(Chunk::Bounds(), eng::AllocationPolicy::ForOverwrite);
@@ -292,23 +277,12 @@ namespace terrain
 
     if (composition.filledWith(block::ID::Air))
       composition.clear();
-
-    std::shared_ptr newChunk = std::make_shared<Chunk>(chunkIndex);
-    if (composition)
-    {
-      BlockArrayBox<block::Light> lighting(Chunk::Bounds(), eng::AllocationPolicy::ForOverwrite);
-      lightingStage(lighting, composition);
-
-      newChunk->setComposition(std::move(composition));
-      newChunk->setLighting(std::move(lighting));
-    }
-
-    return newChunk;
+    return composition;
   }
 
-  std::shared_ptr<Chunk> generateEmpty(const GlobalIndex& chunkIndex)
+  BlockArrayBox<block::Type> generateEmpty(const GlobalIndex& chunkIndex)
   {
-    return std::make_shared<Chunk>(chunkIndex);
+    return BlockArrayBox<block::Type>(Chunk::Bounds(), eng::AllocationPolicy::Deferred);
   }
 
 

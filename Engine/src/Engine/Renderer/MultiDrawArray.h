@@ -1,8 +1,8 @@
 #pragma once
 #include "VertexArray.h"
-#include "MemoryPool.h"
 #include "Engine/Core/Algorithm.h"
 #include "Engine/Core/Log/Log.h"
+#include "Engine/Memory/MemoryPool.h"
 #include "Engine/Utilities/Constraints.h"
 
 namespace eng
@@ -92,14 +92,24 @@ namespace eng
         m_CommandData.firstVertex = firstElement;
     }
 
-    const void* indexData() const
+    mem::Data indexData() const
     {
       if constexpr (IsIndexed)
-        return static_cast<const Derived*>(this)->indexData();
+      {
+        mem::IndexData data = static_cast<const Derived*>(this)->indexData();
+        ENG_CORE_ASSERT(data.elementCount() == m_CommandData.indexCount, "Index data does not have the correct number of indices!");
+        return static_cast<mem::Data>(data);
+      }
       else
-        return nullptr;
+        return {};
     }
-    const void* vertexData() const { return static_cast<const Derived*>(this)->vertexData(); }
+    mem::Data vertexData() const
+    {
+      mem::Data data = static_cast<const Derived*>(this)->vertexData();
+      if constexpr (!IsIndexed)
+        ENG_CORE_ASSERT(data.elementCount() == m_CommandData.vertexCount, "Vertex data does not have the correct number of vertices!");
+      return data;
+    }
     void clearData() { static_cast<Derived*>(this)->clearData(); }
 
     static constexpr bool Indexed() { return IsIndexed; }
@@ -165,8 +175,8 @@ namespace eng
       ENG_CORE_ASSERT(m_DrawCommandIndices.find(baseCommand.id()) == m_DrawCommandIndices.end(), "Draw command with ID {0} has already been allocated!", baseCommand.id());
 
       // Add draw command data to memory pools. If a vertex buffer resize is triggered, vertex array needs to have layout set again.
-      auto [indexBufferResized, indexAllocationAddress] = m_IndexMemory.add(baseCommand.indexData(), elementCount * sizeof(u32));
-      auto [vertexBufferResized, vertexAllocationAddress] = m_VertexMemory.add(baseCommand.vertexData(), vertexCount * m_Stride);
+      auto [indexBufferResized, indexAllocationAddress] = m_IndexMemory.malloc(baseCommand.indexData());
+      auto [vertexBufferResized, vertexAllocationAddress] = m_VertexMemory.malloc(baseCommand.vertexData());
       if (vertexBufferResized)
         m_VertexArray->setLayout(m_VertexArray->getLayout());
       baseCommand.clearData();
@@ -195,8 +205,8 @@ namespace eng
 
       uSize drawCommandIndex = *drawCommandToRemove->second;
       if constexpr (c_IsIndexed)
-        m_IndexMemory.remove(getDrawCommandIndicesAddress(m_DrawCommands[drawCommandIndex]));
-      m_VertexMemory.remove(getDrawCommandVerticesAddress(m_DrawCommands[drawCommandIndex]));
+        m_IndexMemory.free(getDrawCommandIndicesAddress(m_DrawCommands[drawCommandIndex]));
+      m_VertexMemory.free(getDrawCommandVerticesAddress(m_DrawCommands[drawCommandIndex]));
       m_DrawCommandIndices.erase(drawCommandToRemove);
 
       // Update draw command container
@@ -246,9 +256,9 @@ namespace eng
         }
 
         if constexpr (c_IsIndexed)
-          m_IndexMemory.amend(baseCommand.indexData(), getDrawCommandIndicesAddress(baseCommand));
+          m_IndexMemory.realloc(getDrawCommandIndicesAddress(baseCommand), baseCommand.indexData());
         else
-          m_VertexMemory.amend(baseCommand.vertexData(), getDrawCommandVerticesAddress(baseCommand));
+          m_VertexMemory.realloc(getDrawCommandVerticesAddress(baseCommand), baseCommand.vertexData());
       });
     }
 

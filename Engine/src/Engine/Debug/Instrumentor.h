@@ -22,7 +22,7 @@
 */
 namespace eng::debug
 {
-  class Instrumentor : private NonCopyable, NonMovable
+  class Instrumentor : private SetInStone
   {
     std::mutex m_Mutex;
     std::optional<std::string> m_CurrentSession;

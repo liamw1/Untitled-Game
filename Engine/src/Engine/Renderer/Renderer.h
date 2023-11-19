@@ -21,7 +21,7 @@ namespace eng::render
     ENG_ASSERT(target, "Vertex array has not been initialized!");
 
     uintptr_t dataSize = vertices.size() * sizeof(Vertex);
-    target->setVertexBuffer(vertices.data(), dataSize);
+    target->setVertexBuffer(vertices);
     target->setIndexBuffer(IndexBuffer(indices));
   }
 }

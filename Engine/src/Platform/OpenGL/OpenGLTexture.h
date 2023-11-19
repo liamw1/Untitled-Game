@@ -20,7 +20,7 @@ namespace eng
     u32 getHeight() const override;
     u32 getRendererID() const override;
 
-    void setData(void* data, u32 size) override;
+    void setData(const mem::Data& textureData) override;
 
     void bind(u32 slot = 0) const override;
 

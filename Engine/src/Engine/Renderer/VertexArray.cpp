@@ -5,13 +5,11 @@
 
 namespace eng
 {
-  IndexBuffer::IndexBuffer(const u32* indices, u32 count)
+  IndexBuffer::IndexBuffer(const mem::IndexData& data)
     : m_Buffer(StorageBuffer::Create(StorageBuffer::Type::IndexBuffer))
   {
-    m_Buffer->set(indices, count * sizeof(u32));
+    m_Buffer->set(static_cast<mem::Data>(data));
   }
-  IndexBuffer::IndexBuffer(const std::vector<u32>& indices)
-    : IndexBuffer(indices.data(), arithmeticCast<u32>(indices.size())) {}
   IndexBuffer::IndexBuffer(const std::shared_ptr<StorageBuffer>& indexBufferStorage)
     : m_Buffer(indexBufferStorage) {}
 
@@ -35,10 +33,5 @@ namespace eng
       case RendererAPI::API::OpenGL_Legacy: return std::make_unique<OpenGLVertexArray>();
     }
     throw std::invalid_argument("Invalid RendererAPI!");
-  }
-
-  void VertexArray::setVertexBuffer(const void* data, u64 size)
-  {
-    setVertexBuffer(data, arithmeticCast<u32>(size));
   }
 }

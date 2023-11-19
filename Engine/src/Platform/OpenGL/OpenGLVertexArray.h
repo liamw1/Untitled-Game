@@ -1,6 +1,5 @@
 #pragma once
 #include "Engine/Renderer/VertexArray.h"
-#include "Engine/Renderer/StorageBuffer.h"
 
 namespace eng
 {
@@ -20,9 +19,9 @@ namespace eng
 
     void setLayout(const BufferLayout& layout) override;
 
-    void setVertexBuffer(const void* data, u32 size) override;
+    void setVertexBuffer(const mem::Data& data) override;
     void setVertexBuffer(const std::shared_ptr<StorageBuffer>& vertexBuffer) override;
-    void updateVertexBuffer(const void* data, u32 offset, u32 size) const override;
+    void updateVertexBuffer(u32 offset, const mem::Data& data) const override;
     void resizeVertexBuffer(u32 newSize) override;
 
     void setIndexBuffer(const IndexBuffer& indexBuffer) override;

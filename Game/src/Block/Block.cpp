@@ -147,7 +147,7 @@ namespace block
     std::call_once(s_InitializedFlag, []()
     {
       s_Uniform = eng::Uniform::Create(c_UniformBinding, sizeof(BlockUniformData));
-      s_Uniform->set(&s_BlockUniformData, sizeof(BlockUniformData));
+      s_Uniform->set(s_BlockUniformData);
 
       s_TexturePaths = computeTexturePaths();
 

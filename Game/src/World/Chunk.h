@@ -5,7 +5,7 @@
 /*
   A class representing a NxNxN cube of blocks.
 */
-class Chunk : private eng::NonCopyable, eng::NonMovable
+class Chunk : private eng::SetInStone
 {
   static constexpr blockIndex_t c_ChunkSize = 32;
 

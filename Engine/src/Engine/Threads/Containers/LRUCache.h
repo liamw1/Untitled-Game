@@ -4,7 +4,7 @@
 namespace eng::thread
 {
   template<Hashable K, typename V>
-  class LRUCache : private NonCopyable, NonMovable
+  class LRUCache : private SetInStone
   {
     std::mutex m_Mutex;
     eng::LRUCache<K, std::shared_ptr<V>> m_Cache;

@@ -1,6 +1,6 @@
 #pragma once
-#include "BufferLayout.h"
-#include "StorageBuffer.h"
+#include "Engine/Memory/BufferLayout.h"
+#include "Engine/Memory/StorageBuffer.h"
 
 namespace eng
 {
@@ -13,8 +13,7 @@ namespace eng
     std::shared_ptr<StorageBuffer> m_Buffer;
 
   public:
-    IndexBuffer(const u32* indices, u32 count);
-    IndexBuffer(const std::vector<u32>& indices);
+    IndexBuffer(const mem::IndexData& data);
     IndexBuffer(const std::shared_ptr<StorageBuffer>& indexBufferStorage);
 
     void bind() const;
@@ -43,9 +42,9 @@ namespace eng
       \param data Buffer of vertex data
       \param size Size of buffer in bytes
     */
-    virtual void setVertexBuffer(const void* data, u32 size) = 0;
+    virtual void setVertexBuffer(const mem::Data& data) = 0;
     virtual void setVertexBuffer(const std::shared_ptr<StorageBuffer>& vertexBuffer) = 0;
-    virtual void updateVertexBuffer(const void* data, u32 offset, u32 size) const = 0;
+    virtual void updateVertexBuffer(u32 offset, const mem::Data& data) const = 0;
     virtual void resizeVertexBuffer(u32 newSize) = 0;
 
     /*
@@ -58,8 +57,6 @@ namespace eng
 
     virtual const BufferLayout& getLayout() const = 0;
     virtual const std::optional<IndexBuffer>& getIndexBuffer() const = 0;
-
-    void setVertexBuffer(const void* data, u64 size);
 
     static std::unique_ptr<VertexArray> Create();
   };

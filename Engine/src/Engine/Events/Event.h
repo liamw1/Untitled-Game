@@ -13,7 +13,7 @@
 */
 namespace eng::event
 {
-  class Event : private NonCopyable, NonMovable
+  class Event : private SetInStone
   {
     using EventVariant = std::variant<AppRender, AppTick, AppUpdate, WindowClose, WindowResize,
                                       MouseButtonPress, MouseButtonRelease, MouseMove, MouseScroll,

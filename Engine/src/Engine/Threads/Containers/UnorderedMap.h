@@ -5,7 +5,7 @@ namespace eng::thread
 {
   template<Hashable K, typename V>
     requires std::is_default_constructible_v<K> && std::move_constructible<K>
-  class UnorderedMap : private NonCopyable, NonMovable
+  class UnorderedMap : private SetInStone
   {
     mutable std::shared_mutex m_Mutex;
     std::unordered_map<K, std::shared_ptr<V>> m_Data;

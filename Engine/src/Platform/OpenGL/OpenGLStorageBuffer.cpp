@@ -1,5 +1,6 @@
 #include "ENpch.h"
 #include "OpenGLStorageBuffer.h"
+#include "Engine/Core/Casting.h"
 #include "Engine/Debug/Assert.h"
 #include "Engine/Threads/Threads.h"
 #include <glad/glad.h>
@@ -64,22 +65,22 @@ namespace eng
     return m_Type;
   }
 
-  void OpenGLStorageBuffer::set(const void* data, u32 size)
+  void OpenGLStorageBuffer::set(const mem::Data& data)
   {
     ENG_CORE_ASSERT(thread::isMainThread(), "OpenGL calls must be made on the main thread!");
-    glNamedBufferData(m_RendererID, size, data, GL_DYNAMIC_DRAW);
-    m_Size = size;
+    glNamedBufferData(m_RendererID, data.size(), data.raw(), GL_DYNAMIC_DRAW);
+    m_Size = arithmeticCast<u32>(data.size());
 
 #if ENG_DEBUG
     unBind();
 #endif
   }
 
-  void OpenGLStorageBuffer::update(const void* data, u32 offset, u32 size)
+  void OpenGLStorageBuffer::update(u32 offset, const mem::Data& data)
   {
     ENG_CORE_ASSERT(thread::isMainThread(), "OpenGL calls must be made on the main thread!");
-    ENG_CORE_ASSERT(offset + size <= m_Size, "Data is outside of buffer range!");
-    glNamedBufferSubData(m_RendererID, offset, size, data);
+    ENG_CORE_ASSERT(offset + data.size() <= m_Size, "Data is outside of buffer range!");
+    glNamedBufferSubData(m_RendererID, offset, data.size(), data.raw());
 
 #if ENG_DEBUG
     unBind();
@@ -96,8 +97,11 @@ namespace eng
     glNamedBufferData(m_RendererID, newSize, nullptr, GL_DYNAMIC_DRAW);
 
     // Copy old buffer and free its memory
-    glCopyNamedBufferSubData(oldRendererID, m_RendererID, 0, 0, std::min(m_Size, newSize));
-    glDeleteBuffers(1, &oldRendererID);
+    if (oldRendererID)
+    {
+      glCopyNamedBufferSubData(oldRendererID, m_RendererID, 0, 0, std::min(m_Size, newSize));
+      glDeleteBuffers(1, &oldRendererID);
+    }
     m_Size = newSize;
 
 #if ENG_DEBUG

@@ -185,7 +185,7 @@ namespace lod
   void MeshData::SetUniforms(const UniformData& uniformData)
   {
     Initialize();
-    s_Uniform->set(&uniformData, sizeof(UniformData));
+    s_Uniform->set(uniformData);
   }
 
 

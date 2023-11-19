@@ -73,8 +73,8 @@ public:
 
   u32 vertexCount() const;
 
-  const void* indexData() const;
-  const void* vertexData() const;
+  eng::mem::IndexData indexData() const;
+  eng::mem::Data vertexData() const;
   void clearData();
 
   void addQuad(const BlockIndex& blockIndex, eng::math::Direction face, block::TextureID texture, const std::array<i32, 4>& sunlight, const std::array<i32, 4>& ambientOcclusion);

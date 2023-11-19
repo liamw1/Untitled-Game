@@ -123,9 +123,9 @@ namespace eng
 #endif
   }
 
-  void OpenGLVertexArray::setVertexBuffer(const void* data, u32 size)
+  void OpenGLVertexArray::setVertexBuffer(const mem::Data& data)
   {
-    m_VertexBuffer->set(data, size);
+    m_VertexBuffer->set(data);
 
 #if ENG_DEBUG
     unBind();
@@ -138,9 +138,9 @@ namespace eng
     setLayout(m_VertexBufferLayout);
   }
 
-  void OpenGLVertexArray::updateVertexBuffer(const void* data, u32 offset, u32 size) const
+  void OpenGLVertexArray::updateVertexBuffer(u32 offset, const mem::Data& data) const
   {
-    m_VertexBuffer->update(data, offset, size);
+    m_VertexBuffer->update(offset, data);
 
 #if ENG_DEBUG
     unBind();

@@ -1,5 +1,6 @@
 #pragma once
 #include "Engine/Math/ArrayBox.h"
+#include "Engine/Memory/Data.h"
 #include "Engine/Utilities/Constraints.h"
 
 /*
@@ -8,7 +9,7 @@
 */
 namespace eng
 {
-  class Image : private NonCopyable, NonMovable
+  class Image : private SetInStone
   {
     math::ArrayBox<u8, i32> m_Data;
 
@@ -41,7 +42,7 @@ namespace eng
       \param data Buffer of texture data
       \param size Size of buffer in bytes
     */
-    virtual void setData(void* data, u32 size) = 0;
+    virtual void setData(const mem::Data& textureData) = 0;
 
     /*
       Binds texture to texture slot (0 by default).

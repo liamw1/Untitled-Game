@@ -22,6 +22,6 @@ namespace eng::render::command
   void drawIndexed(const VertexArray* vertexArray, u32 indexCount = 0);
   void drawIndexedLines(const VertexArray* vertexArray, u32 indexCount = 0);
 
-  void multiDrawVertices(const void* drawCommands, i32 drawCount, i32 stride);
-  void multiDrawIndexed(const void* drawCommands, i32 drawCount, i32 stride);
+  void multiDrawVertices(const mem::Data& drawCommandData, i32 commandCount);
+  void multiDrawIndexed(const mem::Data& drawCommandData, i32 commandCount);
 }

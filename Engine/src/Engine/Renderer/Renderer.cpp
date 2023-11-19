@@ -41,9 +41,9 @@ namespace eng::render
                                                                   { -0.5f,  0.5f,  0.5f, 1.0f },
                                                                   {  0.5f,  0.5f,  0.5f, 1.0f } };
 
-  static constexpr u32 c_CubeFrameIndices[24] = { 0, 1, 1, 2, 2, 3, 3, 0,
-                                                  4, 5, 5, 6, 6, 7, 7, 4,
-                                                  1, 4, 2, 7, 0, 5, 3, 6 };
+  static constexpr std::array<u32, 24> c_CubeFrameIndices = { 0, 1, 1, 2, 2, 3, 3, 0,
+                                                              4, 5, 5, 6, 6, 7, 7, 4,
+                                                              1, 4, 2, 7, 0, 5, 3, 6 };
 
   static void initialize()
   {
@@ -56,8 +56,8 @@ namespace eng::render
       /* Wire Frame Initialization */
       s_WireFrameVertexArray = VertexArray::Create();
       s_WireFrameVertexArray->setLayout({{ ShaderDataType::Float3, "a_Position"  },
-                                          { ShaderDataType::Float4, "a_Color"     }});
-      s_WireFrameVertexArray->setIndexBuffer(IndexBuffer(c_CubeFrameIndices, 24));
+                                         { ShaderDataType::Float4, "a_Color"     }});
+      s_WireFrameVertexArray->setIndexBuffer(IndexBuffer(c_CubeFrameIndices));
       s_WireFrameShader = Shader::Create("../Engine/assets/shaders/WireFrame.glsl");
     });
   }
@@ -73,7 +73,7 @@ namespace eng::render
 
     s_CameraUniformData.viewProjection = scene::CalculateViewProjection(viewer);
     s_CameraUniformData.cameraPosition = viewer.get<component::Transform>().position;
-    s_CameraUniform->set(&s_CameraUniformData, sizeof(CameraUniformData));
+    s_CameraUniform->set(s_CameraUniformData);
   }
 
   void endScene()
@@ -89,7 +89,7 @@ namespace eng::render
       vertices[i].position = transform * c_CubeFrameVertexPositions[i];
       vertices[i].color = color;
     }
-    s_WireFrameVertexArray->setVertexBuffer(vertices.data(), vertices.size() * sizeof(WireVertex));
+    s_WireFrameVertexArray->setVertexBuffer(vertices);
 
     s_WireFrameShader->bind();
     command::drawIndexedLines(s_WireFrameVertexArray.get());

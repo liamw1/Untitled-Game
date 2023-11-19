@@ -1,4 +1,5 @@
 #pragma once
+#include "Data.h"
 
 namespace eng
 {
@@ -20,8 +21,8 @@ namespace eng
     virtual u32 size() const = 0;
     virtual Type type() const = 0;
 
-    virtual void set(const void* data, u32 size) = 0;
-    virtual void update(const void* data, u32 offset, u32 size) = 0;
+    virtual void set(const mem::Data& data) = 0;
+    virtual void update(u32 offset, const mem::Data& data) = 0;
     virtual void resize(u32 newSize) = 0;
 
     static std::unique_ptr<StorageBuffer> Create(Type type, std::optional<u32> binding = std::nullopt);

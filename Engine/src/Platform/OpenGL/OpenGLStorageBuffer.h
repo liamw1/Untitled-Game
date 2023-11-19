@@ -1,5 +1,5 @@
 #pragma once
-#include "Engine/Renderer/StorageBuffer.h"
+#include "Engine/Memory/StorageBuffer.h"
 
 namespace eng
 {
@@ -20,8 +20,8 @@ namespace eng
     u32 size() const override;
     Type type() const override;
 
-    void set(const void* data, u32 size) override;
-    void update(const void* data, u32 offset, u32 size) override;
+    void set(const mem::Data& data) override;
+    void update(u32 offset, const mem::Data& data) override;
     void resize(u32 newSize) override;
   };
 }
