@@ -76,10 +76,11 @@ namespace eng
 #endif
   }
 
-  void OpenGLStorageBuffer::update(u32 offset, const mem::Data& data)
+  void OpenGLStorageBuffer::modify(u32 offset, const mem::Data& data)
   {
     ENG_CORE_ASSERT(thread::isMainThread(), "OpenGL calls must be made on the main thread!");
-    ENG_CORE_ASSERT(offset + data.size() <= m_Size, "Data is outside of buffer range!");
+    if (offset + data.size() > m_Size)
+      throw std::out_of_range("Data is outside of buffer range!");
     glNamedBufferSubData(m_RendererID, offset, data.size(), data.raw());
 
 #if ENG_DEBUG

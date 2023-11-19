@@ -21,7 +21,7 @@ namespace eng
     Type type() const override;
 
     void set(const mem::Data& data) override;
-    void update(u32 offset, const mem::Data& data) override;
+    void modify(u32 offset, const mem::Data& data) override;
     void resize(u32 newSize) override;
   };
 }

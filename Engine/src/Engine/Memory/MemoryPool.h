@@ -12,7 +12,6 @@ namespace eng
 
     NOTE: This class could be modified to remove the 'm' from the insertion/removal time complexity,
           but it's more trouble than it's worth at the moment as it hasn't been a problem yet.
-    TODO: Maybe make this class safer?
   */
   class MemoryPool
   {
@@ -58,21 +57,28 @@ namespace eng
     void free(address_t address);
 
     /*
-      Overwrites memory at the given address. Assumes data is the same size as the original
-      allocation. Horrifically unsafe.
-
-      TODO: Fix this function.
+      Overwrites data that was previously uploaded to the GPU. May trigger a resize.
+      \returns If a resize was triggered and an address for the reallocated memory.
     */
-    void realloc(address_t address, const mem::Data& data);
+    [[nodiscard]] std::pair<bool, address_t> realloc(address_t address, const mem::Data& data);
 
   private:
     using RegionsIterator = std::map<address_t, MemoryRegion>::iterator;
     using FreeRegionsIterator = std::multimap<i32, address_t>::iterator;
 
-    bool isFree(RegionsIterator region) const;
-    i32& regionSize(RegionsIterator region);
+    bool& isFree(RegionsIterator regionIterator) const;
+    i32& regionSize(RegionsIterator regionIterator);
 
     void addFreeRegion(address_t offset, i32 size);
-    void removeFromFreeRegions(RegionsIterator it);
+    void removeFromFreeRegions(RegionsIterator regionIterator);
+
+    /*
+      Attempts to merge given region with the previous one. If either region is free, removes them
+      from the free region map and marks the resulting region as not free. If the merge is not
+      possible because a begin or end iterator was given, does nothing.
+
+      \returns The newly merged region if the merge was successful and the original region otherwise.
+    */
+    RegionsIterator mergeToPreviousRegion(RegionsIterator regionIterator);
   };
 }

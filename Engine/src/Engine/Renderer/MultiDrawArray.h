@@ -163,6 +163,7 @@ namespace eng
     void bind() const { m_VertexArray->bind(); }
     void unBind() const { m_VertexArray->unBind(); }
 
+    // TODO: Handle case of draw command with same id already in multiArray and rename this to insert
     void add(T&& drawCommand)
     {
       DrawCommandBaseType& baseCommand = drawCommand;

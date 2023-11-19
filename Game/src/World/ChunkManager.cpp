@@ -170,7 +170,7 @@ void ChunkManager::render()
     }
 
     multiDrawArray.bind();
-    s_SSBO->update(0, storageBufferData);
+    s_SSBO->modify(0, storageBufferData);
     eng::render::command::multiDrawIndexed(drawCommands, commandCount);
   });
 
@@ -211,7 +211,7 @@ void ChunkManager::render()
     }
 
     multiDrawArray.bind();
-    s_SSBO->update(0, storageBufferData);
+    s_SSBO->modify(0, storageBufferData);
     eng::render::command::multiDrawIndexed(drawCommands, commandCount);
   });
 }

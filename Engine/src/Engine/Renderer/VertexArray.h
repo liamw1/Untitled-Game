@@ -44,7 +44,7 @@ namespace eng
     */
     virtual void setVertexBuffer(const mem::Data& data) = 0;
     virtual void setVertexBuffer(const std::shared_ptr<StorageBuffer>& vertexBuffer) = 0;
-    virtual void updateVertexBuffer(u32 offset, const mem::Data& data) const = 0;
+    virtual void modifyVertexBuffer(u32 offset, const mem::Data& data) const = 0;
     virtual void resizeVertexBuffer(u32 newSize) = 0;
 
     /*

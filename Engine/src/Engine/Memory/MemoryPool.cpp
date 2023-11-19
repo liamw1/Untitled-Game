@@ -74,61 +74,48 @@ namespace eng
     allocationRegion.size = size;
 
     // Upload data to GPU
-    m_Buffer->update(allocationAddress, data);
+    m_Buffer->modify(allocationAddress, data);
     return { triggeredResize, allocationAddress };
   }
 
   void MemoryPool::free(address_t address)
   {
-    RegionsIterator allocationPosition = m_Regions.find(address);
-    ENG_CORE_ASSERT(allocationPosition != m_Regions.end(), "No memory region was found at adress {0}!", address);
-    ENG_CORE_ASSERT(!isFree(allocationPosition), "Region is already free!");
-
-    i32 freedRegionSize = regionSize(allocationPosition);
-    address_t freedRegionAddress = address;
-    RegionsIterator freedRegionPosition = allocationPosition;
+    RegionsIterator freedRegionPosition = m_Regions.find(address);
+    ENG_CORE_ASSERT(freedRegionPosition != m_Regions.end(), "No memory region was found at adress {0}!", address);
+    ENG_CORE_ASSERT(!isFree(freedRegionPosition), "Region is already free!");
 
     // If previous region is free, merge with newly freed region
-    if (allocationPosition != m_Regions.begin())
-    {
-      RegionsIterator prevRegionPosition = std::prev(allocationPosition);
-      auto [prevRegionAddress, prevRegion] = *prevRegionPosition;
-      if (prevRegion.free)
-      {
-        freedRegionAddress = prevRegionAddress;
-        freedRegionSize += prevRegion.size;
-
-        removeFromFreeRegions(prevRegionPosition);
-        freedRegionPosition = m_Regions.erase(prevRegionPosition);
-      }
-    }
+    if (freedRegionPosition != m_Regions.begin() && isFree(std::prev(freedRegionPosition)))
+      freedRegionPosition = mergeToPreviousRegion(freedRegionPosition);
 
     // If next region if free, merge with newly freed region
-    RegionsIterator nextRegionPosition = m_Regions.erase(freedRegionPosition);
-    if (nextRegionPosition != m_Regions.end())
-    {
-      auto [nextRegionAddress, nextRegion] = *nextRegionPosition;
-      if (nextRegion.free)
-      {
-        freedRegionSize += nextRegion.size;
+    RegionsIterator nextRegionPosition = std::next(freedRegionPosition);
+    if (nextRegionPosition != m_Regions.end() && isFree(nextRegionPosition))
+      freedRegionPosition = mergeToPreviousRegion(nextRegionPosition);
 
-        removeFromFreeRegions(nextRegionPosition);
-        m_Regions.erase(nextRegionPosition);
-      }
+    // Mark region as free and update free regions container
+    isFree(freedRegionPosition) = true;
+    m_FreeRegions.emplace(regionSize(freedRegionPosition), freedRegionPosition->first);
+  }
+
+  std::pair<bool, MemoryPool::address_t> MemoryPool::realloc(address_t address, const mem::Data& data)
+  {
+    RegionsIterator allocationPosition = m_Regions.find(address);
+    ENG_CORE_ASSERT(allocationPosition != m_Regions.end(), "No memory region was found at adress {0}!", address);
+    ENG_CORE_ASSERT(!isFree(allocationPosition), "Region at address {0} has already been freed!", address);
+
+    i32 size = arithmeticCast<i32>(data.size());
+    if (size != regionSize(allocationPosition))
+    {
+      free(address);
+      return malloc(data);
     }
 
-    // Update free regions container
-    addFreeRegion(freedRegionAddress, freedRegionSize);
+    m_Buffer->modify(address, data);
+    return { false, address };
   }
 
-  void MemoryPool::realloc(address_t address, const mem::Data& data)
-  {
-    // RegionsIterator allocationPosition = m_Regions.find(address);
-    // regionSize(allocationPosition)
-    m_Buffer->update(address, data);
-  }
-
-  bool MemoryPool::isFree(RegionsIterator regionIterator) const
+  bool& MemoryPool::isFree(RegionsIterator regionIterator) const
   {
     return regionIterator->second.free;
   }
@@ -154,5 +141,21 @@ namespace eng
       ENG_CORE_ERROR("No region at address {0} of size {1} found!", address, region.size);
     else
       m_FreeRegions.erase(removalPosition);
+  }
+
+  MemoryPool::RegionsIterator MemoryPool::mergeToPreviousRegion(RegionsIterator regionIterator)
+  {
+    if (regionIterator == m_Regions.begin() || regionIterator == m_Regions.end())
+      return regionIterator;
+
+    RegionsIterator prevRegionPosition = std::prev(regionIterator);
+    if (isFree(regionIterator))
+      removeFromFreeRegions(regionIterator);
+    if (isFree(prevRegionPosition))
+      removeFromFreeRegions(prevRegionPosition);
+    isFree(prevRegionPosition) = false;
+
+    regionSize(prevRegionPosition) += regionSize(regionIterator);
+    return std::prev(m_Regions.erase(regionIterator));
   }
 }
