@@ -4,10 +4,101 @@
 #include "Player/Player.h"
 #include "Indexing/Operations.h"
 
+template<typename T>
+class ChunkAllocator
+{
+public:
+  // Necessary to meet requirements of an Allocator
+  using value_type = T;
+
+  GlobalIndex index;
+  std::shared_ptr<eng::thread::AsyncMultiDrawArray<ChunkDrawCommand>> opaqueAsyncArray;
+  std::shared_ptr<eng::thread::AsyncMultiDrawArray<ChunkDrawCommand>> transparentAsyncArray;
+
+  ChunkAllocator() = default;
+  ChunkAllocator(const GlobalIndex& chunkIndex,
+                 const std::shared_ptr<eng::thread::AsyncMultiDrawArray<ChunkDrawCommand>>& opaqueMultiDrawArray,
+                 const std::shared_ptr<eng::thread::AsyncMultiDrawArray<ChunkDrawCommand>>& transparentMultiDrawArray)
+    : index(chunkIndex), opaqueAsyncArray(opaqueMultiDrawArray), transparentAsyncArray(transparentMultiDrawArray) {}
+
+  template<typename U>
+  ChunkAllocator(const ChunkAllocator<U>& other) noexcept
+    : index(other.index), opaqueAsyncArray(other.opaqueAsyncArray), transparentAsyncArray(other.transparentAsyncArray) {}
+
+  value_type* allocate(uSize n)
+  {
+    if (n > std::numeric_limits<uSize>::max() / sizeof(value_type))
+      throw std::bad_array_new_length();
+
+    if (value_type* allocationAddress = static_cast<value_type*>(std::malloc(n * sizeof(value_type))))
+      return allocationAddress;
+
+    throw std::bad_alloc();
+  }
+
+  void deallocate(value_type* allocationAddress, uSize n) noexcept
+  {
+    opaqueAsyncArray->removeCommand(index);
+    transparentAsyncArray->removeCommand(index);
+    std::free(allocationAddress);
+  }
+
+  template<typename U>
+  bool operator==(const ChunkAllocator<U>& other)
+  {
+    return index == other.index && opaqueAsyncArray == other.opaqueAsyncArray && transparentAsyncArray == other.transparentAsyncArray;
+  }
+
+  template<typename U>
+  bool operator!=(const ChunkAllocator<U>& other) { return !(*this == other); }
+};
+
+struct LightUniforms
+{
+  const f32 maxSunlight = eng::arithmeticUpcast<f32>(block::Light::MaxValue());
+  f32 sunIntensity = 1.0f;
+};
+
+struct BlockData
+{
+  BlockArrayBox<block::Type> composition;
+  BlockArrayBox<block::Light> lighting;
+
+  BlockData()
+    : composition(Bounds(), eng::AllocationPolicy::Deferred), lighting(Bounds(), eng::AllocationPolicy::Deferred) {}
+
+  static constexpr BlockBox Bounds() { return BlockBox(-1, Chunk::Size()); }
+};
+
+// TODO: Remove
+static BlockArrayBox<block::Light> calculateLighting(const BlockArrayBox<block::Type>& composition)
+{
+  BlockArrayBox<block::Light> lighting(Chunk::Bounds(), eng::AllocationPolicy::Deferred);
+  if (!composition)
+    return lighting;
+
+  lighting.allocate();
+  for (blockIndex_t i = 0; i < Chunk::Size(); ++i)
+    for (blockIndex_t j = 0; j < Chunk::Size(); ++j)
+    {
+      blockIndex_t k = 0;
+      while (k < Chunk::Size() && !composition[i][j][k].hasTransparency())
+      {
+        lighting[i][j][k] = block::Light(0);
+        k++;
+      }
+      for (; k < Chunk::Size(); ++k)
+        lighting[i][j][k] = block::Light(block::Light::MaxValue());
+    }
+  return lighting;
+}
+
+
+
 ChunkManager::ChunkManager()
-  : m_OpaqueMultiDrawArray(s_VertexBufferLayout),
-    m_TransparentMultiDrawArray(s_VertexBufferLayout),
-    m_ThreadPool(std::make_shared<eng::thread::ThreadPool>(1)),
+  : m_OpaqueMultiDrawArray(std::make_shared<eng::thread::AsyncMultiDrawArray<ChunkDrawCommand>>(s_VertexBufferLayout)),
+    m_TransparentMultiDrawArray(std::make_shared<eng::thread::AsyncMultiDrawArray<ChunkDrawCommand>>(s_VertexBufferLayout)),
+    m_ThreadPool(std::make_shared<eng::thread::ThreadPool>(3)),
     m_LoadWork(m_ThreadPool, eng::thread::Priority::Normal),
     m_CleanWork(m_ThreadPool, eng::thread::Priority::High),
     m_LightingWork(m_ThreadPool, eng::thread::Priority::Normal),
@@ -57,11 +148,11 @@ void ChunkManager::render()
   s_Shader->bind();
   s_TextureArray->bind(c_TextureSlot);
 
+  eng::render::command::setDepthWriting(true);
+  eng::render::command::setUseDepthOffset(false);
+  m_OpaqueMultiDrawArray->drawOperation([&originIndex, &frustumPlanes](eng::MultiDrawArray<ChunkDrawCommand>& multiDrawArray)
   {
-    eng::render::command::setDepthWriting(true);
-    eng::render::command::setUseDepthOffset(false);
-
-    i32 commandCount = m_OpaqueMultiDrawArray.multiDrawArray().partition([&originIndex, &frustumPlanes](const GlobalIndex& chunkIndex)
+    i32 commandCount = multiDrawArray.partition([&originIndex, &frustumPlanes](const GlobalIndex& chunkIndex)
     {
       eng::math::Vec3 anchorPosition = Chunk::AnchorPosition(chunkIndex, originIndex);
       eng::math::Vec3 chunkCenter = Chunk::Center(anchorPosition);
@@ -70,7 +161,7 @@ void ChunkManager::render()
 
     std::vector<eng::math::Float4> storageBufferData;
     storageBufferData.reserve(commandCount);
-    const std::vector<ChunkDrawCommand>& drawCommands = m_OpaqueMultiDrawArray.multiDrawArray().getDrawCommandBuffer();
+    const std::vector<ChunkDrawCommand>& drawCommands = multiDrawArray.getDrawCommandBuffer();
     for (i32 i = 0; i < commandCount; ++i)
     {
       const GlobalIndex& chunkIndex = drawCommands[i].id();
@@ -78,32 +169,32 @@ void ChunkManager::render()
       storageBufferData.emplace_back(chunkAnchor, 0);
     }
 
-    m_OpaqueMultiDrawArray.multiDrawArray().bind();
+    multiDrawArray.bind();
     s_SSBO->update(0, storageBufferData);
     eng::render::command::multiDrawIndexed(drawCommands, commandCount);
-  }
+  });
 
+  eng::render::command::setBlending(true);
+  eng::render::command::setFaceCulling(false);
+  eng::render::command::setDepthWriting(false);
+  eng::render::command::setUseDepthOffset(true);
+  eng::render::command::setDepthOffset(-1.0f, -1.0f);
+  m_TransparentMultiDrawArray->drawOperation([&originIndex, &frustumPlanes, &playerCameraPosition](eng::MultiDrawArray<ChunkDrawCommand>& multiDrawArray)
   {
-    eng::render::command::setBlending(true);
-    eng::render::command::setFaceCulling(false);
-    eng::render::command::setDepthWriting(false);
-    eng::render::command::setUseDepthOffset(true);
-    eng::render::command::setDepthOffset(-1.0f, -1.0f);
-
-    i32 commandCount = m_TransparentMultiDrawArray.multiDrawArray().partition([&originIndex, &frustumPlanes](const GlobalIndex& chunkIndex)
+    i32 commandCount = multiDrawArray.partition([&originIndex, &frustumPlanes](const GlobalIndex& chunkIndex)
     {
       eng::math::Vec3 anchorPosition = Chunk::AnchorPosition(chunkIndex, originIndex);
       eng::math::Vec3 chunkCenter = Chunk::Center(anchorPosition);
       return isInRange(chunkIndex, originIndex, c_RenderDistance) && eng::math::isInFrustum(chunkCenter, frustumPlanes);
     });
-    m_TransparentMultiDrawArray.multiDrawArray().sort(commandCount, [&originIndex, &playerCameraPosition](const GlobalIndex& chunk)
+    multiDrawArray.sort(commandCount, [&originIndex, &playerCameraPosition](const GlobalIndex& chunk)
     {
       // NOTE: Maybe measure min distance to chunk faces instead
       eng::math::Vec3 chunkCenter = Chunk::Center(Chunk::AnchorPosition(chunk, originIndex));
       length_t dist = glm::length2(chunkCenter - playerCameraPosition);
       return dist;
     }, eng::SortPolicy::Descending);
-    m_TransparentMultiDrawArray.multiDrawArray().amend(commandCount, [&originIndex, &playerCameraPosition](ChunkDrawCommand& drawCommand)
+    multiDrawArray.amend(commandCount, [&originIndex, &playerCameraPosition](ChunkDrawCommand& drawCommand)
     {
       bool orderModified = drawCommand.sort(originIndex, playerCameraPosition);
       return orderModified;
@@ -111,7 +202,7 @@ void ChunkManager::render()
 
     std::vector<eng::math::Float4> storageBufferData;
     storageBufferData.reserve(commandCount);
-    const std::vector<ChunkDrawCommand>& drawCommands = m_TransparentMultiDrawArray.multiDrawArray().getDrawCommandBuffer();
+    const std::vector<ChunkDrawCommand>& drawCommands = multiDrawArray.getDrawCommandBuffer();
     for (i32 i = 0; i < commandCount; ++i)
     {
       const GlobalIndex& chunkIndex = drawCommands[i].id();
@@ -119,10 +210,10 @@ void ChunkManager::render()
       storageBufferData.emplace_back(chunkAnchor, 0);
     }
 
-    m_TransparentMultiDrawArray.multiDrawArray().bind();
+    multiDrawArray.bind();
     s_SSBO->update(0, storageBufferData);
     eng::render::command::multiDrawIndexed(drawCommands, commandCount);
-  }
+  });
 }
 
 void ChunkManager::update()
@@ -130,10 +221,8 @@ void ChunkManager::update()
   ENG_PROFILE_FUNCTION();
 
   m_ForceMeshingWork.waitAndDiscardSaved();
-
-  auto chunkExists = [this](const GlobalIndex& chunkIndex) { return m_ChunkContainer.chunks().contains(chunkIndex); };
-  m_OpaqueMultiDrawArray.uploadQueuedCommandsIf(chunkExists);
-  m_TransparentMultiDrawArray.uploadQueuedCommandsIf(chunkExists);
+  m_OpaqueMultiDrawArray->uploadQueuedCommands();
+  m_TransparentMultiDrawArray->uploadQueuedCommands();
 }
 
 void ChunkManager::loadNewChunks()
@@ -272,18 +361,6 @@ void ChunkManager::removeBlock(const GlobalIndex& chunkIndex, const BlockIndex& 
   sendBlockUpdate(chunkIndex, blockIndex);
 }
 
-void ChunkManager::loadChunk(const GlobalIndex& chunkIndex, block::ID blockType)
-{
-  std::shared_ptr<Chunk> chunk = std::make_shared<Chunk>(chunkIndex);
-  if (blockType != block::ID::Air)
-  {
-    chunk->setComposition(BlockArrayBox<block::Type>(Chunk::Bounds(), blockType));
-    chunk->setLighting(BlockArrayBox<block::Light>(Chunk::Bounds(), eng::AllocationPolicy::DefaultInitialize));
-  }
-
-  m_ChunkContainer.insert(chunkIndex, std::move(chunk));
-}
-
 void ChunkManager::initializeLODs()
 {
   ENG_PROFILE_FUNCTION();
@@ -380,41 +457,19 @@ void ChunkManager::addToForceMeshUpdateQueue(const GlobalIndex& chunkIndex)
 
 void ChunkManager::removeMeshes(const GlobalIndex& chunkIndex)
 {
-  m_OpaqueMultiDrawArray.removeCommand(chunkIndex);
-  m_TransparentMultiDrawArray.removeCommand(chunkIndex);
-}
-
-// TODO: Remove
-static BlockArrayBox<block::Light> calculateLighting(const BlockArrayBox<block::Type>& composition)
-{
-  BlockArrayBox<block::Light> lighting(Chunk::Bounds(), eng::AllocationPolicy::Deferred);
-  if (!composition)
-    return lighting;
-
-  lighting.allocate();
-  for (blockIndex_t i = 0; i < Chunk::Size(); ++i)
-    for (blockIndex_t j = 0; j < Chunk::Size(); ++j)
-    {
-      blockIndex_t k = 0;
-      while (k < Chunk::Size() && !composition[i][j][k].hasTransparency())
-      {
-        lighting[i][j][k] = block::Light(0);
-        k++;
-      }
-      for (; k < Chunk::Size(); ++k)
-        lighting[i][j][k] = block::Light(block::Light::MaxValue());
-    }
-  return lighting;
+  m_OpaqueMultiDrawArray->removeCommand(chunkIndex);
+  m_TransparentMultiDrawArray->removeCommand(chunkIndex);
 }
 
 std::shared_ptr<Chunk> ChunkManager::generateNewChunk(const GlobalIndex& chunkIndex)
 {
   ENG_PROFILE_FUNCTION();
 
+  ChunkAllocator<Chunk> allocator(chunkIndex, m_OpaqueMultiDrawArray, m_TransparentMultiDrawArray);
+  std::shared_ptr<Chunk> chunk = std::allocate_shared<Chunk>(allocator, chunkIndex);
+
   BlockArrayBox<block::Type> composition = terrain::generateNew(chunkIndex);
   BlockArrayBox<block::Light> lighting = calculateLighting(composition);
-
-  std::shared_ptr chunk = std::make_shared<Chunk>(chunkIndex);
   chunk->setComposition(std::move(composition));
   chunk->setLighting(std::move(lighting));
 
@@ -430,11 +485,7 @@ std::shared_ptr<Chunk> ChunkManager::generateNewChunk(const GlobalIndex& chunkIn
 void ChunkManager::eraseChunk(const GlobalIndex& chunkIndex)
 {
   if (!isInRange(chunkIndex, player::originIndex(), c_UnloadDistance))
-  {
-    // Order is important here to prevent memory leaks
     m_ChunkContainer.erase(chunkIndex);
-    removeMeshes(chunkIndex);
-  }
 }
 
 void ChunkManager::sendBlockUpdate(const GlobalIndex& chunkIndex, const BlockIndex& blockIndex)
@@ -452,17 +503,6 @@ void ChunkManager::sendBlockUpdate(const GlobalIndex& chunkIndex, const BlockInd
 }
 
 
-
-struct BlockData
-{
-  BlockArrayBox<block::Type> composition;
-  BlockArrayBox<block::Light> lighting;
-
-  BlockData()
-    : composition(Bounds(), eng::AllocationPolicy::Deferred), lighting(Bounds(), eng::AllocationPolicy::Deferred) {}
-
-  static constexpr BlockBox Bounds() { return BlockBox(-1, Chunk::Size()); }
-};
 
 void ChunkManager::meshChunk(const Chunk& chunk)
 {
@@ -550,8 +590,8 @@ void ChunkManager::meshChunk(const Chunk& chunk)
       draw.addVoxel(blockIndex, enabledFaces);
   });
 
-  m_OpaqueMultiDrawArray.queueCommand(std::move(opaqueDraw));
-  m_TransparentMultiDrawArray.queueCommand(std::move(transparentDraw));
+  m_OpaqueMultiDrawArray->queueCommand(std::move(opaqueDraw));
+  m_TransparentMultiDrawArray->queueCommand(std::move(transparentDraw));
 }
 
 void ChunkManager::updateLighting(Chunk& chunk)

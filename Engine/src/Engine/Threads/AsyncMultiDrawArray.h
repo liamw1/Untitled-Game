@@ -4,25 +4,18 @@
 
 namespace eng::thread
 {
-  // Idea: store weak pointers to resources?
   template<DrawCommandType T>
   class AsyncMultiDrawArray
   {
     using Identifier = T::IDType;
 
+    std::mutex m_Mutex;
     UnorderedSet<T> m_CommandQueue;
     MultiDrawArray<T> m_MultiDrawArray;
-    std::mutex m_Mutex;
 
   public:
     AsyncMultiDrawArray(const BufferLayout& layout)
       : m_MultiDrawArray(layout) {}
-
-    // TODO: Remove
-    MultiDrawArray<T>& multiDrawArray()
-    {
-      return m_MultiDrawArray;
-    }
 
     template<std::invocable<eng::MultiDrawArray<T>&> F>
     void drawOperation(F&& operation)
@@ -38,11 +31,11 @@ namespace eng::thread
 
     void removeCommand(const Identifier& id)
     {
-      m_CommandQueue.insertOrReplace(T(id));
+      std::lock_guard lock(m_Mutex);
+      m_MultiDrawArray.remove(id);
     }
 
-    template<std::predicate<Identifier> P>
-    void uploadQueuedCommandsIf(P&& predicate)
+    void uploadQueuedCommands()
     {
       std::lock_guard lock(m_Mutex);
 
@@ -52,8 +45,7 @@ namespace eng::thread
         T drawCommand = std::move(drawCommands.extract(it++).value());
 
         m_MultiDrawArray.remove(drawCommand.id());
-        if (predicate(drawCommand.id()))
-          m_MultiDrawArray.add(std::move(drawCommand));
+        m_MultiDrawArray.add(std::move(drawCommand));
       }
     }
   };

@@ -18,8 +18,8 @@
 #include <concepts>
 #include <compare>
 #include <cstdint>
-#include <initializer_list>
 #include <iterator>
+#include <stdexcept>
 #include <sstream>
 #include <string>
 #include <type_traits>
@@ -58,6 +58,7 @@
 
 // Wrappers
 #include <functional>
+#include <initializer_list>
 #include <memory>
 #include <optional>
 #include <variant>

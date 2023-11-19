@@ -4,6 +4,9 @@ namespace eng
 {
   template<typename T, typename... Args>
   concept AnyOf = (std::same_as<T, Args> || ...);
+
+  template<typename T, typename... Args>
+  concept NoneOf = !AnyOf<T, Args...>;
   
   template<typename T, typename DecayedType>
   concept DecaysTo = std::same_as<std::decay_t<T>, DecayedType>;
@@ -26,6 +29,9 @@ namespace eng
     { E::First };
     { E::Last  };
   };
+
+  template<typename T>
+  concept StandardLayout = std::is_standard_layout_v<T>;
 
   // Return type must match exactly. If merely convertible to return type is desired, use std::is_invocable_r_v.
   template<typename F, typename ReturnType, typename... Args>

@@ -1,4 +1,5 @@
 #pragma once
+#include "Engine/Core/Concepts.h"
 
 namespace eng::mem
 {
@@ -56,7 +57,7 @@ namespace eng::mem
   public:
     UniformData();
 
-    template<typename T>
+    template<StandardLayout T>
     UniformData(const T& uniform)
       : GenericData(&uniform, sizeof(T), 1) {}
   };

@@ -17,8 +17,8 @@ class ChunkManager
   static inline const eng::BufferLayout s_VertexBufferLayout = {{ eng::ShaderDataType::Uint32, "a_VertexData" },
                                                                 { eng::ShaderDataType::Uint32, "a_Lighting"   }};
 
-  eng::thread::AsyncMultiDrawArray<ChunkDrawCommand> m_OpaqueMultiDrawArray;
-  eng::thread::AsyncMultiDrawArray<ChunkDrawCommand> m_TransparentMultiDrawArray;
+  std::shared_ptr<eng::thread::AsyncMultiDrawArray<ChunkDrawCommand>> m_OpaqueMultiDrawArray;
+  std::shared_ptr<eng::thread::AsyncMultiDrawArray<ChunkDrawCommand>> m_TransparentMultiDrawArray;
 
   // Multi-threading
   std::shared_ptr<eng::thread::ThreadPool> m_ThreadPool;
@@ -62,20 +62,11 @@ public:
   void placeBlock(GlobalIndex chunkIndex, BlockIndex blockIndex, eng::math::Direction face, block::Type blockType);
   void removeBlock(const GlobalIndex& chunkIndex, const BlockIndex& blockIndex);
 
-  // Debug
-  void loadChunk(const GlobalIndex& chunkIndex, block::ID blockType);
-
   void initializeLODs();
   void renderLODs();
   void manageLODs();
 
 private:
-  struct LightUniforms
-  {
-    const f32 maxSunlight = eng::arithmeticUpcast<f32>(block::Light::MaxValue());
-    f32 sunIntensity = 1.0f;
-  };
-
   void addToLightingUpdateQueue(const GlobalIndex& chunkIndex);
   void addToLazyMeshUpdateQueue(const GlobalIndex& chunkIndex);
   void addToForceMeshUpdateQueue(const GlobalIndex& chunkIndex);
