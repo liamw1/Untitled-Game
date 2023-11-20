@@ -17,12 +17,17 @@ namespace eng
   {
   public:
     using address_t = u32;
+    struct AllocationResult
+    {
+      address_t address;
+      bool bufferResized;
+    };
 
   private:
     struct MemoryRegion
     {
-      bool free;
       i32 size;
+      bool free;
 
       MemoryRegion(i32 regionSize)
         : free(true), size(regionSize) {}
@@ -44,11 +49,13 @@ namespace eng
 
     const std::shared_ptr<StorageBuffer>& buffer();
 
+    bool validAllocation(address_t address) const;
+
     /*
       Uploads data to GPU. May trigger a resize.
       \returns If a resize was triggered and an address for the allocated memory.
     */
-    [[nodiscard]] std::pair<bool, address_t> malloc(const mem::Data& data);
+    [[nodiscard]] AllocationResult malloc(const mem::Data& data);
 
     /*
       Removes the memory at the specified address. Doesn't actually delete any memory.
@@ -60,7 +67,7 @@ namespace eng
       Overwrites data that was previously uploaded to the GPU. May trigger a resize.
       \returns If a resize was triggered and an address for the reallocated memory.
     */
-    [[nodiscard]] std::pair<bool, address_t> realloc(address_t address, const mem::Data& data);
+    [[nodiscard]] AllocationResult realloc(address_t address, const mem::Data& data);
 
   private:
     using RegionsIterator = std::map<address_t, MemoryRegion>::iterator;

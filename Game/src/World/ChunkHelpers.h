@@ -67,7 +67,7 @@ class ChunkDrawCommand : public eng::IndexedDrawCommand<ChunkDrawCommand, Global
   i32 m_VoxelBaseVertex;
 
 public:
-  ChunkDrawCommand(const GlobalIndex& chunkIndex, bool needsSorting = false);
+  ChunkDrawCommand(const GlobalIndex& chunkIndex, bool needsSorting);
 
   bool operator==(const ChunkDrawCommand& other) const;
 

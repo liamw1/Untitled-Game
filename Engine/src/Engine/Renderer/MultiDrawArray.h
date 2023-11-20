@@ -1,6 +1,7 @@
 #pragma once
 #include "VertexArray.h"
 #include "Engine/Core/Algorithm.h"
+#include "Engine/Core/Casting.h"
 #include "Engine/Core/Log/Log.h"
 #include "Engine/Memory/MemoryPool.h"
 #include "Engine/Utilities/Constraints.h"
@@ -80,9 +81,12 @@ namespace eng
 
     const Identifier& id() const { return m_ID; }
     const std::shared_ptr<uSize>& commandIndex() const { return m_CommandIndex; }
-    void setPlacement(u32 firstElement, i32 baseVertex, uSize commandIndex)
+
+    void setCommandIndex(uSize commandIndex) { m_CommandIndex = std::make_shared<uSize>(commandIndex); }
+    void stealCommandIndex(GenericDrawCommand& other) { m_CommandIndex = std::move(other.m_CommandIndex); }
+
+    void setOffsets(u32 firstElement, i32 baseVertex)
     {
-      m_CommandIndex = std::make_shared<uSize>(commandIndex);
       if constexpr (IsIndexed)
       {
         m_CommandData.firstIndex = firstElement;
@@ -163,8 +167,7 @@ namespace eng
     void bind() const { m_VertexArray->bind(); }
     void unBind() const { m_VertexArray->unBind(); }
 
-    // TODO: Handle case of draw command with same id already in multiArray and rename this to insert
-    void add(T&& drawCommand)
+    void insert(T&& drawCommand)
     {
       DrawCommandBaseType& baseCommand = drawCommand;
 
@@ -173,29 +176,37 @@ namespace eng
       if (vertexCount == 0 || elementCount == 0)
         return;
 
-      ENG_CORE_ASSERT(m_DrawCommandIndices.find(baseCommand.id()) == m_DrawCommandIndices.end(), "Draw command with ID {0} has already been allocated!", baseCommand.id());
-
-      // Add draw command data to memory pools. If a vertex buffer resize is triggered, vertex array needs to have layout set again.
-      auto [indexBufferResized, indexAllocationAddress] = m_IndexMemory.malloc(baseCommand.indexData());
-      auto [vertexBufferResized, vertexAllocationAddress] = m_VertexMemory.malloc(baseCommand.vertexData());
-      if (vertexBufferResized)
-        m_VertexArray->setLayout(m_VertexArray->getLayout());
-      baseCommand.clearData();
-
-      if constexpr (c_IsIndexed)
+      auto afterUpload = [this, &baseCommand](MemoryPool::AllocationResult indexAllocation, MemoryPool::AllocationResult vertexAllocation)
       {
-        u32 firstIndex = arithmeticCast<u32>(indexAllocationAddress / sizeof(u32));
-        i32 baseVertex = arithmeticCast<i32>(vertexAllocationAddress / m_Stride);
-        baseCommand.setPlacement(firstIndex, baseVertex, m_DrawCommands.size());
+        setDrawCommandOffsets(baseCommand, indexAllocation.address, vertexAllocation.address);
+        baseCommand.clearData();
+        if (vertexAllocation.bufferResized)
+          m_VertexArray->setLayout(m_VertexArray->getLayout());
+      };
+
+      DrawCommandIndicesIterator oldDrawCommandPosition = m_DrawCommandIndices.find(baseCommand.id());
+      if (oldDrawCommandPosition == m_DrawCommandIndices.end())
+      {
+        MemoryPool::AllocationResult indexAllocation = m_IndexMemory.malloc(baseCommand.indexData());
+        MemoryPool::AllocationResult vertexAllocation = m_VertexMemory.malloc(baseCommand.vertexData());
+        afterUpload(indexAllocation, vertexAllocation);
+
+        baseCommand.setCommandIndex(m_DrawCommands.size());
+        m_DrawCommandIndices.emplace(baseCommand.id(), baseCommand.commandIndex());
+        m_DrawCommands.push_back(std::move(drawCommand));
       }
       else
       {
-        u32 firstVertex = arithmetic_cast<u32>(vertexAllocationAddress / m_Stride);
-        baseCommand.setPlacement(firstVertex, 0, m_DrawCommands.size());
-      }
+        DrawCommandBaseType& oldDrawCommand = m_DrawCommands.at(*oldDrawCommandPosition->second);
 
-      m_DrawCommandIndices.emplace(baseCommand.id(), baseCommand.commandIndex());
-      m_DrawCommands.push_back(std::move(drawCommand));
+        MemoryPool::AllocationResult indexAllocation = m_IndexMemory.realloc(getDrawCommandIndicesAddress(oldDrawCommand), baseCommand.indexData());
+        MemoryPool::AllocationResult vertexAllocation = m_VertexMemory.realloc(getDrawCommandVerticesAddress(oldDrawCommand), baseCommand.vertexData());
+        afterUpload(indexAllocation, vertexAllocation);
+
+        uSize commandIndex = *oldDrawCommand.commandIndex();
+        baseCommand.stealCommandIndex(oldDrawCommand);
+        m_DrawCommands[commandIndex] = std::move(drawCommand);
+      }
     }
 
     void remove(const Identifier& id)
@@ -239,8 +250,12 @@ namespace eng
       setDrawCommandIndices(0, drawCount);
     }
 
+    /*
+      Allows for a function to be applied to draw commands that modifies their elements and reuploads them to the GPU.
+      For non-indexed draw commands, an element is a vertex. For indexed draw commands, an element is an index.
+    */
     template<InvocableWithReturnType<bool, T&> F>
-    void amend(i32 drawCount, F&& function)
+    void modifyElements(i32 drawCount, F&& function)
     {
       std::for_each_n(m_DrawCommands.begin(), drawCount, [this, &function](T& drawCommand)
       {
@@ -250,19 +265,17 @@ namespace eng
         if (!function(drawCommand))
           return;
 
-        if (baseCommand.elementCount() > oldElementCount)
+        if constexpr (c_IsIndexed)
         {
-          ENG_CORE_ERROR("Ammended draw command added additional elements! Discarding changes...");
-          return;
+          MemoryPool::AllocationResult reallocation = m_IndexMemory.realloc(getDrawCommandIndicesAddress(baseCommand), baseCommand.indexData());
+          MemoryPool::address_t vertexAllocationAddress = getDrawCommandVerticesAddress(baseCommand);
+          setDrawCommandOffsets(baseCommand, reallocation.address, vertexAllocationAddress);
         }
-
-        auto [bufferResized, allocationAddress] = [this, &baseCommand]()
+        else
         {
-          if constexpr (c_IsIndexed)
-            return m_IndexMemory.realloc(getDrawCommandIndicesAddress(baseCommand), baseCommand.indexData());
-          else
-            return m_VertexMemory.realloc(getDrawCommandVerticesAddress(baseCommand), baseCommand.vertexData());
-        }();
+          MemoryPool::AllocationResult reallocation = m_VertexMemory.realloc(getDrawCommandVerticesAddress(baseCommand), baseCommand.vertexData());
+          setDrawCommandOffsets(baseCommand, 0, reallocation.address);
+        }
       });
     }
 
@@ -292,6 +305,21 @@ namespace eng
     {
       for (uSize i = begin; i < end; ++i)
         *m_DrawCommands[i].DrawCommandBaseType::commandIndex() = i;
+    }
+
+    void setDrawCommandOffsets(DrawCommandBaseType& baseCommand, MemoryPool::address_t indexAllocationAddress, MemoryPool::address_t vertexAllocationAddress)
+    {
+      if constexpr (c_IsIndexed)
+      {
+        u32 firstIndex = arithmeticCast<u32>(indexAllocationAddress / sizeof(u32));
+        i32 baseVertex = arithmeticCast<i32>(vertexAllocationAddress / m_Stride);
+        baseCommand.setOffsets(firstIndex, baseVertex);
+      }
+      else
+      {
+        u32 firstVertex = arithmeticCast<u32>(vertexAllocationAddress / m_Stride);
+        baseCommand.setOffsets(firstVertex, 0);
+      }
     }
   };
 }

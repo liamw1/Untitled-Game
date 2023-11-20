@@ -167,7 +167,7 @@ void ChunkManager::render()
       length_t dist = glm::length2(chunkCenter - playerCameraPosition);
       return dist;
     }, eng::SortPolicy::Descending);
-    multiDrawArray.amend(commandCount, [&originIndex, &playerCameraPosition](ChunkDrawCommand& drawCommand)
+    multiDrawArray.modifyElements(commandCount, [&originIndex, &playerCameraPosition](ChunkDrawCommand& drawCommand)
     {
       bool orderModified = drawCommand.sort(originIndex, playerCameraPosition);
       return orderModified;

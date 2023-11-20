@@ -41,12 +41,7 @@ namespace eng::thread
 
       std::unordered_set<T> drawCommands = m_CommandQueue.removeAll();
       for (auto it = drawCommands.begin(); it != drawCommands.end();)
-      {
-        T drawCommand = std::move(drawCommands.extract(it++).value());
-
-        m_MultiDrawArray.remove(drawCommand.id());
-        m_MultiDrawArray.add(std::move(drawCommand));
-      }
+        m_MultiDrawArray.insert(std::move(drawCommands.extract(it++).value()));
     }
   };
 }
