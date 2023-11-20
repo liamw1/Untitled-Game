@@ -43,6 +43,7 @@
 #include "Engine/Math/ViewFrustum.h"
 
 #include "Engine/Memory/BufferLayout.h"
+#include "Engine/Memory/CustomAllocator.h"
 #include "Engine/Memory/Data.h"
 #include "Engine/Memory/MemoryPool.h"
 #include "Engine/Memory/StorageBuffer.h"

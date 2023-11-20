@@ -4,53 +4,26 @@
 #include "Player/Player.h"
 #include "Indexing/Operations.h"
 
-template<typename T>
-class ChunkAllocator
+class DeallocatorPayload
 {
+  GlobalIndex m_ChunkIndex;
+  std::shared_ptr<eng::thread::AsyncMultiDrawArray<ChunkDrawCommand>> m_OpaqueAsyncArray;
+  std::shared_ptr<eng::thread::AsyncMultiDrawArray<ChunkDrawCommand>> m_TransparentAsyncArray;
+
 public:
-  // Necessary to meet requirements of an Allocator
-  using value_type = T;
+  DeallocatorPayload() = default;
+  DeallocatorPayload(const GlobalIndex& chunkIndex,
+                     const std::shared_ptr<eng::thread::AsyncMultiDrawArray<ChunkDrawCommand>>& opaqueMultiDrawArray,
+                     const std::shared_ptr<eng::thread::AsyncMultiDrawArray<ChunkDrawCommand>>& transparentMultiDrawArray)
+    : m_ChunkIndex(chunkIndex), m_OpaqueAsyncArray(opaqueMultiDrawArray), m_TransparentAsyncArray(transparentMultiDrawArray) {}
 
-  GlobalIndex index;
-  std::shared_ptr<eng::thread::AsyncMultiDrawArray<ChunkDrawCommand>> opaqueAsyncArray;
-  std::shared_ptr<eng::thread::AsyncMultiDrawArray<ChunkDrawCommand>> transparentAsyncArray;
+  bool operator==(const DeallocatorPayload& other) const = default;
 
-  ChunkAllocator() = default;
-  ChunkAllocator(const GlobalIndex& chunkIndex,
-                 const std::shared_ptr<eng::thread::AsyncMultiDrawArray<ChunkDrawCommand>>& opaqueMultiDrawArray,
-                 const std::shared_ptr<eng::thread::AsyncMultiDrawArray<ChunkDrawCommand>>& transparentMultiDrawArray)
-    : index(chunkIndex), opaqueAsyncArray(opaqueMultiDrawArray), transparentAsyncArray(transparentMultiDrawArray) {}
-
-  template<typename U>
-  ChunkAllocator(const ChunkAllocator<U>& other) noexcept
-    : index(other.index), opaqueAsyncArray(other.opaqueAsyncArray), transparentAsyncArray(other.transparentAsyncArray) {}
-
-  value_type* allocate(uSize n)
+  void operator()()
   {
-    if (n > std::numeric_limits<uSize>::max() / sizeof(value_type))
-      throw std::bad_array_new_length();
-
-    if (value_type* allocationAddress = static_cast<value_type*>(std::malloc(n * sizeof(value_type))))
-      return allocationAddress;
-
-    throw std::bad_alloc();
+    m_OpaqueAsyncArray->removeCommand(m_ChunkIndex);
+    m_TransparentAsyncArray->removeCommand(m_ChunkIndex);
   }
-
-  void deallocate(value_type* allocationAddress, uSize n) noexcept
-  {
-    opaqueAsyncArray->removeCommand(index);
-    transparentAsyncArray->removeCommand(index);
-    std::free(allocationAddress);
-  }
-
-  template<typename U>
-  bool operator==(const ChunkAllocator<U>& other)
-  {
-    return index == other.index && opaqueAsyncArray == other.opaqueAsyncArray && transparentAsyncArray == other.transparentAsyncArray;
-  }
-
-  template<typename U>
-  bool operator!=(const ChunkAllocator<U>& other) { return !(*this == other); }
 };
 
 struct LightUniforms
@@ -465,8 +438,8 @@ std::shared_ptr<Chunk> ChunkManager::generateNewChunk(const GlobalIndex& chunkIn
 {
   ENG_PROFILE_FUNCTION();
 
-  ChunkAllocator<Chunk> allocator(chunkIndex, m_OpaqueMultiDrawArray, m_TransparentMultiDrawArray);
-  std::shared_ptr<Chunk> chunk = std::allocate_shared<Chunk>(allocator, chunkIndex);
+  eng::mem::UponDeallocation<DeallocatorPayload, Chunk> chunkAllocator(chunkIndex, m_OpaqueMultiDrawArray, m_TransparentMultiDrawArray);
+  std::shared_ptr<Chunk> chunk = std::allocate_shared<Chunk>(chunkAllocator, chunkIndex);
 
   BlockArrayBox<block::Type> composition = terrain::generateNew(chunkIndex);
   BlockArrayBox<block::Light> lighting = calculateLighting(composition);

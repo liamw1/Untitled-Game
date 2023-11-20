@@ -256,10 +256,13 @@ namespace eng
           return;
         }
 
-        if constexpr (c_IsIndexed)
-          m_IndexMemory.realloc(getDrawCommandIndicesAddress(baseCommand), baseCommand.indexData());
-        else
-          m_VertexMemory.realloc(getDrawCommandVerticesAddress(baseCommand), baseCommand.vertexData());
+        auto [bufferResized, allocationAddress] = [this, &baseCommand]()
+        {
+          if constexpr (c_IsIndexed)
+            return m_IndexMemory.realloc(getDrawCommandIndicesAddress(baseCommand), baseCommand.indexData());
+          else
+            return m_VertexMemory.realloc(getDrawCommandVerticesAddress(baseCommand), baseCommand.vertexData());
+        }();
       });
     }
 
