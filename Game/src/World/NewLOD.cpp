@@ -17,7 +17,7 @@ namespace newLod
 
   globalIndex_t Node::size() const { return eng::math::pow2<globalIndex_t>(lodLevel()); }
 
-  const BlockArrayBox<const Node>& Node::children() const { return m_Children; }
+  const BlockArrayBox<Node>& Node::children() const { return m_Children; }
   std::shared_ptr<Data> Node::data() { return m_Data; }
 
   void Node::split()

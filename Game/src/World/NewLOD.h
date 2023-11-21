@@ -31,7 +31,7 @@ namespace newLod
     */
     globalIndex_t size() const;
 
-    const BlockArrayBox<const Node>& children() const;
+    const BlockArrayBox<Node>& children() const;
     std::shared_ptr<Data> data();
 
     void split();
