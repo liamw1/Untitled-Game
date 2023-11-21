@@ -16,10 +16,14 @@ namespace newLod
                                                                    { eng::ShaderDataType::Float2, "a_TextureWeighs"   },
                                                                    { eng::ShaderDataType::Int,    "a_QuadIndex"       } };
 
-    // LOD data
-    Octree m_LODs;
+    std::shared_ptr<eng::thread::AsyncMultiDrawArray<DrawCommand>> m_MultiDrawArray;
 
     // Multi-threading
+    std::shared_ptr<eng::thread::ThreadPool> m_ThreadPool;
+    eng::thread::WorkSet<GlobalIndex, void> m_MeshingWork;
+
+    // LOD data
+    Octree m_LODs;
 
   public:
     LODManager();

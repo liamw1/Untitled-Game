@@ -134,7 +134,7 @@ namespace eng
     Stores and manages a set of multi-draw commands. Commands are queried using their unique ID,
     the type of which is user-specified. Provides fast insertion and removal, while keeping
     draw commands tightly packed. Vertex data is stored in a single dynamically-resizing buffer
-    on the gpu. Additionally, the class provides operations on draw commands, such as sorting.
+    on the GPU. Additionally, the class provides operations on draw commands, such as sorting.
   */
   template<DrawCommandType T>
   class MultiDrawArray
@@ -205,7 +205,7 @@ namespace eng
 
         uSize commandIndex = *oldDrawCommand.commandIndex();
         baseCommand.stealCommandIndex(oldDrawCommand);
-        m_DrawCommands[commandIndex] = std::move(drawCommand);
+        m_DrawCommands.at(commandIndex) = std::move(drawCommand);
       }
     }
 

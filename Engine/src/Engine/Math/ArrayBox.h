@@ -61,43 +61,26 @@ namespace eng::math
     IBox3<IntType> m_Bounds;
     IVec2<iSize> m_Strides;
     iSize m_Offset;
-    T* m_Data;
+    std::unique_ptr<T[]> m_Data;
 
   public:
     using Layer = ArrayBoxLayer<T, IntType>;
     using Strip = ArrayBoxStrip<T, IntType>;
 
     ArrayBox(const IBox3<IntType>& bounds, AllocationPolicy policy)
-      : m_Data(nullptr)
     {
       setBounds(bounds);
-      if (policy != AllocationPolicy::Deferred)
-        allocate();
-      if (policy == AllocationPolicy::DefaultInitialize)
-        fill(T());
+      switch (policy)
+      {
+        case AllocationPolicy::ForOverwrite:      allocate();                             break;
+        case AllocationPolicy::DefaultInitialize: m_Data = std::make_unique<T[]>(size()); break;
+      }
     }
     ArrayBox(const IBox3<IntType>& bounds, const T& initialValue)
       : ArrayBox(bounds, AllocationPolicy::ForOverwrite) { fill(initialValue); }
-    ~ArrayBox() { delete[] m_Data; }
 
-    ArrayBox(ArrayBox&& other) noexcept = default;
-    ArrayBox& operator=(ArrayBox&& other) noexcept
-    {
-      if (&other != this)
-      {
-        m_Bounds = other.m_Bounds;
-        m_Strides = other.m_Strides;
-        m_Offset = other.m_Offset;
-
-        delete[] m_Data;
-        m_Data = other.m_Data;
-        other.m_Data = nullptr;
-      }
-      return *this;
-    }
-
-    operator bool() const { return m_Data; }
-    const T* data() const { return m_Data; }
+    operator bool() const { return static_cast<bool>(m_Data); }
+    const T* data() const { return m_Data.get(); }
 
     T& operator()(const IVec3<IntType>& index) { ENG_MUTABLE_VERSION(operator(), index); }
     const T& operator()(const IVec3<IntType>& index) const
@@ -113,7 +96,7 @@ namespace eng::math
       ENG_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
       ENG_CORE_ASSERT(debug::boundsCheck(index, m_Bounds.min.i, m_Bounds.max.i + 1), "Index is out of bounds!");
       IBox2<IntType> layerBounds(m_Bounds.min.j, m_Bounds.min.k, m_Bounds.max.j, m_Bounds.max.k);
-      return Layer(m_Data + m_Strides.i * (index - m_Bounds.min.i), layerBounds);
+      return Layer(m_Data.get() + m_Strides.i * (index - m_Bounds.min.i), layerBounds);
     }
 
     uSize size() const { return m_Bounds.volume(); }
@@ -122,7 +105,7 @@ namespace eng::math
     bool contains(const T& value) const
     {
       ENG_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
-      return std::any_of(m_Data, m_Data + size(), [&value](const T& data)
+      return std::any_of(m_Data.get(), m_Data.get() + size(), [&value](const T& data)
       {
         return data == value;
       });
@@ -131,7 +114,7 @@ namespace eng::math
     bool filledWith(const T& value) const
     {
       ENG_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
-      return std::all_of(m_Data, m_Data + size(), [&value](const T& data)
+      return std::all_of(m_Data.get(), m_Data.get() + size(), [&value](const T& data)
       {
         return data == value;
       });
@@ -188,7 +171,7 @@ namespace eng::math
     void fill(const T& value)
     {
       ENG_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
-      std::fill_n(m_Data, size(), value);
+      std::fill_n(m_Data.get(), size(), value);
     }
 
     void fill(const IBox3<IntType>& fillSection, const T& value)
@@ -218,6 +201,13 @@ namespace eng::math
       });
     }
 
+    template<std::invocable<T&> F>
+    void forEach(F&& function)
+    {
+      ENG_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
+      std::for_each_n(m_Data.get(), size(), function);
+    }
+
     void setBounds(const IBox3<IntType>& bounds)
     {
       m_Bounds = bounds;
@@ -231,13 +221,12 @@ namespace eng::math
       if (m_Data)
         ENG_CORE_WARN("Data already allocated to ArrayBox. Ignoring...");
       else
-        m_Data = new T[size()];
+        m_Data = std::make_unique_for_overwrite<T[]>(size());
     }
 
     void clear()
     {
-      delete[] m_Data;
-      m_Data = nullptr;
+      m_Data.reset();
     }
   };
 }

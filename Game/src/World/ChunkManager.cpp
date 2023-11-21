@@ -377,8 +377,7 @@ void ChunkManager::renderLODs()
     if (leaf->data->primaryMesh.vertexArray != nullptr)
     {
       // Shift each plane by distance equal to radius of sphere that circumscribes LOD
-      static constexpr float sqrt3 = 1.732050807568877f;
-      const length_t LODSphereRadius = sqrt3 * leaf->length() / 2;
+      const length_t LODSphereRadius = std::numbers::sqrt3_v<length_t> * leaf->length() / 2;
       for (eng::math::FrustumPlane plane : eng::math::FrustumPlanes())
         shiftedFrustumPlanes[plane].w = frustumPlanes[plane].w + LODSphereRadius * planeNormalMags[plane];
 

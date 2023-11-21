@@ -75,7 +75,7 @@ i32 ChunkVoxel::baseVertex() const
 
 
 ChunkDrawCommand::ChunkDrawCommand(const GlobalIndex& chunkIndex, bool needsSorting)
-  : eng::GenericDrawCommand<ChunkDrawCommand, GlobalIndex, true>(chunkIndex),
+  : eng::IndexedDrawCommand<ChunkDrawCommand, GlobalIndex>(chunkIndex),
     m_SortState(-1, -1, -1),
     m_NeedsSorting(needsSorting),
     m_VoxelBaseVertex(0) {}

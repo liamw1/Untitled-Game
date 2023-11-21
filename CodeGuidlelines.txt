@@ -49,12 +49,15 @@ Software Design:
   Prefer return/break/continue over nesting.
   Prefer to keep function definitions out of header files, including trivial cases like Constructor() = default;.
   Prefer to initialize member variables in constructor rather than in class definition.
+  Prefer implicit copy/move constructors, copy/move assignment operators, and destructors over explicitly writing them.
+  Avoid forward declarations.
 
 Language Features:
   Avoid implicit conversions. User-defined conversions should be marked explicit. Implicit onversions to bool are ok.
   Avoid using goto. One notable exception is to use goto to break out of nested loops.
   Avoid using anonymous namespaces. Mark static variables/functions with 'static' instead.
   Avoid throwing in destructors.
+  Prefer smart pointers over raw pointers.
 
 Custom Constructs:
   Prefer to use our custom fixed-width types, i8, i16, i32, etc., in place of char, short, int, etc.
