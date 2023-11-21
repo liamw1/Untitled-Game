@@ -4,7 +4,11 @@
 #include "Platform/OpenGL/OpenGLTexture.h"
 #include "Engine/Debug/Instrumentor.h"
 
+#include <codeanalysis\warnings.h> // Disable intellisense warnings
+#pragma warning(push, 0)
+#pragma warning(disable : ALL_CODE_ANALYSIS_WARNINGS)
 #include <stb_image.h>
+#pragma warning(pop)
 
 namespace eng
 {

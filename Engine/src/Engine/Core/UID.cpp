@@ -9,9 +9,7 @@ namespace eng
 
   UID::UID()
     : m_LowerUID(s_UniformDistribution(s_RandomEngine)),
-      m_UpperUID(s_UniformDistribution(s_RandomEngine))
-  {
-  }
+      m_UpperUID(s_UniformDistribution(s_RandomEngine)) {}
 
   std::string UID::toString()
   {
@@ -24,8 +22,5 @@ namespace eng
     return ss.str();
   }
 
-  uSize UID::hash() const
-  {
-    return m_LowerUID + m_UpperUID;
-  }
+  uSize UID::hash() const { return m_LowerUID + m_UpperUID; }
 }

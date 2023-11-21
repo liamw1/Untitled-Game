@@ -6,11 +6,11 @@
 namespace eng
 {
   IndexBuffer::IndexBuffer(const mem::IndexData& data)
-    : m_Buffer(StorageBuffer::Create(StorageBuffer::Type::IndexBuffer))
+    : m_Buffer(mem::StorageBuffer::Create(mem::StorageBuffer::Type::IndexBuffer))
   {
     m_Buffer->set(static_cast<mem::Data>(data));
   }
-  IndexBuffer::IndexBuffer(const std::shared_ptr<StorageBuffer>& indexBufferStorage)
+  IndexBuffer::IndexBuffer(const std::shared_ptr<mem::StorageBuffer>& indexBufferStorage)
     : m_Buffer(indexBufferStorage) {}
 
   void IndexBuffer::bind() const { m_Buffer->bind(); }

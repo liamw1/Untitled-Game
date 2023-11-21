@@ -1,6 +1,7 @@
 #include "GMpch.h"
 #include "Noise.h"
 #include "Block/Block.h"
+
 #include <glm/gtc/noise.hpp>
 
 // Operators for element-wise vector-vector multiplication

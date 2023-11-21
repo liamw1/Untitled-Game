@@ -89,7 +89,7 @@ void ChunkManager::initialize()
   s_LightUniform = eng::Uniform::Create(2, sizeof(LightUniforms));
   s_TextureArray = block::getTextureArray();
 
-  s_SSBO = eng::StorageBuffer::Create(eng::StorageBuffer::Type::SSBO, c_StorageBufferBinding);
+  s_SSBO = eng::mem::StorageBuffer::Create(eng::mem::StorageBuffer::Type::SSBO, c_StorageBufferBinding);
   s_SSBO->resize(c_StorageBufferSize);
   s_SSBO->bind();
 

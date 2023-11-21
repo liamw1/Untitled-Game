@@ -1,7 +1,8 @@
 #pragma once
+#include "Engine/Core/FixedWidthTypes.h"
 #include "Engine/Utilities/BoilerplateReduction.h"
 
-namespace eng
+namespace eng::mem
 {
   /*
     Indicates underyling type of data to be send to shader.

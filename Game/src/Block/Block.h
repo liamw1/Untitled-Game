@@ -40,6 +40,6 @@ namespace block
 
     i8 sunlight() const;
 
-    static constexpr i32 MaxValue() { return 15; }
+    static constexpr i8 MaxValue() { return 15; }
   };
 };

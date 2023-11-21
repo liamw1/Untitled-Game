@@ -1,4 +1,5 @@
 #pragma once
+#include "FixedWidthTypes.h"
 
 namespace eng
 {

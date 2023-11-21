@@ -1,7 +1,7 @@
 #pragma once
 #include "Data.h"
 
-namespace eng
+namespace eng::mem
 {
   class StorageBuffer
   {

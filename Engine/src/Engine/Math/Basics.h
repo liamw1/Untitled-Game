@@ -18,7 +18,8 @@ namespace eng::math
   {
     if constexpr (std::is_signed_v<T>)
       return std::abs(value);
-    return value;
+    else
+      return value;
   }
 
   // Euclidean modulus
@@ -29,6 +30,7 @@ namespace eng::math
     auto result = left % right;
     if constexpr (std::is_signed_v<decltype(result)>)
       return result >= 0 ? result : result + abs(right);
-    return result;
+    else
+      return result;
   }
 }

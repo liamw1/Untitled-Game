@@ -66,7 +66,8 @@ namespace eng::event
         else
           return CheckEventTypeAt<N + 1, F, Args...>();
       }
-      return false;
+      else
+        return false;
     }
   };
 

@@ -1,5 +1,6 @@
 #include "ENpch.h"
 #include "Timer.h"
+#include "Engine/Core/Logger.h"
 
 namespace eng::debug
 {
@@ -11,7 +12,7 @@ namespace eng::debug
   
   Timer::~Timer()
   {
-    std::cout << m_Name << " took " << m_Duration.count() * 1000.0f << "ms" << std::endl;
+    ENG_CORE_INFO("{0} took {1} ms", m_Name, m_Duration.count() * 1000.0f);
   }
   
   void Timer::timeStart()

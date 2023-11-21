@@ -1,7 +1,7 @@
 #include "ENpch.h"
 #include "BufferLayout.h"
 
-namespace eng
+namespace eng::mem
 {
   static u32 shaderDataTypeSize(ShaderDataType type)
   {

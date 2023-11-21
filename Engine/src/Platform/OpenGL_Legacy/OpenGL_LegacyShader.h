@@ -1,4 +1,5 @@
 #pragma once
+#include "Engine/Core/FixedWidthTypes.h"
 #include "Engine/Renderer/Shader.h"
 
 namespace eng

@@ -1,14 +1,14 @@
 #include "ENpch.h"
 #include "Components.h"
+
 #include <glm/gtc/matrix_transform.hpp>
 
 namespace eng::component
 {
   math::Vec3 Transform::orientationDirection() const
   {
-    const length_t& roll = rotation.x;
-    const length_t& pitch = rotation.y;
-    const length_t& yaw = rotation.z;
+    length_t pitch = rotation.y;
+    length_t yaw = rotation.z;
 
     return {std::cos(yaw) * std::cos(pitch),
             -std::sin(yaw) * std::cos(pitch),

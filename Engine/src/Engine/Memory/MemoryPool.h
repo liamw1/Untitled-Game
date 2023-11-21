@@ -1,7 +1,7 @@
 #pragma once
 #include "StorageBuffer.h"
 
-namespace eng
+namespace eng::mem
 {
   /*
     Helper class for managing GPU memory. Provides O(log(n) + m) insertion and removal, where

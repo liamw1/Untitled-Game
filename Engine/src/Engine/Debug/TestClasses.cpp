@@ -1,8 +1,14 @@
 #include "ENpch.h"
 #include "TestClasses.h"
+#include "Engine/Core/Logger.h"
 
 namespace eng::debug
 {
+  CopyMoveTest::Counters::~Counters()
+  {
+    ENG_CORE_INFO("{0} move constructors and {1} copy constructors were called during the object's lifetime", moves, copies);
+  }
+
   CopyMoveTest::CopyMoveTest()
     : m_Counters(std::make_shared<Counters>())
   {

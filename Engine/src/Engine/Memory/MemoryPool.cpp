@@ -3,7 +3,7 @@
 #include "Engine/Core/Casting.h"
 #include "Engine/Debug/Assert.h"
 
-namespace eng
+namespace eng::mem
 {
   MemoryPool::MemoryPool()
     : m_Capacity(0) {}

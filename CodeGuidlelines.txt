@@ -39,6 +39,8 @@ Brackets and spacing:
 
 Includes:
   Use angular brackets when including libraries, i.e. #include <string>. Quotes for everything else, i.e. #include "MyFile.h".
+  Engine/Game headers go first, then 3rd party library headers, then standard library headers. 
+    - Each category should be separated with a single space.
 
 
 ========================= Strong Preferences =========================

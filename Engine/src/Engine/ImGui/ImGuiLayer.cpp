@@ -5,12 +5,16 @@
 #include "Engine/Core/Window.h"
 #include "Engine/Debug/Instrumentor.h"
 
+#include <codeanalysis\warnings.h> // Disable intellisense warnings
+#pragma warning(push, 0)
+#pragma warning(disable : ALL_CODE_ANALYSIS_WARNINGS)
 #include <imgui.h>
 #include <backends/imgui_impl_glfw.h>
 #include <backends/imgui_impl_opengl3.h>
 
 // TEMPORARY
 #include <GLFW/glfw3.h>
+#pragma warning(pop)
 
 
 namespace eng

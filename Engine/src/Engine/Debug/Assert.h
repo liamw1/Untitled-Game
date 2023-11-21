@@ -1,5 +1,5 @@
 #pragma once
-#include "Engine/Core/Log/Log.h"
+#include "Engine/Core/Logger.h"
 
 // ======================== Debug Macros ======================== //
 #ifdef ENG_DEBUG

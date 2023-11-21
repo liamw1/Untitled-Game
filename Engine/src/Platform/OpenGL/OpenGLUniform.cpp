@@ -2,6 +2,7 @@
 #include "OpenGLUniform.h"
 #include "Engine/Debug/Assert.h"
 #include "Engine/Threads/Threads.h"
+
 #include <glad/glad.h>
 
 namespace eng

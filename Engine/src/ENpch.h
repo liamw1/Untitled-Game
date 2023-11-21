@@ -3,6 +3,7 @@
 // ================= Preprocessor Definitions ================= //
 #define NOMINMAX
 #define GLM_ENABLE_EXPERIMENTAL
+#define _SILENCE_ALL_MS_EXT_DEPRECATION_WARNINGS
 
 // ========================= Platform ========================= //
 #include "Engine/Core/PlatformDetection.h"
@@ -18,6 +19,7 @@
 #include <concepts>
 #include <compare>
 #include <cstdint>
+#include <cstdlib>
 #include <iterator>
 #include <stdexcept>
 #include <sstream>
@@ -62,6 +64,3 @@
 #include <memory>
 #include <optional>
 #include <variant>
-
-// ======================= Custom Types ======================= //
-#include "Engine/Core/FixedWidthTypes.h"

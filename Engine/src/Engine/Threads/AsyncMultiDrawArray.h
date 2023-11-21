@@ -14,7 +14,7 @@ namespace eng::thread
     MultiDrawArray<T> m_MultiDrawArray;
 
   public:
-    AsyncMultiDrawArray(const BufferLayout& layout)
+    AsyncMultiDrawArray(const mem::BufferLayout& layout)
       : m_MultiDrawArray(layout) {}
 
     template<std::invocable<eng::MultiDrawArray<T>&> F>

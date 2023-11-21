@@ -8,17 +8,6 @@ namespace eng
   {
     static constexpr const char* c_BadCastMessage = "Value cannot be represented in the destination type!";
 
-    template<Arithmetic T>
-    constexpr int rank()
-    {
-      if (std::is_same_v<T, bool>)
-        return 0;
-      else if constexpr (std::is_integral_v<T>)
-        return sizeof(T);
-      else
-        return sizeof(iMax) + sizeof(T);
-    }
-
     template<Arithmetic C, Arithmetic T>
     constexpr bool alwaysSafe()
     {
@@ -58,7 +47,8 @@ namespace eng
       return arithmeticUpcast<C>(value);
     else if (detail::canSafelyCast<C>(value))
       return static_cast<C>(value);
-    throw std::range_error(detail::c_BadCastMessage);
+    else
+      throw std::range_error(detail::c_BadCastMessage);
   }
 
   template<Arithmetic C, Arithmetic T>

@@ -1,22 +1,23 @@
 #pragma once
-
-enum class FramebufferTextureFormat
-{
-  None,
-
-  // Color
-  RED_INTEGER,
-  RGBA8,
-
-  // Depth/stencil
-  DEPTH24STENCIL8,
-
-  // Defaults
-  Depth = DEPTH24STENCIL8
-};
+#include "Engine/Core/FixedWidthTypes.h"
 
 namespace eng
 {
+  enum class FramebufferTextureFormat
+  {
+    None,
+
+    // Color
+    RED_INTEGER,
+    RGBA8,
+
+    // Depth/stencil
+    DEPTH24STENCIL8,
+
+    // Defaults
+    Depth = DEPTH24STENCIL8
+  };
+
   struct FramebufferTextureSpecification
   {
     FramebufferTextureFormat textureFormat;

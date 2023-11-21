@@ -1,4 +1,5 @@
 #pragma once
+#include "Engine/Core/FixedWidthTypes.h"
 #include "Engine/Utilities/Constraints.h"
 
 #define ENG_PROFILE 0

@@ -2,7 +2,7 @@
 #include "VertexArray.h"
 #include "Engine/Core/Algorithm.h"
 #include "Engine/Core/Casting.h"
-#include "Engine/Core/Log/Log.h"
+#include "Engine/Core/Logger.h"
 #include "Engine/Memory/MemoryPool.h"
 #include "Engine/Utilities/Constraints.h"
 
@@ -144,17 +144,17 @@ namespace eng
     static constexpr bool c_IsIndexed = T::Indexed();
 
     i32 m_Stride;
-    MemoryPool m_IndexMemory;
-    MemoryPool m_VertexMemory;
+    mem::MemoryPool m_IndexMemory;
+    mem::MemoryPool m_VertexMemory;
     std::unique_ptr<VertexArray> m_VertexArray;
     std::vector<T> m_DrawCommands;
     std::unordered_map<Identifier, std::shared_ptr<uSize>> m_DrawCommandIndices;
 
   public:
-    MultiDrawArray(const BufferLayout& layout)
+    MultiDrawArray(const mem::BufferLayout& layout)
       : m_Stride(layout.stride()),
-        m_IndexMemory(StorageBuffer::Type::IndexBuffer),
-        m_VertexMemory(StorageBuffer::Type::VertexBuffer)
+        m_IndexMemory(mem::StorageBuffer::Type::IndexBuffer),
+        m_VertexMemory(mem::StorageBuffer::Type::VertexBuffer)
     {
       m_VertexArray = VertexArray::Create();
       m_VertexArray->setVertexBuffer(m_VertexMemory.buffer());
@@ -176,7 +176,7 @@ namespace eng
       if (vertexCount == 0 || elementCount == 0)
         return;
 
-      auto afterUpload = [this, &baseCommand](MemoryPool::AllocationResult indexAllocation, MemoryPool::AllocationResult vertexAllocation)
+      auto afterUpload = [this, &baseCommand](mem::MemoryPool::AllocationResult indexAllocation, mem::MemoryPool::AllocationResult vertexAllocation)
       {
         setDrawCommandOffsets(baseCommand, indexAllocation.address, vertexAllocation.address);
         baseCommand.clearData();
@@ -187,8 +187,8 @@ namespace eng
       DrawCommandIndicesIterator oldDrawCommandPosition = m_DrawCommandIndices.find(baseCommand.id());
       if (oldDrawCommandPosition == m_DrawCommandIndices.end())
       {
-        MemoryPool::AllocationResult indexAllocation = m_IndexMemory.malloc(baseCommand.indexData());
-        MemoryPool::AllocationResult vertexAllocation = m_VertexMemory.malloc(baseCommand.vertexData());
+        mem::MemoryPool::AllocationResult indexAllocation = m_IndexMemory.malloc(baseCommand.indexData());
+        mem::MemoryPool::AllocationResult vertexAllocation = m_VertexMemory.malloc(baseCommand.vertexData());
         afterUpload(indexAllocation, vertexAllocation);
 
         baseCommand.setCommandIndex(m_DrawCommands.size());
@@ -199,8 +199,8 @@ namespace eng
       {
         DrawCommandBaseType& oldDrawCommand = m_DrawCommands.at(*oldDrawCommandPosition->second);
 
-        MemoryPool::AllocationResult indexAllocation = m_IndexMemory.realloc(getDrawCommandIndicesAddress(oldDrawCommand), baseCommand.indexData());
-        MemoryPool::AllocationResult vertexAllocation = m_VertexMemory.realloc(getDrawCommandVerticesAddress(oldDrawCommand), baseCommand.vertexData());
+        mem::MemoryPool::AllocationResult indexAllocation = m_IndexMemory.realloc(getDrawCommandIndicesAddress(oldDrawCommand), baseCommand.indexData());
+        mem::MemoryPool::AllocationResult vertexAllocation = m_VertexMemory.realloc(getDrawCommandVerticesAddress(oldDrawCommand), baseCommand.vertexData());
         afterUpload(indexAllocation, vertexAllocation);
 
         uSize commandIndex = *oldDrawCommand.commandIndex();
@@ -267,13 +267,13 @@ namespace eng
 
         if constexpr (c_IsIndexed)
         {
-          MemoryPool::AllocationResult reallocation = m_IndexMemory.realloc(getDrawCommandIndicesAddress(baseCommand), baseCommand.indexData());
-          MemoryPool::address_t vertexAllocationAddress = getDrawCommandVerticesAddress(baseCommand);
+          mem::MemoryPool::AllocationResult reallocation = m_IndexMemory.realloc(getDrawCommandIndicesAddress(baseCommand), baseCommand.indexData());
+          mem::MemoryPool::address_t vertexAllocationAddress = getDrawCommandVerticesAddress(baseCommand);
           setDrawCommandOffsets(baseCommand, reallocation.address, vertexAllocationAddress);
         }
         else
         {
-          MemoryPool::AllocationResult reallocation = m_VertexMemory.realloc(getDrawCommandVerticesAddress(baseCommand), baseCommand.vertexData());
+          mem::MemoryPool::AllocationResult reallocation = m_VertexMemory.realloc(getDrawCommandVerticesAddress(baseCommand), baseCommand.vertexData());
           setDrawCommandOffsets(baseCommand, 0, reallocation.address);
         }
       });
@@ -285,7 +285,7 @@ namespace eng
     using DrawCommandIterator = std::vector<T>::iterator;
     using DrawCommandIndicesIterator = std::unordered_map<Identifier, std::shared_ptr<uSize>>::iterator;
 
-    MemoryPool::address_t getDrawCommandIndicesAddress(const DrawCommandBaseType& baseCommand)
+    mem::MemoryPool::address_t getDrawCommandIndicesAddress(const DrawCommandBaseType& baseCommand)
     {
       if constexpr (c_IsIndexed)
         return baseCommand.firstElement() * sizeof(u32);
@@ -293,7 +293,7 @@ namespace eng
         throw std::runtime_error("Vertex-based commands do not have an index address!");
     }
 
-    MemoryPool::address_t getDrawCommandVerticesAddress(const DrawCommandBaseType& baseCommand)
+    mem::MemoryPool::address_t getDrawCommandVerticesAddress(const DrawCommandBaseType& baseCommand)
     {
       if constexpr (c_IsIndexed)
         return baseCommand.baseVertex() * m_Stride;
@@ -307,7 +307,7 @@ namespace eng
         *m_DrawCommands[i].DrawCommandBaseType::commandIndex() = i;
     }
 
-    void setDrawCommandOffsets(DrawCommandBaseType& baseCommand, MemoryPool::address_t indexAllocationAddress, MemoryPool::address_t vertexAllocationAddress)
+    void setDrawCommandOffsets(DrawCommandBaseType& baseCommand, mem::MemoryPool::address_t indexAllocationAddress, mem::MemoryPool::address_t vertexAllocationAddress)
     {
       if constexpr (c_IsIndexed)
       {

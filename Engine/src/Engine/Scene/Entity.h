@@ -1,6 +1,8 @@
 #pragma once
-#include <entt/entt.hpp>
+#include "Engine/Core/FixedWidthTypes.h"
 #include "Engine/Debug/Assert.h"
+
+#include <entt/entt.hpp>
 
 namespace eng
 {

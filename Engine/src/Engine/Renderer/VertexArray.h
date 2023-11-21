@@ -10,11 +10,11 @@ namespace eng
   */
   class IndexBuffer
   {
-    std::shared_ptr<StorageBuffer> m_Buffer;
+    std::shared_ptr<mem::StorageBuffer> m_Buffer;
 
   public:
     IndexBuffer(const mem::IndexData& data);
-    IndexBuffer(const std::shared_ptr<StorageBuffer>& indexBufferStorage);
+    IndexBuffer(const std::shared_ptr<mem::StorageBuffer>& indexBufferStorage);
 
     void bind() const;
     void unBind() const;
@@ -36,14 +36,14 @@ namespace eng
     virtual void bind() const = 0;
     virtual void unBind() const = 0;
 
-    virtual void setLayout(const BufferLayout& layout) = 0;
+    virtual void setLayout(const mem::BufferLayout& layout) = 0;
 
     /*
       \param data Buffer of vertex data
       \param size Size of buffer in bytes
     */
     virtual void setVertexBuffer(const mem::Data& data) = 0;
-    virtual void setVertexBuffer(const std::shared_ptr<StorageBuffer>& vertexBuffer) = 0;
+    virtual void setVertexBuffer(const std::shared_ptr<mem::StorageBuffer>& vertexBuffer) = 0;
     virtual void modifyVertexBuffer(u32 offset, const mem::Data& data) const = 0;
     virtual void resizeVertexBuffer(u32 newSize) = 0;
 
@@ -53,9 +53,9 @@ namespace eng
       OpenGL expects vertices to be in counter-clockwise orientation.
     */
     virtual void setIndexBuffer(const IndexBuffer& indexBuffer) = 0;
-    virtual void setIndexBuffer(const std::shared_ptr<StorageBuffer>& indexBufferStorage) = 0;
+    virtual void setIndexBuffer(const std::shared_ptr<mem::StorageBuffer>& indexBufferStorage) = 0;
 
-    virtual const BufferLayout& getLayout() const = 0;
+    virtual const mem::BufferLayout& getLayout() const = 0;
     virtual const std::optional<IndexBuffer>& getIndexBuffer() const = 0;
 
     static std::unique_ptr<VertexArray> Create();

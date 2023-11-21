@@ -3,26 +3,27 @@
 #include "Engine/Core/Casting.h"
 #include "Engine/Debug/Assert.h"
 #include "Engine/Threads/Threads.h"
+
 #include <glad/glad.h>
 
 namespace eng
 {
-  static GLenum convertToOpenGLBaseType(ShaderDataType type)
+  static GLenum convertToOpenGLBaseType(mem::ShaderDataType type)
   {
     switch (type)
     {
-      case ShaderDataType::Bool:        return GL_BOOL;
-      case ShaderDataType::Uint32:      return GL_UNSIGNED_INT;
-      case ShaderDataType::Int:         return GL_INT;
-      case ShaderDataType::Int2:        return GL_INT;
-      case ShaderDataType::Int3:        return GL_INT;
-      case ShaderDataType::Int4:        return GL_INT;
-      case ShaderDataType::Float:       return GL_FLOAT;
-      case ShaderDataType::Float2:      return GL_FLOAT;
-      case ShaderDataType::Float3:      return GL_FLOAT;
-      case ShaderDataType::Float4:      return GL_FLOAT;
-      case ShaderDataType::Mat3:        return GL_FLOAT;
-      case ShaderDataType::Mat4:        return GL_FLOAT;
+      case mem::ShaderDataType::Bool:        return GL_BOOL;
+      case mem::ShaderDataType::Uint32:      return GL_UNSIGNED_INT;
+      case mem::ShaderDataType::Int:         return GL_INT;
+      case mem::ShaderDataType::Int2:        return GL_INT;
+      case mem::ShaderDataType::Int3:        return GL_INT;
+      case mem::ShaderDataType::Int4:        return GL_INT;
+      case mem::ShaderDataType::Float:       return GL_FLOAT;
+      case mem::ShaderDataType::Float2:      return GL_FLOAT;
+      case mem::ShaderDataType::Float3:      return GL_FLOAT;
+      case mem::ShaderDataType::Float4:      return GL_FLOAT;
+      case mem::ShaderDataType::Mat3:        return GL_FLOAT;
+      case mem::ShaderDataType::Mat4:        return GL_FLOAT;
     }
     throw std::invalid_argument("Invalid ShaderDataType!");
   }
@@ -32,7 +33,7 @@ namespace eng
     ENG_CORE_ASSERT(thread::isMainThread(), "OpenGL calls must be made on the main thread!");
 
     glCreateVertexArrays(1, &m_RendererID);
-    m_VertexBuffer = StorageBuffer::Create(StorageBuffer::Type::VertexBuffer);
+    m_VertexBuffer = mem::StorageBuffer::Create(mem::StorageBuffer::Type::VertexBuffer);
   }
 
   OpenGLVertexArray::~OpenGLVertexArray()
@@ -63,7 +64,7 @@ namespace eng
       m_IndexBuffer->unBind();
   }
 
-  void OpenGLVertexArray::setLayout(const BufferLayout& layout)
+  void OpenGLVertexArray::setLayout(const mem::BufferLayout& layout)
   {
     ENG_CORE_ASSERT(thread::isMainThread(), "OpenGL calls must be made on the main thread!");
 
@@ -73,11 +74,11 @@ namespace eng
     m_VertexBuffer->bind();
 
     u32 vertexBufferIndex = 0;
-    for (const BufferElement& element : layout)
+    for (const mem::BufferElement& element : layout)
     {
-      std::underlying_type_t<ShaderDataType> dataTypeID = toUnderlying(element.type);
+      std::underlying_type_t<mem::ShaderDataType> dataTypeID = toUnderlying(element.type);
 
-      if (dataTypeID >= toUnderlying(ShaderDataType::FloatTypeBegin) && dataTypeID <= toUnderlying(ShaderDataType::FloatTypeEnd))
+      if (dataTypeID >= toUnderlying(mem::ShaderDataType::FloatTypeBegin) && dataTypeID <= toUnderlying(mem::ShaderDataType::FloatTypeEnd))
       {
         glEnableVertexAttribArray(vertexBufferIndex);
         glVertexAttribPointer(vertexBufferIndex,
@@ -88,7 +89,7 @@ namespace eng
           std::bit_cast<const void*>(arithmeticUpcast<uSize>(element.offset)));
         vertexBufferIndex++;
       }
-      else if (dataTypeID >= toUnderlying(ShaderDataType::IntTypeBegin) && dataTypeID <= toUnderlying(ShaderDataType::IntTypeEnd))
+      else if (dataTypeID >= toUnderlying(mem::ShaderDataType::IntTypeBegin) && dataTypeID <= toUnderlying(mem::ShaderDataType::IntTypeEnd))
       {
         glEnableVertexAttribArray(vertexBufferIndex);
         glVertexAttribIPointer(vertexBufferIndex,
@@ -98,7 +99,7 @@ namespace eng
           std::bit_cast<const void*>(arithmeticUpcast<uSize>(element.offset)));
         vertexBufferIndex++;
       }
-      else if (dataTypeID >= toUnderlying(ShaderDataType::MatTypeBegin) && dataTypeID <= toUnderlying(ShaderDataType::MatTypeEnd))
+      else if (dataTypeID >= toUnderlying(mem::ShaderDataType::MatTypeBegin) && dataTypeID <= toUnderlying(mem::ShaderDataType::MatTypeEnd))
       {
         i32 componentCount = element.getComponentCount();
         for (i32 i = 0; i < componentCount; ++i)
@@ -132,7 +133,7 @@ namespace eng
 #endif
   }
 
-  void OpenGLVertexArray::setVertexBuffer(const std::shared_ptr<StorageBuffer>& vertexBuffer)
+  void OpenGLVertexArray::setVertexBuffer(const std::shared_ptr<mem::StorageBuffer>& vertexBuffer)
   {
     m_VertexBuffer = vertexBuffer;
     setLayout(m_VertexBufferLayout);
@@ -168,7 +169,7 @@ namespace eng
 #endif
   }
 
-  void OpenGLVertexArray::setIndexBuffer(const std::shared_ptr<StorageBuffer>& indexBufferStorage)
+  void OpenGLVertexArray::setIndexBuffer(const std::shared_ptr<mem::StorageBuffer>& indexBufferStorage)
   {
     ENG_CORE_ASSERT(thread::isMainThread(), "OpenGL calls must be made on the main thread!");
     ENG_CORE_ASSERT(indexBufferStorage->type() == StorageBuffer::Type::IndexBuffer, "Submitted buffer is not an index buffer!");
@@ -180,7 +181,7 @@ namespace eng
 #endif
   }
 
-  const BufferLayout& OpenGLVertexArray::getLayout() const
+  const mem::BufferLayout& OpenGLVertexArray::getLayout() const
   {
     return m_VertexBufferLayout;
   }

@@ -3,7 +3,7 @@
 #include "Engine/Renderer/RendererAPI.h"
 #include "Platform/OpenGL/OpenGLStorageBuffer.h"
 
-namespace eng
+namespace eng::mem
 {
   StorageBuffer::~StorageBuffer() = default;
 

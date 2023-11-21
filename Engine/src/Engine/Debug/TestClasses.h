@@ -1,5 +1,5 @@
 #pragma once
-#include "Engine/Core/Log/Log.h"
+#include "Engine/Core/FixedWidthTypes.h"
 
 namespace eng::debug
 {
@@ -10,7 +10,7 @@ namespace eng::debug
       std::atomic<i32> moves = 0;
       std::atomic<i32> copies = 0;
 
-      ~Counters() { ENG_CORE_INFO("{0} move constructors and {1} copy constructors were called during the object's lifetime", moves, copies); }
+      ~Counters();
     };
 
     std::shared_ptr<Counters> m_Counters;
