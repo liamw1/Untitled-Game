@@ -31,6 +31,9 @@ namespace eng::math
 
     template<std::integral U>
     constexpr IVec3<U> checkedCast() const { return { arithmeticCast<U>(i), arithmeticCast<U>(j), arithmeticCast<U>(k) }; }
+
+    template<std::integral U>
+    constexpr IVec3<U> uncheckedCast() const { return { arithmeticCastUnchecked<U>(i), arithmeticCastUnchecked<U>(j), arithmeticCastUnchecked<U>(k) }; }
   
     constexpr T& operator[](Axis axis) { ENG_MUTABLE_VERSION(operator[], axis); }
     constexpr const T& operator[](Axis axis) const
@@ -82,8 +85,8 @@ namespace eng::math
     constexpr IVec3 operator+(T n) const { return clone(*this) += n; }
     constexpr IVec3 operator-(T n) const { return clone(*this) -= n; }
   
-    constexpr IVec3 operator*(T n) const { clone(*this) *= n; }
-    constexpr IVec3 operator/(T n) const { clone(*this) /= n; }
+    constexpr IVec3 operator*(T n) const { return clone(*this) *= n; }
+    constexpr IVec3 operator/(T n) const { return clone(*this) /= n; }
   
     constexpr T l1Norm() const { return std::abs(i) + std::abs(j) + std::abs(k); }
     constexpr T dot(const IVec3& other) const { return i * other.i + j * other.j + k * other.k; }

@@ -1,10 +1,10 @@
 #pragma once
 #include "BlockIDs.h"
-#include "Indexing/Definitions.h"
+#include "GlobalParameters.h"
 
 namespace block
 {
-  constexpr length_t length() { return 0.5_m; }
+  constexpr length_t length() { return param::BlockLength(); }
   constexpr f32 lengthF() { return eng::arithmeticCastUnchecked<f32>(length()); }
 
   std::shared_ptr<eng::TextureArray> getTextureArray();

@@ -2,7 +2,6 @@
 #include "Terrain.h"
 #include "ChunkContainer.h"
 #include "Util/Noise.h"
-#include "Player/Player.h"
 
 namespace terrain
 {
@@ -75,7 +74,7 @@ namespace terrain
     BiomeData biomeData = BlockArrayRect<CompoundBiome>(Chunk::Bounds2D(), eng::AllocationPolicy::ForOverwrite);
   };
 
-  static constexpr i32 c_CacheSize = (2 * c_UnloadDistance + 5) * (2 * c_UnloadDistance + 5);
+  static constexpr i32 c_CacheSize = (2 * param::UnloadDistance() + 5) * (2 * param::UnloadDistance() + 5);
   static eng::thread::LRUCache<GlobalIndex2D, SurfaceData> s_SurfaceDataCache(c_CacheSize);
   static std::mutex s_Mutex;
 

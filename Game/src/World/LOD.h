@@ -44,7 +44,6 @@ namespace lod
   private:
     static constexpr i32 c_TextureSlot = 0;
     static constexpr i32 c_UniformBinding = 3;
-    static inline std::once_flag s_InitializedFlag;
     static inline std::unique_ptr<eng::Shader> s_Shader = nullptr;
     static inline std::unique_ptr<eng::Uniform> s_Uniform = nullptr;
     static inline std::shared_ptr<eng::TextureArray> s_TextureArray = nullptr;

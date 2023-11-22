@@ -1,6 +1,6 @@
 #include "GMpch.h"
 #include "Chunk.h"
-#include "Player/Player.h"
+#include "Indexing/Operations.h"
 
 Chunk::Chunk(const GlobalIndex& chunkIndex)
   : m_Composition(Bounds(), block::ID::Air),
@@ -15,7 +15,7 @@ const GlobalIndex& Chunk::globalIndex() const
 
 ProtectedBlockArrayBox<block::Type>& Chunk::composition()
 {
-  return m_Composition;
+  ENG_MUTABLE_VERSION(composition);
 }
 
 const ProtectedBlockArrayBox<block::Type>& Chunk::composition() const
@@ -25,12 +25,22 @@ const ProtectedBlockArrayBox<block::Type>& Chunk::composition() const
 
 ProtectedBlockArrayBox<block::Light>& Chunk::lighting()
 {
-  return m_Lighting;
+  ENG_MUTABLE_VERSION(lighting);
 }
 
 const ProtectedBlockArrayBox<block::Light>& Chunk::lighting() const
 {
   return m_Lighting;
+}
+
+eng::math::Vec3 Chunk::center(const GlobalIndex& originIndex) const
+{
+  return indexCenter(globalIndex(), originIndex);
+}
+
+eng::math::Vec3 Chunk::anchorPosition(const GlobalIndex& originIndex) const
+{
+  return indexPosition(globalIndex(), originIndex);
 }
 
 bool Chunk::isFaceOpaque(eng::math::Direction face) const
@@ -77,14 +87,4 @@ void Chunk::update()
   m_Lighting.clearIfFilledWithDefault();
 
   determineOpacity();
-}
-
-eng::math::Vec3 Chunk::Center(const eng::math::Vec3& anchorPosition)
-{
-  return anchorPosition + Chunk::Length() / 2;
-}
-
-eng::math::Vec3 Chunk::AnchorPosition(const GlobalIndex& chunkIndex, const GlobalIndex& originIndex)
-{
-  return Chunk::Length() * static_cast<eng::math::Vec3>(chunkIndex - originIndex);
 }

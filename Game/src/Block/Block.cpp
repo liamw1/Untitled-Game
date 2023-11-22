@@ -115,7 +115,7 @@ namespace block
 
   struct BlockUniformData
   {
-    const f32 blockLength = eng::arithmeticCastUnchecked<f32>(length());
+    const f32 blockLength = lengthF();
   };
 
   struct BlockProperties
@@ -134,7 +134,6 @@ namespace block
   static BlockProperties s_Properties;
   
   static constexpr i32 c_UniformBinding = 1;
-  static std::once_flag s_InitializedFlag;
 
   static eng::EnumArray<eng::math::Float4, TextureID> s_TextureAverageColors;
   static eng::EnumArray<std::filesystem::path, TextureID> s_TexturePaths;
@@ -144,7 +143,7 @@ namespace block
 
   static void initialize()
   {
-    std::call_once(s_InitializedFlag, []()
+    static bool initialized = []()
     {
       s_Uniform = eng::Uniform::Create(c_UniformBinding, sizeof(BlockUniformData));
       s_Uniform->set(s_BlockUniformData);
@@ -167,7 +166,8 @@ namespace block
         textureAverageColor.a = 1.0f;
         s_TextureAverageColors[texture] = textureAverageColor;
       }
-    });
+      return true;
+    }();
   }
 
   std::shared_ptr<eng::TextureArray> getTextureArray()

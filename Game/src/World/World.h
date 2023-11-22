@@ -11,8 +11,6 @@ struct RayIntersection
 
 class World
 {
-  static constexpr length_t c_MinDistanceToWall = 0.01_m * block::length();
-
   ChunkManager m_ChunkManager;
   RayIntersection m_PlayerRayCast;
   bool m_RenderingPaused = false;

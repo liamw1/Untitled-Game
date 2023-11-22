@@ -31,6 +31,9 @@ namespace eng::math
 
     template<std::integral U>
     constexpr IVec2<U> checkedCast() const { return { arithmeticCast<U>(i), arithmeticCast<U>(j) }; }
+
+    template<std::integral U>
+    constexpr IVec2<U> uncheckedCast() const { return { arithmeticCastUnchecked<U>(i), arithmeticCastUnchecked<U>(j) }; }
   
     constexpr T& operator[](Axis axis) { ENG_MUTABLE_VERSION(operator[], axis); }
     constexpr const T& operator[](Axis axis) const

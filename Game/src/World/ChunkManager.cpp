@@ -4,6 +4,23 @@
 #include "Player/Player.h"
 #include "Indexing/Operations.h"
 
+// Rendering
+static constexpr i32 c_TextureSlot = 0;
+static constexpr i32 c_StorageBufferBinding = 0;
+static constexpr u32 c_StorageBufferSize = eng::math::pow2<u32>(20);
+static std::unique_ptr<eng::Shader> s_Shader;
+static std::unique_ptr<eng::Uniform> s_LightUniform;
+static std::unique_ptr<eng::mem::StorageBuffer> s_SSBO;
+static std::shared_ptr<eng::TextureArray> s_TextureArray;
+static const eng::mem::BufferLayout s_VertexBufferLayout = {{ eng::mem::ShaderDataType::Uint32, "a_VertexData" },
+                                                            { eng::mem::ShaderDataType::Uint32, "a_Lighting"   }};
+
+struct LightUniforms
+{
+  const f32 maxSunlight = eng::arithmeticUpcast<f32>(block::Light::MaxValue());
+  f32 sunIntensity = 1.0f;
+};
+
 class DeallocatorPayload
 {
   GlobalIndex m_ChunkIndex;
@@ -24,12 +41,6 @@ public:
     m_OpaqueAsyncArray->removeCommand(m_ChunkIndex);
     m_TransparentAsyncArray->removeCommand(m_ChunkIndex);
   }
-};
-
-struct LightUniforms
-{
-  const f32 maxSunlight = eng::arithmeticUpcast<f32>(block::Light::MaxValue());
-  f32 sunIntensity = 1.0f;
 };
 
 struct BlockData
@@ -102,8 +113,6 @@ void ChunkManager::render()
 {
   ENG_PROFILE_FUNCTION();
 
-  m_ThreadPool->queuedTasks();
-
   eng::math::Mat4 viewProjection = eng::scene::CalculateViewProjection(eng::scene::ActiveCamera());
   eng::EnumArray<eng::math::Vec4, eng::math::FrustumPlane> frustumPlanes = eng::math::calculateViewFrustumPlanes(viewProjection);
 
@@ -121,15 +130,15 @@ void ChunkManager::render()
   s_Shader->bind();
   s_TextureArray->bind(c_TextureSlot);
 
+  eng::render::command::setFaceCulling(true);
   eng::render::command::setDepthWriting(true);
   eng::render::command::setUseDepthOffset(false);
-  m_OpaqueMultiDrawArray->drawOperation([&originIndex, &frustumPlanes](eng::MultiDrawArray<ChunkDrawCommand>& multiDrawArray)
+  m_OpaqueMultiDrawArray->drawOperation([&frustumPlanes, &originIndex](eng::MultiDrawArray<ChunkDrawCommand>& multiDrawArray)
   {
-    i32 commandCount = multiDrawArray.partition([&originIndex, &frustumPlanes](const GlobalIndex& chunkIndex)
+    i32 commandCount = multiDrawArray.partition([&frustumPlanes, &originIndex](const GlobalIndex& chunkIndex)
     {
-      eng::math::Vec3 anchorPosition = Chunk::AnchorPosition(chunkIndex, originIndex);
-      eng::math::Vec3 chunkCenter = Chunk::Center(anchorPosition);
-      return isInRange(chunkIndex, originIndex, c_RenderDistance) && eng::math::isInFrustum(chunkCenter, frustumPlanes);
+      eng::math::Vec3 chunkCenter = indexCenter(chunkIndex, originIndex);
+      return isInRange(chunkIndex, originIndex, param::RenderDistance()) && eng::math::isInFrustum(chunkCenter, frustumPlanes);
     });
 
     std::vector<eng::math::Float4> storageBufferData;
@@ -138,8 +147,8 @@ void ChunkManager::render()
     for (i32 i = 0; i < commandCount; ++i)
     {
       const GlobalIndex& chunkIndex = drawCommands[i].id();
-      eng::math::Vec3 chunkAnchor = Chunk::AnchorPosition(chunkIndex, originIndex);
-      storageBufferData.emplace_back(chunkAnchor, 0);
+      eng::math::Vec3 chunkAnchorPosition = indexPosition(chunkIndex, originIndex);
+      storageBufferData.emplace_back(chunkAnchorPosition, 0);
     }
 
     multiDrawArray.bind();
@@ -152,18 +161,17 @@ void ChunkManager::render()
   eng::render::command::setDepthWriting(false);
   eng::render::command::setUseDepthOffset(true);
   eng::render::command::setDepthOffset(-1.0f, -1.0f);
-  m_TransparentMultiDrawArray->drawOperation([&originIndex, &frustumPlanes, &playerCameraPosition](eng::MultiDrawArray<ChunkDrawCommand>& multiDrawArray)
+  m_TransparentMultiDrawArray->drawOperation([&frustumPlanes, &originIndex, &playerCameraPosition](eng::MultiDrawArray<ChunkDrawCommand>& multiDrawArray)
   {
-    i32 commandCount = multiDrawArray.partition([&originIndex, &frustumPlanes](const GlobalIndex& chunkIndex)
+    i32 commandCount = multiDrawArray.partition([&frustumPlanes, &originIndex](const GlobalIndex& chunkIndex)
     {
-      eng::math::Vec3 anchorPosition = Chunk::AnchorPosition(chunkIndex, originIndex);
-      eng::math::Vec3 chunkCenter = Chunk::Center(anchorPosition);
-      return isInRange(chunkIndex, originIndex, c_RenderDistance) && eng::math::isInFrustum(chunkCenter, frustumPlanes);
+      eng::math::Vec3 chunkCenter = indexCenter(chunkIndex, originIndex);
+      return isInRange(chunkIndex, originIndex, param::RenderDistance()) && eng::math::isInFrustum(chunkCenter, frustumPlanes);
     });
-    multiDrawArray.sort(commandCount, [&originIndex, &playerCameraPosition](const GlobalIndex& chunk)
+    multiDrawArray.sort(commandCount, [&originIndex, &playerCameraPosition](const GlobalIndex& chunkIndex)
     {
       // NOTE: Maybe measure min distance to chunk faces instead
-      eng::math::Vec3 chunkCenter = Chunk::Center(Chunk::AnchorPosition(chunk, originIndex));
+      eng::math::Vec3 chunkCenter = indexCenter(chunkIndex, originIndex);
       length_t dist = glm::length2(chunkCenter - playerCameraPosition);
       return dist;
     }, eng::SortPolicy::Descending);
@@ -179,8 +187,8 @@ void ChunkManager::render()
     for (i32 i = 0; i < commandCount; ++i)
     {
       const GlobalIndex& chunkIndex = drawCommands[i].id();
-      eng::math::Vec3 chunkAnchor = Chunk::AnchorPosition(chunkIndex, originIndex);
-      storageBufferData.emplace_back(chunkAnchor, 0);
+      eng::math::Vec3 chunkAnchorPosition = indexPosition(chunkIndex, originIndex);
+      storageBufferData.emplace_back(chunkAnchorPosition, 0);
     }
 
     multiDrawArray.bind();
@@ -255,7 +263,7 @@ void ChunkManager::clean()
     GlobalIndex originIndex = player::originIndex();
     std::vector<GlobalIndex> chunksMarkedForDeletion = m_ChunkContainer.chunks().getKeys([&originIndex](const GlobalIndex& chunkIndex)
     {
-      return !isInRange(chunkIndex, originIndex, c_UnloadDistance);
+      return !isInRange(chunkIndex, originIndex, param::UnloadDistance());
     });
 
     for (const GlobalIndex& chunkIndex : chunksMarkedForDeletion)
@@ -381,7 +389,7 @@ void ChunkManager::renderLODs()
       for (eng::math::FrustumPlane plane : eng::math::FrustumPlanes())
         shiftedFrustumPlanes[plane].w = frustumPlanes[plane].w + LODSphereRadius * planeNormalMags[plane];
 
-      if (eng::math::isInFrustum(leaf->center(), shiftedFrustumPlanes) && !isInRange(leaf->anchor, player::originIndex(), c_RenderDistance - 1))
+      if (eng::math::isInFrustum(leaf->center(), shiftedFrustumPlanes) && !isInRange(leaf->anchor, player::originIndex(), param::RenderDistance() - 1))
         lod::draw(leaf);
     }
 }
@@ -456,7 +464,7 @@ std::shared_ptr<Chunk> ChunkManager::generateNewChunk(const GlobalIndex& chunkIn
 
 void ChunkManager::eraseChunk(const GlobalIndex& chunkIndex)
 {
-  if (!isInRange(chunkIndex, player::originIndex(), c_UnloadDistance))
+  if (!isInRange(chunkIndex, player::originIndex(), param::UnloadDistance()))
     m_ChunkContainer.erase(chunkIndex);
 }
 
@@ -736,7 +744,7 @@ bool ChunkManager::splitLODs(std::vector<lod::Octree::Node*>& leaves)
 
     if (node->LODLevel() > 0)
     {
-      globalIndex_t splitRange = 2 * node->size() - 1 + c_RenderDistance;
+      globalIndex_t splitRange = 2 * node->size() - 1 + param::RenderDistance();
       GlobalBox splitRangeBoundingBox(player::originIndex() - splitRange, player::originIndex() + splitRange);
 
       GlobalBox intersection = GlobalBox::Intersection(splitRangeBoundingBox, node->boundingBox());
@@ -764,7 +772,7 @@ bool ChunkManager::combineLODs(std::vector<lod::Octree::Node*>& leaves)
   for (lod::Octree::Node* node : leaves)
     if (node->depth > 0)
     {
-      globalIndex_t combineRange = 4 * node->size() - 1 + c_RenderDistance;
+      globalIndex_t combineRange = 4 * node->size() - 1 + param::RenderDistance();
       GlobalBox rangeBoundingBox(player::originIndex() - combineRange, player::originIndex() + combineRange);
 
       if (!GlobalBox::Intersection(rangeBoundingBox, node->parent->boundingBox()).valid())

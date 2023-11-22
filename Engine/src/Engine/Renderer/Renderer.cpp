@@ -30,7 +30,6 @@ namespace eng::render
   static std::unique_ptr<Shader> s_WireFrameShader;
   static std::unique_ptr<VertexArray> s_WireFrameVertexArray;
   static CameraUniformData s_CameraUniformData;
-  static std::once_flag s_InitializedFlag;
   
   static constexpr math::Float4 c_CubeFrameVertexPositions[8] = { { -0.5f, -0.5f, -0.5f, 1.0f },
                                                                   {  0.5f, -0.5f, -0.5f, 1.0f },
@@ -47,7 +46,7 @@ namespace eng::render
 
   static void initialize()
   {
-    std::call_once(s_InitializedFlag, []()
+    static bool initialized = []()
     {
       command::setBlendFunc();
 
@@ -55,11 +54,12 @@ namespace eng::render
 
       /* Wire Frame Initialization */
       s_WireFrameVertexArray = VertexArray::Create();
-      s_WireFrameVertexArray->setLayout({{ mem::ShaderDataType::Float3, "a_Position"  },
-                                         { mem::ShaderDataType::Float4, "a_Color"     }});
+      s_WireFrameVertexArray->setLayout({ { mem::ShaderDataType::Float3, "a_Position"  },
+                                         { mem::ShaderDataType::Float4, "a_Color"     } });
       s_WireFrameVertexArray->setIndexBuffer(IndexBuffer(c_CubeFrameIndices));
       s_WireFrameShader = Shader::Create("../Engine/assets/shaders/WireFrame.glsl");
-    });
+      return true;
+    }();
   }
 
 

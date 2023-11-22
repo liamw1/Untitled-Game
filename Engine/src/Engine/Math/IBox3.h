@@ -30,6 +30,9 @@ namespace eng::math
 
     template<std::integral U>
     constexpr IBox3<U> checkedCast() const { return { min.checkedCast<U>(), max.checkedCast<U>() }; }
+
+    template<std::integral U>
+    constexpr IBox3<U> uncheckedCast() const { return { min.uncheckedCast<U>(), max.uncheckedCast<U>() }; }
   
     // Define lexicographical ordering on stored IVec3s
     constexpr std::strong_ordering operator<=>(const IBox3& other) const = default;

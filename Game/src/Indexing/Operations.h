@@ -1,9 +1,10 @@
 #pragma once
-#include "World\Chunk.h"
+#include "GlobalParameters.h"
+#include "World/Chunk.h"
 
-constexpr bool isInRange(const GlobalIndex& chunkIndex, const GlobalIndex& originIndex, globalIndex_t range)
+constexpr bool isInRange(const GlobalIndex& index, const GlobalIndex& originIndex, globalIndex_t range)
 {
-  GlobalIndex diff = chunkIndex - originIndex;
+  GlobalIndex diff = index - originIndex;
   return eng::math::abs(diff.i) <= range && eng::math::abs(diff.j) <= range && eng::math::abs(diff.k) <= range;
 }
 
@@ -11,6 +12,16 @@ constexpr bool blockNeighborIsInAnotherChunk(const BlockIndex& blockIndex, eng::
 {
   blockIndex_t chunkLimit = isUpstream(direction) ? Chunk::Size() - 1 : 0;
   return blockIndex[axisOf(direction)] == chunkLimit;
+}
+
+constexpr eng::math::Vec3 indexPosition(const GlobalIndex& index, const GlobalIndex& originIndex)
+{
+  return Chunk::Length() * static_cast<eng::math::Vec3>(index - originIndex);
+}
+
+constexpr eng::math::Vec3 indexCenter(const GlobalIndex& index, const GlobalIndex& originIndex)
+{
+  return indexPosition(index, originIndex) + Chunk::Length() / 2;
 }
 
 constexpr LocalBox blockBoxToLocalBox(const BlockBox& box)
@@ -39,14 +50,10 @@ constexpr std::vector<std::pair<LocalIndex, BlockBox>> partitionBlockBox(const B
 
 constexpr std::array<BlockBox, 26> decomposeBlockBoxBoundary(const BlockBox& box)
 {
-  i32 arrayIndex = 0;
   std::array<BlockBox, 26> boxDecomposition;
-  for (const BlockBox& faceInterior : eng::math::FaceInteriors(box))
-    boxDecomposition[arrayIndex++] = faceInterior;
-  for (const BlockBox& edgeInterior : eng::math::EdgeInteriors(box))
-    boxDecomposition[arrayIndex++] = edgeInterior;
-  for (const BlockBox& corner : eng::math::Corners(box))
-    boxDecomposition[arrayIndex++] = corner;
+  eng::algo::copy(eng::math::FaceInteriors(box), boxDecomposition.begin());
+  eng::algo::copy(eng::math::EdgeInteriors(box), boxDecomposition.begin() + 6);
+  eng::algo::copy(eng::math::Corners(box), boxDecomposition.begin() + 6 + 12);
   return boxDecomposition;
 }
 

@@ -1,11 +1,7 @@
 #pragma once
 #include "Chunk.h"
 #include "ChunkHelpers.h"
-
-// Will be removed eventually and replaced with settings system
-constexpr i32 c_RenderDistance = 16;
-constexpr i32 c_LoadDistance = c_RenderDistance + 1;
-constexpr i32 c_UnloadDistance = c_LoadDistance;
+#include "GlobalParameters.h"
 
 /*
   Class that handles the classification of chunks.

@@ -172,7 +172,7 @@ namespace eng
   void OpenGLVertexArray::setIndexBuffer(const std::shared_ptr<mem::StorageBuffer>& indexBufferStorage)
   {
     ENG_CORE_ASSERT(thread::isMainThread(), "OpenGL calls must be made on the main thread!");
-    ENG_CORE_ASSERT(indexBufferStorage->type() == StorageBuffer::Type::IndexBuffer, "Submitted buffer is not an index buffer!");
+    ENG_CORE_ASSERT(indexBufferStorage->type() == mem::StorageBuffer::Type::IndexBuffer, "Submitted buffer is not an index buffer!");
 
     m_IndexBuffer = IndexBuffer(indexBufferStorage);
 

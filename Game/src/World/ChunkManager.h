@@ -6,17 +6,6 @@
 
 class ChunkManager
 {
-  // Rendering
-  static constexpr i32 c_TextureSlot = 0;
-  static constexpr i32 c_StorageBufferBinding = 0;
-  static constexpr u32 c_StorageBufferSize = eng::math::pow2<u32>(20);
-  static inline std::unique_ptr<eng::Shader> s_Shader;
-  static inline std::unique_ptr<eng::Uniform> s_LightUniform;
-  static inline std::unique_ptr<eng::mem::StorageBuffer> s_SSBO;
-  static inline std::shared_ptr<eng::TextureArray> s_TextureArray;
-  static inline const eng::mem::BufferLayout s_VertexBufferLayout = {{ eng::mem::ShaderDataType::Uint32, "a_VertexData" },
-                                                                     { eng::mem::ShaderDataType::Uint32, "a_Lighting"   }};
-
   std::shared_ptr<eng::thread::AsyncMultiDrawArray<ChunkDrawCommand>> m_OpaqueMultiDrawArray;
   std::shared_ptr<eng::thread::AsyncMultiDrawArray<ChunkDrawCommand>> m_TransparentMultiDrawArray;
 

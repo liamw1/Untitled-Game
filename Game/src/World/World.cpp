@@ -3,6 +3,7 @@
 #include "Player/Player.h"
 
 static constexpr bool useLODs = false;
+static constexpr length_t c_MinDistanceToWall = 0.01_m * block::length();
 
 void World::initialize()
 {

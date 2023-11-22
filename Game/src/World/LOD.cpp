@@ -166,12 +166,13 @@ namespace lod
 
   void MeshData::Initialize()
   {
-    std::call_once(s_InitializedFlag, []()
+    static bool initialized = []()
     {
       s_Uniform = eng::Uniform::Create(c_UniformBinding, sizeof(UniformData));
       s_Shader = eng::Shader::Create("assets/shaders/ChunkLOD.glsl");
       s_TextureArray = block::getTextureArray();
-    });
+      return true;
+    }();
   }
 
   void MeshData::BindBuffers()

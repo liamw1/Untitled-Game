@@ -183,7 +183,13 @@ namespace eng::algo
   }
 
   template<IterableContainer C, IteratorWithValueType<detail::containedType<C>> D>
-  constexpr void partialSum(C& container, D destination)
+  constexpr void copy(const C& container, D destination)
+  {
+    std::copy(std::begin(container), std::end(container), destination);
+  }
+
+  template<IterableContainer C, IteratorWithValueType<detail::containedType<C>> D>
+  constexpr void partialSum(const C& container, D destination)
   {
     std::partial_sum(std::begin(container), std::end(container), destination);
   }

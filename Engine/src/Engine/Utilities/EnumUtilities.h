@@ -63,17 +63,32 @@ namespace eng
 
   public:
     constexpr EnumArray() = default;
-    constexpr EnumArray(const T& initialValue) { algo::fill(m_Data, initialValue); }
+    constexpr EnumArray(const T& initialValue) { m_Data.fill(initialValue); }
     constexpr EnumArray(const std::initializer_list<std::pair<E, T>>& list)
     {
-      for (const auto& [index, value] : list)
-        operator[](index) = value;
+      std::array<i32, enumRange<E>()> initializationCounts{};
+      for (const auto& [enumIndex, value] : list)
+      {
+        std::underlying_type_t<E> arrayIndex = toUnderlying(enumIndex);
+        m_Data[arrayIndex] = value;
+        initializationCounts[arrayIndex]++;
+      }
+
+      auto badInitializationPosition = algo::findIf(initializationCounts, [](int count) { return count != 1; });
+      if (badInitializationPosition != initializationCounts.end())
+      {
+        int count = *badInitializationPosition;
+        if (count == 0)
+          throw std::runtime_error("Not all values have been initialized!");
+        else
+          throw std::runtime_error("A value has been initialized more than once!");
+      }
     }
 
     ENG_DEFINE_CONSTEXPR_ITERATORS(m_Data);
 
-    constexpr T& operator[](E index) { ENG_MUTABLE_VERSION(operator[], index); }
-    constexpr const T& operator[](E index) const { return m_Data[toUnderlying(index) - toUnderlying(E::First)]; }
+    constexpr T& operator[](E enumIndex) { ENG_MUTABLE_VERSION(operator[], enumIndex); }
+    constexpr const T& operator[](E enumIndex) const { return m_Data[toUnderlying(enumIndex) - toUnderlying(E::First)]; }
 
     constexpr uSize size() { return m_Data.size(); }
   };

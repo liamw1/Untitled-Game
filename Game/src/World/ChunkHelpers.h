@@ -1,5 +1,6 @@
 #pragma once
 #include "Block/Block.h"
+#include "Indexing/Definitions.h"
 
 /*
   Represents a block vertex and stores data in a compressed format.

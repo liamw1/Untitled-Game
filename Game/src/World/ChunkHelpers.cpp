@@ -1,6 +1,7 @@
 #include "GMpch.h"
 #include "ChunkHelpers.h"
 #include "Chunk.h"
+#include "Indexing/Operations.h"
 
 ChunkVertex::ChunkVertex()
   : m_VertexData(0), m_LightingData(0) {}
@@ -176,10 +177,10 @@ void ChunkDrawCommand::reorderIndices(const GlobalIndex& originIndex, const eng:
 {
   m_Indices.clear();
 
-  eng::math::Vec3 chunkAnchor = Chunk::AnchorPosition(m_ID, originIndex);
+  eng::math::Vec3 chunkAnchorPosition = indexPosition(m_ID, originIndex);
   for (ChunkVoxel voxel : m_Voxels)
   {
-    eng::math::Vec3 blockCenter = chunkAnchor + block::length() * eng::math::Vec3(voxel.index()) + eng::math::Vec3(block::length()) / 2;
+    eng::math::Vec3 blockCenter = chunkAnchorPosition + block::length() * eng::math::Vec3(voxel.index()) + eng::math::Vec3(block::length()) / 2;
     eng::math::Vec3 toBlock = blockCenter - viewPosition;
 
     i32 quadVertexOffset = 0;

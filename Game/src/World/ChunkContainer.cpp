@@ -67,7 +67,7 @@ std::unordered_set<GlobalIndex> ChunkContainer::findAllLoadableIndices() const
   GlobalIndex originIndex = player::originIndex();
   std::unordered_set<GlobalIndex> newChunkIndices;
   for (const GlobalIndex& boundaryIndex : boundaryIndices)
-    if (isInRange(boundaryIndex, originIndex, c_LoadDistance))
+    if (isInRange(boundaryIndex, originIndex, param::LoadDistance()))
       newChunkIndices.insert(boundaryIndex);
 
   return newChunkIndices;

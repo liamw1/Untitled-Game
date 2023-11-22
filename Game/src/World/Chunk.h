@@ -1,14 +1,13 @@
 #pragma once
-#include "Indexing/Definitions.h"
+#include "GlobalParameters.h"
 #include "Block/Block.h"
+#include "Indexing/Definitions.h"
 
 /*
   A class representing a NxNxN cube of blocks.
 */
 class Chunk : private eng::SetInStone
 {
-  static constexpr blockIndex_t c_ChunkSize = 32;
-
   ProtectedBlockArrayBox<block::Type> m_Composition;
   ProtectedBlockArrayBox<block::Light> m_Lighting;
   std::atomic<u16> m_NonOpaqueFaces;
@@ -25,6 +24,20 @@ public:
 
   ProtectedBlockArrayBox<block::Light>& lighting();
   const ProtectedBlockArrayBox<block::Light>& lighting() const;
+
+  /*
+    \returns The chunk's geometric center relative to origin chunk.
+  */
+  eng::math::Vec3 center(const GlobalIndex& originIndex) const;
+
+  /*
+    A chunk's anchor point is its bottom southeast vertex.
+    Position given relative to the anchor of the origin chunk.
+    Useful property:
+    If the anchor point is denoted by A, then for any point
+    X within the chunk, X_i >= A_i.
+  */
+  eng::math::Vec3 anchorPosition(const GlobalIndex& originIndex) const;
 
   template<typename T>
   const ProtectedBlockArrayBox<T>& data() const
@@ -54,21 +67,7 @@ public:
 
   void update();
 
-  /*
-    \returns The chunk's geometric center relative to origin chunk.
-  */
-  static eng::math::Vec3 Center(const eng::math::Vec3& anchorPosition);
-
-  /*
-    A chunk's anchor point is its bottom southeast vertex.
-    Position given relative to the anchor of the origin chunk.
-    Useful property:
-    If the anchor point is denoted by A, then for any point
-    X within the chunk, X_i >= A_i.
-  */
-  static eng::math::Vec3 AnchorPosition(const GlobalIndex& chunkIndex, const GlobalIndex& originIndex);
-
-  static constexpr blockIndex_t Size() { return c_ChunkSize; }
+  static constexpr blockIndex_t Size() { return param::ChunkSize(); }
   static constexpr length_t Length() { return block::length() * Size(); }
   static constexpr i32 TotalBlocks() { return eng::math::cube(Size()); }
   static constexpr BlockBox Bounds() { return BlockBox(0, Size() - 1); }
