@@ -127,33 +127,38 @@ void ChunkManager::render()
   eng::math::Vec3 playerCameraPosition = player::cameraPosition();
   GlobalIndex originIndex = player::originIndex();
 
-  s_Shader->bind();
-  s_TextureArray->bind(c_TextureSlot);
-
-  eng::render::command::setFaceCulling(true);
-  eng::render::command::setDepthWriting(true);
-  eng::render::command::setUseDepthOffset(false);
-  m_OpaqueMultiDrawArray->drawOperation([&frustumPlanes, &originIndex](eng::MultiDrawArray<ChunkDrawCommand>& multiDrawArray)
+  auto isInViewFrustum = [&frustumPlanes, &originIndex](const GlobalIndex& chunkIndex)
   {
-    i32 commandCount = multiDrawArray.partition([&frustumPlanes, &originIndex](const GlobalIndex& chunkIndex)
-    {
-      eng::math::Vec3 chunkCenter = indexCenter(chunkIndex, originIndex);
-      return isInRange(chunkIndex, originIndex, param::RenderDistance()) && eng::math::isInFrustum(chunkCenter, frustumPlanes);
-    });
+    eng::math::Vec3 chunkCenter = indexCenter(chunkIndex, originIndex);
+    return isInRange(chunkIndex, originIndex, param::RenderDistance()) && eng::math::isInFrustum(chunkCenter, frustumPlanes);
+  };
+  auto draw = [&originIndex](const eng::MultiDrawArray<ChunkDrawCommand>& multiDrawArray, i32 commandCount)
+  {
+    const std::vector<ChunkDrawCommand>& drawCommands = multiDrawArray.getDrawCommandBuffer();
 
     std::vector<eng::math::Float4> storageBufferData;
     storageBufferData.reserve(commandCount);
-    const std::vector<ChunkDrawCommand>& drawCommands = multiDrawArray.getDrawCommandBuffer();
     for (i32 i = 0; i < commandCount; ++i)
     {
       const GlobalIndex& chunkIndex = drawCommands[i].id();
       eng::math::Vec3 chunkAnchorPosition = indexPosition(chunkIndex, originIndex);
       storageBufferData.emplace_back(chunkAnchorPosition, 0);
     }
-
-    multiDrawArray.bind();
     s_SSBO->modify(0, storageBufferData);
+    multiDrawArray.bind();
     eng::render::command::multiDrawIndexed(drawCommands, commandCount);
+  };
+
+  s_Shader->bind();
+  s_TextureArray->bind(c_TextureSlot);
+
+  eng::render::command::setFaceCulling(true);
+  eng::render::command::setDepthWriting(true);
+  eng::render::command::setUseDepthOffset(false);
+  m_OpaqueMultiDrawArray->drawOperation([&isInViewFrustum, &draw](eng::MultiDrawArray<ChunkDrawCommand>& multiDrawArray)
+  {
+    i32 commandCount = multiDrawArray.partition(isInViewFrustum);
+    draw(multiDrawArray, commandCount);
   });
 
   eng::render::command::setBlending(true);
@@ -161,13 +166,9 @@ void ChunkManager::render()
   eng::render::command::setDepthWriting(false);
   eng::render::command::setUseDepthOffset(true);
   eng::render::command::setDepthOffset(-1.0f, -1.0f);
-  m_TransparentMultiDrawArray->drawOperation([&frustumPlanes, &originIndex, &playerCameraPosition](eng::MultiDrawArray<ChunkDrawCommand>& multiDrawArray)
+  m_TransparentMultiDrawArray->drawOperation([&isInViewFrustum, &draw, &originIndex, &playerCameraPosition](eng::MultiDrawArray<ChunkDrawCommand>& multiDrawArray)
   {
-    i32 commandCount = multiDrawArray.partition([&frustumPlanes, &originIndex](const GlobalIndex& chunkIndex)
-    {
-      eng::math::Vec3 chunkCenter = indexCenter(chunkIndex, originIndex);
-      return isInRange(chunkIndex, originIndex, param::RenderDistance()) && eng::math::isInFrustum(chunkCenter, frustumPlanes);
-    });
+    i32 commandCount = multiDrawArray.partition(isInViewFrustum);
     multiDrawArray.sort(commandCount, [&originIndex, &playerCameraPosition](const GlobalIndex& chunkIndex)
     {
       // NOTE: Maybe measure min distance to chunk faces instead
@@ -181,19 +182,7 @@ void ChunkManager::render()
       return orderModified;
     });
 
-    std::vector<eng::math::Float4> storageBufferData;
-    storageBufferData.reserve(commandCount);
-    const std::vector<ChunkDrawCommand>& drawCommands = multiDrawArray.getDrawCommandBuffer();
-    for (i32 i = 0; i < commandCount; ++i)
-    {
-      const GlobalIndex& chunkIndex = drawCommands[i].id();
-      eng::math::Vec3 chunkAnchorPosition = indexPosition(chunkIndex, originIndex);
-      storageBufferData.emplace_back(chunkAnchorPosition, 0);
-    }
-
-    multiDrawArray.bind();
-    s_SSBO->modify(0, storageBufferData);
-    eng::render::command::multiDrawIndexed(drawCommands, commandCount);
+    draw(multiDrawArray, commandCount);
   });
 }
 
