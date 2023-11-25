@@ -16,7 +16,7 @@ class World
   bool m_RenderingPaused = false;
 
 public:
-  void initialize();
+  World();
 
   void onUpdate(eng::Timestep timestep);
 

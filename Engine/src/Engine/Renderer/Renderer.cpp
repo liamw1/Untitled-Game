@@ -55,7 +55,7 @@ namespace eng::render
       /* Wire Frame Initialization */
       s_WireFrameVertexArray = VertexArray::Create();
       s_WireFrameVertexArray->setLayout({ { mem::ShaderDataType::Float3, "a_Position"  },
-                                         { mem::ShaderDataType::Float4, "a_Color"     } });
+                                          { mem::ShaderDataType::Float4, "a_Color"     } });
       s_WireFrameVertexArray->setIndexBuffer(IndexBuffer(c_CubeFrameIndices));
       s_WireFrameShader = Shader::Create("../Engine/assets/shaders/WireFrame.glsl");
       return true;

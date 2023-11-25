@@ -151,9 +151,13 @@ namespace std
   {
     constexpr uSize operator()(const eng::math::IVec3<T>& index) const
     {
-      return eng::u32Bit( 0) * eng::math::mod(index.i, eng::u32Bit(10)) +
-             eng::u32Bit(10) * eng::math::mod(index.j, eng::u32Bit(10)) +
-             eng::u32Bit(20) * eng::math::mod(index.k, eng::u32Bit(10));
+      constexpr i32 n = std::numeric_limits<uSize>::digits / 3; 
+      constexpr uSize stride = eng::math::pow2<uSize>(n) - 1;
+      constexpr eng::math::IVec3<uSize> strides(1, stride, eng::math::square(stride));
+
+      return strides.i * eng::math::mod(index.i, stride) +
+             strides.j * eng::math::mod(index.j, stride) +
+             strides.k * eng::math::mod(index.k, stride);
     }
   };
 }

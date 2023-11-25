@@ -8,10 +8,7 @@ GameSandbox::GameSandbox()
   : Layer("GameSandbox"),
     m_PrintFrameRate(false),
     m_PrintMinFrameRate(false),
-    m_PrintPlayerPosition(false)
-{
-  m_World.initialize();
-}
+    m_PrintPlayerPosition(false) {}
 
 GameSandbox::~GameSandbox() = default;
 

@@ -5,10 +5,9 @@
 static constexpr bool useLODs = false;
 static constexpr length_t c_MinDistanceToWall = 0.01_m * block::length();
 
-void World::initialize()
+World::World()
 {
   player::initialize(GlobalIndex(0, 0, 2), block::length() * eng::math::Vec3(16.0));
-  m_ChunkManager.initialize();
 
   if constexpr (useLODs)
     m_ChunkManager.initializeLODs();

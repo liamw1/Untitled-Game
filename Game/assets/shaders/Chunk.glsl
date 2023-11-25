@@ -43,7 +43,7 @@ void main()
   v_TexCoord = c_TexCoords[quadIndex];
   v_TextureIndex = (a_VertexData >> 20) & 0x3FF;
 
-  uint sunlightLevel =         (a_Lighting >> 16) & 0xF;
+  uint sunlightLevel         = (a_Lighting >> 16) & 0xF;
   uint ambientOcclusionLevel = (a_Lighting >> 20) & 0x3;
 
   float light = u_SunIntensity * float(sunlightLevel + 1) / (u_MaxSunlight + 1);

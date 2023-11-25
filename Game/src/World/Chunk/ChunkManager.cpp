@@ -87,15 +87,10 @@ ChunkManager::ChunkManager()
     m_CleanWork(m_ThreadPool, eng::thread::Priority::High),
     m_LightingWork(m_ThreadPool, eng::thread::Priority::Normal),
     m_LazyMeshingWork(m_ThreadPool, eng::thread::Priority::Normal),
-    m_ForceMeshingWork(m_ThreadPool, eng::thread::Priority::Immediate) {}
-
-ChunkManager::~ChunkManager()
+    m_ForceMeshingWork(m_ThreadPool, eng::thread::Priority::Immediate)
 {
-  m_ThreadPool->shutdown();
-}
+  ENG_PROFILE_FUNCTION();
 
-void ChunkManager::initialize()
-{
   s_Shader = eng::Shader::Create("assets/shaders/Chunk.glsl");
   s_LightUniform = eng::Uniform::Create(2, sizeof(LightUniforms));
   s_TextureArray = block::getTextureArray();
@@ -109,6 +104,11 @@ void ChunkManager::initialize()
   s_LightUniform->set(lightUniforms);
 }
 
+ChunkManager::~ChunkManager()
+{
+  m_ThreadPool->shutdown();
+}
+
 void ChunkManager::render()
 {
   ENG_PROFILE_FUNCTION();
@@ -120,7 +120,7 @@ void ChunkManager::render()
   for (eng::math::Vec4& plane : frustumPlanes)
   {
     length_t planeNormalMag = glm::length(eng::math::Vec3(plane));
-    plane.w += Chunk::SphereRadius() * planeNormalMag;
+    plane.w += Chunk::BoundingSphereRadius() * planeNormalMag;
   }
 
   eng::math::Vec3 playerCameraPosition = player::cameraPosition();

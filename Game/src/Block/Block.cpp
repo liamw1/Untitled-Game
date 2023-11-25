@@ -134,19 +134,19 @@ namespace block
   static BlockProperties s_Properties;
   
   static constexpr i32 c_UniformBinding = 1;
+  static constexpr BlockUniformData c_BlockUniformData;
 
   static eng::EnumArray<eng::math::Float4, TextureID> s_TextureAverageColors;
   static eng::EnumArray<std::filesystem::path, TextureID> s_TexturePaths;
   static std::shared_ptr<eng::TextureArray> s_TextureArray;
   static std::unique_ptr<eng::Uniform> s_Uniform;
-  static const BlockUniformData s_BlockUniformData{};
 
   static void initialize()
   {
     static bool initialized = []()
     {
       s_Uniform = eng::Uniform::Create(c_UniformBinding, sizeof(BlockUniformData));
-      s_Uniform->set(s_BlockUniformData);
+      s_Uniform->set(c_BlockUniformData);
 
       s_TexturePaths = computeTexturePaths();
 

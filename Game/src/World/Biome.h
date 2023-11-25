@@ -10,10 +10,10 @@ protected:
 public:
   enum class Type
   {
-    Default,
+    SuperFlat,
     GrassField,
     Desert,
-    SuperFlat,
+    Default,
 
     Null,
     First = 0, Last = Null - 1

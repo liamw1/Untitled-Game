@@ -481,14 +481,9 @@ namespace newLod
 
 
   LODManager::LODManager()
-  {
-  }
-
-  void LODManager::initialize()
+    : m_MultiDrawArray(std::make_shared<eng::thread::AsyncMultiDrawArray<DrawCommand>>(s_VertexBufferLayout))
   {
     ENG_PROFILE_FUNCTION();
-
-
   }
 
   void LODManager::render()
@@ -518,7 +513,7 @@ namespace newLod
           return false;
 
         // Shift each plane by distance equal to radius of sphere that circumscribes LOD
-        length_t LODSphereRadius = std::numbers::sqrt3_v<length_t> * meshID.nodeID().length() / 2;
+        length_t LODSphereRadius = meshID.nodeID().boundingSphereRadius();
         for (eng::math::FrustumPlane plane : eng::math::FrustumPlanes())
           shiftedFrustumPlanes[plane].w = frustumPlanes[plane].w + LODSphereRadius * planeNormalMagnitudes[plane];
 

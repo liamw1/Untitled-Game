@@ -18,8 +18,6 @@ namespace newLod
   public:
     LODManager();
 
-    void initialize();
-
     void render();
 
   private:

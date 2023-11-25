@@ -90,7 +90,7 @@ namespace eng::math
 }
 
 // Literals
-constexpr eng::math::Angle operator"" _deg(u64 degrees) { return eng::math::Angle(degrees); }
+constexpr eng::math::Angle operator"" _deg(uSize degrees) { return eng::math::Angle(degrees); }
 constexpr eng::math::Angle operator"" _deg(fMax degrees) { return eng::math::Angle(degrees); }
-constexpr eng::math::Angle operator"" _rad(u64 radians) { return eng::math::Angle::FromRad(radians); }
+constexpr eng::math::Angle operator"" _rad(uSize radians) { return eng::math::Angle::FromRad(radians); }
 constexpr eng::math::Angle operator"" _rad(fMax radians) { return eng::math::Angle::FromRad(radians); }
