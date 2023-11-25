@@ -1,8 +1,8 @@
 #pragma once
-#include "World/Chunk.h"
+#include "World/Chunk/Chunk.h"
 
 /*
-  Represents the player.  The player's position (all the positions of all other
+  Represents the player. The player's position (all the positions of all other
   geometry) is stored relative to an "origin chunk", which is the chunk the player
   is currently inside.
 */

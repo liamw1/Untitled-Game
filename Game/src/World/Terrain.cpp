@@ -1,6 +1,6 @@
 #include "GMpch.h"
 #include "Terrain.h"
-#include "ChunkContainer.h"
+#include "Chunk/ChunkContainer.h"
 #include "Util/Noise.h"
 
 namespace terrain
@@ -8,8 +8,7 @@ namespace terrain
   CompoundSurfaceData::CompoundSurfaceData()
     : CompoundSurfaceData(0, block::ID::Null) {}
   CompoundSurfaceData::CompoundSurfaceData(length_t surfaceElevation, block::ID blockType)
-    : m_Elevation(surfaceElevation), m_Components(blockType)
-  { }
+    : m_Elevation(surfaceElevation), m_Components(blockType) {}
 
   CompoundSurfaceData CompoundSurfaceData::operator+(const CompoundSurfaceData& other) const
   {

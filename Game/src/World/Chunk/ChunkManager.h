@@ -2,7 +2,7 @@
 #include "Chunk.h"
 #include "ChunkContainer.h"
 #include "ChunkHelpers.h"
-#include "LOD.h"
+#include "World/LOD.h"
 
 class ChunkManager
 {

@@ -1,6 +1,6 @@
 #pragma once
 #include "GlobalParameters.h"
-#include "World/Chunk.h"
+#include "World/Chunk/Chunk.h"
 
 constexpr bool isInRange(const GlobalIndex& index, const GlobalIndex& originIndex, globalIndex_t range)
 {

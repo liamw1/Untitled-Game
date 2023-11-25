@@ -1,8 +1,8 @@
 #include "GMpch.h"
 #include "ChunkManager.h"
-#include "Terrain.h"
-#include "Player/Player.h"
 #include "Indexing/Operations.h"
+#include "Player/Player.h"
+#include "World/Terrain.h"
 
 // Rendering
 static constexpr i32 c_TextureSlot = 0;
@@ -117,11 +117,10 @@ void ChunkManager::render()
   eng::EnumArray<eng::math::Vec4, eng::math::FrustumPlane> frustumPlanes = eng::math::calculateViewFrustumPlanes(viewProjection);
 
   // Shift each plane by distance equal to radius of sphere that circumscribes chunk
-  static constexpr length_t chunkSphereRadius = std::numbers::sqrt3_v<length_t> * Chunk::Length() / 2;
   for (eng::math::Vec4& plane : frustumPlanes)
   {
     length_t planeNormalMag = glm::length(eng::math::Vec3(plane));
-    plane.w += chunkSphereRadius * planeNormalMag;
+    plane.w += Chunk::SphereRadius() * planeNormalMag;
   }
 
   eng::math::Vec3 playerCameraPosition = player::cameraPosition();

@@ -1,5 +1,5 @@
 #pragma once
-#include "ChunkManager.h"
+#include "Chunk/ChunkManager.h"
 
 struct RayIntersection
 {

@@ -3,7 +3,7 @@
 #include "NewLOD.h"
 #include "GlobalParameters.h"
 #include "Indexing/Operations.h"
-#include "World/Chunk.h"
+#include "World/Chunk/Chunk.h"
 
 namespace newLod
 {

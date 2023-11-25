@@ -1,6 +1,6 @@
 #pragma once
 #include "NodeID.h"
-#include "World/Chunk.h"
+#include "World/Chunk/Chunk.h"
 
 namespace newLod
 {
