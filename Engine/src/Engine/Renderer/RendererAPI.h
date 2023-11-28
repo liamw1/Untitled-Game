@@ -27,7 +27,6 @@ namespace eng
 
     virtual void clear(const math::Float4& color = { 0.0f, 0.0f, 0.0f, 1.0f }) = 0;
 
-    virtual void setBlendFunc() = 0;
     virtual void setBlending(bool enableBlending) = 0;
     virtual void setUseDepthOffset(bool enableDepthOffset) = 0;
     virtual void setDepthOffset(f32 factor, f32 units) = 0;

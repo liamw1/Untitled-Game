@@ -54,7 +54,7 @@ namespace eng
     setDarkThemeColors();
 
     Application& app = Application::Get();
-    GLFWwindow* window = static_cast<GLFWwindow*>(app.getWindow().getNativeWindow());
+    GLFWwindow* window = static_cast<GLFWwindow*>(app.window().getNativeWindow());
 
     // Setup Platform/Renderer bindings
     ImGui_ImplGlfw_InitForOpenGL(window, true);
@@ -96,7 +96,7 @@ namespace eng
 
     ImGuiIO& io = ImGui::GetIO();
     Application& app = Application::Get();
-    io.DisplaySize = ImVec2(arithmeticUpcast<f32>(app.getWindow().getWidth()), arithmeticUpcast<f32>(app.getWindow().getHeight()));
+    io.DisplaySize = ImVec2(arithmeticUpcast<f32>(app.window().width()), arithmeticUpcast<f32>(app.window().height()));
 
     // Rendering
     ImGui::Render();

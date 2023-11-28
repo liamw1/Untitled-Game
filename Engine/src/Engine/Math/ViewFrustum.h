@@ -6,9 +6,9 @@ namespace eng::math
 {
   enum class FrustumPlane
   {
-    Left, Right, Bottom, Top, Near, Far,
+    Left, Right, Bottom, Top, Near,
 
-    First = 0, Last = Far
+    First = 0, Last = Near
   };
   using FrustumPlanes = EnumIterator<FrustumPlane>;
 

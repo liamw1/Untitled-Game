@@ -18,7 +18,6 @@ class CameraController : public eng::EntityScript
   static constexpr eng::math::Angle c_FOV = 80_deg;
   static constexpr f32 c_AspectRatio = 1280.0f / 720.0f;
   static constexpr length_t c_NearClip = 0.125_m * block::length();
-  static constexpr length_t c_FarClip = 1024_m * block::length();
 
   eng::Entity m_Entity;
   eng::math::Float2 m_LastMousePosition;

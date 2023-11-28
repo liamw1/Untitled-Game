@@ -1,11 +1,12 @@
 #include "ENpch.h"
 #include "Renderer.h"
+#include "Framebuffer.h"
 #include "RenderCommand.h"
 #include "Shader.h"
 #include "Uniform.h"
+#include "Engine/Debug/Instrumentor.h"
 #include "Engine/Scene/Scene.h"
 #include "Engine/Scene/Components.h"
-#include "Engine/Debug/Instrumentor.h"
 
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -29,6 +30,7 @@ namespace eng::render
   static std::unique_ptr<Uniform> s_CameraUniform;
   static std::unique_ptr<Shader> s_WireFrameShader;
   static std::unique_ptr<VertexArray> s_WireFrameVertexArray;
+  static std::unique_ptr<Framebuffer> s_DefaultFramebuffer;
   static CameraUniformData s_CameraUniformData;
   
   static constexpr math::Float4 c_CubeFrameVertexPositions[8] = { { -0.5f, -0.5f, -0.5f, 1.0f },
@@ -48,8 +50,10 @@ namespace eng::render
   {
     static bool initialized = []()
     {
-      command::setBlendFunc();
-
+      FramebufferSpecification fbs = { FramebufferTextureFormat::RGBA8, FramebufferTextureFormat::Depth32f };
+      fbs.width = 1920;
+      fbs.height = 1080;
+      s_DefaultFramebuffer = Framebuffer::Create(fbs);
       s_CameraUniform = Uniform::Create(0, sizeof(CameraUniformData));
 
       /* Wire Frame Initialization */
@@ -68,7 +72,8 @@ namespace eng::render
   {
     initialize();
 
-    command::setBlending(true);
+    s_DefaultFramebuffer->bind();
+
     command::setDepthTesting(true);
 
     s_CameraUniformData.viewProjection = scene::CalculateViewProjection(viewer);
@@ -78,6 +83,7 @@ namespace eng::render
 
   void endScene()
   {
+    s_DefaultFramebuffer->copyToWindow();
   }
 
   void drawCubeFrame(const math::Vec3& position, const math::Vec3& size, const math::Float4& color)
@@ -97,6 +103,6 @@ namespace eng::render
 
   void onWindowResize(u32 width, u32 height)
   {
-    command::setViewport(0, 0, width, height);
+    s_DefaultFramebuffer->resize(width, height);
   }
 }

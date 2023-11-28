@@ -23,7 +23,6 @@ namespace eng
     void clear(const math::Float4& color = { 0.0f, 0.0f, 0.0f, 1.0f }) override;
     void clearDepthBuffer() override;
 
-    void setBlendFunc() override;
     void setBlending(bool enableBlending) override;
     void setUseDepthOffset(bool enableDepthOffset) override;
     void setDepthOffset(f32 factor, f32 units) override;

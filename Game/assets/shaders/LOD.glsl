@@ -36,12 +36,6 @@ void main()
   v_LocalWorldPosition = a_Position;
   gl_Position = u_ViewProjection * vec4(u_AnchorPosition[gl_DrawID].xyz + a_Position, 1.0f);
 
-  // Applying logarithmic depth buffer
-  // NOTE: This might be disorting normals far from the camera,
-  //	     it may be better to give shader a modified camera instead
-  gl_Position.z = C * log(gl_Position.w / u_NearPlaneDistance) - 1; 
-  gl_Position.z *= gl_Position.w;
-
   v_Color = a_TextureWeights[0] * u_AverageColor[a_TextureIndices[0]] + a_TextureWeights[1] * u_AverageColor[a_TextureIndices[1]];
 }
 

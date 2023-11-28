@@ -36,13 +36,14 @@ namespace eng
     ENG_CORE_ASSERT(thread::isMainThread(), "OpenGL calls must be made on the main thread!");
 
     glfwMakeContextCurrent(m_WindowHandle);
-    i32 status = gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
-    ENG_CORE_ASSERT(status, "Failed to initialize GLad!");
+    i32 status = gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress));
+    if (!status)
+      throw std::runtime_error("Failed to initialize GLad!");
 
     ENG_CORE_INFO("OpenGL Info:");
-    ENG_CORE_INFO("  Vendor:    {0}", reinterpret_cast<const char*>(glGetString(GL_VENDOR)));
-    ENG_CORE_INFO("  Renderer:  {0}", reinterpret_cast<const char*>(glGetString(GL_RENDERER)));
-    ENG_CORE_INFO("  Version:   {0}", reinterpret_cast<const char*>(glGetString(GL_VERSION)));
+    ENG_CORE_INFO("  Vendor:    {0}", std::bit_cast<const char*>(glGetString(GL_VENDOR)));
+    ENG_CORE_INFO("  Renderer:  {0}", std::bit_cast<const char*>(glGetString(GL_RENDERER)));
+    ENG_CORE_INFO("  Version:   {0}", std::bit_cast<const char*>(glGetString(GL_VERSION)));
     
     ENG_CORE_ASSERT(GLVersion.major > 4 || (GLVersion.major == 4 && GLVersion.minor >= 5), "Hazel requires at least OpenGL version 4.5!");
 
@@ -52,6 +53,13 @@ namespace eng
       glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
       glDebugMessageCallback(openGLLogMessage, nullptr);
     #endif
+
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    // Engine uses reversed-Z: https://nlguillemot.wordpress.com/2016/12/07/reversed-z-in-opengl/comment-page-1/
+    glClipControl(GL_LOWER_LEFT, GL_ZERO_TO_ONE);
+    glDepthFunc(GL_GREATER);
+    glClearDepth(0.0f);
   }
 
   void OpenGLContext::swapBuffers()

@@ -8,14 +8,12 @@ namespace eng
     None,
 
     // Color
-    RED_INTEGER,
+    RedInteger,
     RGBA8,
 
     // Depth/stencil
-    DEPTH24STENCIL8,
-
-    // Defaults
-    Depth = DEPTH24STENCIL8
+    Depth24Stencil8,
+    Depth32f
   };
 
   struct FramebufferTextureSpecification
@@ -50,6 +48,8 @@ namespace eng
 
     virtual const FramebufferSpecification& specification() const = 0;
     virtual u32 getColorAttachmentRendererID(u32 index = 0) const = 0;
+
+    virtual void copyToWindow() const = 0;
 
     virtual void resize(u32 width, u32 height) = 0;
     virtual i32 readPixel(u32 attachmentIndex, i32 x, i32 y) = 0;

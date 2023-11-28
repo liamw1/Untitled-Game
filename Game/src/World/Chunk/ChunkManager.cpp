@@ -166,7 +166,7 @@ void ChunkManager::render()
   eng::render::command::setFaceCulling(false);
   eng::render::command::setDepthWriting(false);
   eng::render::command::setUseDepthOffset(true);
-  eng::render::command::setDepthOffset(-1.0f, -1.0f);
+  eng::render::command::setDepthOffset(1.0f, 1.0f);
   m_TransparentMultiDrawArray->drawOperation([&isInViewFrustum, &draw, &originIndex, &cameraPosition](eng::MultiDrawArray<ChunkDrawCommand>& multiDrawArray)
   {
     i32 commandCount = multiDrawArray.partition(isInViewFrustum);

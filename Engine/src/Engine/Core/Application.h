@@ -39,8 +39,8 @@ namespace eng
 
     void close();
 
-    ImGuiLayer& getImGuiLayer();
-    Window& getWindow();
+    ImGuiLayer& imGuiLayer();
+    Window& window();
     const ApplicationCommandLineArgs& GetCommandLineArgs() const;
     static Application& Get();
 

@@ -21,7 +21,6 @@ namespace eng::render::command
   void clear(const math::Float4& color) { s_RendererAPI->clear(color); }
   void clearDepthBuffer() { s_RendererAPI->clearDepthBuffer(); }
 
-  void setBlendFunc() { s_RendererAPI->setBlendFunc(); }
   void setBlending(bool enableBlending) { s_RendererAPI->setBlending(enableBlending); }
   void setUseDepthOffset(bool enableDepthOffset) { s_RendererAPI->setUseDepthOffset(enableDepthOffset); }
   void setDepthOffset(f32 factor, f32 units) { s_RendererAPI->setDepthOffset(factor, units); }

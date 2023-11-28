@@ -36,8 +36,8 @@ namespace eng
     m_Context->swapBuffers();
   }
 
-  u32 WindowsWindow::getWidth() const { return m_Data.width; }
-  u32 WindowsWindow::getHeight() const { return m_Data.height; }
+  u32 WindowsWindow::width() const { return m_Data.width; }
+  u32 WindowsWindow::height() const { return m_Data.height; }
 
   void WindowsWindow::setEventCallback(const EventCallbackFn& callback)
   {

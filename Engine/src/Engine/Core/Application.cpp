@@ -80,8 +80,8 @@ namespace eng
     m_Running = false;
   }
 
-  ImGuiLayer& Application::getImGuiLayer() { return *m_ImGuiLayer; }
-  Window& Application::getWindow() { return *m_Window; }
+  ImGuiLayer& Application::imGuiLayer() { return *m_ImGuiLayer; }
+  Window& Application::window() { return *m_Window; }
   const ApplicationCommandLineArgs& Application::GetCommandLineArgs() const { return m_CommandLineArgs; }
   Application& Application::Get() { return *s_Instance; }
 

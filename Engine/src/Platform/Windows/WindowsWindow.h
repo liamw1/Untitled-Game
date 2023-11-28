@@ -28,8 +28,8 @@ namespace eng
 
     void onUpdate() override;
 
-    u32 getWidth() const override;
-    u32 getHeight() const override;
+    u32 width() const override;
+    u32 height() const override;
 
     // Window attributes
     void setEventCallback(const EventCallbackFn& callback) override;

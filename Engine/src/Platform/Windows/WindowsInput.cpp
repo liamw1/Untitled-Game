@@ -9,21 +9,21 @@ namespace eng::input
 {
   bool isKeyPressed(Key key)
   {
-    GLFWwindow* window = static_cast<GLFWwindow*>(Application::Get().getWindow().getNativeWindow());
+    GLFWwindow* window = static_cast<GLFWwindow*>(Application::Get().window().getNativeWindow());
     i32 state = glfwGetKey(window, toUnderlying(key));
     return state == GLFW_PRESS;
   }
 
   bool isMouseButtonPressed(Mouse button)
   {
-    GLFWwindow* window = static_cast<GLFWwindow*>(Application::Get().getWindow().getNativeWindow());
+    GLFWwindow* window = static_cast<GLFWwindow*>(Application::Get().window().getNativeWindow());
     i32 state = glfwGetMouseButton(window, toUnderlying(button));
     return state == GLFW_PRESS;
   }
 
   math::Float2 getMousePosition()
   {
-    GLFWwindow* window = static_cast<GLFWwindow*>(Application::Get().getWindow().getNativeWindow());
+    GLFWwindow* window = static_cast<GLFWwindow*>(Application::Get().window().getNativeWindow());
     f64 xPos, yPos;
     glfwGetCursorPos(window, &xPos, &yPos);
     return { arithmeticCastUnchecked<f32>(xPos), arithmeticCastUnchecked<f32>(yPos) };

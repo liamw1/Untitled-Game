@@ -27,8 +27,8 @@ namespace eng
 
     virtual void onUpdate() = 0;
 
-    virtual u32 getWidth() const = 0;
-    virtual u32 getHeight() const = 0;
+    virtual u32 width() const = 0;
+    virtual u32 height() const = 0;
 
     // Window attributes
     virtual void setEventCallback(const EventCallbackFn& callback) = 0;

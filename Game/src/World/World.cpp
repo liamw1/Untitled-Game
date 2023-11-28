@@ -25,6 +25,10 @@ void World::onUpdate(eng::Timestep timestep)
   /* Rendering stage */
   eng::render::beginScene(eng::scene::ActiveCamera());
 
+  eng::render::command::setDepthWriting(true);
+  eng::render::command::setUseDepthOffset(false);
+  eng::render::command::clear(eng::math::Float4(0.788f, 0.949f, 0.949f, 1.0f));
+
   if constexpr (useLODs)
   {
     m_ChunkManager.manageLODs();

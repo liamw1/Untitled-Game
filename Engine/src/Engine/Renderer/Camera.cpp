@@ -1,6 +1,7 @@
 #include "ENpch.h"
 #include "Camera.h"
 #include "Engine/Debug/Assert.h"
+#include "Engine/Math/Projection.h"
 
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -10,8 +11,7 @@ namespace eng
     : m_Projection(math::Mat4(1)),
       m_ProjectionType(ProjectionType::Perspective),
       m_AspectRatio(1280.0f / 720),
-      m_NearClip(-1.0f),
-      m_FarClip(1.0f),
+      m_NearClip(0.0f),
       m_FOV(80_deg),
       m_OrthographicSize(1.0f) {}
 
@@ -19,7 +19,6 @@ namespace eng
   Camera::ProjectionType Camera::projectionType() const { return m_ProjectionType; }
 
   f32 Camera::nearClip() const { return m_NearClip; }
-  f32 Camera::farClip() const { return m_FarClip; }
 
   f32 Camera::aspectRatio() const { return m_AspectRatio; }
   void Camera::setAspectRatio(f32 aspectRatio)
@@ -47,23 +46,21 @@ namespace eng
     return m_OrthographicSize;
   }
 
-  void Camera::setOrthographicView(f32 aspectRatio, f32 size, f32 nearClip, f32 farClip)
+  void Camera::setOrthographicView(f32 aspectRatio, f32 size, f32 nearClip)
   {
     m_AspectRatio = aspectRatio;
     m_OrthographicSize = size;
     m_NearClip = nearClip;
-    m_FarClip = farClip;
     m_ProjectionType = ProjectionType::Orthographic;
 
     recalculateOrthographicProjection();
   }
 
-  void Camera::setPerspectiveView(f32 aspectRatio, math::Angle fov, f32 nearClip, f32 farClip)
+  void Camera::setPerspectiveView(f32 aspectRatio, math::Angle fov, f32 nearClip)
   {
     m_AspectRatio = aspectRatio;
     m_FOV = fov;
     m_NearClip = nearClip;
-    m_FarClip = farClip;
     m_ProjectionType = ProjectionType::Perspective;
 
     recalculatePerspectiveProjection();
@@ -87,16 +84,11 @@ namespace eng
 
   void Camera::recalculateOrthographicProjection()
   {
-    f32 left = -m_OrthographicSize * m_AspectRatio / 2;
-    f32 right = m_OrthographicSize * m_AspectRatio / 2;
-    f32 bottom = -m_OrthographicSize / 2;
-    f32 top = m_OrthographicSize / 2;
-
-    m_Projection = glm::ortho(left, right, bottom, top, m_NearClip, m_FarClip);
+    throw std::runtime_error("Reversed-Z orthographic projection not yet implemented!");
   }
 
   void Camera::recalculatePerspectiveProjection()
   {
-    m_Projection = glm::perspective(m_FOV.radf(), m_AspectRatio, m_NearClip, m_FarClip);
+    m_Projection = reversedZProjection(m_FOV, m_AspectRatio, m_NearClip);
   }
 }

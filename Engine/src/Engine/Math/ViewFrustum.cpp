@@ -16,15 +16,11 @@ namespace eng::math
              { FrustumPlane::Right,   row4 - row1 },
              { FrustumPlane::Bottom,  row4 + row2 },
              { FrustumPlane::Top,     row4 - row2 },
-             { FrustumPlane::Near,    row4 + row3 },
-             { FrustumPlane::Far,     row4 - row3 } };
+             { FrustumPlane::Near,    row4 + row3 } };
   }
 
   bool isInFrustum(const eng::math::Vec3& point, const EnumArray<Vec4, FrustumPlane>& frustumPlanes)
   {
-    for (FrustumPlane planeID : FrustumPlanes())
-      if (planeID != FrustumPlane::Far && glm::dot(eng::math::Vec4(point, 1), frustumPlanes[planeID]) < 0)
-        return false;
-    return true;
+    return eng::algo::noneOf(frustumPlanes, [&point](const Vec4& plane) { return glm::dot(eng::math::Vec4(point, 1), plane) < 0; });
   }
 }

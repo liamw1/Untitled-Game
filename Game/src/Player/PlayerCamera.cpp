@@ -8,7 +8,7 @@ CameraController::CameraController(eng::Entity entity)
 {
   eng::component::Camera& cameraComponent = m_Entity.get<eng::component::Camera>();
   cameraComponent.isActive = true;
-  cameraComponent.camera.setPerspectiveView(c_AspectRatio, c_FOV, c_NearClip, c_FarClip);
+  cameraComponent.camera.setPerspectiveView(c_AspectRatio, c_FOV, c_NearClip);
 }
 
 void CameraController::onUpdate(eng::Timestep timestep)

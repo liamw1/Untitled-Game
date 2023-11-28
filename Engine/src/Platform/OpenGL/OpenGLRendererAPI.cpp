@@ -46,11 +46,6 @@ namespace eng
     glClear(GL_DEPTH_BUFFER_BIT);
   }
 
-  void OpenGLRendererAPI::setBlendFunc()
-  {
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-  }
-
   void OpenGLRendererAPI::setBlending(bool enableBlending)
   {
     ENG_CORE_ASSERT(thread::isMainThread(), "OpenGL calls must be made on the main thread!");

@@ -9,7 +9,6 @@ namespace eng::render::command
   void clear(const math::Float4& color = { 0.0f, 0.0f, 0.0f, 1.0f });
   void clearDepthBuffer();
 
-  void setBlendFunc();
   void setBlending(bool enableBlending);
   void setUseDepthOffset(bool enableDepthOffset);
   void setDepthOffset(f32 factor, f32 units);
