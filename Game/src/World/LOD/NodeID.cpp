@@ -19,6 +19,7 @@ namespace newLod
   globalIndex_t NodeID::size() const { return eng::math::pow2<globalIndex_t>(lodLevel()); }
   length_t NodeID::length() const { return size() * Chunk::Length(); }
   length_t NodeID::boundingSphereRadius() const { return std::numbers::sqrt3_v<length_t> * length() / 2; }
+  GlobalBox NodeID::boundingBox() const { return { m_Anchor, m_Anchor + size() }; }
 
   eng::math::Vec3 NodeID::anchorPosition(const GlobalIndex& originIndex) const { return indexPosition(anchor(), originIndex); }
   eng::math::Vec3 NodeID::center(const GlobalIndex& originIndex) const { return anchorPosition(originIndex) + length() / 2; }

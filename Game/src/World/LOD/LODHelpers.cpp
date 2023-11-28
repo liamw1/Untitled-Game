@@ -3,8 +3,8 @@
 
 namespace newLod
 {
-  Vertex::Vertex(const eng::math::Float3& position, const eng::math::Float3& isoNormal, const std::array<i32, 2>& textureIndices, const eng::math::Float2& textureWeights, i32 quadIndex)
-    : position(position), isoNormal(isoNormal), textureIndices(textureIndices), textureWeights(textureWeights), quadIndex(quadIndex) {}
+  Vertex::Vertex(const eng::math::Float3& position, const eng::math::Float3& isoNormal, const std::array<i32, 2>& textureIndices, const eng::math::Float2& textureWeights)
+    : position(position), isoNormal(isoNormal), textureIndices(textureIndices), textureWeights(textureWeights) {}
 
 
 
@@ -15,7 +15,6 @@ namespace newLod
 
   bool DrawCommand::operator==(const DrawCommand& other) const { return id() == other.id(); }
 
-  u32 DrawCommand::vertexCount() const { return eng::arithmeticCast<u32>(m_Vertices.size()); }
   eng::mem::IndexData DrawCommand::indexData() const { return eng::mem::IndexData(m_Indices); }
   eng::mem::Data DrawCommand::vertexData() const { return eng::mem::Data(m_Vertices); }
   void DrawCommand::clearData() {}

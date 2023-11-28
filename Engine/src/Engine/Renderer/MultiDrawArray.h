@@ -30,15 +30,13 @@ namespace eng
   /*
     A CRTP class that represents a single multi-draw command.
     Derived classes must provided vertexData() and clearData() functions.
-    Derived classes of the indexed variant must also provide vertexCount()
-    and indexData() functions.
+    Derived classes of the indexed variant must also provide indexData() function.
   */
   template<typename Derived, Hashable Identifier, bool IsIndexed>
   class GenericDrawCommand : private NonCopyable
   {
     using CommandData = std::conditional_t<IsIndexed, detail::IndexedDrawCommandData, detail::DrawCommandData>;
 
-  protected:
     CommandData m_CommandData;
     Identifier m_ID;
     std::shared_ptr<uSize> m_CommandIndex;
@@ -49,10 +47,10 @@ namespace eng
     GenericDrawCommand(const Identifier& id)
       : m_ID(id) {}
 
-    u32 elementCount() const
+    u32 elementCount()
     {
       if constexpr (IsIndexed)
-        return m_CommandData.indexCount;
+        return m_CommandData.indexCount = eng::arithmeticCast<u32>(static_cast<const Derived*>(this)->indexData().elementCount());
       else
         return m_CommandData.vertexCount;
     }
@@ -64,12 +62,12 @@ namespace eng
         return m_CommandData.firstVertex;
     }
 
-    u32 vertexCount() const
+    u32 vertexCount()
     {
       if constexpr (IsIndexed)
-        return static_cast<const Derived*>(this)->vertexCount();
+        return eng::arithmeticCast<u32>(static_cast<const Derived*>(this)->vertexData().elementCount());
       else
-        return m_CommandData.vertexCount;
+        return m_CommandData.vertexCount = eng::arithmeticCast<u32>(static_cast<const Derived*>(this)->vertexData().elementCount());
     }
     i32 baseVertex() const
     {

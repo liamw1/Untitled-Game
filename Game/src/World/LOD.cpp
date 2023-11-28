@@ -40,7 +40,7 @@ namespace lod
   {
     delete data;
     data = nullptr;
-    for (int i = 0; i < 8; ++i)
+    for (i32 i = 0; i < 8; ++i)
     {
       delete children[i];
       children[i] = nullptr;
@@ -104,7 +104,7 @@ namespace lod
       return;
 
     // Delete child nodes
-    for (int i = 0; i < 8; ++i)
+    for (i32 i = 0; i < 8; ++i)
     {
       delete node->children[i];
       node->children[i] = nullptr;

@@ -30,29 +30,6 @@ const BlockIndex& ChunkVertex::GetOffset(eng::math::Direction face, i32 quadInde
 
 
 
-ChunkQuad::ChunkQuad(const BlockIndex& blockIndex, eng::math::Direction face, block::TextureID texture, const std::array<i32, 4>& sunlight, const std::array<i32, 4>& ambientOcclusion)
-{
-  static constexpr std::array<i32, 4> standardOrder = { 0, 1, 2, 3 };
-  static constexpr std::array<i32, 4> reversedOrder = { 1, 3, 0, 2 };
-
-  auto totalLightAtVertex = [&sunlight, &ambientOcclusion](i32 index)
-  {
-    return sunlight[index] + ambientOcclusion[index];
-  };
-
-  i32 lightDifferenceAlongStandardSeam = std::abs(totalLightAtVertex(2) - totalLightAtVertex(1));
-  i32 lightDifferenceAlongReversedSeam = std::abs(totalLightAtVertex(3) - totalLightAtVertex(0));
-  const std::array<i32, 4>& quadOrder = lightDifferenceAlongStandardSeam > lightDifferenceAlongReversedSeam ? reversedOrder : standardOrder;
-  for (i32 i = 0; i < 4; ++i)
-  {
-    i32 quadIndex = quadOrder[i];
-    BlockIndex vertexPlacement = blockIndex + ChunkVertex::GetOffset(face, quadIndex);
-    m_Vertices[i] = ChunkVertex(vertexPlacement, quadIndex, texture, sunlight[quadIndex], ambientOcclusion[quadIndex]);
-  }
-}
-
-
-
 ChunkVoxel::ChunkVoxel(const BlockIndex& blockIndex, eng::math::DirectionBitMask enabledFaces, i32 firstVertex)
   : m_Index(blockIndex),
     m_EnabledFaces(enabledFaces),
@@ -81,16 +58,14 @@ ChunkDrawCommand::ChunkDrawCommand(const GlobalIndex& chunkIndex, bool needsSort
     m_NeedsSorting(needsSorting),
     m_VoxelBaseVertex(0) {}
 
-bool ChunkDrawCommand::operator==(const ChunkDrawCommand& other) const { return m_ID == other.m_ID; }
-
-u32 ChunkDrawCommand::vertexCount() const { return eng::arithmeticCast<u32>(4 * m_Quads.size()); }
+bool ChunkDrawCommand::operator==(const ChunkDrawCommand& other) const { return id() == other.id(); }
 
 eng::mem::IndexData ChunkDrawCommand::indexData() const { return m_Indices; }
-eng::mem::Data ChunkDrawCommand::vertexData() const { return m_Quads; }
+eng::mem::Data ChunkDrawCommand::vertexData() const { return m_Vertices; }
 
 void ChunkDrawCommand::clearData()
 {
-  m_Quads = {};
+  m_Vertices = {};
   if (!m_NeedsSorting)
   {
     m_Voxels = {};
@@ -100,15 +75,26 @@ void ChunkDrawCommand::clearData()
 
 void ChunkDrawCommand::addQuad(const BlockIndex& blockIndex, eng::math::Direction face, block::TextureID texture, const std::array<i32, 4>& sunlight, const std::array<i32, 4>& ambientOcclusion)
 {
-  addQuadIndices(vertexCount());
-  m_CommandData.indexCount += 6;
-  m_Quads.emplace_back(blockIndex, face, texture, sunlight, ambientOcclusion);
+  static constexpr std::array<i32, 4> standardOrder = { 0, 1, 2, 3 };
+  static constexpr std::array<i32, 4> reversedOrder = { 1, 3, 0, 2 };
+  auto totalLightAtVertex = [&sunlight, &ambientOcclusion](i32 index) { return sunlight[index] + ambientOcclusion[index]; };
+
+  i32 lightDifferenceAlongStandardSeam = std::abs(totalLightAtVertex(2) - totalLightAtVertex(1));
+  i32 lightDifferenceAlongReversedSeam = std::abs(totalLightAtVertex(3) - totalLightAtVertex(0));
+  const std::array<i32, 4>& quadOrder = lightDifferenceAlongStandardSeam > lightDifferenceAlongReversedSeam ? reversedOrder : standardOrder;
+  for (i32 i = 0; i < 4; ++i)
+  {
+    i32 quadIndex = quadOrder[i];
+    BlockIndex vertexPlacement = blockIndex + ChunkVertex::GetOffset(face, quadIndex);
+    m_Vertices.emplace_back(vertexPlacement, quadIndex, texture, sunlight[quadIndex], ambientOcclusion[quadIndex]);
+  }
+  addQuadIndices(eng::arithmeticCast<i32>(m_Vertices.size() - 4));
 }
 
 void ChunkDrawCommand::addVoxel(const BlockIndex& blockIndex, eng::math::DirectionBitMask enabledFaces)
 {
   m_Voxels.emplace_back(blockIndex, enabledFaces, m_VoxelBaseVertex);
-  m_VoxelBaseVertex = vertexCount();
+  m_VoxelBaseVertex = eng::arithmeticCast<i32>(m_Vertices.size());
 }
 
 bool ChunkDrawCommand::sort(const GlobalIndex& originIndex, const eng::math::Vec3& viewPosition)
@@ -177,7 +163,7 @@ void ChunkDrawCommand::reorderIndices(const GlobalIndex& originIndex, const eng:
 {
   m_Indices.clear();
 
-  eng::math::Vec3 chunkAnchorPosition = indexPosition(m_ID, originIndex);
+  eng::math::Vec3 chunkAnchorPosition = indexPosition(id(), originIndex);
   for (ChunkVoxel voxel : m_Voxels)
   {
     eng::math::Vec3 blockCenter = chunkAnchorPosition + block::length() * eng::math::Vec3(voxel.index()) + eng::math::Vec3(block::length()) / 2;

@@ -9,13 +9,6 @@ namespace eng
     static constexpr const char* c_BadCastMessage = "Value cannot be represented in the destination type!";
 
     template<Arithmetic C, Arithmetic T>
-    constexpr bool alwaysSafe()
-    {
-      return static_cast<fMax>(std::numeric_limits<C>::lowest()) <= static_cast<fMax>(std::numeric_limits<T>::lowest()) &&
-             static_cast<fMax>(std::numeric_limits<C>::max()) >= static_cast<fMax>(std::numeric_limits<T>::max());
-    }
-
-    template<Arithmetic C, Arithmetic T>
     constexpr bool canSafelyCast(T value, C min = std::numeric_limits<C>::lowest(), C max = std::numeric_limits<C>::max())
     {
       if constexpr (std::is_floating_point_v<T> || std::is_floating_point_v<C>)
@@ -30,20 +23,41 @@ namespace eng
   }
 
   /*
+    Checks whether values of type T are always on the interval spanning the range of values
+    of type C. I call this propery 'weakly representable'. This is opposed to strongly
+    representable, where values of type T are always exactly representable in C.
+  */
+  template<Arithmetic C, Arithmetic T>
+  constexpr bool weaklyRepresentable()
+  {
+    return static_cast<fMax>(std::numeric_limits<C>::lowest()) <= static_cast<fMax>(std::numeric_limits<T>::lowest()) &&
+           static_cast<fMax>(std::numeric_limits<C>::max()) >= static_cast<fMax>(std::numeric_limits<T>::max());
+  }
+
+  /*
+    Checks whether the value N is exaclty representable in T.
+  */
+  template<std::integral T, uSize N>
+  constexpr bool exactlyRepresentable()
+  {
+    return std::cmp_less_equal(std::numeric_limits<T>::lowest(), N) && std::cmp_less_equal(N, std::numeric_limits<T>::max());
+  }
+
+  /*
     Used casts that are always safe. That is, conversions from type A to type B, where values in
-    A are always representable in B.
+    A are weakly representable in B.
   */
   template<Arithmetic C, Arithmetic T>
   constexpr C arithmeticUpcast(T value)
   {
-    static_assert(detail::alwaysSafe<C, T>(), "Not an upcast!");
+    static_assert(weaklyRepresentable<C, T>(), "Not an upcast!");
     return static_cast<C>(value);
   }
 
   template<Arithmetic C, Arithmetic T>
   constexpr C arithmeticCast(T value)
   {
-    if constexpr (detail::alwaysSafe<C, T>())
+    if constexpr (weaklyRepresentable<C, T>())
       return arithmeticUpcast<C>(value);
     else if (detail::canSafelyCast<C>(value))
       return static_cast<C>(value);
@@ -54,7 +68,7 @@ namespace eng
   template<Arithmetic C, Arithmetic T>
   constexpr C arithmeticCastUnchecked(T value)
   {
-    if constexpr (detail::alwaysSafe<C, T>())
+    if constexpr (weaklyRepresentable<C, T>())
       return arithmeticUpcast<C>(value);
     else
     {

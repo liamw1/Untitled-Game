@@ -134,12 +134,14 @@ namespace block
   static BlockProperties s_Properties;
   
   static constexpr i32 c_UniformBinding = 1;
+  static constexpr i32 c_StorageBufferBinding = 0;
   static constexpr BlockUniformData c_BlockUniformData;
 
   static eng::EnumArray<eng::math::Float4, TextureID> s_TextureAverageColors;
   static eng::EnumArray<std::filesystem::path, TextureID> s_TexturePaths;
   static std::shared_ptr<eng::TextureArray> s_TextureArray;
   static std::unique_ptr<eng::Uniform> s_Uniform;
+  static std::unique_ptr<eng::mem::StorageBuffer> s_SSBO;
 
   static void initialize()
   {
@@ -166,6 +168,10 @@ namespace block
         textureAverageColor.a = 1.0f;
         s_TextureAverageColors[texture] = textureAverageColor;
       }
+
+      s_SSBO = eng::mem::StorageBuffer::Create(eng::mem::StorageBuffer::Type::SSBO, c_StorageBufferBinding);
+      s_SSBO->set(s_TextureAverageColors);
+
       return true;
     }();
   }
@@ -176,7 +182,11 @@ namespace block
     return s_TextureArray;
   }
 
-
+  void bindAverageColorSSBO()
+  {
+    initialize();
+    s_SSBO->bind();
+  }
 
   TextureID Type::texture(eng::math::Direction face) const
   {

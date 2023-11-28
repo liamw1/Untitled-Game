@@ -7,7 +7,7 @@ static constexpr length_t c_Width = 0.6_m * block::length();
 static constexpr length_t c_Height = 1.8_m * block::length();
 
 static bool s_FreeCamEnabled = false;
-static constexpr length_t c_TranslationSpeed = 50 * block::length();
+static constexpr length_t c_TranslationSpeed = 500 * block::length();
 
 // Designates origin of coordinate system
 static GlobalIndex s_OriginIndex;
@@ -24,8 +24,8 @@ static std::mutex s_Mutex;
 void player::initialize(const GlobalIndex& chunkIndex, const eng::math::Vec3& positionWithinChunk)
 {
   ENG_ASSERT(positionWithinChunk.x >= 0.0 && positionWithinChunk.x <= Chunk::Length() &&
-            positionWithinChunk.y >= 0.0 && positionWithinChunk.y <= Chunk::Length() &&
-            positionWithinChunk.z >= 0.0 && positionWithinChunk.z <= Chunk::Length(), "Local position is out of bounds!");
+             positionWithinChunk.y >= 0.0 && positionWithinChunk.y <= Chunk::Length() &&
+             positionWithinChunk.z >= 0.0 && positionWithinChunk.z <= Chunk::Length(), "Local position is out of bounds!");
 
   s_OriginIndex = chunkIndex;
   s_Velocity = eng::math::Vec3(0.0);

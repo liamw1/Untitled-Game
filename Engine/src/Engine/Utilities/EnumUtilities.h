@@ -74,10 +74,10 @@ namespace eng
         initializationCounts[arrayIndex]++;
       }
 
-      auto badInitializationPosition = algo::findIf(initializationCounts, [](int count) { return count != 1; });
+      auto badInitializationPosition = algo::findIf(initializationCounts, [](i32 count) { return count != 1; });
       if (badInitializationPosition != initializationCounts.end())
       {
-        int count = *badInitializationPosition;
+        i32 count = *badInitializationPosition;
         if (count == 0)
           throw std::runtime_error("Not all values have been initialized!");
         else
@@ -90,7 +90,8 @@ namespace eng
     constexpr T& operator[](E enumIndex) { ENG_MUTABLE_VERSION(operator[], enumIndex); }
     constexpr const T& operator[](E enumIndex) const { return m_Data[toUnderlying(enumIndex) - toUnderlying(E::First)]; }
 
-    constexpr uSize size() { return m_Data.size(); }
+    constexpr uSize size() const { return m_Data.size(); }
+    constexpr const T* data() const { return m_Data.data(); }
   };
 }
 

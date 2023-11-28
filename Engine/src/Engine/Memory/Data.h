@@ -1,5 +1,6 @@
 #pragma once
 #include "Engine/Core/Concepts.h"
+#include "Engine/Utilities/EnumUtilities.h"
 
 namespace eng::mem
 {
@@ -34,6 +35,10 @@ namespace eng::mem
     Data(const std::array<T, N>& arr)
       : GenericData(arr.data(), sizeof(T), N) {}
 
+    template<typename T, IterableEnum E>
+    Data(const EnumArray<T, E>& arr)
+      : GenericData(arr.data(), sizeof(T), arr.size()) {}
+
   private:
     Data(const void* data, uSize elementSize, uSize elementCount);
     friend class IndexData;
@@ -48,6 +53,10 @@ namespace eng::mem
     template<uSize N>
     IndexData(const std::array<u32, N>& arr)
       : GenericData(arr.data(), sizeof(u32), N) {}
+
+    template<IterableEnum E>
+    IndexData(const EnumArray<u32, E>& arr)
+      : GenericData(arr.data(), sizeof(u32), arr.size()) {}
 
     explicit operator Data() const;
   };

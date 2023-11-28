@@ -28,18 +28,6 @@ public:
 };
 
 /*
-  Represents a block quad. Upon construction, decides where to put quad seam
-  based on the lighting values at the vertices.
-*/
-class ChunkQuad
-{
-  std::array<ChunkVertex, 4> m_Vertices;
-
-public:
-  ChunkQuad(const BlockIndex& blockIndex, eng::math::Direction face, block::TextureID texture, const std::array<i32, 4>& sunlight, const std::array<i32, 4>& ambientOcclusion);
-};
-
-/*
   Represents the renderable portions of a voxel. Stores as little information as
   possible, as these need to be sorted quickly at runtime.
 */
@@ -59,7 +47,7 @@ public:
 
 class ChunkDrawCommand : public eng::IndexedDrawCommand<ChunkDrawCommand, GlobalIndex>
 {
-  std::vector<ChunkQuad> m_Quads;
+  std::vector<ChunkVertex> m_Vertices;
   std::vector<ChunkVoxel> m_Voxels;
   std::vector<u32> m_Indices;
   BlockIndex m_SortState;
@@ -71,8 +59,6 @@ public:
   ChunkDrawCommand(const GlobalIndex& chunkIndex, bool needsSorting);
 
   bool operator==(const ChunkDrawCommand& other) const;
-
-  u32 vertexCount() const;
 
   eng::mem::IndexData indexData() const;
   eng::mem::Data vertexData() const;

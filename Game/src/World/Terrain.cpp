@@ -78,28 +78,29 @@ namespace terrain
   static std::mutex s_Mutex;
 
   // From https://stackoverflow.com/questions/664014/what-integer-hash-function-are-good-that-accepts-an-integer-hash-key
-  static u32 hash(u32 n)
+  static uSize hash(uSize n)
   {
-    n = ((n >> 16) ^ n) * 0x45d9f3b;
-    n = ((n >> 16) ^ n) * 0x45d9f3b;
-    return (n >> 16) ^ n;
+    n = (n ^ (n >> 30)) * 0xbf58476d1ce4e5b9;
+    n = (n ^ (n >> 27)) * 0x94d049bb133111eb;
+    n =  n ^ (n >> 31);
+    return n;
   }
 
   // Returns a random f32 in the range [0.0, 1.0] based determinisitically on the input n
-  static f32 random(u32 n)
+  static f32 random(uSize n)
   {
-    return eng::arithmeticUpcast<f32>(hash(n)) / std::numeric_limits<u32>::max();
+    return eng::arithmeticUpcast<f32>(hash(n)) / std::numeric_limits<uSize>::max();
   }
 
   // Returns a biome type based determinisitically on the input n
-  static Biome::Type randomBiome(u32 n)
+  static Biome::Type randomBiome(uSize n)
   {
     return eng::enumCastUnchecked<Biome::Type>(hash(n) % Biome::Count());
   }
 
   static std::pair<Biome::Type, eng::math::Float2> getRegionVoronoiPoint(const GlobalIndex2D& regionIndex)
   {
-    u32 key = static_cast<u32>(std::hash<GlobalIndex2D>{}(regionIndex));
+    uSize key = std::hash<GlobalIndex2D>()(regionIndex);
     f32 r = 0.5f * random(key);
     f32 theta = 2 * std::numbers::pi_v<f32> *random(hash(key));
 
@@ -290,7 +291,7 @@ namespace terrain
     Biome::NoiseSamples noise = noise::octaveNoise2D<Biome::LocalElevationOctaves()>(pointXY, 1_m / c_LargestNoiseScale, c_NoiseLacunarity);
 
     length_t elevation = 0;
-    for (int i = 0; i < c_MaxCompoundBiomes; ++i)
+    for (i32 i = 0; i < c_MaxCompoundBiomes; ++i)
       if (biomeData[i].type != Biome::Type::Null)
         elevation += biomeData[i].weight * Biome::Get(biomeData[i].type)->localSurfaceElevation(noise);
     return elevation;

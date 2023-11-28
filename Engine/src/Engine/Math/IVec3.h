@@ -155,9 +155,9 @@ namespace std
       constexpr uSize stride = eng::math::pow2<uSize>(n) - 1;
       constexpr eng::math::IVec3<uSize> strides(1, stride, eng::math::square(stride));
 
-      return strides.i * eng::math::mod(index.i, stride) +
-             strides.j * eng::math::mod(index.j, stride) +
-             strides.k * eng::math::mod(index.k, stride);
+      return strides.i * eng::math::mod<stride>(index.i) +
+             strides.j * eng::math::mod<stride>(index.j) +
+             strides.k * eng::math::mod<stride>(index.k);
     }
   };
 }

@@ -6,7 +6,7 @@
 
 // Rendering
 static constexpr i32 c_TextureSlot = 0;
-static constexpr i32 c_StorageBufferBinding = 0;
+static constexpr i32 c_StorageBufferBinding = 1;
 static constexpr u32 c_StorageBufferSize = eng::math::pow2<u32>(20);
 static std::unique_ptr<eng::Shader> s_Shader;
 static std::unique_ptr<eng::Uniform> s_LightUniform;
@@ -97,7 +97,6 @@ ChunkManager::ChunkManager()
 
   s_SSBO = eng::mem::StorageBuffer::Create(eng::mem::StorageBuffer::Type::SSBO, c_StorageBufferBinding);
   s_SSBO->resize(c_StorageBufferSize);
-  s_SSBO->bind();
 
   LightUniforms lightUniforms;
   lightUniforms.sunIntensity = 1.0f;
@@ -113,7 +112,8 @@ void ChunkManager::render()
 {
   ENG_PROFILE_FUNCTION();
 
-  eng::math::Mat4 viewProjection = eng::scene::CalculateViewProjection(eng::scene::ActiveCamera());
+  eng::Entity activeCameraEntity = eng::scene::ActiveCamera();
+  eng::math::Mat4 viewProjection = eng::scene::CalculateViewProjection(activeCameraEntity);
   eng::EnumArray<eng::math::Vec4, eng::math::FrustumPlane> frustumPlanes = eng::math::calculateViewFrustumPlanes(viewProjection);
 
   // Shift each plane by distance equal to radius of sphere that circumscribes chunk
@@ -123,7 +123,7 @@ void ChunkManager::render()
     plane.w += Chunk::BoundingSphereRadius() * planeNormalMag;
   }
 
-  eng::math::Vec3 playerCameraPosition = player::cameraPosition();
+  eng::math::Vec3 cameraPosition = activeCameraEntity.get<eng::component::Transform>().position;
   GlobalIndex originIndex = player::originIndex();
 
   auto isInViewFrustum = [&frustumPlanes, &originIndex](const GlobalIndex& chunkIndex)
@@ -144,6 +144,8 @@ void ChunkManager::render()
       storageBufferData.emplace_back(chunkAnchorPosition, 0);
     }
     s_SSBO->modify(0, storageBufferData);
+
+    s_SSBO->bind();
     multiDrawArray.bind();
     eng::render::command::multiDrawIndexed(drawCommands, commandCount);
   };
@@ -165,19 +167,19 @@ void ChunkManager::render()
   eng::render::command::setDepthWriting(false);
   eng::render::command::setUseDepthOffset(true);
   eng::render::command::setDepthOffset(-1.0f, -1.0f);
-  m_TransparentMultiDrawArray->drawOperation([&isInViewFrustum, &draw, &originIndex, &playerCameraPosition](eng::MultiDrawArray<ChunkDrawCommand>& multiDrawArray)
+  m_TransparentMultiDrawArray->drawOperation([&isInViewFrustum, &draw, &originIndex, &cameraPosition](eng::MultiDrawArray<ChunkDrawCommand>& multiDrawArray)
   {
     i32 commandCount = multiDrawArray.partition(isInViewFrustum);
-    multiDrawArray.sort(commandCount, [&originIndex, &playerCameraPosition](const GlobalIndex& chunkIndex)
+    multiDrawArray.sort(commandCount, [&originIndex, &cameraPosition](const GlobalIndex& chunkIndex)
     {
       // NOTE: Maybe measure min distance to chunk faces instead
       eng::math::Vec3 chunkCenter = indexCenter(chunkIndex, originIndex);
-      length_t dist = glm::length2(chunkCenter - playerCameraPosition);
+      length_t dist = glm::length2(chunkCenter - cameraPosition);
       return dist;
     }, eng::SortPolicy::Descending);
-    multiDrawArray.modifyElements(commandCount, [&originIndex, &playerCameraPosition](ChunkDrawCommand& drawCommand)
+    multiDrawArray.modifyElements(commandCount, [&originIndex, &cameraPosition](ChunkDrawCommand& drawCommand)
     {
-      bool orderModified = drawCommand.sort(originIndex, playerCameraPosition);
+      bool orderModified = drawCommand.sort(originIndex, cameraPosition);
       return orderModified;
     });
 

@@ -30,6 +30,11 @@ namespace newLod
     */
     std::shared_ptr<RenderData> find(const GlobalIndex& index);
 
+    void divide(const GlobalIndex& index);
+
+    // TODO: Remove
+    std::vector<NodeID> getLeafNodes() const;
+
     static constexpr i32 MaxDepth() { return param::MaxNodeDepth(); }
     static constexpr i32 LODLevel(i32 nodeDepth) { return MaxDepth() - nodeDepth; }
 
@@ -37,6 +42,8 @@ namespace newLod
     void splitNode(Node& leafNode, const NodeID& nodeInfo);
     void combineNode(Node& branchNode);
 
-    std::shared_ptr<RenderData> findImpl(Node& branch, const NodeID& branchInfo, const GlobalIndex& index);
+    std::shared_ptr<RenderData> findImpl(const Node& branch, const NodeID& branchInfo, const GlobalIndex& index);
+    void divideImpl(Node& node, const NodeID& nodeInfo, const GlobalIndex& index);
+    void getLeafNodesImpl(std::vector<NodeID>& leafNodes, const Node& node, const NodeID& nodeInfo) const;
   };
 }

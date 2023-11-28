@@ -31,6 +31,11 @@ void World::onUpdate(eng::Timestep timestep)
     m_ChunkManager.renderLODs();
     eng::render::command::clearDepthBuffer();
   }
+  else
+  {
+    m_LODManager.render();
+    eng::render::command::clearDepthBuffer();
+  }
 
   playerWorldInteraction();
   m_ChunkManager.update();
@@ -98,9 +103,9 @@ RayIntersection World::castRaySegment(const eng::math::Vec3& pointA, const eng::
           chunkIndex[axis]--;
 
         // Get local index of block that was hit by ray
-        BlockIndex blockIndex = BlockIndex::CreatePermuted(eng::math::mod(N, Chunk::Size()),
-                                                           eng::math::mod(eng::arithmeticCastUnchecked<globalIndex_t>(floor(intersection[v] / block::length())), Chunk::Size()),
-                                                           eng::math::mod(eng::arithmeticCastUnchecked<globalIndex_t>(floor(intersection[w] / block::length())), Chunk::Size()), axis);
+        BlockIndex blockIndex = BlockIndex::CreatePermuted(eng::math::mod<Chunk::Size()>(N),
+                                                           eng::math::mod<Chunk::Size()>(eng::arithmeticCastUnchecked<globalIndex_t>(floor(intersection[v] / block::length()))),
+                                                           eng::math::mod<Chunk::Size()>(eng::arithmeticCastUnchecked<globalIndex_t>(floor(intersection[w] / block::length()))), axis);
 
         // Search to see if chunk is loaded
         std::shared_ptr<const Chunk> chunk = m_ChunkManager.getChunk(chunkIndex);

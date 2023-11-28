@@ -18,6 +18,7 @@
 #include <chrono>
 #include <concepts>
 #include <compare>
+#include <cstddef>
 #include <cstdint>
 #include <cstdlib>
 #include <iterator>

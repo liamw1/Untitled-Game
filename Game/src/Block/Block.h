@@ -8,6 +8,7 @@ namespace block
   constexpr f32 lengthF() { return eng::arithmeticCastUnchecked<f32>(length()); }
 
   std::shared_ptr<eng::TextureArray> getTextureArray();
+  void bindAverageColorSSBO();
 
   class Type
   {

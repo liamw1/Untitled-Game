@@ -1,6 +1,5 @@
 #pragma once
-#include "Engine/Utilities/Helpers.h"
-#include "Engine/Core/Concepts.h"
+#include "Engine/Core/Casting.h"
 
 namespace eng::math
 {
@@ -11,7 +10,7 @@ namespace eng::math
   [[nodiscard]] constexpr T cube(T value) noexcept { return value * square(value); }
 
   template<std::integral T>
-  [[nodiscard]] constexpr T pow2(T n) noexcept { return static_cast<T>(1) << n; }
+  [[nodiscard]] constexpr T pow2(T value) noexcept { return static_cast<T>(1) << value; }
 
   template<Arithmetic T>
   [[nodiscard]] constexpr T abs(T value) noexcept
@@ -22,15 +21,27 @@ namespace eng::math
       return value;
   }
 
-  // Euclidean modulus
-  template<std::integral T1, std::integral T2>
-  [[nodiscard]] constexpr auto mod(T1 left, T2 right) noexcept -> decltype(left % right)
+  /*
+    Euclidean modulus. Return type may get upgraded if divisor cannot be represented
+    in the type of the dividend.
+  */
+  template<uSize N, std::integral T>
+  [[nodiscard]] constexpr auto mod(T value) noexcept
   {
-    ENG_CORE_ASSERT(right != 0, "Right operand of euclidean modulus cannot be 0!");
-    auto result = left % right;
-    if constexpr (std::is_signed_v<decltype(result)>)
-      return result >= 0 ? result : result + abs(right);
+    static_assert(N != 0, "Divisor cannot be 0!");
+
+    if constexpr (std::is_signed_v<T> && !exactlyRepresentable<T, N>())
+    {
+      static_assert(exactlyRepresentable<iMax, N>(), "Divisor cannot be represented in largest signed integer type!");
+      iMax result = value % static_cast<iMax>(N);
+      return static_cast<uSize>(result >= 0 ? result : result + static_cast<iMax>(N));
+    }
+    else if constexpr (std::is_signed_v<T>)
+    {
+      T result = value % static_cast<T>(N);
+      return result >= 0 ? result : result + static_cast<T>(N);
+    }
     else
-      return result;
+      return value % N;
   }
 }

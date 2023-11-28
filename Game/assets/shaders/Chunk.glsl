@@ -20,7 +20,7 @@ layout(std140, binding = 2) uniform Light
   float u_MaxSunlight;
   float u_SunIntensity;
 };
-layout(std430, binding = 0) buffer ChunkAnchors
+layout(std430, binding = 1) buffer ChunkAnchors
 {
   vec4 u_AnchorPosition[];
 };

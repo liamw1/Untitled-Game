@@ -20,6 +20,7 @@ namespace newLod
     globalIndex_t size() const;
     length_t length() const;
     length_t boundingSphereRadius() const;
+    GlobalBox boundingBox() const;
 
     eng::math::Vec3 anchorPosition(const GlobalIndex& originIndex) const;
     eng::math::Vec3 center(const GlobalIndex& originIndex) const;

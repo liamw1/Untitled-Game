@@ -16,15 +16,22 @@ namespace newLod
   static constexpr length_t c_TransitionCellFractionalWidth = 0.5_m;
 
   // Rendering
-  static constexpr i32 c_StorageBufferBinding = 1;
-  static constexpr u32 c_StorageBufferSize = 0;
+  static constexpr i32 c_UniformBinding = 3;
+  static constexpr i32 c_StorageBufferBinding = 2;
+  static constexpr u32 c_StorageBufferSize = eng::math::pow2<u32>(20);
   static std::unique_ptr<eng::Shader> s_Shader;
+  static std::unique_ptr<eng::Uniform> s_Uniform;
   static std::unique_ptr<eng::mem::StorageBuffer> s_SSBO;
   static const eng::mem::BufferLayout s_VertexBufferLayout = { { eng::mem::ShaderDataType::Float3, "a_Position"       },
                                                                { eng::mem::ShaderDataType::Float3, "a_IsoNormal"      },
                                                                { eng::mem::ShaderDataType::Int2,   "a_TextureIndices" },
-                                                               { eng::mem::ShaderDataType::Float2, "a_TextureWeighs"  },
-                                                               { eng::mem::ShaderDataType::Int,    "a_QuadIndex"      } };
+                                                               { eng::mem::ShaderDataType::Float2, "a_TextureWeighs"  } };
+  struct UniformData
+  {
+    const f32 nearPlaneDistance = 10 * block::lengthF();
+    const f32 farPlaneDistance = 1e10f * block::lengthF();
+  };
+  static constexpr UniformData c_UniformData;
 
   struct NoiseData
   {
@@ -32,14 +39,6 @@ namespace newLod
     eng::math::Vec3 normal;
 
     terrain::CompoundSurfaceData surfaceData;
-  };
-
-  struct UniformData
-  {
-    eng::math::Float3 anchor;
-    f32 textureScaling;
-    const f32 nearPlaneDistance = 10 * block::lengthF();
-    const f32 farPlaneDistance = 1e10f * block::lengthF();
   };
 
   // LOD smoothness parameter, must be in the range [0.0, 1.0]
@@ -299,7 +298,7 @@ namespace newLod
 
             NoiseData noiseData = interpolateNoiseData(node, noiseValues, noiseNormals, cornerA, cornerB, smoothness);
 
-            primaryMeshVertices.emplace_back(noiseData.position, noiseData.normal, noiseData.surfaceData.getTextureIndices(), noiseData.surfaceData.getTextureWeights(), vert % 3);
+            primaryMeshVertices.emplace_back(noiseData.position, noiseData.normal, noiseData.surfaceData.getTextureIndices(), noiseData.surfaceData.getTextureWeights());
             primaryMeshIndices.push_back(vertexCount);
             prevCellVertexIndices[edgeIndex] = vertexCount;
 
@@ -462,7 +461,7 @@ namespace newLod
           if (!isOnLowResSide)
             noiseData.position -= transitionCellWidth * normals[face];
 
-          transitionMeshVertices.emplace_back(noiseData.position, noiseData.normal, noiseData.surfaceData.getTextureIndices(), noiseData.surfaceData.getTextureWeights(), vert % 3);
+          transitionMeshVertices.emplace_back(noiseData.position, noiseData.normal, noiseData.surfaceData.getTextureIndices(), noiseData.surfaceData.getTextureWeights());
           transitionMeshIndices.push_back(vertexCount);
           prevCellVertexIndices[edgeIndex] = vertexCount;
 
@@ -484,6 +483,19 @@ namespace newLod
     : m_MultiDrawArray(std::make_shared<eng::thread::AsyncMultiDrawArray<DrawCommand>>(s_VertexBufferLayout))
   {
     ENG_PROFILE_FUNCTION();
+
+    s_Shader = eng::Shader::Create("assets/shaders/LOD.glsl");
+    s_Uniform = eng::Uniform::Create(c_UniformBinding, sizeof(UniformData));
+    s_Uniform->set(c_UniformData);
+    s_SSBO = eng::mem::StorageBuffer::Create(eng::mem::StorageBuffer::Type::SSBO, c_StorageBufferBinding);
+    s_SSBO->resize(c_StorageBufferSize);
+
+    m_LODs.divide({});
+    std::vector<NodeID> leafNodes = m_LODs.getLeafNodes();
+
+    for (const NodeID& node : leafNodes)
+      meshLOD(node);
+    m_MultiDrawArray->uploadQueuedCommands();
   }
 
   void LODManager::render()
@@ -501,6 +513,7 @@ namespace newLod
     GlobalIndex originIndex = player::originIndex();
 
     s_Shader->bind();
+    s_Uniform->bind();
 
     // eng::render::command::setFaceCulling(true);
     eng::render::command::setDepthWriting(true);
@@ -528,9 +541,11 @@ namespace newLod
         eng::math::Vec3 nodeAnchorPosition = drawCommands[i].id().nodeID().anchorPosition(originIndex);
         storageBufferData.emplace_back(nodeAnchorPosition, 0);
       }
-
-      multiDrawArray.bind();
       s_SSBO->modify(0, storageBufferData);
+
+      s_SSBO->bind();
+      multiDrawArray.bind();
+      block::bindAverageColorSSBO();
       eng::render::command::multiDrawIndexed(drawCommands, commandCount);
     });
   }

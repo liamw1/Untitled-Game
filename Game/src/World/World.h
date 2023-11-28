@@ -1,5 +1,6 @@
 #pragma once
 #include "Chunk/ChunkManager.h"
+#include "LOD/LODManager.h"
 
 struct RayIntersection
 {
@@ -12,6 +13,7 @@ struct RayIntersection
 class World
 {
   ChunkManager m_ChunkManager;
+  newLod::LODManager m_LODManager;
   RayIntersection m_PlayerRayCast;
   bool m_RenderingPaused = false;
 
