@@ -1,7 +1,6 @@
 #pragma once
 #include "Chunk.h"
 #include "ChunkHelpers.h"
-#include "GlobalParameters.h"
 
 /*
   Class that handles the classification of chunks.

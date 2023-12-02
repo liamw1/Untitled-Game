@@ -4,6 +4,7 @@
 #include "RenderCommand.h"
 #include "Shader.h"
 #include "Uniform.h"
+#include "Engine/Core/Application.h"
 #include "Engine/Debug/Instrumentor.h"
 #include "Engine/Scene/Scene.h"
 #include "Engine/Scene/Components.h"
@@ -50,10 +51,11 @@ namespace eng::render
   {
     static bool initialized = []()
     {
-      FramebufferSpecification fbs = { FramebufferTextureFormat::RGBA8, FramebufferTextureFormat::Depth32f };
-      fbs.width = 1920;
-      fbs.height = 1080;
-      s_DefaultFramebuffer = Framebuffer::Create(fbs);
+      FramebufferSpecification frameBufferSpecification({ FramebufferTextureFormat::RGBA8, FramebufferTextureFormat::Depth32f });
+      frameBufferSpecification.width = Application::Get().window().width();
+      frameBufferSpecification.height = Application::Get().window().height();
+      s_DefaultFramebuffer = Framebuffer::Create(frameBufferSpecification);
+
       s_CameraUniform = Uniform::Create(0, sizeof(CameraUniformData));
 
       /* Wire Frame Initialization */

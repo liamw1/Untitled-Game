@@ -2,14 +2,14 @@
 #include "World.h"
 #include "Player/Player.h"
 
-static constexpr bool useLODs = false;
+static constexpr bool useOldLODs = false;
 static constexpr length_t c_MinDistanceToWall = 0.01_m * block::length();
 
 World::World()
 {
   player::initialize(GlobalIndex(0, 0, 2), block::length() * eng::math::Vec3(16.0));
 
-  if constexpr (useLODs)
+  if constexpr (useOldLODs)
     m_ChunkManager.initializeLODs();
 }
 
@@ -29,9 +29,9 @@ void World::onUpdate(eng::Timestep timestep)
   eng::render::command::setUseDepthOffset(false);
   eng::render::command::clear(eng::math::Float4(0.788f, 0.949f, 0.949f, 1.0f));
 
-  if constexpr (useLODs)
+  if constexpr (useOldLODs)
   {
-    m_ChunkManager.manageLODs();
+    // m_ChunkManager.manageLODs();
     m_ChunkManager.renderLODs();
     eng::render::command::clearDepthBuffer();
   }
@@ -60,7 +60,7 @@ RayIntersection World::castRaySegment(const eng::math::Vec3& pointA, const eng::
   RayIntersection firstIntersection{};
   for (eng::math::Axis axis : eng::math::Axes())
   {
-    i32 axisID = eng::toUnderlying(axis);
+    i32 axisID = eng::enumIndex(axis);
     bool pointedUpstream = rayDirection[axisID] > 0.0;
 
     // Global indices of first and last planes that segment will intersect in direction i

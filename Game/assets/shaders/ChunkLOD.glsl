@@ -37,8 +37,8 @@ void main()
   // Applying logarithmic depth buffer
   // NOTE: This might be disorting normals far from the camera,
   //	   it may be better to give shader a modified camera instead
-  gl_Position.z = C * log(gl_Position.w / u_NearPlaneDistance) - 1; 
-  gl_Position.z *= gl_Position.w;
+  // gl_Position.z = C * log(gl_Position.w / u_NearPlaneDistance) - 1; 
+  // gl_Position.z *= gl_Position.w;
 
   vec2 texCoord = u_TextureScaling * s_TexCoords[a_QuadIndex];
   vec4 texture0 = a_TextureWeights[0] * texture(u_TextureArray, vec3(texCoord, a_TextureIndices[0]));

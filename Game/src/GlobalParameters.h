@@ -9,5 +9,7 @@ namespace param
 
   constexpr length_t BlockLength() { return 0.5_m; }
   constexpr i32 ChunkSize() { return 32; }
+
   constexpr i32 MaxNodeDepth() { return 28; }
+  constexpr f32 TransitionCellFractionalWidth() { return 0.5f; }
 }

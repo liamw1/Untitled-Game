@@ -27,7 +27,7 @@ namespace eng::event
     Event(const T& e)
       : m_Event(e), m_Handled(false) {}
 
-    EventCategory categoryFlags() const;
+    EnumBitMask<EventCategory> categoryFlags() const;
     const char* name() const;
     std::string toString() const;
 

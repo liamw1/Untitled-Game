@@ -29,7 +29,7 @@ namespace eng
   {
     { E::First };
     { E::Last  };
-  };
+  } && static_cast<std::underlying_type_t<E>>(E::Last) > static_cast<std::underlying_type_t<E>>(E::First);
 
   template<typename T>
   concept StandardLayout = std::is_standard_layout_v<T>;

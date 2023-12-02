@@ -1,6 +1,6 @@
 #include "GMpch.h"
 #include "Terrain.h"
-#include "Chunk/ChunkContainer.h"
+#include "Chunk/Chunk.h"
 #include "Util/Noise.h"
 
 namespace terrain
@@ -42,8 +42,8 @@ namespace terrain
   {
     std::array<i32, 2> textureIndices{};
 
-    textureIndices[0] = eng::toUnderlying(m_Components[0].type.texture(eng::math::Direction::Top));
-    textureIndices[1] = eng::toUnderlying(m_Components[1].type.texture(eng::math::Direction::Top));
+    textureIndices[0] = eng::enumIndex(m_Components[0].type.texture(eng::math::Direction::Top));
+    textureIndices[1] = eng::enumIndex(m_Components[1].type.texture(eng::math::Direction::Top));
 
     return textureIndices;
   }

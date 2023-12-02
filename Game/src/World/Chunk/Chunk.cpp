@@ -46,7 +46,7 @@ eng::math::Vec3 Chunk::anchorPosition(const GlobalIndex& originIndex) const
 bool Chunk::isFaceOpaque(eng::math::Direction face) const
 {
   u16 nonOpaqueFaces = m_NonOpaqueFaces.load();
-  return !(nonOpaqueFaces & eng::bit(eng::toUnderlying(face)));
+  return !(nonOpaqueFaces & eng::bit(eng::enumIndex(face)));
 }
 
 void Chunk::setComposition(BlockArrayBox<block::Type>&& composition)
@@ -75,7 +75,7 @@ void Chunk::determineOpacity()
     {
       BlockBox face = Bounds().face(direction);
       if (arrayBox.anyOf(face, [](block::Type blockType) { return blockType.hasTransparency(); }))
-        nonOpaqueFaces |= eng::bit(eng::toUnderlying(direction));
+        nonOpaqueFaces |= eng::bit(eng::enumIndex(direction));
     }
     m_NonOpaqueFaces.store(nonOpaqueFaces);
   });

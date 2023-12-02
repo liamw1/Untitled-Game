@@ -5,11 +5,6 @@ layout(std140, binding = 0) uniform Camera
 {
 	mat4 u_ViewProjection;
 };
-layout(std140, binding = 3) uniform LOD
-{
-  float u_NearPlaneDistance;
-  float u_FarPlaneDistance;
-};
 layout(std430, binding = 0) buffer BlockTextureAverageColors
 {
   vec4 u_AverageColor[];
@@ -18,8 +13,6 @@ layout(std430, binding = 2) buffer LODAnchors   // Maybe share this buffer with 
 {
   vec4 u_AnchorPosition[];
 };
-
-float C = 2.0 / log(u_FarPlaneDistance / u_NearPlaneDistance);
 
 layout(binding = 0) uniform sampler2DArray u_TextureArray;
 

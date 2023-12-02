@@ -1,5 +1,4 @@
 #pragma once
-#include "GlobalParameters.h"
 #include "Block/Block.h"
 #include "Indexing/Definitions.h"
 

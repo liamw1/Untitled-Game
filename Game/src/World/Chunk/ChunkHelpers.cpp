@@ -30,7 +30,7 @@ const BlockIndex& ChunkVertex::GetOffset(eng::math::Direction face, i32 quadInde
 
 
 
-ChunkVoxel::ChunkVoxel(const BlockIndex& blockIndex, eng::math::DirectionBitMask enabledFaces, i32 firstVertex)
+ChunkVoxel::ChunkVoxel(const BlockIndex& blockIndex, eng::EnumBitMask<eng::math::Direction> enabledFaces, i32 firstVertex)
   : m_Index(blockIndex),
     m_EnabledFaces(enabledFaces),
     m_BaseVertex(firstVertex) {}
@@ -91,7 +91,7 @@ void ChunkDrawCommand::addQuad(const BlockIndex& blockIndex, eng::math::Directio
   addQuadIndices(eng::arithmeticCast<i32>(m_Vertices.size() - 4));
 }
 
-void ChunkDrawCommand::addVoxel(const BlockIndex& blockIndex, eng::math::DirectionBitMask enabledFaces)
+void ChunkDrawCommand::addVoxel(const BlockIndex& blockIndex, eng::EnumBitMask<eng::math::Direction> enabledFaces)
 {
   m_Voxels.emplace_back(blockIndex, enabledFaces, m_VoxelBaseVertex);
   m_VoxelBaseVertex = eng::arithmeticCast<i32>(m_Vertices.size());
@@ -181,7 +181,7 @@ void ChunkDrawCommand::reorderIndices(const GlobalIndex& originIndex, const eng:
     // Add back-facing quads
     for (eng::math::Axis axis : eng::math::Axes())
     {
-      eng::math::Direction face = toDirection(axis, toBlock[eng::toUnderlying(axis)] > 0);
+      eng::math::Direction face = toDirection(axis, toBlock[eng::enumIndex(axis)] > 0);
       if (quadVertexOffsets[face] >= 0)
         addQuadIndices(voxel.baseVertex() + quadVertexOffsets[face]);
     }
@@ -189,7 +189,7 @@ void ChunkDrawCommand::reorderIndices(const GlobalIndex& originIndex, const eng:
     // Add front-facing quads
     for (eng::math::Axis axis : eng::math::Axes())
     {
-      eng::math::Direction face = toDirection(axis, toBlock[eng::toUnderlying(axis)] <= 0);
+      eng::math::Direction face = toDirection(axis, toBlock[eng::enumIndex(axis)] <= 0);
       if (quadVertexOffsets[face] >= 0)
         addQuadIndices(voxel.baseVertex() + quadVertexOffsets[face]);
     }

@@ -177,7 +177,7 @@ void ChunkManager::render()
       length_t dist = glm::length2(chunkCenter - cameraPosition);
       return dist;
     }, eng::SortPolicy::Descending);
-    multiDrawArray.modifyElements(commandCount, [&originIndex, &cameraPosition](ChunkDrawCommand& drawCommand)
+    multiDrawArray.modifyIndices(commandCount, [&originIndex, &cameraPosition](ChunkDrawCommand& drawCommand)
     {
       bool orderModified = drawCommand.sort(originIndex, cameraPosition);
       return orderModified;
@@ -499,7 +499,7 @@ void ChunkManager::meshChunk(const Chunk& chunk)
     if (blockType == block::ID::Air)
       return;
 
-    eng::math::DirectionBitMask enabledFaces;
+    eng::EnumBitMask<eng::math::Direction> enabledFaces;
     ChunkDrawCommand& draw = blockType.hasTransparency() ? transparentDraw : opaqueDraw;
     for (eng::math::Direction face : eng::math::Directions())
     {

@@ -1,5 +1,5 @@
 #pragma once
-#include "World/Chunk/Chunk.h"
+#include "Indexing/Definitions.h"
 
 /*
   Represents the player. The player's position (all the positions of all other

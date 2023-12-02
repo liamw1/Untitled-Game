@@ -1,6 +1,5 @@
 #pragma once
 #include "Biome.h"
-#include "Chunk/Chunk.h"
 #include "Util/CompoundType.h"
 
 namespace terrain

@@ -1,9 +1,8 @@
 #include "GMpch.h"
 #include "LODManager.h"
-#include "GlobalParameters.h"
-#include "Indexing/Operations.h"
 #include "Player/Player.h"
 #include "Util/TransVoxel.h"
+#include "World/Chunk/Chunk.h"
 #include "World/Terrain.h"
 
 namespace newLod
@@ -12,26 +11,15 @@ namespace newLod
   static constexpr BlockBox c_LODBounds(0, c_NumCells);
   static constexpr BlockRect c_LODBounds2D(0, c_NumCells);
 
-  // Width of a transition cell as a fraction of regular cell width
-  static constexpr length_t c_TransitionCellFractionalWidth = 0.5_m;
-
   // Rendering
-  static constexpr i32 c_UniformBinding = 3;
   static constexpr i32 c_StorageBufferBinding = 2;
   static constexpr u32 c_StorageBufferSize = eng::math::pow2<u32>(20);
   static std::unique_ptr<eng::Shader> s_Shader;
-  static std::unique_ptr<eng::Uniform> s_Uniform;
   static std::unique_ptr<eng::mem::StorageBuffer> s_SSBO;
   static const eng::mem::BufferLayout s_VertexBufferLayout = { { eng::mem::ShaderDataType::Float3, "a_Position"       },
                                                                { eng::mem::ShaderDataType::Float3, "a_IsoNormal"      },
                                                                { eng::mem::ShaderDataType::Int2,   "a_TextureIndices" },
                                                                { eng::mem::ShaderDataType::Float2, "a_TextureWeighs"  } };
-  struct UniformData
-  {
-    const f32 nearPlaneDistance = 10 * block::lengthF();
-    const f32 farPlaneDistance = 1e10f * block::lengthF();
-  };
-  static constexpr UniformData c_UniformData;
 
   struct NoiseData
   {
@@ -42,17 +30,18 @@ namespace newLod
   };
 
   // LOD smoothness parameter, must be in the range [0.0, 1.0]
-  static constexpr f32 smoothnessLevel(i32 nodeDepth)
+  static constexpr f32 smoothnessLevel(i32 lodLevel)
   {
-    return std::min(0.15f * Octree::LODLevel(nodeDepth) + 0.3f, 1.0f);
+    return 1.0f;
+    return std::min(0.15f * lodLevel + 0.3f, 1.0f);
   }
 
   // Calculate quantity based on values at corners that compose an edge.  The smoothness parameter s is used to interpolate between 
   // roughest iso-surface (vertex is always chosen at edge midpoint) and the smooth iso-surface interpolation used by Paul Bourke.
   template<typename T>
-  static T semiSmoothInterpolation(const T& q0, const T& q1, f32 t, f32 smoothness)
+  static T semiSmoothInterpolation(const T& q0, const T& q1, f32 t, f32 s)
   {
-    return ((1 - smoothness) / 2 + smoothness * (1 - t)) * q0 + ((1 - smoothness) / 2 + smoothness * t) * q1;
+    return ((1 - s) / 2 + s * (1 - t)) * q0 + ((1 - s) / 2 + s * t) * q1;
   }
 
   static BlockArrayRect<terrain::CompoundSurfaceData> generateNoise(const NodeID& node)
@@ -337,7 +326,7 @@ namespace newLod
 
     length_t LODFloor = node.anchor().k * Chunk::Length();
     length_t cellLength = node.length() / c_NumCells;
-    length_t transitionCellWidth = c_TransitionCellFractionalWidth * cellLength;
+    length_t transitionCellWidth = param::TransitionCellFractionalWidth() * cellLength;
 
     // Relabel coordinates, u being the coordinate normal to face
     eng::math::Axis u = axisOf(face);
@@ -485,8 +474,6 @@ namespace newLod
     ENG_PROFILE_FUNCTION();
 
     s_Shader = eng::Shader::Create("assets/shaders/LOD.glsl");
-    s_Uniform = eng::Uniform::Create(c_UniformBinding, sizeof(UniformData));
-    s_Uniform->set(c_UniformData);
     s_SSBO = eng::mem::StorageBuffer::Create(eng::mem::StorageBuffer::Type::SSBO, c_StorageBufferBinding);
     s_SSBO->resize(c_StorageBufferSize);
 
@@ -500,8 +487,6 @@ namespace newLod
 
   void LODManager::render()
   {
-    ENG_PROFILE_FUNCTION();
-
     eng::math::Mat4 viewProjection = eng::scene::CalculateViewProjection(eng::scene::ActiveCamera());
     eng::EnumArray<eng::math::Vec4, eng::math::FrustumPlane> frustumPlanes = eng::math::calculateViewFrustumPlanes(viewProjection);
     eng::EnumArray<eng::math::Vec4, eng::math::FrustumPlane> shiftedFrustumPlanes = frustumPlanes;
@@ -513,24 +498,30 @@ namespace newLod
     GlobalIndex originIndex = player::originIndex();
 
     s_Shader->bind();
-    s_Uniform->bind();
 
-    // eng::render::command::setFaceCulling(true);
+    eng::render::command::setFaceCulling(true);
     eng::render::command::setDepthWriting(true);
     eng::render::command::setUseDepthOffset(false);
-    m_MultiDrawArray->drawOperation([&frustumPlanes, &shiftedFrustumPlanes, &planeNormalMagnitudes, &originIndex](eng::MultiDrawArray<DrawCommand>& multiDrawArray)
+    m_MultiDrawArray->drawOperation([this, &frustumPlanes, &shiftedFrustumPlanes, &planeNormalMagnitudes, &originIndex](eng::MultiDrawArray<DrawCommand>& multiDrawArray)
     {
-      i32 commandCount = multiDrawArray.partition([&frustumPlanes, &shiftedFrustumPlanes, &planeNormalMagnitudes, &originIndex](const MeshID& meshID)
+      ENG_PROFILE_FUNCTION();
+      i32 commandCount = multiDrawArray.partition([this, &frustumPlanes, &shiftedFrustumPlanes, &planeNormalMagnitudes, &originIndex](const MeshID& meshID)
       {
-        if (isInRange(meshID.nodeID().anchor(), originIndex, param::RenderDistance() - 1))
-          return false;
-
         // Shift each plane by distance equal to radius of sphere that circumscribes LOD
         length_t LODSphereRadius = meshID.nodeID().boundingSphereRadius();
         for (eng::math::FrustumPlane plane : eng::math::FrustumPlanes())
           shiftedFrustumPlanes[plane].w = frustumPlanes[plane].w + LODSphereRadius * planeNormalMagnitudes[plane];
 
-        return eng::math::isInFrustum(meshID.nodeID().center(originIndex), shiftedFrustumPlanes);
+        if (!eng::math::isInFrustum(meshID.nodeID().center(originIndex), shiftedFrustumPlanes))
+          return false;
+
+        return meshID.isPrimaryMesh() || m_LODs.transitionNeighbors(meshID.nodeID())[*meshID.face()];
+      });
+      multiDrawArray.modifyVertices(commandCount, [this](DrawCommand& drawCommand)
+      {
+        eng::EnumBitMask<eng::math::Direction> transitionFaces = m_LODs.transitionNeighbors(drawCommand.id().nodeID());
+        bool verticesAdjusted = drawCommand.adjustVertices(transitionFaces);
+        return verticesAdjusted;
       });
 
       std::vector<eng::math::Float4> storageBufferData;

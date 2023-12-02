@@ -75,6 +75,11 @@ namespace eng::math
       \returns True if the box dimensions are non-negative.
     */
     constexpr bool valid() const { return min.i <= max.i && min.j <= max.j && min.k <= max.k; }
+
+    /*
+      \returns True if the box has a non-zero volume.
+    */
+    constexpr bool empty() const { return min.i == max.i && min.j == max.j && min.k == max.k; }
   
     /*
       \returns True if the given point is contained within the box.
@@ -115,6 +120,12 @@ namespace eng::math
       IVec3<uSize> strides(boxExtents.j * boxExtents.k, boxExtents.k, 1);
       IVec3<uSize> indexRelativeToBase = (index - min).checkedCast<uSize>();
       return strides.dot(indexRelativeToBase);
+    }
+
+    bool intersects(const IBox3& other) const
+    {
+      IBox3 intersection = Intersection(*this, other);
+      return intersection.valid() && !intersection.empty();
     }
   
     constexpr IBox3& expand(T n = 1)
@@ -253,7 +264,10 @@ namespace eng::math
           for (index.k = min.k; index.k <= max.k; ++index.k)
             function(index);  
     }
-  
+
+    /*
+      Finds the intersections between two boxes. May return an invalid box.
+    */
     static constexpr IBox3 Intersection(const IBox3& boxA, const IBox3& boxB)
     {
       return { ComponentWiseMax(boxA.min, boxB.min), ComponentWiseMin(boxA.max, boxB.max) };
@@ -274,7 +288,7 @@ namespace eng::math
     {
       std::array<IBox3<T>, 6> faces;
       for (Direction side : Directions())
-        faces[toUnderlying(side)] = interiorOnly ? box.faceInterior(side) : box.face(side);
+        faces[enumIndex(side)] = interiorOnly ? box.faceInterior(side) : box.face(side);
       return faces;
     }
   

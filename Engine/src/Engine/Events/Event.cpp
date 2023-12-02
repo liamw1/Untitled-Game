@@ -3,11 +3,11 @@
 
 namespace eng::event
 {
-  EventCategory Event::categoryFlags() const
+  EnumBitMask<EventCategory> Event::categoryFlags() const
   {
     return std::visit([](auto&& rawEvent)
     {
-      static_assert(requires(decltype(rawEvent) e) { { e.categoryFlags() } -> std::same_as<EventCategory>; }, "Event type does not have a valid categoryFlags() function!");
+      static_assert(requires(decltype(rawEvent) e) { { e.categoryFlags() } -> std::same_as<EnumBitMask<EventCategory>>; }, "Event type does not have a valid categoryFlags() function!");
       return rawEvent.categoryFlags();
     }, m_Event);
   }
@@ -34,5 +34,5 @@ namespace eng::event
 
   bool Event::handled() const { return m_Handled; }
   void Event::flagAsHandled() { m_Handled = true; }
-  bool Event::isInCategory(EventCategory category) { return (categoryFlags() & category) != EventCategory::None; }
+  bool Event::isInCategory(EventCategory category) { return categoryFlags()[category]; }
 }

@@ -17,6 +17,8 @@ namespace newLod
   {
     std::vector<u32> m_Indices;
     std::vector<Vertex> m_Vertices;
+    std::vector<Vertex> m_AdjustedVertices;
+    eng::EnumBitMask<eng::math::Direction> m_AdjustmentState;
 
   public:
     DrawCommand(const MeshID& meshID, std::vector<u32>&& indices, std::vector<Vertex>&& vertices);
@@ -26,5 +28,7 @@ namespace newLod
     eng::mem::IndexData indexData() const;
     eng::mem::Data vertexData() const;
     void clearData();
+
+    bool adjustVertices(eng::EnumBitMask<eng::math::Direction> transitionFaces);
   };
 }

@@ -75,6 +75,11 @@ namespace eng::math
       \returns True if the box dimensions are non-negative.
     */
     constexpr bool valid() const { return min.i <= max.i && min.j <= max.j; }
+
+    /*
+      \returns True if the box has a non-zero volume.
+    */
+    constexpr bool empty() const { return min.i == max.i && min.j == max.j; }
   
     /*
       \returns True if the given point is contained within the box.
@@ -111,6 +116,12 @@ namespace eng::math
       IVec2<uSize> strides(boxExtents.j, 1);
       IVec2<uSize> indexRelativeToBase = (index - min).checkedCast<uSize>();
       return strides.dot(indexRelativeToBase);
+    }
+
+    bool intersects(const IBox2& other) const
+    {
+      IBox2 intersection = Intersection(*this, other);
+      return intersection.valid() && !intersection.empty();
     }
   
     constexpr IBox2& expand(T n = 1)

@@ -37,6 +37,8 @@ namespace newLod
 
     bool operator==(const MeshID& other) const;
 
+    bool isPrimaryMesh() const;
+
     const NodeID& nodeID() const;
     std::optional<eng::math::Direction> face() const;
   };
@@ -59,8 +61,8 @@ namespace std
   {
     uSize operator()(const newLod::MeshID& meshID) const
     {
-      static constexpr underlying_type_t<eng::math::Direction> stride = eng::enumRange<eng::math::Direction>() + 1;
-      underlying_type_t<eng::math::Direction> offset = meshID.face() ? 1 + eng::toUnderlying(*meshID.face()) : 0;
+      static constexpr underlying_type_t<eng::math::Direction> stride = eng::enumCount<eng::math::Direction>() + 1;
+      underlying_type_t<eng::math::Direction> offset = meshID.face() ? 1 + eng::enumIndex(*meshID.face()) : 0;
       return stride * hash<GlobalIndex>()(meshID.nodeID().anchor()) + offset;
     }
   };

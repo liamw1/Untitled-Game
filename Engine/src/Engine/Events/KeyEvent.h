@@ -1,6 +1,7 @@
 #pragma once
 #include "EventCategory.h"
 #include "Engine/Core/Input/KeyCodes.h"
+#include "Engine/Utilities/EnumUtilities.h"
 
 namespace eng::event
 {
@@ -12,7 +13,7 @@ namespace eng::event
   public:
     KeyPress(input::Key key, bool isRepeat = false);
 
-    EventCategory categoryFlags() const;
+    EnumBitMask<EventCategory> categoryFlags() const;
     const char* name() const;
     std::string toString() const;
 
@@ -27,7 +28,7 @@ namespace eng::event
   public:
     KeyRelease(input::Key key);
 
-    EventCategory categoryFlags() const;
+    EnumBitMask<EventCategory> categoryFlags() const;
     const char* name() const;
     std::string toString() const;
 
@@ -41,7 +42,7 @@ namespace eng::event
   public:
     KeyType(input::Key key);
 
-    EventCategory categoryFlags() const;
+    EnumBitMask<EventCategory> categoryFlags() const;
     const char* name() const;
     std::string toString() const;
 

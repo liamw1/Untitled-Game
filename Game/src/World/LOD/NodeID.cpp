@@ -15,7 +15,7 @@ namespace newLod
   const GlobalIndex& NodeID::anchor() const { return m_Anchor; }
   globalIndex_t NodeID::depth() const { return m_Depth; }
 
-  i32 NodeID::lodLevel() const { return Octree::LODLevel(depth()); }
+  i32 NodeID::lodLevel() const { return Octree::MaxDepth() - depth(); }
   globalIndex_t NodeID::size() const { return eng::math::pow2<globalIndex_t>(lodLevel()); }
   length_t NodeID::length() const { return size() * Chunk::Length(); }
   length_t NodeID::boundingSphereRadius() const { return std::numbers::sqrt3_v<length_t> * length() / 2; }
@@ -32,6 +32,8 @@ namespace newLod
     : m_NodeID(node), m_Face(face) {}
 
   bool MeshID::operator==(const MeshID& other) const = default;
+
+  bool MeshID::isPrimaryMesh() const { return !m_Face; }
 
   const NodeID& MeshID::nodeID() const { return m_NodeID; }
   std::optional<eng::math::Direction> MeshID::face() const { return m_Face; }

@@ -6,7 +6,7 @@ namespace eng::event
   MouseButtonPress::MouseButtonPress(input::Mouse button)
     : m_Button(button) {}
 
-  EventCategory MouseButtonPress::categoryFlags() const { return EventCategory::Mouse | EventCategory::Input | EventCategory::MouseButton; }
+  EnumBitMask<EventCategory> MouseButtonPress::categoryFlags() const { return { EventCategory::Mouse, EventCategory::Input, EventCategory::MouseButton }; }
   const char* MouseButtonPress::name() const { return "MouseButtonPress"; }
   std::string MouseButtonPress::toString() const
   {
@@ -20,7 +20,7 @@ namespace eng::event
   MouseButtonRelease::MouseButtonRelease(input::Mouse button)
     : m_Button(button) {}
 
-  EventCategory MouseButtonRelease::categoryFlags() const { return EventCategory::Mouse | EventCategory::Input | EventCategory::MouseButton; }
+  EnumBitMask<EventCategory> MouseButtonRelease::categoryFlags() const { return { EventCategory::Mouse, EventCategory::Input, EventCategory::MouseButton }; }
   const char* MouseButtonRelease::name() const { return "MouseButtonRelease"; }
   std::string MouseButtonRelease::toString() const
   {
@@ -34,7 +34,7 @@ namespace eng::event
   MouseMove::MouseMove(f32 x, f32 y)
     : m_MouseX(x), m_MouseY(y) {}
 
-  EventCategory MouseMove::categoryFlags() const { return EventCategory::Mouse | EventCategory::Input; }
+  EnumBitMask<EventCategory> MouseMove::categoryFlags() const { return { EventCategory::Mouse, EventCategory::Input }; }
   const char* MouseMove::name() const { return "MouseMove"; }
   std::string MouseMove::toString() const
   {
@@ -51,7 +51,7 @@ namespace eng::event
   MouseScroll::MouseScroll(f32 xOffset, f32 yOffset)
     : m_XOffset(xOffset), m_YOffset(yOffset) {}
 
-  EventCategory MouseScroll::categoryFlags() const { return EventCategory::Mouse | EventCategory::Input; }
+  EnumBitMask<EventCategory> MouseScroll::categoryFlags() const { return { EventCategory::Mouse, EventCategory::Input }; }
   const char* MouseScroll::name() const { return "MouseScroll"; }
   std::string MouseScroll::toString() const
   {

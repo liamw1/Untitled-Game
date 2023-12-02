@@ -1,6 +1,7 @@
 #pragma once
 #include "EventCategory.h"
 #include "Engine/Core/Input/MouseButtonCodes.h"
+#include "Engine/Utilities/EnumUtilities.h"
 
 namespace eng::event
 {
@@ -11,7 +12,7 @@ namespace eng::event
   public:
     MouseButtonPress(input::Mouse button);
 
-    EventCategory categoryFlags() const;
+    EnumBitMask<EventCategory> categoryFlags() const;
     const char* name() const;
     std::string toString() const;
   };
@@ -23,7 +24,7 @@ namespace eng::event
   public:
     MouseButtonRelease(input::Mouse button);
 
-    EventCategory categoryFlags() const;
+    EnumBitMask<EventCategory> categoryFlags() const;
     const char* name() const;
     std::string toString() const;
   };
@@ -36,7 +37,7 @@ namespace eng::event
   public:
     MouseMove(f32 x, f32 y);
 
-    EventCategory categoryFlags() const;
+    EnumBitMask<EventCategory> categoryFlags() const;
     const char* name() const;
     std::string toString() const;
 
@@ -52,7 +53,7 @@ namespace eng::event
   public:
     MouseScroll(f32 xOffset, f32 yOffset);
 
-    EventCategory categoryFlags() const;
+    EnumBitMask<EventCategory> categoryFlags() const;
     const char* name() const;
     std::string toString() const;
 

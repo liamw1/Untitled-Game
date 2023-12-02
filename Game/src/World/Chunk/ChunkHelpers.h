@@ -34,11 +34,11 @@ public:
 class ChunkVoxel
 {
   BlockIndex m_Index;
-  eng::math::DirectionBitMask m_EnabledFaces;
+  eng::EnumBitMask<eng::math::Direction> m_EnabledFaces;
   i32 m_BaseVertex;
 
 public:
-  ChunkVoxel(const BlockIndex& blockIndex, eng::math::DirectionBitMask enabledFaces, i32 firstVertex);
+  ChunkVoxel(const BlockIndex& blockIndex, eng::EnumBitMask<eng::math::Direction> enabledFaces, i32 firstVertex);
 
   const BlockIndex& index() const;
   bool faceEnabled(eng::math::Direction direction) const;
@@ -65,7 +65,7 @@ public:
   void clearData();
 
   void addQuad(const BlockIndex& blockIndex, eng::math::Direction face, block::TextureID texture, const std::array<i32, 4>& sunlight, const std::array<i32, 4>& ambientOcclusion);
-  void addVoxel(const BlockIndex& blockIndex, eng::math::DirectionBitMask enabledFaces);
+  void addVoxel(const BlockIndex& blockIndex, eng::EnumBitMask<eng::math::Direction> enabledFaces);
 
   /*
     Sorts indices so that triangles will be rendered from back to front.

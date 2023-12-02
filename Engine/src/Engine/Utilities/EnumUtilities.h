@@ -1,4 +1,5 @@
 ﻿#pragma once
+#include "BitUtilities.h"
 #include "Helpers.h"
 #include "BoilerplateReduction.h"
 #include "Engine/Core/Algorithm.h"
@@ -10,11 +11,10 @@ namespace eng
   constexpr std::underlying_type_t<E> toUnderlying(E e) { return static_cast<std::underlying_type_t<E>>(e); }
 
   template<IterableEnum E>
-  constexpr std::underlying_type_t<E> enumRange()
-  {
-    static_assert(toUnderlying(E::Last) > toUnderlying(E::First), "First and Last enums are in incorrect order!");
-    return 1 + toUnderlying(E::Last) - toUnderlying(E::First);
-  }
+  constexpr std::underlying_type_t<E> enumIndex(E e) { return toUnderlying(e) - toUnderlying(E::First); }
+
+  template<IterableEnum E>
+  constexpr std::underlying_type_t<E> enumCount() { return enumIndex(E::Last) + 1; }
 
   // ==================== Enabling Iteration for Enum Classes ==================== //
   template<IterableEnum E>
@@ -55,21 +55,23 @@ namespace eng
     constexpr EnumIterator end() const { return ++EnumIterator(E::Last); }
   };
 
-  // ===================== Arrays Indexable by Enum Classes ====================== //
+  /*
+    A simple wrapper over a std::array that is indexed into using an enum rather than an integer.
+  */
   template<typename T, IterableEnum E>
   class EnumArray
   {
-    std::array<T, enumRange<E>()> m_Data{};
+    std::array<T, enumCount<E>()> m_Data{};
 
   public:
     constexpr EnumArray() = default;
     constexpr EnumArray(const T& initialValue) { m_Data.fill(initialValue); }
-    constexpr EnumArray(const std::initializer_list<std::pair<E, T>>& list)
+    constexpr EnumArray(const std::initializer_list<std::pair<E, T>>& initializerList)
     {
-      std::array<i32, enumRange<E>()> initializationCounts{};
-      for (const auto& [enumIndex, value] : list)
+      std::array<i32, enumCount<E>()> initializationCounts{};
+      for (const auto& [e, value] : initializerList)
       {
-        std::underlying_type_t<E> arrayIndex = toUnderlying(enumIndex);
+        std::underlying_type_t<E> arrayIndex = enumIndex(e);
         m_Data[arrayIndex] = value;
         initializationCounts[arrayIndex]++;
       }
@@ -87,34 +89,47 @@ namespace eng
 
     ENG_DEFINE_CONSTEXPR_ITERATORS(m_Data);
 
-    constexpr T& operator[](E enumIndex) { ENG_MUTABLE_VERSION(operator[], enumIndex); }
-    constexpr const T& operator[](E enumIndex) const { return m_Data[toUnderlying(enumIndex) - toUnderlying(E::First)]; }
+    constexpr T& operator[](E e) { ENG_MUTABLE_VERSION(operator[], e); }
+    constexpr const T& operator[](E e) const { return m_Data[enumIndex(e)]; }
 
     constexpr uSize size() const { return m_Data.size(); }
     constexpr const T* data() const { return m_Data.data(); }
   };
-}
 
+  /*
+    A class used for storing boolean values associated with an enum.
+    It currently only supports enums of size <= 8, but can easily be
+    extended to sizes of up to 64 if ever needed.
+  */
+  template<IterableEnum E>
+  class EnumBitMask
+  {
+    static_assert(enumCount<E>() <= 8, "EnumBitMask only supports Enums of size 8 or lower!");
+    u8 m_Data;
 
+  public:
+    constexpr EnumBitMask()
+      : EnumBitMask(0) {}
+    constexpr EnumBitMask(E e)
+      : EnumBitMask() { set(e); }
+    constexpr EnumBitMask(const std::initializer_list<E>& initializerList)
+      : EnumBitMask()
+    {
+      for (E e : initializerList)
+        set(e);
+    }
 
-// ==================== Enabling Bitmasking for Enum Classes ==================== //
-#define ENG_ENABLE_BITMASK_OPERATORS(x) \
-template<>                              \
-struct EnableBitMaskOperators<x> { static const bool enable = true; };
+    constexpr bool operator==(const EnumBitMask& other) const = default;
 
-template<typename E>
-struct EnableBitMaskOperators { static const bool enable = false; };
+    constexpr EnumBitMask operator~() const { return EnumBitMask(~m_Data); }
 
-template<typename E>
-typename std::enable_if<EnableBitMaskOperators<E>::enable, E>::type
-  operator&(E enumA, E enumB)
-{
-  return static_cast<E>(eng::toUnderlying(enumA) & eng::toUnderlying(enumB));
-}
+    constexpr bool operator[](E e) const { return (m_Data >> enumIndex(e)) & 0x1; }
 
-template<typename E>
-typename std::enable_if<EnableBitMaskOperators<E>::enable, E>::type
-  operator|(E enumA, E enumB)
-{
-  return static_cast<E>(eng::toUnderlying(enumA) | eng::toUnderlying(enumB));
+    constexpr bool empty() const { return m_Data == 0; }
+    constexpr void set(E e) { m_Data |= u8Bit(enumIndex(e)); }
+
+  private:
+    EnumBitMask(std::underlying_type_t<E> underlyingData)
+      : m_Data(underlyingData) {}
+  };
 }

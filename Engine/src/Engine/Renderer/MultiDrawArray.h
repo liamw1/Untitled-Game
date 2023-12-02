@@ -249,31 +249,47 @@ namespace eng
     }
 
     /*
-      Allows for a function to be applied to draw commands that modifies their elements and reuploads them to the GPU.
-      For non-indexed draw commands, an element is a vertex. For indexed draw commands, an element is an index.
+      Allows for a function to be applied to draw commands that modifies their indices and reuploads them to the GPU.
+      Cannot be used with non-indexed draw commands.
     */
     template<InvocableWithReturnType<bool, T&> F>
-    void modifyElements(i32 drawCount, F&& function)
+    void modifyIndices(i32 drawCount, F&& function)
+    {
+      static_assert(c_IsIndexed);
+      std::for_each_n(m_DrawCommands.begin(), drawCount, [this, &function](T& drawCommand)
+      {
+        DrawCommandBaseType& baseCommand = drawCommand;
+
+        if (!function(drawCommand))
+          return;
+
+        mem::MemoryPool::AllocationResult reallocation = m_IndexMemory.realloc(getDrawCommandIndicesAddress(baseCommand), baseCommand.indexData());
+        mem::MemoryPool::address_t vertexAllocationAddress = getDrawCommandVerticesAddress(baseCommand);
+        setDrawCommandOffsets(baseCommand, reallocation.address, vertexAllocationAddress);
+      });
+    }
+
+    /*
+      Allows for a function to be applied to draw commands that modifies their vertices and reuploads them to the GPU.
+    */
+    template<InvocableWithReturnType<bool, T&> F>
+    void modifyVertices(i32 drawCount, F&& function)
     {
       std::for_each_n(m_DrawCommands.begin(), drawCount, [this, &function](T& drawCommand)
       {
         DrawCommandBaseType& baseCommand = drawCommand;
 
-        u32 oldElementCount = baseCommand.elementCount();
         if (!function(drawCommand))
           return;
 
+        mem::MemoryPool::AllocationResult reallocation = m_VertexMemory.realloc(getDrawCommandVerticesAddress(baseCommand), baseCommand.vertexData());
         if constexpr (c_IsIndexed)
         {
-          mem::MemoryPool::AllocationResult reallocation = m_IndexMemory.realloc(getDrawCommandIndicesAddress(baseCommand), baseCommand.indexData());
-          mem::MemoryPool::address_t vertexAllocationAddress = getDrawCommandVerticesAddress(baseCommand);
-          setDrawCommandOffsets(baseCommand, reallocation.address, vertexAllocationAddress);
+          mem::MemoryPool::address_t indexAllocationAddress = getDrawCommandIndicesAddress(baseCommand);
+          setDrawCommandOffsets(baseCommand, indexAllocationAddress, reallocation.address);
         }
         else
-        {
-          mem::MemoryPool::AllocationResult reallocation = m_VertexMemory.realloc(getDrawCommandVerticesAddress(baseCommand), baseCommand.vertexData());
           setDrawCommandOffsets(baseCommand, 0, reallocation.address);
-        }
       });
     }
 
@@ -285,10 +301,8 @@ namespace eng
 
     mem::MemoryPool::address_t getDrawCommandIndicesAddress(const DrawCommandBaseType& baseCommand)
     {
-      if constexpr (c_IsIndexed)
-        return baseCommand.firstElement() * sizeof(u32);
-      else
-        throw std::runtime_error("Vertex-based commands do not have an index address!");
+      static_assert(c_IsIndexed, "Non-indexed commands do not have an index address!");
+      return baseCommand.firstElement() * sizeof(u32);
     }
 
     mem::MemoryPool::address_t getDrawCommandVerticesAddress(const DrawCommandBaseType& baseCommand)

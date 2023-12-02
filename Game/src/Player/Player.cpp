@@ -1,6 +1,7 @@
 #include "GMpch.h"
 #include "Player.h"
 #include "PlayerCamera.h"
+#include "World/Chunk/Chunk.h"
 
 // Hitbox dimensions
 static constexpr length_t c_Width = 0.6_m * block::length();

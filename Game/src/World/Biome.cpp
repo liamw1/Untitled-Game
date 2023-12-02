@@ -39,27 +39,27 @@ void Biome::StandardColumnFill(BlockArrayBox<block::Type>::Strip column, length_
   i32 waterLevelIndex = eng::arithmeticCast<i32>(std::ceil((0 - chunkFloor) / block::length()));
 
   blockIndex_t k = 0;
-  while (k < terrainElevationIndex - soilDepth - surfaceDepth && k < Chunk::Size())
+  while (k < terrainElevationIndex - soilDepth - surfaceDepth && k < param::ChunkSize())
   {
     column[k] = block::ID::Stone;
     k++;
   }
-  while (k < terrainElevationIndex - surfaceDepth && k < Chunk::Size())
+  while (k < terrainElevationIndex - surfaceDepth && k < param::ChunkSize())
   {
     column[k] = soilType;
     k++;
   }
-  while (k < terrainElevationIndex && k < Chunk::Size())
+  while (k < terrainElevationIndex && k < param::ChunkSize())
   {
     column[k] = surfaceType;
     k++;
   }
-  while (k < waterLevelIndex && k < Chunk::Size())
+  while (k < waterLevelIndex && k < param::ChunkSize())
   {
     column[k] = block::ID::Water;
     k++;
   }
-  while (k < Chunk::Size())
+  while (k < param::ChunkSize())
   {
     column[k] = block::ID::Air;
     k++;

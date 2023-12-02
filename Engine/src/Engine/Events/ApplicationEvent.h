@@ -1,33 +1,34 @@
 #pragma once
 #include "EventCategory.h"
+#include "Engine/Utilities/EnumUtilities.h"
 
 namespace eng::event
 {
   class AppRender
   {
   public:
-    EventCategory categoryFlags() const;
+    EnumBitMask<EventCategory> categoryFlags() const;
     const char* name() const;
   };
 
   class AppTick
   {
   public:
-    EventCategory categoryFlags() const;
+    EnumBitMask<EventCategory> categoryFlags() const;
     const char* name() const;
   };
 
   class AppUpdate
   {
   public:
-    EventCategory categoryFlags() const;
+    EnumBitMask<EventCategory> categoryFlags() const;
     const char* name() const;
   };
 
   class WindowClose
   {
   public:
-    EventCategory categoryFlags() const;
+    EnumBitMask<EventCategory> categoryFlags() const;
     const char* name() const;
   };
 
@@ -39,7 +40,7 @@ namespace eng::event
   public:
     WindowResize(u32 width, u32 height);
 
-    EventCategory categoryFlags() const;
+    EnumBitMask<EventCategory> categoryFlags() const;
     const char* name() const;
     std::string toString() const;
 

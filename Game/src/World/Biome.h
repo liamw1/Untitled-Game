@@ -1,5 +1,6 @@
 #pragma once
-#include "Chunk/Chunk.h"
+#include "Block/Block.h"
+#include "Indexing/Definitions.h"
 #include "Util/Noise.h"
 
 class Biome
