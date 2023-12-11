@@ -9,7 +9,8 @@ namespace newLod
     globalIndex_t m_Depth;
 
   public:
-    NodeID(const GlobalIndex& anchor, globalIndex_t depth);
+    constexpr NodeID(const GlobalIndex& anchor, globalIndex_t depth)
+      : m_Anchor(anchor), m_Depth(depth) {}
 
     bool operator==(const NodeID& other) const;
 
@@ -24,6 +25,9 @@ namespace newLod
 
     eng::math::Vec3 anchorPosition(const GlobalIndex& originIndex) const;
     eng::math::Vec3 center(const GlobalIndex& originIndex) const;
+
+    NodeID child(const BlockIndex& childIndex) const;
+    BlockIndex childIndex(const GlobalIndex& index) const;
   };
 
   class MeshID

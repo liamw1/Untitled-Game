@@ -131,6 +131,10 @@ void ChunkManager::render()
     eng::math::Vec3 chunkCenter = indexCenter(chunkIndex, originIndex);
     return isInRange(chunkIndex, originIndex, param::RenderDistance()) && eng::math::isInFrustum(chunkCenter, frustumPlanes);
   };
+  auto chunkDistance = [&originIndex](const GlobalIndex& chunkIndex)
+  {
+    return (chunkIndex - originIndex).l1Norm();
+  };
   auto draw = [&originIndex](const eng::MultiDrawArray<ChunkDrawCommand>& multiDrawArray, i32 commandCount)
   {
     const std::vector<ChunkDrawCommand>& drawCommands = multiDrawArray.getDrawCommandBuffer();
@@ -156,9 +160,10 @@ void ChunkManager::render()
   eng::render::command::setFaceCulling(true);
   eng::render::command::setDepthWriting(true);
   eng::render::command::setUseDepthOffset(false);
-  m_OpaqueMultiDrawArray->drawOperation([&isInViewFrustum, &draw](eng::MultiDrawArray<ChunkDrawCommand>& multiDrawArray)
+  m_OpaqueMultiDrawArray->drawOperation([&isInViewFrustum, &chunkDistance, &draw](eng::MultiDrawArray<ChunkDrawCommand>& multiDrawArray)
   {
     i32 commandCount = multiDrawArray.partition(isInViewFrustum);
+    multiDrawArray.sort(commandCount, chunkDistance, eng::SortPolicy::Ascending);   // Sort opaque meshes front-to-back
     draw(multiDrawArray, commandCount);
   });
 
@@ -167,16 +172,10 @@ void ChunkManager::render()
   eng::render::command::setDepthWriting(false);
   eng::render::command::setUseDepthOffset(true);
   eng::render::command::setDepthOffset(1.0f, 1.0f);
-  m_TransparentMultiDrawArray->drawOperation([&isInViewFrustum, &draw, &originIndex, &cameraPosition](eng::MultiDrawArray<ChunkDrawCommand>& multiDrawArray)
+  m_TransparentMultiDrawArray->drawOperation([&isInViewFrustum, &chunkDistance, &draw, &originIndex, &cameraPosition](eng::MultiDrawArray<ChunkDrawCommand>& multiDrawArray)
   {
     i32 commandCount = multiDrawArray.partition(isInViewFrustum);
-    multiDrawArray.sort(commandCount, [&originIndex, &cameraPosition](const GlobalIndex& chunkIndex)
-    {
-      // NOTE: Maybe measure min distance to chunk faces instead
-      eng::math::Vec3 chunkCenter = indexCenter(chunkIndex, originIndex);
-      length_t dist = glm::length2(chunkCenter - cameraPosition);
-      return dist;
-    }, eng::SortPolicy::Descending);
+    multiDrawArray.sort(commandCount, chunkDistance, eng::SortPolicy::Descending);  // Sort transparent meshes back-to-front
     multiDrawArray.modifyIndices(commandCount, [&originIndex, &cameraPosition](ChunkDrawCommand& drawCommand)
     {
       bool orderModified = drawCommand.sort(originIndex, cameraPosition);
@@ -409,7 +408,7 @@ void ChunkManager::manageLODs()
 
 void ChunkManager::addToLightingUpdateQueue(const GlobalIndex& chunkIndex)
 {
-  m_LightingWork.submit(chunkIndex, &ChunkManager::lightingPacket, this, chunkIndex);
+  m_LightingWork.submit(chunkIndex, &ChunkManager::lightingTask, this, chunkIndex);
 }
 
 void ChunkManager::addToLazyMeshUpdateQueue(const GlobalIndex& chunkIndex)
@@ -417,12 +416,12 @@ void ChunkManager::addToLazyMeshUpdateQueue(const GlobalIndex& chunkIndex)
   if (m_ForceMeshingWork.contains(chunkIndex))
     return;
 
-  m_LazyMeshingWork.submit(chunkIndex, &ChunkManager::lazyMeshingPacket, this, chunkIndex);
+  m_LazyMeshingWork.submit(chunkIndex, &ChunkManager::lazyMeshingTask, this, chunkIndex);
 }
 
 void ChunkManager::addToForceMeshUpdateQueue(const GlobalIndex& chunkIndex)
 {
-  m_ForceMeshingWork.submitAndSaveResult(chunkIndex, &ChunkManager::forceMeshingPacket, this, chunkIndex);
+  m_ForceMeshingWork.submitAndSaveResult(chunkIndex, &ChunkManager::forceMeshingTask, this, chunkIndex);
 }
 
 void ChunkManager::removeMeshes(const GlobalIndex& chunkIndex)
@@ -690,7 +689,7 @@ void ChunkManager::updateLighting(Chunk& chunk)
   addToLazyMeshUpdateQueue(chunkIndex);
 }
 
-void ChunkManager::lightingPacket(const GlobalIndex& chunkIndex)
+void ChunkManager::lightingTask(const GlobalIndex& chunkIndex)
 {
   if (m_ChunkContainer.hasBoundaryNeighbors(chunkIndex))
     return;
@@ -702,7 +701,7 @@ void ChunkManager::lightingPacket(const GlobalIndex& chunkIndex)
   updateLighting(*chunk);
 }
 
-void ChunkManager::lazyMeshingPacket(const GlobalIndex& chunkIndex)
+void ChunkManager::lazyMeshingTask(const GlobalIndex& chunkIndex)
 {
   if (m_ChunkContainer.hasBoundaryNeighbors(chunkIndex))
     return;
@@ -715,7 +714,7 @@ void ChunkManager::lazyMeshingPacket(const GlobalIndex& chunkIndex)
   chunk->update();
 }
 
-void ChunkManager::forceMeshingPacket(const GlobalIndex& chunkIndex)
+void ChunkManager::forceMeshingTask(const GlobalIndex& chunkIndex)
 {
   std::shared_ptr<Chunk> chunk = m_ChunkContainer.chunks().get(chunkIndex);
   if (!chunk)

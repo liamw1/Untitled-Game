@@ -1,6 +1,6 @@
 #pragma once
-#include "NewLOD.h"
 #include "LODHelpers.h"
+#include "World/Terrain.h"
 
 namespace newLod
 {
@@ -13,7 +13,7 @@ namespace newLod
     eng::thread::WorkSet<GlobalIndex, void> m_MeshingWork;
 
     // LOD data
-    Octree m_LODs;
+    Node m_Root;
 
   public:
     LODManager();
@@ -22,5 +22,25 @@ namespace newLod
 
   private:
     void meshLOD(const NodeID& nodeID);
+
+    eng::EnumBitMask<eng::math::Direction> transitionNeighbors(const NodeID& nodeInfo) const;
+
+    /*
+      \returns The leaf node ID that contains the given index.
+               Will return std::nullopt if index is outside of octree bounds.
+    */
+    std::optional<NodeID> find(const GlobalIndex& index) const;
+    std::optional<NodeID> findImpl(const Node& branch, const NodeID& branchInfo, const GlobalIndex& index) const;
+
+    // TODO: Remove
+    std::vector<NodeID> getLeafNodes() const;
+    void getLeafNodesImpl(std::vector<NodeID>& leafNodes, const Node& node, const NodeID& nodeInfo) const;
+
+    void divide(const GlobalIndex& index);
+    void divideImpl(Node& node, const NodeID& nodeInfo, const GlobalIndex& index);
+
+    void divideTask(const NodeID& nodeInfo);
+
+    bool replaceLeafNode(Node&& node, const NodeID& nodeInfo);
   };
 }

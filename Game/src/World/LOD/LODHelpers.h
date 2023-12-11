@@ -13,22 +13,45 @@ namespace newLod
     Vertex(const eng::math::Float3& position, const eng::math::Float3& isoNormal, const std::array<i32, 2>& textureIndices, const eng::math::Float2& textureWeights);
   };
 
-  class DrawCommand : public eng::IndexedDrawCommand<DrawCommand, MeshID>
+  struct Mesh
+  {
+    std::vector<u32> indices;
+    std::vector<Vertex> vertices;
+  };
+
+  struct RenderData
+  {
+    Mesh primaryMesh;
+    eng::EnumArray<Mesh, eng::math::Direction> transitionMeshes;
+
+    uSize totalIndices() const;
+    uSize totalVertices() const;
+  };
+
+  struct Node
+  {
+    BlockArrayBox<Node> children;
+    std::shared_ptr<RenderData> data;
+
+    Node();
+    bool isLeaf() const;
+
+    void divide();
+    void combine();
+  };
+
+  class DrawCommand : public eng::IndexedDrawCommand<DrawCommand, NodeID>
   {
     std::vector<u32> m_Indices;
     std::vector<Vertex> m_Vertices;
-    std::vector<Vertex> m_AdjustedVertices;
-    eng::EnumBitMask<eng::math::Direction> m_AdjustmentState;
 
   public:
-    DrawCommand(const MeshID& meshID, std::vector<u32>&& indices, std::vector<Vertex>&& vertices);
+    DrawCommand(const NodeID& nodeID, std::vector<u32>&& indices, std::vector<Vertex>&& vertices);
 
     bool operator==(const DrawCommand& other) const;
 
     eng::mem::IndexData indexData() const;
     eng::mem::Data vertexData() const;
     void clearData();
-
-    bool adjustVertices(eng::EnumBitMask<eng::math::Direction> transitionFaces);
   };
 }

@@ -3,13 +3,18 @@
 #include "Player/Player.h"
 #include "Util/TransVoxel.h"
 #include "World/Chunk/Chunk.h"
-#include "World/Terrain.h"
 
 namespace newLod
 {
+  static constexpr u64 c_RootNodeSize = eng::math::pow2<u64>(param::MaxNodeDepth());
+  static constexpr GlobalIndex c_RootNodeAnchor = -eng::arithmeticCast<globalIndex_t>(c_RootNodeSize / 2) * GlobalIndex(1);
+  static constexpr GlobalBox c_OctreeBounds = GlobalBox(c_RootNodeAnchor, -c_RootNodeAnchor - 1);
+  static constexpr NodeID c_RootNodeID = NodeID(c_RootNodeAnchor, 0);
+
   static constexpr i32 c_NumCells = Chunk::Size();
   static constexpr BlockBox c_LODBounds(0, c_NumCells);
   static constexpr BlockRect c_LODBounds2D(0, c_NumCells);
+  static constexpr f32 c_TransitionCellFractionalWidth = 0.5f;
 
   // Rendering
   static constexpr i32 c_StorageBufferBinding = 2;
@@ -175,10 +180,69 @@ namespace newLod
     return { vertexPosition, isoNormal, surfaceData };
   }
 
-  // Generate primary LOD mesh using Marching Cubes algorithm
-  static DrawCommand generatePrimaryMesh(const NodeID& node,
-                                         const BlockArrayRect<terrain::CompoundSurfaceData>& noiseValues,
-                                         const BlockArrayRect<eng::math::Vec3>& noiseNormals)
+  // Formulas can be found in section 4.4 of TransVoxel paper
+  static bool isVertexNearFace(bool isUpstream, f32 u, f32 cellLength)
+  {
+    return isUpstream ? u > cellLength * (param::ChunkSize() - 1) : u < cellLength;
+  }
+  static f32 vertexAdjustment1D(bool isUpstream, f32 u, f32 cellLength)
+  {
+    return c_TransitionCellFractionalWidth * (isUpstream ? ((param::ChunkSize() - 1) * cellLength - u) : (cellLength - u));
+  }
+  static eng::math::FMat3 calcVertexTransform(const eng::math::Float3& n)
+  {
+    return eng::math::FMat3(1 - n.x * n.x, -n.x * n.y, -n.x * n.z,
+                            -n.x * n.y, 1 - n.y * n.y, -n.y * n.z,
+                            -n.x * n.z, -n.y * n.z, 1 - n.z * n.z);
+  }
+
+  static Vertex adjustedPrimaryVertex(const Vertex& vertex, const NodeID& node, eng::EnumBitMask<eng::math::Direction> transitionFaces)
+  {
+    f32 cellLength = node.length() / c_NumCells;
+
+    eng::math::Float3 vertexAdjustment{};
+    bool isNearSameResolutionLOD = false;
+    for (eng::math::Direction face : eng::math::Directions())
+    {
+      i32 axisID = eng::enumIndex(eng::math::axisOf(face));
+      if (isVertexNearFace(eng::math::isUpstream(face), vertex.position[axisID], cellLength))
+      {
+        if (transitionFaces[face])
+          vertexAdjustment[axisID] = vertexAdjustment1D(eng::math::isUpstream(face), vertex.position[axisID], cellLength);
+        else
+        {
+          isNearSameResolutionLOD = true;
+          break;
+        }
+      }
+    }
+
+    Vertex adjustedVertex = vertex;
+    if (!isNearSameResolutionLOD && vertexAdjustment != eng::math::Float3(0.0))
+    {
+      const eng::math::Float3& n = vertex.isoNormal;
+      eng::math::FMat3 transform = calcVertexTransform(n);
+
+      adjustedVertex.position += transform * vertexAdjustment;
+    }
+    return adjustedVertex;
+  }
+
+  static Vertex adjustedTransitionVertex(const Vertex& vertex, const NodeID& node, eng::EnumBitMask<eng::math::Direction> transitionFaces, eng::math::Direction face)
+  {
+    Vertex adjustedVertex = vertex;
+
+    // If Vertex is on low-resolution side, no adjustment needed.  If on high-resolution side, move vertex to LOD face
+    i32 axisID = eng::enumIndex(eng::math::axisOf(face));
+    static constexpr f32 tolerance = 128 * std::numeric_limits<f32>::epsilon();
+    if (vertex.position[axisID] < tolerance * node.length() || vertex.position[axisID] > (1.0f - tolerance) * node.length())
+      return adjustedVertex;
+
+    adjustedVertex.position[axisID] = eng::math::isUpstream(face) ? node.length() : 0.0f;
+    return adjustedPrimaryVertex(adjustedVertex, node, transitionFaces);
+  }
+
+  static Mesh generatePrimaryMesh(const NodeID& node, const BlockArrayRect<terrain::CompoundSurfaceData>& noiseValues, const BlockArrayRect<eng::math::Vec3>& noiseNormals)
   {
     ENG_PROFILE_FUNCTION();
 
@@ -194,8 +258,7 @@ namespace newLod
     f32 smoothness = smoothnessLevel(node.lodLevel());
 
     i32 vertexCount = 0;
-    std::vector<u32> primaryMeshIndices;
-    std::vector<Vertex> primaryMeshVertices;
+    Mesh primaryMesh;
     VertexLayer prevLayer(Chunk::Bounds2D(), eng::AllocationPolicy::DefaultInitialize);
     for (i32 i = 0; i < c_NumCells; ++i)
     {
@@ -238,7 +301,7 @@ namespace newLod
             i32 vertexIndex = prevCellVertexIndices[edgeIndex];
             if (vertexIndex > 0)
             {
-              primaryMeshIndices.push_back(vertexIndex);
+              primaryMesh.indices.push_back(vertexIndex);
               continue;
             }
 
@@ -265,7 +328,7 @@ namespace newLod
                 i32 vertexOrder = targetLayer[J][K].vertexOrder[sharedVertexIndex];
                 if (baseMeshIndex > 0 && vertexOrder >= 0)
                 {
-                  primaryMeshIndices.push_back(baseMeshIndex + vertexOrder);
+                  primaryMesh.indices.push_back(baseMeshIndex + vertexOrder);
                   prevCellVertexIndices[edgeIndex] = baseMeshIndex + vertexOrder;
                   continue;
                 }
@@ -287,8 +350,8 @@ namespace newLod
 
             NoiseData noiseData = interpolateNoiseData(node, noiseValues, noiseNormals, cornerA, cornerB, smoothness);
 
-            primaryMeshVertices.emplace_back(noiseData.position, noiseData.normal, noiseData.surfaceData.getTextureIndices(), noiseData.surfaceData.getTextureWeights());
-            primaryMeshIndices.push_back(vertexCount);
+            primaryMesh.vertices.emplace_back(noiseData.position, noiseData.normal, noiseData.surfaceData.getTextureIndices(), noiseData.surfaceData.getTextureWeights());
+            primaryMesh.indices.push_back(vertexCount);
             prevCellVertexIndices[edgeIndex] = vertexCount;
 
             vertexCount++;
@@ -298,15 +361,13 @@ namespace newLod
 
       prevLayer = std::move(currLayer);
     }
-
-    MeshID meshID(node);
-    return DrawCommand(meshID, std::move(primaryMeshIndices), std::move(primaryMeshVertices));
+    return primaryMesh;
   }
 
-  // Generate transition meshes using Transvoxel algorithm
-  static DrawCommand generateTransitionMesh(const NodeID& node,
-                                            const BlockArrayRect<terrain::CompoundSurfaceData>& noiseValues,
-                                            const BlockArrayRect<eng::math::Vec3>& noiseNormals, eng::math::Direction face)
+  static Mesh generateTransitionMesh(const NodeID& node,
+                                     const BlockArrayRect<terrain::CompoundSurfaceData>& noiseValues,
+                                     const BlockArrayRect<eng::math::Vec3>& noiseNormals,
+                                     eng::math::Direction face)
   {
     ENG_PROFILE_FUNCTION();
 
@@ -326,7 +387,7 @@ namespace newLod
 
     length_t LODFloor = node.anchor().k * Chunk::Length();
     length_t cellLength = node.length() / c_NumCells;
-    length_t transitionCellWidth = param::TransitionCellFractionalWidth() * cellLength;
+    length_t transitionCellWidth = c_TransitionCellFractionalWidth * cellLength;
 
     // Relabel coordinates, u being the coordinate normal to face
     eng::math::Axis u = axisOf(face);
@@ -336,8 +397,7 @@ namespace newLod
 
     // Generate transition mesh using Transvoxel algorithm
     i32 vertexCount = 0;
-    std::vector<u32> transitionMeshIndices;
-    std::vector<Vertex> transitionMeshVertices;
+    Mesh transitionMesh;
     std::array<VertexReuseData, c_NumCells / 2> prevRow{};
     for (i32 i = 0; i < c_NumCells; i += 2)
     {
@@ -388,7 +448,7 @@ namespace newLod
           i32 vertexIndex = prevCellVertexIndices[edgeIndex];
           if (vertexIndex > 0)
           {
-            transitionMeshIndices.push_back(vertexIndex);
+            transitionMesh.indices.push_back(vertexIndex);
             continue;
           }
 
@@ -415,7 +475,7 @@ namespace newLod
               i32 vertexOrder = targetRow[J].vertexOrder[sharedVertexIndex];
               if (baseMeshIndex > 0 && vertexOrder >= 0)
               {
-                transitionMeshIndices.push_back(baseMeshIndex + vertexOrder);
+                transitionMesh.indices.push_back(baseMeshIndex + vertexOrder);
                 prevCellVertexIndices[edgeIndex] = baseMeshIndex + vertexOrder;
                 continue;
               }
@@ -450,8 +510,8 @@ namespace newLod
           if (!isOnLowResSide)
             noiseData.position -= transitionCellWidth * normals[face];
 
-          transitionMeshVertices.emplace_back(noiseData.position, noiseData.normal, noiseData.surfaceData.getTextureIndices(), noiseData.surfaceData.getTextureWeights());
-          transitionMeshIndices.push_back(vertexCount);
+          transitionMesh.vertices.emplace_back(noiseData.position, noiseData.normal, noiseData.surfaceData.getTextureIndices(), noiseData.surfaceData.getTextureWeights());
+          transitionMesh.indices.push_back(vertexCount);
           prevCellVertexIndices[edgeIndex] = vertexCount;
 
           vertexCount++;
@@ -461,9 +521,54 @@ namespace newLod
 
       prevRow = std::move(currRow);
     }
+    return transitionMesh;
+  }
 
-    MeshID meshID(node, face);
-    return DrawCommand(meshID, std::move(transitionMeshIndices), std::move(transitionMeshVertices));
+  static std::shared_ptr<RenderData> generateRenderData(const NodeID& node)
+  {
+    ENG_PROFILE_FUNCTION();
+
+    // Generate voxel data using heightmap
+    BlockArrayRect<terrain::CompoundSurfaceData> noiseValues = generateNoise(node);
+
+    if (!needsMesh(node, noiseValues))
+      return nullptr;
+
+    // Generate normal data from heightmap
+    BlockArrayRect<eng::math::Vec3> noiseNormals = calcNoiseNormals(node, noiseValues);
+
+    std::shared_ptr<RenderData> renderData = std::make_shared<RenderData>();
+    renderData->primaryMesh = generatePrimaryMesh(node, noiseValues, noiseNormals);
+    for (eng::math::Direction face : eng::math::Directions())
+      renderData->transitionMeshes[face] = generateTransitionMesh(node, noiseValues, noiseNormals, face);
+    return renderData;
+  }
+
+  static DrawCommand createDrawCommand(const RenderData& renderData, const NodeID& node, eng::EnumBitMask<eng::math::Direction> transitionFaces)
+  {
+    Mesh fullMesh;
+    fullMesh.indices.reserve(renderData.totalIndices());
+    fullMesh.vertices.reserve(renderData.totalVertices());
+
+    // Add adjusted primary mesh
+    for (u32 index : renderData.primaryMesh.indices)
+      fullMesh.indices.push_back(index);
+    for (const Vertex& vertex : renderData.primaryMesh.vertices)
+      fullMesh.vertices.push_back(adjustedPrimaryVertex(vertex, node, transitionFaces));
+
+    // Add adjusted transition mesh if it exists
+    for (eng::math::Direction face : eng::math::Directions())
+      if (transitionFaces[face])
+      {
+        u32 baseIndex = eng::arithmeticCast<u32>(fullMesh.vertices.size());
+
+        for (u32 index : renderData.transitionMeshes[face].indices)
+          fullMesh.indices.push_back(baseIndex + index);
+        for (const Vertex& vertex : renderData.transitionMeshes[face].vertices)
+          fullMesh.vertices.push_back(adjustedTransitionVertex(vertex, node, transitionFaces, face));
+      }
+
+    return DrawCommand(node, std::move(fullMesh.indices), std::move(fullMesh.vertices));
   }
 
 
@@ -477,8 +582,8 @@ namespace newLod
     s_SSBO = eng::mem::StorageBuffer::Create(eng::mem::StorageBuffer::Type::SSBO, c_StorageBufferBinding);
     s_SSBO->resize(c_StorageBufferSize);
 
-    m_LODs.divide({});
-    std::vector<NodeID> leafNodes = m_LODs.getLeafNodes();
+    divide({});
+    std::vector<NodeID> leafNodes = getLeafNodes();
 
     for (const NodeID& node : leafNodes)
       meshLOD(node);
@@ -487,6 +592,8 @@ namespace newLod
 
   void LODManager::render()
   {
+    ENG_PROFILE_FUNCTION();
+
     eng::math::Mat4 viewProjection = eng::scene::CalculateViewProjection(eng::scene::ActiveCamera());
     eng::EnumArray<eng::math::Vec4, eng::math::FrustumPlane> frustumPlanes = eng::math::calculateViewFrustumPlanes(viewProjection);
     eng::EnumArray<eng::math::Vec4, eng::math::FrustumPlane> shiftedFrustumPlanes = frustumPlanes;
@@ -504,24 +611,14 @@ namespace newLod
     eng::render::command::setUseDepthOffset(false);
     m_MultiDrawArray->drawOperation([this, &frustumPlanes, &shiftedFrustumPlanes, &planeNormalMagnitudes, &originIndex](eng::MultiDrawArray<DrawCommand>& multiDrawArray)
     {
-      ENG_PROFILE_FUNCTION();
-      i32 commandCount = multiDrawArray.partition([this, &frustumPlanes, &shiftedFrustumPlanes, &planeNormalMagnitudes, &originIndex](const MeshID& meshID)
+      i32 commandCount = multiDrawArray.partition([this, &frustumPlanes, &shiftedFrustumPlanes, &planeNormalMagnitudes, &originIndex](const NodeID& nodeID)
       {
         // Shift each plane by distance equal to radius of sphere that circumscribes LOD
-        length_t LODSphereRadius = meshID.nodeID().boundingSphereRadius();
+        length_t LODSphereRadius = nodeID.boundingSphereRadius();
         for (eng::math::FrustumPlane plane : eng::math::FrustumPlanes())
           shiftedFrustumPlanes[plane].w = frustumPlanes[plane].w + LODSphereRadius * planeNormalMagnitudes[plane];
 
-        if (!eng::math::isInFrustum(meshID.nodeID().center(originIndex), shiftedFrustumPlanes))
-          return false;
-
-        return meshID.isPrimaryMesh() || m_LODs.transitionNeighbors(meshID.nodeID())[*meshID.face()];
-      });
-      multiDrawArray.modifyVertices(commandCount, [this](DrawCommand& drawCommand)
-      {
-        eng::EnumBitMask<eng::math::Direction> transitionFaces = m_LODs.transitionNeighbors(drawCommand.id().nodeID());
-        bool verticesAdjusted = drawCommand.adjustVertices(transitionFaces);
-        return verticesAdjusted;
+        return eng::math::isInFrustum(nodeID.center(originIndex), shiftedFrustumPlanes);
       });
 
       std::vector<eng::math::Float4> storageBufferData;
@@ -529,7 +626,7 @@ namespace newLod
       const std::vector<DrawCommand>& drawCommands = multiDrawArray.getDrawCommandBuffer();
       for (i32 i = 0; i < commandCount; ++i)
       {
-        eng::math::Vec3 nodeAnchorPosition = drawCommands[i].id().nodeID().anchorPosition(originIndex);
+        eng::math::Vec3 nodeAnchorPosition = drawCommands[i].id().anchorPosition(originIndex);
         storageBufferData.emplace_back(nodeAnchorPosition, 0);
       }
       s_SSBO->modify(0, storageBufferData);
@@ -543,19 +640,94 @@ namespace newLod
 
   void LODManager::meshLOD(const NodeID& node)
   {
-    ENG_PROFILE_FUNCTION();
-
-    // Generate voxel data using heightmap
-    BlockArrayRect<terrain::CompoundSurfaceData> noiseValues = generateNoise(node);
-
-    if (!needsMesh(node, noiseValues))
+    std::shared_ptr<RenderData> renderData = generateRenderData(node);
+    if (!renderData)
       return;
 
-    // Generate normal data from heightmap
-    BlockArrayRect<eng::math::Vec3> noiseNormals = calcNoiseNormals(node, noiseValues);
+    eng::EnumBitMask<eng::math::Direction> transitionFaces = transitionNeighbors(node);
+    m_MultiDrawArray->queueCommand(createDrawCommand(*renderData, node, transitionFaces));
+  }
 
-    m_MultiDrawArray->queueCommand(generatePrimaryMesh(node, noiseValues, noiseNormals));
+  eng::EnumBitMask<eng::math::Direction> LODManager::transitionNeighbors(const NodeID& nodeInfo) const
+  {
+    eng::EnumArray<GlobalIndex, eng::math::Direction> offsets =
+    { { eng::math::Direction::West,   {-1,               0,               0} },
+      { eng::math::Direction::East,   {nodeInfo.size(),  0,               0} },
+      { eng::math::Direction::South,  { 0,              -1,               0} },
+      { eng::math::Direction::North,  { 0, nodeInfo.size(),               0} },
+      { eng::math::Direction::Bottom, { 0,               0,              -1} },
+      { eng::math::Direction::Top,    { 0,               0, nodeInfo.size()} } };
+
+    eng::EnumBitMask<eng::math::Direction> transitionNeighbors;
     for (eng::math::Direction face : eng::math::Directions())
-      m_MultiDrawArray->queueCommand(generateTransitionMesh(node, noiseValues, noiseNormals, face));
+    {
+      std::optional<NodeID> neighborID = find(nodeInfo.anchor() + offsets[face]);
+      if (!neighborID)
+        continue;
+
+      if (neighborID->lodLevel() - nodeInfo.lodLevel() == 1)
+        transitionNeighbors.set(face);
+      else if (neighborID->lodLevel() - nodeInfo.lodLevel() > 1)
+        ENG_WARN("LOD neighbor is more than one level lower resolution!");
+    }
+    return transitionNeighbors;
+  }
+
+  std::optional<NodeID> LODManager::find(const GlobalIndex& index) const
+  {
+    if (!c_OctreeBounds.encloses(index))
+      return std::nullopt;
+    return findImpl(m_Root, c_RootNodeID, index);
+  }
+  std::optional<NodeID> LODManager::findImpl(const Node& branch, const NodeID& branchInfo, const GlobalIndex& index) const
+  {
+    if (branch.isLeaf())
+      return branchInfo;
+
+    BlockIndex childIndex = branchInfo.childIndex(index);
+    return findImpl(branch.children(childIndex), branchInfo.child(childIndex), index);
+  }
+
+  std::vector<NodeID> LODManager::getLeafNodes() const
+  {
+    std::vector<NodeID> leafNodes;
+    getLeafNodesImpl(leafNodes, m_Root, c_RootNodeID);
+    return leafNodes;
+  }
+  void LODManager::getLeafNodesImpl(std::vector<NodeID>& leafNodes, const Node& node, const NodeID& nodeInfo) const
+  {
+    if (node.isLeaf())
+    {
+      leafNodes.push_back(nodeInfo);
+      return;
+    }
+
+    node.children.bounds().forEach([this, &leafNodes, &node, &nodeInfo](const BlockIndex& childIndex)
+    {
+      getLeafNodesImpl(leafNodes, node.children(childIndex), nodeInfo.child(childIndex));
+    });
+  }
+
+  void LODManager::divide(const GlobalIndex& index)
+  {
+    if (c_OctreeBounds.encloses(index))
+      divideImpl(m_Root, c_RootNodeID, index);
+  }
+  void LODManager::divideImpl(Node& node, const NodeID& nodeInfo, const GlobalIndex& index)
+  {
+    if (!node.isLeaf() || nodeInfo.lodLevel() == 0)
+      return;
+
+    globalIndex_t splitRange = 2 * nodeInfo.size() - 1 + param::RenderDistance();
+    GlobalBox splitRangeBoundingBox(index - splitRange, index + splitRange);
+    GlobalBox intersection = GlobalBox::Intersection(splitRangeBoundingBox, nodeInfo.boundingBox());
+    if (!intersection.valid())
+      return;
+
+    node.divide();
+    node.children.bounds().forEach([this, &node, &nodeInfo, &index](const BlockIndex& childIndex)
+    {
+      divideImpl(node.children(childIndex), nodeInfo.child(childIndex), index);
+    });
   }
 }

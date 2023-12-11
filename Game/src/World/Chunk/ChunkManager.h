@@ -78,9 +78,9 @@ private:
 
   void updateLighting(Chunk& chunk);
 
-  void lightingPacket(const GlobalIndex& chunkIndex);
-  void lazyMeshingPacket(const GlobalIndex& chunkIndex);
-  void forceMeshingPacket(const GlobalIndex& chunkIndex);
+  void lightingTask(const GlobalIndex& chunkIndex);
+  void lazyMeshingTask(const GlobalIndex& chunkIndex);
+  void forceMeshingTask(const GlobalIndex& chunkIndex);
 
   bool splitLODs(std::vector<lod::Octree::Node*>& leaves);
   bool combineLODs(std::vector<lod::Octree::Node*>& leaves);
