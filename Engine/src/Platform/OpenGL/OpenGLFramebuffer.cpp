@@ -78,7 +78,7 @@ namespace eng
       case FramebufferTextureFormat::RedInteger:  return GL_RED_INTEGER;
       case FramebufferTextureFormat::RGBA8:       return GL_RGBA8;
     }
-    throw std::invalid_argument("Invalid texture formate!");
+    throw CoreException("Invalid texture formate!");
   }
 
 

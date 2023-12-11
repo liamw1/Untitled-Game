@@ -17,7 +17,7 @@ namespace eng
       case 3:   return GL_RGB8;
       case 4:   return GL_RGBA8;
     }
-    throw std::invalid_argument("Format not supported!");
+    throw CoreException("Format not supported!");
   }
 
   static GLenum dataFormatOf(const Image& image)
@@ -27,7 +27,7 @@ namespace eng
       case 3:   return GL_RGB;
       case 4:   return GL_RGBA;
     }
-    throw std::invalid_argument("Format not supported!");
+    throw CoreException("Format not supported!");
   }
 
 

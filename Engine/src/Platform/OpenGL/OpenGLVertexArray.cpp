@@ -25,7 +25,7 @@ namespace eng
       case mem::ShaderDataType::Mat3:        return GL_FLOAT;
       case mem::ShaderDataType::Mat4:        return GL_FLOAT;
     }
-    throw std::invalid_argument("Invalid ShaderDataType!");
+    throw CoreException("Invalid ShaderDataType!");
   }
 
   OpenGLVertexArray::OpenGLVertexArray()
@@ -116,7 +116,7 @@ namespace eng
         }
       }
       else
-        throw std::invalid_argument("Invalid shader data type!");
+        throw CoreException("Invalid shader data type!");
     }
 
 #if ENG_DEBUG

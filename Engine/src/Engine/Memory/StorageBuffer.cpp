@@ -14,6 +14,6 @@ namespace eng::mem
       case RendererAPI::API::OpenGL:          return std::make_unique<OpenGLStorageBuffer>(type, binding);
       case RendererAPI::API::OpenGL_Legacy:   return std::make_unique<OpenGLStorageBuffer>(type, binding);
     }
-    throw std::invalid_argument("Invalid RendererAPI!");
+    throw CoreException("Invalid RendererAPI!");
   }
 }

@@ -79,12 +79,12 @@ namespace eng
       case ProjectionType::Orthographic: recalculateOrthographicProjection(); return;
       case ProjectionType::Perspective:  recalculatePerspectiveProjection();  return;
     }
-    throw std::invalid_argument("Invalid projection type!");
+    throw CoreException("Invalid projection type!");
   }
 
   void Camera::recalculateOrthographicProjection()
   {
-    throw std::runtime_error("Reversed-Z orthographic projection not yet implemented!");
+    throw CoreException("Reversed-Z orthographic projection not yet implemented!");
   }
 
   void Camera::recalculatePerspectiveProjection()

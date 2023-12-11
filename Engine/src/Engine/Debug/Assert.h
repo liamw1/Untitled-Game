@@ -16,10 +16,13 @@
   #define ENG_DEBUG_BREAK()
 #endif
 
+#define ENG_TERMINATE(...)      { ENG_FATAL(__VA_ARGS__);      ENG_DEBUG_BREAK(); } static_assert(true)
+#define ENG_CORE_TERMINATE(...) { ENG_CORE_FATAL(__VA_ARGS__); ENG_DEBUG_BREAK(); } static_assert(true)
+
 // Runtime assert macros.  Will be removed from code in non-debug builds
 #ifdef ENG_ENABLE_ASSERTS
-  #define ENG_ASSERT(x, ...) { if (!(x)) { ENG_FATAL(__VA_ARGS__); ENG_DEBUG_BREAK(); } }
-  #define ENG_CORE_ASSERT(x, ...) { if (!(x)) { ENG_CORE_FATAL(__VA_ARGS__); ENG_DEBUG_BREAK(); } }
+  #define ENG_ASSERT(x, ...) { if (!(x)) ENG_TERMINATE(__VA_ARGS__); }
+  #define ENG_CORE_ASSERT(x, ...) { if (!(x)) ENG_CORE_TERMINATE(__VA_ARGS__); }
 #else
   #define ENG_ASSERT(x, ...)
   #define ENG_CORE_ASSERT(x, ...)

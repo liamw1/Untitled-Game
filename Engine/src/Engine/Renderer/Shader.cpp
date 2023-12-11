@@ -9,80 +9,69 @@ namespace eng
 {
   Shader::~Shader() = default;
 
-  std::unique_ptr<Shader> Shader::Create(const std::string& filepath, const std::unordered_map<std::string, std::string>& preprocessorDefinitions)
+  std::unique_ptr<Shader> Shader::Create(const std::filesystem::path& filepath, const std::unordered_map<std::string, std::string>& preprocessorDefinitions)
   {
     switch (RendererAPI::GetAPI())
     {
       case RendererAPI::API::OpenGL:          return std::make_unique<OpenGLShader>(filepath, preprocessorDefinitions);
       case RendererAPI::API::OpenGL_Legacy:   return std::make_unique<OpenGL_LegacyShader>(filepath, preprocessorDefinitions);
     }
-    throw std::invalid_argument("Invalid RendererAPI!");
+    throw CoreException("Invalid RendererAPI!");
   }
 
-  std::string Shader::ReadFile(const std::string& filepath)
+  std::string Shader::ReadFile(const std::filesystem::path& filepath)
   {
     ENG_PROFILE_FUNCTION();
 
-    std::string result;
-    std::ifstream in(filepath, std::ios::in | std::ios::binary);  // ifstream closes itself due to RAII
-    if (in)
-    {
-      const uSize& size = in.tellg();
-      if (size != -1)
-      {
-        in.seekg(0, std::ios::end);
-        result.resize(in.tellg());
-        in.seekg(0, std::ios::beg);
-        in.read(&result[0], result.size());
-      }
-      else
-        ENG_CORE_ERROR("Could not read from file {0}", filepath);
-    }
+    std::stringstream ss;
+    std::ifstream fileStream(filepath, std::ios::in | std::ios::binary);
+    if (fileStream && fileStream.tellg() != -1)
+      ss << fileStream.rdbuf();
     else
-      ENG_CORE_ERROR("Could not open file {0}", filepath);
+      ENG_CORE_ERROR("Unable to read from file {0}", filepath);
 
-    return result;
+    return ss.str();
   }
 
   std::unordered_map<std::string, std::string> Shader::PreProcess(std::string source, const std::unordered_map<std::string, std::string>& preprocessorDefinitions)
   {
     ENG_PROFILE_FUNCTION();
 
-    uSize pos = 0;
-    while ((pos = source.find("#define ", pos)) != std::string::npos)
-    {
-      pos += 8;
+    static constexpr std::string_view defineToken = "#define";
+    static constexpr std::string_view typeToken = "#type";
 
-      uSize endToken = source.find('\n', pos) - 1;
-      std::string token = source.substr(pos, endToken - pos);
-      pos = endToken;
+    uSize sourcePosition = 0;
+    while ((sourcePosition = source.find(defineToken, sourcePosition)) != std::string::npos)
+    {
+      sourcePosition += defineToken.size() + 1;
+
+      uSize endTokenPosition = source.find('\n', sourcePosition) - 1;
+      std::string token = source.substr(sourcePosition, endTokenPosition - sourcePosition);
+      sourcePosition = endTokenPosition;
 
       std::unordered_map<std::string, std::string>::const_iterator iteratorPosition = preprocessorDefinitions.find(token);
-      if (iteratorPosition != preprocessorDefinitions.end())
-      {
-        const auto& [key, definition] = *iteratorPosition;
+      if (iteratorPosition == preprocessorDefinitions.end())
+        continue;
 
-        source.insert(pos, " " + definition);
-        pos += definition.size();
-      }
+      const std::string& definition = iteratorPosition->second;
+      source.insert(sourcePosition, " " + definition);
+      sourcePosition += definition.size();
     }
 
     std::unordered_map<std::string, std::string> shaderSources;
 
-    const char* typeToken = "#type";
-    uSize typeTokenLength = strlen(typeToken);
-    pos = source.find(typeToken, 0);                          // Start of shader type declaration line
-    while (pos != std::string::npos)
+    sourcePosition = source.find(typeToken, 0);                           // Start of shader type declaration line
+    while (sourcePosition != std::string::npos)
     {
-      uSize eol = source.find_first_of("\r\n", pos);    // End of shader type declaration line
-      ENG_CORE_ASSERT(eol != std::string::npos, "Syntax error");
-      uSize begin = pos + typeTokenLength + 1;          // Start of shader type name (after "#type" keyword)
-      std::string type = source.substr(begin, eol - begin);
+      uSize endOfLine = source.find_first_of("\r\n", sourcePosition);     // End of shader type declaration line
+      ENG_CORE_ASSERT(endOfLine != std::string::npos, "Syntax error");
+      uSize typeBegin = sourcePosition + typeToken.size() + 1;            // Start of shader type name (after "#type" keyword)
+      std::string type = source.substr(typeBegin, endOfLine - typeBegin);
 
-      uSize nextLinePos = source.find_first_not_of("\r\n", eol);
+      uSize nextLinePos = source.find_first_not_of("\r\n", endOfLine);
       ENG_CORE_ASSERT(nextLinePos != std::string::npos, "Syntax error");
-      pos = source.find(typeToken, nextLinePos);              // Start of next shader type declaration line
-      shaderSources[type] = (pos == std::string::npos) ? source.substr(nextLinePos) : source.substr(nextLinePos, pos - nextLinePos);
+      sourcePosition = source.find(typeToken, nextLinePos);               // Start of next shader type declaration line
+      shaderSources[type] = source.substr(nextLinePos, sourcePosition - nextLinePos);
     }
 
     return shaderSources;

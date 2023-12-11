@@ -21,7 +21,7 @@ namespace eng
       case GL_DEBUG_SEVERITY_MEDIUM:        ENG_CORE_WARN(message);                               return;
       case GL_DEBUG_SEVERITY_HIGH:          ENG_CORE_ERROR(message);                              return;
     }
-    throw std::invalid_argument("OpenGL message has unknown severity level!");
+    throw CoreException("OpenGL message has unknown severity level!");
   }
 
   OpenGLContext::OpenGLContext(GLFWwindow* windowHandle)
@@ -38,7 +38,7 @@ namespace eng
     glfwMakeContextCurrent(m_WindowHandle);
     i32 status = gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress));
     if (!status)
-      throw std::runtime_error("Failed to initialize GLad!");
+      throw CoreException("Failed to initialize GLad!");
 
     ENG_CORE_INFO("OpenGL Info:");
     ENG_CORE_INFO("  Vendor:    {0}", std::bit_cast<const char*>(glGetString(GL_VENDOR)));

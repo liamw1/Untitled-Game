@@ -80,10 +80,8 @@ namespace eng
       if (badInitializationPosition != initializationCounts.end())
       {
         i32 count = *badInitializationPosition;
-        if (count == 0)
-          throw std::runtime_error("Not all values have been initialized!");
-        else
-          throw std::runtime_error("A value has been initialized more than once!");
+        const char* message = count == 0 ? "Not all values have been initialized!" : "A value has been initialized more than once!";
+        throw CoreException(message);
       }
     }
 

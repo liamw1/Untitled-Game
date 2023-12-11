@@ -43,7 +43,7 @@ namespace eng::math
         case Axis::X: return i;
         case Axis::Y: return j;
       }
-      throw std::invalid_argument("Invalid axis!");
+      throw CoreException("Invalid axis!");
     }
   
     // Define lexicographical ordering on 2D indices

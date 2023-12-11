@@ -10,7 +10,7 @@ namespace eng
     std::string m_Name;
 
   public:
-    OpenGL_LegacyShader(const std::string& filepath, const std::unordered_map<std::string, std::string>& preprocessorDefinitions);
+    OpenGL_LegacyShader(const std::filesystem::path& filepath, const std::unordered_map<std::string, std::string>& preprocessorDefinitions);
     ~OpenGL_LegacyShader();
 
     const std::string& name() const override;

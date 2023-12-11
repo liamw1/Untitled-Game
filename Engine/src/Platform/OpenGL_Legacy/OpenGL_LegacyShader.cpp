@@ -1,5 +1,6 @@
 #include "ENpch.h"
 #include "OpenGL_LegacyShader.h"
+#include "Engine/Core/Exception.h"
 #include "Engine/Threads/Threads.h"
 #include "Engine/Debug/Assert.h"
 #include "Engine/Debug/Instrumentor.h"
@@ -26,16 +27,12 @@ namespace eng
 
 
 
-  OpenGL_LegacyShader::OpenGL_LegacyShader(const std::string& filepath, const std::unordered_map<std::string, std::string>& preprocessorDefinitions)
+  OpenGL_LegacyShader::OpenGL_LegacyShader(const std::filesystem::path& filepath, const std::unordered_map<std::string, std::string>& preprocessorDefinitions)
     : m_RendererID(0),
-      m_Name("Unnamed Shader")
+      m_Name(filepath.stem().string())
   {
     ENG_PROFILE_FUNCTION();
-
     compile(PreProcess(ReadFile(filepath), preprocessorDefinitions));
-
-    std::filesystem::path path = filepath;
-    m_Name = path.stem().string(); // Returns the file's name stripped of the extension.
   }
 
   OpenGL_LegacyShader::~OpenGL_LegacyShader()
@@ -69,39 +66,34 @@ namespace eng
     ENG_CORE_ASSERT(thread::isMainThread(), "OpenGL calls must be made on the main thread!");
     ENG_CORE_ASSERT(debug::boundsCheck(shaderSources.size(), 0, c_MaxShaders + 1), "A maximum of {0} shaders is supported", c_MaxShaders);
 
-    GLuint program = glCreateProgram();
-    std::vector<GLenum> glShaderIDs(shaderSources.size());
-    i32 glShaderIDIndex = 0;
+    m_RendererID = glCreateProgram();
+
+    std::vector<GLenum> glShaderIDs;
     for (const auto& [type, source] : shaderSources)
     {
-      GLuint shader = glCreateShader(shaderTypeFromString(type));
+      GLuint shaderID = glCreateShader(shaderTypeFromString(type));
 
       const GLchar* sourceCStr = source.c_str();
-      glShaderSource(shader, 1, &sourceCStr, 0);
-
-      glCompileShader(shader);
+      glShaderSource(shaderID, 1, &sourceCStr, 0);
+      glCompileShader(shaderID);
 
       GLint isCompiled = 0;
-      glGetShaderiv(shader, GL_COMPILE_STATUS, &isCompiled);
+      glGetShaderiv(shaderID, GL_COMPILE_STATUS, &isCompiled);
       if (!isCompiled)
       {
         GLint maxLength = 0;
-        glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &maxLength);
+        glGetShaderiv(shaderID, GL_INFO_LOG_LENGTH, &maxLength);
 
         std::vector<GLchar> infoLog(maxLength);
-        glGetShaderInfoLog(shader, maxLength, &maxLength, &infoLog[0]);
+        glGetShaderInfoLog(shaderID, maxLength, &maxLength, infoLog.data());
 
-        glDeleteShader(shader);
-
-        ENG_CORE_ERROR("{0}", infoLog.data());
-        ENG_CORE_ASSERT(false, "{0} shader compilation failure!", type);
-        break;
+        glDeleteShader(shaderID);
+        throw CoreException(std::string("Shader compilation failure!\n") + infoLog.data());
       }
-      glAttachShader(program, shader);
-      glShaderIDs[glShaderIDIndex++] = shader;
+      glAttachShader(m_RendererID, shaderID);
+      glShaderIDs.push_back(shaderID);
     }
 
-    m_RendererID = program;
     glLinkProgram(m_RendererID);
 
     GLint isLinked = 0;
@@ -111,21 +103,16 @@ namespace eng
       GLint maxLength = 0;
       glGetProgramiv(m_RendererID, GL_INFO_LOG_LENGTH, &maxLength);
 
-      // The maxLength includes the NULL character
       std::vector<GLchar> infoLog(maxLength);
-      glGetProgramInfoLog(m_RendererID, maxLength, &maxLength, &infoLog[0]);
+      glGetProgramInfoLog(m_RendererID, maxLength, &maxLength, infoLog.data());
 
       glDeleteProgram(m_RendererID);
-
       for (GLenum id : glShaderIDs)
       {
         glDetachShader(m_RendererID, id);
         glDeleteShader(id);
       }
-
-      ENG_CORE_ERROR("{0}", infoLog.data());
-      ENG_CORE_ASSERT(false, "Shader link failure!");
-      return;
+      throw CoreException(std::string("Shader link failure!\n") + infoLog.data());
     }
 
     // Always detach shaders after a successful link

@@ -21,7 +21,7 @@ namespace eng
     std::unordered_map<u32, std::string> m_OpenGLSourceCode;
 
   public:
-    OpenGLShader(const std::string& filepath, const std::unordered_map<std::string, std::string>& preprocessorDefinitions);
+    OpenGLShader(const std::filesystem::path& filepath, const std::unordered_map<std::string, std::string>& preprocessorDefinitions);
     ~OpenGLShader();
 
     const std::string& name() const override;

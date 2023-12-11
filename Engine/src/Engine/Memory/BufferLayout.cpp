@@ -1,5 +1,6 @@
 #include "ENpch.h"
 #include "BufferLayout.h"
+#include "Engine/Core/Exception.h"
 
 namespace eng::mem
 {
@@ -20,7 +21,7 @@ namespace eng::mem
       case ShaderDataType::Mat3:        return 3 * 3 * sizeof(f32);
       case ShaderDataType::Mat4:        return 4 * 4 * sizeof(f32);
     }
-    throw std::invalid_argument("Invalid ShaderDataType!");
+    throw CoreException("Invalid ShaderDataType!");
   }
 
 
@@ -47,7 +48,7 @@ namespace eng::mem
       case ShaderDataType::Mat3:        return 3;
       case ShaderDataType::Mat4:        return 4;
     }
-    throw std::invalid_argument("Invalid ShaderDataType!");
+    throw CoreException("Invalid ShaderDataType!");
   }
 
 

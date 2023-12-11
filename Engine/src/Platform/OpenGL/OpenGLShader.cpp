@@ -22,7 +22,7 @@ namespace eng
       return GL_GEOMETRY_SHADER;
     if (type == "fragment" || type == "pixel")
       return GL_FRAGMENT_SHADER;
-    throw std::invalid_argument("Invalid shader type!");
+    throw CoreException("Invalid shader type!");
   }
 
   static shaderc_shader_kind openGLShaderStageToShaderC(GLenum stage)
@@ -33,7 +33,7 @@ namespace eng
       case GL_GEOMETRY_SHADER:  return shaderc_glsl_geometry_shader;
       case GL_FRAGMENT_SHADER:  return shaderc_glsl_fragment_shader;
     }
-    throw std::invalid_argument("Invalid openGL shader stage!");
+    throw CoreException("Invalid openGL shader stage!");
   }
 
   static const char* openGLShaderStageToString(GLenum stage)
@@ -44,15 +44,15 @@ namespace eng
       case GL_GEOMETRY_SHADER:  return "GL_GEOMETRY_SHADER";
       case GL_FRAGMENT_SHADER:  return "GL_FRAGMENT_SHADER";
     }
-    throw std::invalid_argument("Invalid openGL shader stage!");
+    throw CoreException("Invalid openGL shader stage!");
   }
 
 
 
-  OpenGLShader::OpenGLShader(const std::string& filepath, const std::unordered_map<std::string, std::string>& preprocessorDefinitions)
+  OpenGLShader::OpenGLShader(const std::filesystem::path& filepath, const std::unordered_map<std::string, std::string>& preprocessorDefinitions)
     : m_RendererID(0),
-      m_Name("Unnamed Shader"),
-      m_FilePath(filepath)
+      m_Name(filepath.stem().string()),
+      m_FilePath(filepath.string())
   {
     ENG_PROFILE_FUNCTION();
 
@@ -65,13 +65,6 @@ namespace eng
     compileOpenGLBinaries();
     createProgram();
     timer.timeStop();
-
-    // Extract name from filepath
-    uSize lastSlash = filepath.find_last_of("/\\");
-    lastSlash = lastSlash == std::string::npos ? 0 : lastSlash + 1;
-    uSize lastDot = filepath.rfind('.');
-    uSize count = lastDot == std::string::npos ? filepath.size() - lastSlash : lastDot - lastSlash;
-    m_Name = filepath.substr(lastSlash, count);
   }
 
   OpenGLShader::~OpenGLShader()

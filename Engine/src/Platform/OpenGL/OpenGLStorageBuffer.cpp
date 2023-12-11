@@ -16,7 +16,7 @@ namespace eng::mem
       case StorageBuffer::Type::IndexBuffer:    return GL_ELEMENT_ARRAY_BUFFER;
       case StorageBuffer::Type::SSBO:           return GL_SHADER_STORAGE_BUFFER;
     }
-    throw std::invalid_argument("Invalid storage buffer type!");
+    throw CoreException("Invalid storage buffer type!");
   }
 
   OpenGLStorageBuffer::OpenGLStorageBuffer(Type type, std::optional<u32> binding)
@@ -81,7 +81,7 @@ namespace eng::mem
   {
     ENG_CORE_ASSERT(thread::isMainThread(), "OpenGL calls must be made on the main thread!");
     if (offset + data.size() > m_Size)
-      throw std::out_of_range("Data is outside of buffer range!");
+      throw CoreException("Data is outside of buffer range!");
     glNamedBufferSubData(m_RendererID, offset, data.size(), data.raw());
 
 #if ENG_DEBUG

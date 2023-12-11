@@ -1,12 +1,13 @@
 #pragma once
 #include "Concepts.h"
+#include "Exception.h"
 #include "Engine/Debug/Assert.h"
 
 namespace eng
 {
   namespace detail
   {
-    static constexpr const char* c_BadCastMessage = "Value cannot be represented in the destination type!";
+    static constexpr std::string_view c_BadCastMessage = "Value cannot be represented in the destination type!";
 
     template<Arithmetic C, Arithmetic T>
     constexpr bool canSafelyCast(T value, C min = std::numeric_limits<C>::lowest(), C max = std::numeric_limits<C>::max())
@@ -62,7 +63,7 @@ namespace eng
     else if (detail::canSafelyCast<C>(value))
       return static_cast<C>(value);
     else
-      throw std::range_error(detail::c_BadCastMessage);
+      throw CoreException(detail::c_BadCastMessage.data());
   }
 
   template<Arithmetic C, Arithmetic T>
@@ -82,7 +83,7 @@ namespace eng
   {
     if (detail::canSafelyCast(value, detail::toUnderlying(E::First), detail::toUnderlying(E::Last)))
       return static_cast<E>(value);
-    throw std::range_error("Value cannot be represented by enum!");
+    throw CoreException("Value cannot be represented by enum!");
   }
 
   template<IterableEnum E, Arithmetic T>

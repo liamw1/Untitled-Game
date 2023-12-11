@@ -32,6 +32,6 @@ namespace eng
       case RendererAPI::API::OpenGL:        return std::make_unique<OpenGLVertexArray>();
       case RendererAPI::API::OpenGL_Legacy: return std::make_unique<OpenGLVertexArray>();
     }
-    throw std::invalid_argument("Invalid RendererAPI!");
+    throw CoreException("Invalid RendererAPI!");
   }
 }

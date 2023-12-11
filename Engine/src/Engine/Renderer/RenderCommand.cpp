@@ -12,7 +12,7 @@ namespace eng::render::command
       case RendererAPI::API::OpenGL:        return std::make_unique<OpenGLRendererAPI>();
       case RendererAPI::API::OpenGL_Legacy: return std::make_unique<OpenGLRendererAPI>();
     }
-    throw std::invalid_argument("Invalid RendererAPI!");
+    throw CoreException("Invalid RendererAPI!");
   }
   static std::unique_ptr<RendererAPI> s_RendererAPI = createAPI();
 

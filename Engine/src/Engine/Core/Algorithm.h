@@ -1,5 +1,6 @@
 #pragma once
 #include "Concepts.h"
+#include "Exception.h"
 #include "Policy.h"
 
 /*
@@ -155,7 +156,7 @@ namespace eng::algo
       case SortPolicy::Ascending:   std::sort(first, last, [&transform](const ValueType& a, const ValueType& b) { return transform(a) < transform(b); }); return;
       case SortPolicy::Descending:  std::sort(first, last, [&transform](const ValueType& a, const ValueType& b) { return transform(a) > transform(b); }); return;
     }
-    throw std::invalid_argument("Invalid sort policy!");
+    throw CoreException("Invalid sort policy!");
   }
 
   template<IterableContainer C, TransformToComparable<detail::containedType<C>> F>

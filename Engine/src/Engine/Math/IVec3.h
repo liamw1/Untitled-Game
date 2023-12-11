@@ -44,7 +44,7 @@ namespace eng::math
         case Axis::Y: return j;
         case Axis::Z: return k;
       }
-      throw std::invalid_argument("Invalid axis!");
+      throw CoreException("Invalid axis!");
     }
   
     // Define lexicographical ordering on 3D indices
@@ -110,7 +110,7 @@ namespace eng::math
         case Axis::Y: return IVec3(k, i, j);
         case Axis::Z: return IVec3(j, k, i);
       }
-      throw std::invalid_argument("Invalid permutation!");
+      throw CoreException("Invalid permutation!");
     }
   };
   
