@@ -42,7 +42,7 @@ namespace eng
       \param data Buffer of texture data
       \param size Size of buffer in bytes
     */
-    virtual void setData(const mem::Data& textureData) = 0;
+    virtual void setData(const mem::RenderData& textureData) = 0;
 
     /*
       Binds texture to texture slot (0 by default).

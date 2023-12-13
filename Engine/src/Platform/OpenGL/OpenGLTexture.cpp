@@ -88,7 +88,7 @@ namespace eng
   u32 OpenGLTexture::getHeight() const { return m_Height; }
   u32 OpenGLTexture::getRendererID() const { return m_RendererID; }
 
-  void OpenGLTexture::setData(const mem::Data& textureData)
+  void OpenGLTexture::setData(const mem::RenderData& textureData)
   {
     ENG_PROFILE_FUNCTION();
     ENG_CORE_ASSERT(thread::isMainThread(), "OpenGL calls must be made on the main thread!");

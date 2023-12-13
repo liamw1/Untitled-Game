@@ -94,20 +94,20 @@ namespace eng
         m_CommandData.firstVertex = firstElement;
     }
 
-    mem::Data indexData() const
+    mem::RenderData indexData() const
     {
       if constexpr (IsIndexed)
       {
         mem::IndexData data = static_cast<const Derived*>(this)->indexData();
         ENG_CORE_ASSERT(data.elementCount() == m_CommandData.indexCount, "Index data does not have the correct number of indices!");
-        return static_cast<mem::Data>(data);
+        return static_cast<mem::RenderData>(data);
       }
       else
         return {};
     }
-    mem::Data vertexData() const
+    mem::RenderData vertexData() const
     {
-      mem::Data data = static_cast<const Derived*>(this)->vertexData();
+      mem::RenderData data = static_cast<const Derived*>(this)->vertexData();
       if constexpr (!IsIndexed)
         ENG_CORE_ASSERT(data.elementCount() == m_CommandData.vertexCount, "Vertex data does not have the correct number of vertices!");
       return data;

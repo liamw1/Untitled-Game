@@ -25,7 +25,7 @@ namespace eng::mem
     return m_Regions.contains(address);
   }
 
-  MemoryPool::AllocationResult MemoryPool::malloc(const mem::Data& data)
+  MemoryPool::AllocationResult MemoryPool::malloc(const mem::RenderData& data)
   {
     if (data.size() == 0)
       return { std::numeric_limits<address_t>::max(), false };
@@ -103,7 +103,7 @@ namespace eng::mem
     m_FreeRegions.emplace(regionSize(freedRegionPosition), freedRegionPosition->first);
   }
 
-  MemoryPool::AllocationResult MemoryPool::realloc(address_t address, const mem::Data& data)
+  MemoryPool::AllocationResult MemoryPool::realloc(address_t address, const mem::RenderData& data)
   {
     RegionsIterator allocationPosition = m_Regions.find(address);
     ENG_CORE_ASSERT(allocationPosition != m_Regions.end(), "No memory region was found at adress {0}!", address);

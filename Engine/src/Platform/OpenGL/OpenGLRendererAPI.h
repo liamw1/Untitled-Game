@@ -35,7 +35,7 @@ namespace eng
     void drawIndexed(const VertexArray* vertexArray, u32 indexCount) override;
     void drawIndexedLines(const VertexArray* vertexArray, u32 indexCount) override;
 
-    void multiDrawVertices(const mem::Data& drawCommandData, i32 commandCount) override;
-    void multiDrawIndexed(const mem::Data& drawCommandData, i32 commandCount) override;
+    void multiDrawVertices(const mem::RenderData& drawCommandData, i32 commandCount) override;
+    void multiDrawIndexed(const mem::RenderData& drawCommandData, i32 commandCount) override;
   };
 }

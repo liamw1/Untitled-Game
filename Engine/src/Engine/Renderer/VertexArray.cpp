@@ -8,7 +8,7 @@ namespace eng
   IndexBuffer::IndexBuffer(const mem::IndexData& data)
     : m_Buffer(mem::StorageBuffer::Create(mem::StorageBuffer::Type::IndexBuffer))
   {
-    m_Buffer->set(static_cast<mem::Data>(data));
+    m_Buffer->set(static_cast<mem::RenderData>(data));
   }
   IndexBuffer::IndexBuffer(const std::shared_ptr<mem::StorageBuffer>& indexBufferStorage)
     : m_Buffer(indexBufferStorage) {}

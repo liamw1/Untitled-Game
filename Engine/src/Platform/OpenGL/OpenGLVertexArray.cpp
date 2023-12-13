@@ -12,18 +12,22 @@ namespace eng
   {
     switch (type)
     {
-      case mem::ShaderDataType::Bool:        return GL_BOOL;
-      case mem::ShaderDataType::Uint32:      return GL_UNSIGNED_INT;
-      case mem::ShaderDataType::Int:         return GL_INT;
-      case mem::ShaderDataType::Int2:        return GL_INT;
-      case mem::ShaderDataType::Int3:        return GL_INT;
-      case mem::ShaderDataType::Int4:        return GL_INT;
-      case mem::ShaderDataType::Float:       return GL_FLOAT;
-      case mem::ShaderDataType::Float2:      return GL_FLOAT;
-      case mem::ShaderDataType::Float3:      return GL_FLOAT;
-      case mem::ShaderDataType::Float4:      return GL_FLOAT;
-      case mem::ShaderDataType::Mat3:        return GL_FLOAT;
-      case mem::ShaderDataType::Mat4:        return GL_FLOAT;
+      case mem::ShaderDataType::Bool:
+        return GL_BOOL;
+      case mem::ShaderDataType::Unsigned:
+        return GL_UNSIGNED_INT;
+      case mem::ShaderDataType::Int:
+      case mem::ShaderDataType::Int2:
+      case mem::ShaderDataType::Int3:
+      case mem::ShaderDataType::Int4:
+        return GL_INT;
+      case mem::ShaderDataType::Float:
+      case mem::ShaderDataType::Float2:
+      case mem::ShaderDataType::Float3:
+      case mem::ShaderDataType::Float4:
+      case mem::ShaderDataType::Mat3:
+      case mem::ShaderDataType::Mat4:
+        return GL_FLOAT;
     }
     throw CoreException("Invalid ShaderDataType!");
   }
@@ -73,46 +77,43 @@ namespace eng
     glBindVertexArray(m_RendererID);
     m_VertexBuffer->bind();
 
-    u32 vertexBufferIndex = 0;
-    for (const mem::BufferElement& element : layout)
+    for (u32 attributeIndex = 0; attributeIndex < m_VertexBufferLayout.elements().size(); ++attributeIndex)
     {
+      const mem::BufferElement& element = m_VertexBufferLayout.elements()[attributeIndex];
       std::underlying_type_t<mem::ShaderDataType> dataTypeID = toUnderlying(element.type);
 
-      if (dataTypeID >= toUnderlying(mem::ShaderDataType::FloatTypeBegin) && dataTypeID <= toUnderlying(mem::ShaderDataType::FloatTypeEnd))
+      if (dataTypeID >= toUnderlying(mem::ShaderDataType::FirstFloat) && dataTypeID <= toUnderlying(mem::ShaderDataType::LastFloat))
       {
-        glEnableVertexAttribArray(vertexBufferIndex);
-        glVertexAttribPointer(vertexBufferIndex,
-          element.getComponentCount(),
-          convertToOpenGLBaseType(element.type),
-          element.normalized ? GL_TRUE : GL_FALSE,
-          layout.stride(),
-          std::bit_cast<const void*>(arithmeticUpcast<uSize>(element.offset)));
-        vertexBufferIndex++;
+        glEnableVertexAttribArray(attributeIndex);
+        glVertexAttribPointer(attributeIndex,
+                              element.getComponentCount(),
+                              convertToOpenGLBaseType(element.type),
+                              element.normalized ? GL_TRUE : GL_FALSE,
+                              m_VertexBufferLayout.stride(),
+                              std::bit_cast<const void*>(arithmeticUpcast<uSize>(element.offset)));
       }
-      else if (dataTypeID >= toUnderlying(mem::ShaderDataType::IntTypeBegin) && dataTypeID <= toUnderlying(mem::ShaderDataType::IntTypeEnd))
+      else if (dataTypeID >= toUnderlying(mem::ShaderDataType::FirstInt) && dataTypeID <= toUnderlying(mem::ShaderDataType::LastInt))
       {
-        glEnableVertexAttribArray(vertexBufferIndex);
-        glVertexAttribIPointer(vertexBufferIndex,
-          element.getComponentCount(),
-          convertToOpenGLBaseType(element.type),
-          layout.stride(),
-          std::bit_cast<const void*>(arithmeticUpcast<uSize>(element.offset)));
-        vertexBufferIndex++;
+        glEnableVertexAttribArray(attributeIndex);
+        glVertexAttribIPointer(attributeIndex,
+                               element.getComponentCount(),
+                               convertToOpenGLBaseType(element.type),
+                               m_VertexBufferLayout.stride(),
+                               std::bit_cast<const void*>(arithmeticUpcast<uSize>(element.offset)));
       }
-      else if (dataTypeID >= toUnderlying(mem::ShaderDataType::MatTypeBegin) && dataTypeID <= toUnderlying(mem::ShaderDataType::MatTypeEnd))
+      else if (dataTypeID >= toUnderlying(mem::ShaderDataType::FirstMat) && dataTypeID <= toUnderlying(mem::ShaderDataType::LastMat))
       {
         i32 componentCount = element.getComponentCount();
         for (i32 i = 0; i < componentCount; ++i)
         {
-          glEnableVertexAttribArray(vertexBufferIndex);
-          glVertexAttribPointer(vertexBufferIndex,
+          glEnableVertexAttribArray(attributeIndex);
+          glVertexAttribPointer(attributeIndex,
                                 componentCount,
                                 convertToOpenGLBaseType(element.type),
                                 element.normalized ? GL_TRUE : GL_FALSE,
-                                layout.stride(),
+                                m_VertexBufferLayout.stride(),
                                 std::bit_cast<const void*>(arithmeticUpcast<uSize>(element.offset + sizeof(f32) * componentCount * i)));
-          glVertexAttribDivisor(vertexBufferIndex, 1);
-          vertexBufferIndex++;
+          glVertexAttribDivisor(attributeIndex, 1);
         }
       }
       else
@@ -124,7 +125,7 @@ namespace eng
 #endif
   }
 
-  void OpenGLVertexArray::setVertexBuffer(const mem::Data& data)
+  void OpenGLVertexArray::setVertexBuffer(const mem::RenderData& data)
   {
     m_VertexBuffer->set(data);
 
@@ -139,7 +140,7 @@ namespace eng
     setLayout(m_VertexBufferLayout);
   }
 
-  void OpenGLVertexArray::modifyVertexBuffer(u32 offset, const mem::Data& data) const
+  void OpenGLVertexArray::modifyVertexBuffer(u32 offset, const mem::RenderData& data) const
   {
     m_VertexBuffer->modify(offset, data);
 

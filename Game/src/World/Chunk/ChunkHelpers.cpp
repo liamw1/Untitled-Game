@@ -61,7 +61,7 @@ ChunkDrawCommand::ChunkDrawCommand(const GlobalIndex& chunkIndex, bool needsSort
 bool ChunkDrawCommand::operator==(const ChunkDrawCommand& other) const { return id() == other.id(); }
 
 eng::mem::IndexData ChunkDrawCommand::indexData() const { return m_Indices; }
-eng::mem::Data ChunkDrawCommand::vertexData() const { return m_Vertices; }
+eng::mem::RenderData ChunkDrawCommand::vertexData() const { return m_Vertices; }
 
 void ChunkDrawCommand::clearData()
 {

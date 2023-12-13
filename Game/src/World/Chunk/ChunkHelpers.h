@@ -61,7 +61,7 @@ public:
   bool operator==(const ChunkDrawCommand& other) const;
 
   eng::mem::IndexData indexData() const;
-  eng::mem::Data vertexData() const;
+  eng::mem::RenderData vertexData() const;
   void clearData();
 
   void addQuad(const BlockIndex& blockIndex, eng::math::Direction face, block::TextureID texture, const std::array<i32, 4>& sunlight, const std::array<i32, 4>& ambientOcclusion);

@@ -12,8 +12,8 @@ static std::unique_ptr<eng::Shader> s_Shader;
 static std::unique_ptr<eng::Uniform> s_LightUniform;
 static std::unique_ptr<eng::mem::StorageBuffer> s_SSBO;
 static std::shared_ptr<eng::TextureArray> s_TextureArray;
-static const eng::mem::BufferLayout s_VertexBufferLayout = {{ eng::mem::ShaderDataType::Uint32, "a_VertexData" },
-                                                            { eng::mem::ShaderDataType::Uint32, "a_Lighting"   }};
+static const eng::mem::BufferLayout s_VertexBufferLayout = {{ eng::mem::ShaderDataType::Unsigned, "a_VertexData" },
+                                                            { eng::mem::ShaderDataType::Unsigned, "a_Lighting"   }};
 
 struct LightUniforms
 {

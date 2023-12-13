@@ -39,8 +39,8 @@ namespace eng
     virtual void drawIndexed(const VertexArray* vertexArray, u32 indexCount) = 0;
     virtual void drawIndexedLines(const VertexArray* vertexArray, u32 indexCount) = 0;
 
-    virtual void multiDrawVertices(const mem::Data& drawCommandData, i32 commandCount) = 0;
-    virtual void multiDrawIndexed(const mem::Data& drawCommandData, i32 commandCount) = 0;
+    virtual void multiDrawVertices(const mem::RenderData& drawCommandData, i32 commandCount) = 0;
+    virtual void multiDrawIndexed(const mem::RenderData& drawCommandData, i32 commandCount) = 0;
 
     virtual void clearDepthBuffer() = 0;
 

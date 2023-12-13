@@ -66,7 +66,7 @@ namespace eng::mem
     return m_Type;
   }
 
-  void OpenGLStorageBuffer::set(const mem::Data& data)
+  void OpenGLStorageBuffer::set(const mem::RenderData& data)
   {
     ENG_CORE_ASSERT(thread::isMainThread(), "OpenGL calls must be made on the main thread!");
     glNamedBufferData(m_RendererID, data.size(), data.raw(), GL_DYNAMIC_DRAW);
@@ -77,7 +77,7 @@ namespace eng::mem
 #endif
   }
 
-  void OpenGLStorageBuffer::modify(u32 offset, const mem::Data& data)
+  void OpenGLStorageBuffer::modify(u32 offset, const mem::RenderData& data)
   {
     ENG_CORE_ASSERT(thread::isMainThread(), "OpenGL calls must be made on the main thread!");
     if (offset + data.size() > m_Size)

@@ -27,7 +27,7 @@ namespace eng
 
     m_Window = Window::Create(WindowProps(name));
     m_Window->setEventCallback(bindMemberFunction(&Application::onEvent, this));
-    m_Window->setVSync(true);
+    m_Window->setVSync(false);
 
     // m_ImGuiLayer = std::make_unique<ImGuiLayer>();
     // pushOverlay(m_ImGuiLayer);

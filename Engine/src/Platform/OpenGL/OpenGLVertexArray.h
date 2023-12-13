@@ -19,9 +19,9 @@ namespace eng
 
     void setLayout(const mem::BufferLayout& layout) override;
 
-    void setVertexBuffer(const mem::Data& data) override;
+    void setVertexBuffer(const mem::RenderData& data) override;
     void setVertexBuffer(const std::shared_ptr<mem::StorageBuffer>& vertexBuffer) override;
-    void modifyVertexBuffer(u32 offset, const mem::Data& data) const override;
+    void modifyVertexBuffer(u32 offset, const mem::RenderData& data) const override;
     void resizeVertexBuffer(u32 newSize) override;
 
     void setIndexBuffer(const IndexBuffer& indexBuffer) override;

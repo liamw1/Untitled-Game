@@ -41,7 +41,7 @@ namespace newLod
   bool DrawCommand::operator==(const DrawCommand& other) const { return id() == other.id(); }
 
   eng::mem::IndexData DrawCommand::indexData() const { return eng::mem::IndexData(m_Indices); }
-  eng::mem::Data DrawCommand::vertexData() const { return eng::mem::Data(m_Vertices); }
+  eng::mem::RenderData DrawCommand::vertexData() const { return eng::mem::RenderData(m_Vertices); }
   void DrawCommand::clearData()
   {
     m_Indices = {};

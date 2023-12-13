@@ -21,8 +21,8 @@ namespace eng::mem
     virtual u32 size() const = 0;
     virtual Type type() const = 0;
 
-    virtual void set(const mem::Data& data) = 0;
-    virtual void modify(u32 offset, const mem::Data& data) = 0;
+    virtual void set(const mem::RenderData& data) = 0;
+    virtual void modify(u32 offset, const mem::RenderData& data) = 0;
     virtual void resize(u32 newSize) = 0;
 
     static std::unique_ptr<StorageBuffer> Create(Type type, std::optional<u32> binding = std::nullopt);

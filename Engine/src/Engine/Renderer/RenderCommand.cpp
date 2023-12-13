@@ -33,6 +33,6 @@ namespace eng::render::command
   void drawIndexed(const VertexArray* vertexArray, u32 indexCount) { s_RendererAPI->drawIndexed(vertexArray, indexCount); }
   void drawIndexedLines(const VertexArray* vertexArray, u32 indexCount) { s_RendererAPI->drawIndexedLines(vertexArray, indexCount); }
 
-  void multiDrawVertices(const mem::Data& drawCommandData, i32 commandCount) { s_RendererAPI->multiDrawVertices(drawCommandData, commandCount); }
-  void multiDrawIndexed(const mem::Data& drawCommandData, i32 commandCount) { s_RendererAPI->multiDrawIndexed(drawCommandData, commandCount); }
+  void multiDrawVertices(const mem::RenderData& drawCommandData, i32 commandCount) { s_RendererAPI->multiDrawVertices(drawCommandData, commandCount); }
+  void multiDrawIndexed(const mem::RenderData& drawCommandData, i32 commandCount) { s_RendererAPI->multiDrawIndexed(drawCommandData, commandCount); }
 }

@@ -51,7 +51,7 @@ namespace newLod
     bool operator==(const DrawCommand& other) const;
 
     eng::mem::IndexData indexData() const;
-    eng::mem::Data vertexData() const;
+    eng::mem::RenderData vertexData() const;
     void clearData();
   };
 }

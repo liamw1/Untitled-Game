@@ -133,7 +133,7 @@ namespace eng
     glDrawElements(GL_LINES, count, GL_UNSIGNED_INT, nullptr);
   }
 
-  void OpenGLRendererAPI::multiDrawVertices(const mem::Data& drawCommandData, i32 commandCount)
+  void OpenGLRendererAPI::multiDrawVertices(const mem::RenderData& drawCommandData, i32 commandCount)
   {
     ENG_CORE_ASSERT(thread::isMainThread(), "OpenGL calls must be made on the main thread!");
     ENG_CORE_ASSERT(commandCount <= drawCommandData.elementCount(), "Command count is higher than the number of draw commands!");
@@ -141,7 +141,7 @@ namespace eng
     glMultiDrawArraysIndirect(GL_TRIANGLES, drawCommandData.raw(), commandCount, commandStride);
   }
 
-  void OpenGLRendererAPI::multiDrawIndexed(const mem::Data& drawCommandData, i32 commandCount)
+  void OpenGLRendererAPI::multiDrawIndexed(const mem::RenderData& drawCommandData, i32 commandCount)
   {
     ENG_CORE_ASSERT(thread::isMainThread(), "OpenGL calls must be made on the main thread!");
     ENG_CORE_ASSERT(commandCount <= drawCommandData.elementCount(), "Command count is higher than the number of draw commands!");

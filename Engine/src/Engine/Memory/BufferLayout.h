@@ -19,14 +19,14 @@ namespace eng::mem
   {
     None,
     Bool,
-    Uint32,
+    Unsigned,
     Int, Int2, Int3, Int4,
     Float, Float2, Float3, Float4,
     Mat3, Mat4,
   
-    IntTypeBegin = Bool,    IntTypeEnd = Int4,
-    FloatTypeBegin = Float, FloatTypeEnd = Float4,
-    MatTypeBegin = Mat3,    MatTypeEnd = Mat4
+    FirstInt = Bool,    LastInt = Int4,
+    FirstFloat = Float, LastFloat = Float4,
+    FirstMat = Mat3,    LastMat = Mat4
   };
 
   struct BufferElement

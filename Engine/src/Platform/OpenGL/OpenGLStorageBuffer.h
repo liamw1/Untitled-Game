@@ -20,8 +20,8 @@ namespace eng::mem
     u32 size() const override;
     Type type() const override;
 
-    void set(const mem::Data& data) override;
-    void modify(u32 offset, const mem::Data& data) override;
+    void set(const mem::RenderData& data) override;
+    void modify(u32 offset, const mem::RenderData& data) override;
     void resize(u32 newSize) override;
   };
 }

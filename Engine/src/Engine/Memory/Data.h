@@ -1,5 +1,6 @@
 #pragma once
 #include "Engine/Core/Concepts.h"
+#include "Engine/Utilities/Constraints.h"
 #include "Engine/Utilities/EnumUtilities.h"
 
 namespace eng::mem
@@ -22,25 +23,25 @@ namespace eng::mem
     GenericData(const void* data, uSize elementSize, uSize elementCount);
   };
 
-  class Data : public GenericData
+  class RenderData : public GenericData
   {
   public:
-    Data();
+    RenderData();
 
     template<typename T>
-    Data(const std::vector<T>& vector)
+    RenderData(const std::vector<T>& vector)
       : GenericData(vector.data(), sizeof(T), vector.size()) {}
 
     template<typename T, uSize N>
-    Data(const std::array<T, N>& arr)
+    RenderData(const std::array<T, N>& arr)
       : GenericData(arr.data(), sizeof(T), N) {}
 
     template<typename T, IterableEnum E>
-    Data(const EnumArray<T, E>& arr)
+    RenderData(const EnumArray<T, E>& arr)
       : GenericData(arr.data(), sizeof(T), arr.size()) {}
 
   private:
-    Data(const void* data, uSize elementSize, uSize elementCount);
+    RenderData(const void* data, uSize elementSize, uSize elementCount);
     friend class IndexData;
   };
 
@@ -58,7 +59,7 @@ namespace eng::mem
     IndexData(const EnumArray<u32, E>& arr)
       : GenericData(arr.data(), sizeof(u32), arr.size()) {}
 
-    explicit operator Data() const;
+    explicit operator RenderData() const;
   };
 
   class UniformData : public GenericData

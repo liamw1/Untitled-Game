@@ -9,7 +9,7 @@ namespace eng::mem
     switch (type)
     {
       case ShaderDataType::Bool:        return 1 * sizeof(bool);
-      case ShaderDataType::Uint32:      return 1 * sizeof(u32);
+      case ShaderDataType::Unsigned:    return 1 * sizeof(u32);
       case ShaderDataType::Int:         return 1 * sizeof(i32);
       case ShaderDataType::Int2:        return 2 * sizeof(i32);
       case ShaderDataType::Int3:        return 3 * sizeof(i32);
@@ -36,7 +36,7 @@ namespace eng::mem
     switch (type)
     {
       case ShaderDataType::Bool:        return 1;
-      case ShaderDataType::Uint32:      return 1;
+      case ShaderDataType::Unsigned:    return 1;
       case ShaderDataType::Int:         return 1;
       case ShaderDataType::Int2:        return 2;
       case ShaderDataType::Int3:        return 3;

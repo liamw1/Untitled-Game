@@ -16,8 +16,8 @@ namespace eng::mem
 
 
 
-  Data::Data() = default;
-  Data::Data(const void* data, uSize elementSize, uSize elementCount)
+  RenderData::RenderData() = default;
+  RenderData::RenderData(const void* data, uSize elementSize, uSize elementCount)
     : GenericData(data, elementSize, elementCount) {}
 
 
@@ -26,7 +26,7 @@ namespace eng::mem
   IndexData::IndexData(const std::vector<u32>& vector)
     : GenericData(vector.data(), sizeof(u32), vector.size()) {}
 
-  IndexData::operator Data() const { return Data(raw(), elementSize(), elementCount()); }
+  IndexData::operator RenderData() const { return RenderData(raw(), elementSize(), elementCount()); }
 
 
 

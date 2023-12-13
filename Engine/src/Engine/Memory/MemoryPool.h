@@ -55,7 +55,7 @@ namespace eng::mem
       Uploads data to GPU. May trigger a resize.
       \returns If a resize was triggered and an address for the allocated memory.
     */
-    [[nodiscard]] AllocationResult malloc(const mem::Data& data);
+    [[nodiscard]] AllocationResult malloc(const mem::RenderData& data);
 
     /*
       Removes the memory at the specified address. Doesn't actually delete any memory.
@@ -67,7 +67,7 @@ namespace eng::mem
       Overwrites data that was previously uploaded to the GPU. May trigger a resize.
       \returns If a resize was triggered and an address for the reallocated memory.
     */
-    [[nodiscard]] AllocationResult realloc(address_t address, const mem::Data& data);
+    [[nodiscard]] AllocationResult realloc(address_t address, const mem::RenderData& data);
 
   private:
     using RegionsIterator = std::map<address_t, MemoryRegion>::iterator;
