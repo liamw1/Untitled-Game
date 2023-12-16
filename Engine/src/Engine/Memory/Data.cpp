@@ -25,10 +25,10 @@ namespace eng::mem
   IndexData::IndexData() = default;
   IndexData::IndexData(const std::vector<u32>& vector)
     : GenericData(vector.data(), sizeof(u32), vector.size()) {}
-
   IndexData::operator RenderData() const { return RenderData(raw(), elementSize(), elementCount()); }
 
 
 
   UniformData::UniformData() = default;
+  UniformData::operator RenderData() const { return RenderData(raw(), elementSize(), elementCount()); }
 }

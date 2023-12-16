@@ -29,10 +29,10 @@ namespace eng::render::command
   void setFaceCulling(bool enableFaceCulling) { s_RendererAPI->setFaceCulling(enableFaceCulling); }
   void setWireFrame(bool enableWireFrame) { s_RendererAPI->setWireFrame(enableWireFrame); }
 
-  void drawVertices(const VertexArray* vertexArray, u32 vertexCount) { s_RendererAPI->drawVertices(vertexArray, vertexCount); }
-  void drawIndexed(const VertexArray* vertexArray, u32 indexCount) { s_RendererAPI->drawIndexed(vertexArray, indexCount); }
-  void drawIndexedLines(const VertexArray* vertexArray, u32 indexCount) { s_RendererAPI->drawIndexedLines(vertexArray, indexCount); }
+  void drawVertices(const VertexArray* vertexArray, uSize vertexCount) { s_RendererAPI->drawVertices(vertexArray, vertexCount); }
+  void drawIndexed(const VertexArray* vertexArray, uSize indexCount) { s_RendererAPI->drawIndexed(vertexArray, indexCount); }
+  void drawIndexedLines(const VertexArray* vertexArray, uSize indexCount) { s_RendererAPI->drawIndexedLines(vertexArray, indexCount); }
 
-  void multiDrawVertices(const mem::RenderData& drawCommandData, i32 commandCount) { s_RendererAPI->multiDrawVertices(drawCommandData, commandCount); }
-  void multiDrawIndexed(const mem::RenderData& drawCommandData, i32 commandCount) { s_RendererAPI->multiDrawIndexed(drawCommandData, commandCount); }
+  void multiDrawVertices(const mem::RenderData& drawCommandData, uSize commandCount) { s_RendererAPI->multiDrawVertices(drawCommandData, commandCount); }
+  void multiDrawIndexed(const mem::RenderData& drawCommandData, uSize commandCount) { s_RendererAPI->multiDrawIndexed(drawCommandData, commandCount); }
 }

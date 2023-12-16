@@ -1,5 +1,5 @@
 #pragma once
-#include "StorageBuffer.h"
+#include "Buffer.h"
 
 namespace eng::mem
 {
@@ -35,19 +35,19 @@ namespace eng::mem
 
     static constexpr f32 c_CapacityIncreaseOnResize = 1.25f;
 
-    std::shared_ptr<StorageBuffer> m_Buffer;
+    std::shared_ptr<DynamicBuffer> m_Buffer;
     std::map<address_t, MemoryRegion> m_Regions;  // For fast access based on address
     std::multimap<i32, address_t> m_FreeRegions;  // For fast access based on free region size
     i32 m_Capacity;
 
   public:
     MemoryPool();
-    MemoryPool(StorageBuffer::Type bufferType, i32 initialCapacity = 64);
+    MemoryPool(DynamicBuffer::Type bufferType, i32 initialCapacity = 64);
 
     void bind() const;
-    void unBind() const;
+    void unbind() const;
 
-    const std::shared_ptr<StorageBuffer>& buffer();
+    const std::shared_ptr<DynamicBuffer>& buffer();
 
     bool validAllocation(address_t address) const;
 

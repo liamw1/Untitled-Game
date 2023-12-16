@@ -1,18 +1,21 @@
 #pragma once
 #include "Engine/Memory/Data.h"
+#include "Engine/Memory/Buffer.h"
 
 namespace eng
 {
   class Uniform
   {
+    static constexpr u32 c_MaxBindings = 36;
+    static constexpr uSize c_MaxSize = 16384;
+    static inline std::array<std::unique_ptr<mem::StorageBuffer>, c_MaxBindings> s_Uniforms;
+
+    u32 m_Binding;
+
   public:
-    virtual ~Uniform();
+    Uniform(u32 binding, uSize size);
+    ~Uniform();
 
-    virtual void bind() const = 0;
-    virtual void unBind() const = 0;
-
-    virtual void set(const mem::UniformData& uniformData) = 0;
-
-    static std::unique_ptr<Uniform> Create(u32 binding, u32 size);
+    void set(const mem::UniformData& uniformData);
   };
 }

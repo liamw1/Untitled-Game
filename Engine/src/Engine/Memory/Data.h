@@ -42,7 +42,9 @@ namespace eng::mem
 
   private:
     RenderData(const void* data, uSize elementSize, uSize elementCount);
+
     friend class IndexData;
+    friend class UniformData;
   };
 
   class IndexData : public GenericData
@@ -70,5 +72,7 @@ namespace eng::mem
     template<StandardLayout T>
     UniformData(const T& uniform)
       : GenericData(&uniform, sizeof(T), 1) {}
+
+    explicit operator RenderData() const;
   };
 }

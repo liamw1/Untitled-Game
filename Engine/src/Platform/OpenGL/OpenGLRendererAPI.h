@@ -31,11 +31,11 @@ namespace eng
     void setFaceCulling(bool enableFaceCulling) override;
     void setWireFrame(bool enableWireFrame) override;
 
-    void drawVertices(const VertexArray* vertexArray, u32 vertexCount) override;
-    void drawIndexed(const VertexArray* vertexArray, u32 indexCount) override;
-    void drawIndexedLines(const VertexArray* vertexArray, u32 indexCount) override;
+    void drawVertices(const VertexArray* vertexArray, uSize vertexCount) override;
+    void drawIndexed(const VertexArray* vertexArray, uSize indexCount) override;
+    void drawIndexedLines(const VertexArray* vertexArray, uSize indexCount) override;
 
-    void multiDrawVertices(const mem::RenderData& drawCommandData, i32 commandCount) override;
-    void multiDrawIndexed(const mem::RenderData& drawCommandData, i32 commandCount) override;
+    void multiDrawVertices(const mem::RenderData& drawCommandData, uSize commandCount) override;
+    void multiDrawIndexed(const mem::RenderData& drawCommandData, uSize commandCount) override;
   };
 }

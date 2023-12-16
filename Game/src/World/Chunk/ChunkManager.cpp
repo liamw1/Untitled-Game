@@ -6,16 +6,17 @@
 
 // Rendering
 static constexpr i32 c_TextureSlot = 0;
-static constexpr i32 c_StorageBufferBinding = 1;
-static constexpr u32 c_StorageBufferSize = eng::math::pow2<u32>(20);
+static constexpr i32 c_SSBOBinding = 1;
+static constexpr i32 c_LightUniformBinding = 2;
+static constexpr u32 c_SSBOSize = eng::math::pow2<u32>(20);
 static std::unique_ptr<eng::Shader> s_Shader;
 static std::unique_ptr<eng::Uniform> s_LightUniform;
-static std::unique_ptr<eng::mem::StorageBuffer> s_SSBO;
+static std::unique_ptr<eng::ShaderBufferStorage> s_SSBO;
 static std::shared_ptr<eng::TextureArray> s_TextureArray;
 static const eng::mem::BufferLayout s_VertexBufferLayout = {{ eng::mem::ShaderDataType::Unsigned, "a_VertexData" },
                                                             { eng::mem::ShaderDataType::Unsigned, "a_Lighting"   }};
 
-struct LightUniforms
+struct LightUniformData
 {
   const f32 maxSunlight = eng::arithmeticUpcast<f32>(block::Light::MaxValue());
   f32 sunIntensity = 1.0f;
@@ -92,13 +93,11 @@ ChunkManager::ChunkManager()
   ENG_PROFILE_FUNCTION();
 
   s_Shader = eng::Shader::Create("assets/shaders/Chunk.glsl");
-  s_LightUniform = eng::Uniform::Create(2, sizeof(LightUniforms));
+  s_LightUniform = std::make_unique<eng::Uniform>(c_LightUniformBinding, sizeof(LightUniformData));
   s_TextureArray = block::getTextureArray();
+  s_SSBO = std::make_unique<eng::ShaderBufferStorage>(c_SSBOBinding, c_SSBOSize);
 
-  s_SSBO = eng::mem::StorageBuffer::Create(eng::mem::StorageBuffer::Type::SSBO, c_StorageBufferBinding);
-  s_SSBO->resize(c_StorageBufferSize);
-
-  LightUniforms lightUniforms;
+  LightUniformData lightUniforms;
   lightUniforms.sunIntensity = 1.0f;
   s_LightUniform->set(lightUniforms);
 }
@@ -135,21 +134,20 @@ void ChunkManager::render()
   {
     return (chunkIndex - originIndex).l1Norm();
   };
-  auto draw = [&originIndex](const eng::MultiDrawArray<ChunkDrawCommand>& multiDrawArray, i32 commandCount)
+  auto draw = [&originIndex](const eng::MultiDrawArray<ChunkDrawCommand>& multiDrawArray, uSize commandCount)
   {
     const std::vector<ChunkDrawCommand>& drawCommands = multiDrawArray.getDrawCommandBuffer();
 
     std::vector<eng::math::Float4> storageBufferData;
     storageBufferData.reserve(commandCount);
-    for (i32 i = 0; i < commandCount; ++i)
+    for (uSize i = 0; i < commandCount; ++i)
     {
       const GlobalIndex& chunkIndex = drawCommands[i].id();
       eng::math::Vec3 chunkAnchorPosition = indexPosition(chunkIndex, originIndex);
       storageBufferData.emplace_back(chunkAnchorPosition, 0);
     }
-    s_SSBO->modify(0, storageBufferData);
+    s_SSBO->set(storageBufferData);
 
-    s_SSBO->bind();
     multiDrawArray.bind();
     eng::render::command::multiDrawIndexed(drawCommands, commandCount);
   };
@@ -162,7 +160,7 @@ void ChunkManager::render()
   eng::render::command::setUseDepthOffset(false);
   m_OpaqueMultiDrawArray->drawOperation([&isInViewFrustum, &chunkDistance, &draw](eng::MultiDrawArray<ChunkDrawCommand>& multiDrawArray)
   {
-    i32 commandCount = multiDrawArray.partition(isInViewFrustum);
+    uSize commandCount = multiDrawArray.partition(isInViewFrustum);
     multiDrawArray.sort(commandCount, chunkDistance, eng::SortPolicy::Ascending);   // Sort opaque meshes front-to-back
     draw(multiDrawArray, commandCount);
   });
@@ -174,7 +172,7 @@ void ChunkManager::render()
   eng::render::command::setDepthOffset(1.0f, 1.0f);
   m_TransparentMultiDrawArray->drawOperation([&isInViewFrustum, &chunkDistance, &draw, &originIndex, &cameraPosition](eng::MultiDrawArray<ChunkDrawCommand>& multiDrawArray)
   {
-    i32 commandCount = multiDrawArray.partition(isInViewFrustum);
+    uSize commandCount = multiDrawArray.partition(isInViewFrustum);
     multiDrawArray.sort(commandCount, chunkDistance, eng::SortPolicy::Descending);  // Sort transparent meshes back-to-front
     multiDrawArray.modifyIndices(commandCount, [&originIndex, &cameraPosition](ChunkDrawCommand& drawCommand)
     {

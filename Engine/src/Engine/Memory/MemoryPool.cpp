@@ -7,18 +7,18 @@ namespace eng::mem
 {
   MemoryPool::MemoryPool()
     : m_Capacity(0) {}
-  MemoryPool::MemoryPool(StorageBuffer::Type bufferType, i32 initialCapacity)
+  MemoryPool::MemoryPool(DynamicBuffer::Type bufferType, i32 initialCapacity)
     : m_Capacity(initialCapacity)
   {
-    m_Buffer = StorageBuffer::Create(bufferType);
+    m_Buffer = DynamicBuffer::Create(bufferType);
     m_Buffer->resize(m_Capacity);
 
     addFreeRegion(0, m_Capacity);
   }
 
   void MemoryPool::bind() const { m_Buffer->bind(); }
-  void MemoryPool::unBind() const { m_Buffer->unBind(); }
-  const std::shared_ptr<StorageBuffer>& MemoryPool::buffer() { return m_Buffer; }
+  void MemoryPool::unbind() const { m_Buffer->unbind(); }
+  const std::shared_ptr<DynamicBuffer>& MemoryPool::buffer() { return m_Buffer; }
 
   bool MemoryPool::validAllocation(address_t address) const
   {

@@ -6,17 +6,17 @@
 namespace eng
 {
   IndexBuffer::IndexBuffer(const mem::IndexData& data)
-    : m_Buffer(mem::StorageBuffer::Create(mem::StorageBuffer::Type::IndexBuffer))
+    : m_Buffer(mem::DynamicBuffer::Create(mem::DynamicBuffer::Type::Index))
   {
     m_Buffer->set(static_cast<mem::RenderData>(data));
   }
-  IndexBuffer::IndexBuffer(const std::shared_ptr<mem::StorageBuffer>& indexBufferStorage)
-    : m_Buffer(indexBufferStorage) {}
+  IndexBuffer::IndexBuffer(const std::shared_ptr<mem::DynamicBuffer>& indexBuffer)
+    : m_Buffer(indexBuffer) {}
 
   void IndexBuffer::bind() const { m_Buffer->bind(); }
-  void IndexBuffer::unBind() const { m_Buffer->unBind(); }
+  void IndexBuffer::unbind() const { m_Buffer->unbind(); }
 
-  u32 IndexBuffer::count() const
+  uSize IndexBuffer::count() const
   {
     return m_Buffer->size() / sizeof(u32);
   }

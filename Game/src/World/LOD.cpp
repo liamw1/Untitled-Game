@@ -168,7 +168,7 @@ namespace lod
   {
     static bool initialized = []()
     {
-      s_Uniform = eng::Uniform::Create(c_UniformBinding, sizeof(UniformData));
+      s_Uniform = std::make_unique<eng::Uniform>(c_UniformBinding, sizeof(UniformData));
       s_Shader = eng::Shader::Create("assets/shaders/ChunkLOD.glsl");
       s_TextureArray = block::getTextureArray();
       return true;
@@ -178,8 +178,6 @@ namespace lod
   void MeshData::BindBuffers()
   {
     Initialize();
-    s_Uniform->bind();
-    s_Shader->bind();
     s_TextureArray->bind(c_TextureSlot);
   }
 

@@ -104,48 +104,48 @@ namespace eng
     m_WireFrameEnabled = enableWireFrame;
   }
 
-  void OpenGLRendererAPI::drawVertices(const VertexArray* vertexArray, u32 vertexCount)
+  void OpenGLRendererAPI::drawVertices(const VertexArray* vertexArray, uSize vertexCount)
   {
     ENG_CORE_ASSERT(thread::isMainThread(), "OpenGL calls must be made on the main thread!");
     ENG_CORE_ASSERT(vertexArray, "Vertex array has not been initialized!");
 
     vertexArray->bind();
-    glDrawArrays(GL_TRIANGLES, 0, vertexCount);
+    glDrawArrays(GL_TRIANGLES, 0, arithmeticCast<GLsizei>(vertexCount));
   }
 
-  void OpenGLRendererAPI::drawIndexed(const VertexArray* vertexArray, u32 indexCount)
+  void OpenGLRendererAPI::drawIndexed(const VertexArray* vertexArray, uSize indexCount)
   {
     ENG_CORE_ASSERT(thread::isMainThread(), "OpenGL calls must be made on the main thread!");
     ENG_CORE_ASSERT(vertexArray, "Vertex array has not been initialized!");
 
     vertexArray->bind();
-    u32 count = indexCount == 0 ? vertexArray->getIndexBuffer()->count() : indexCount;
-    glDrawElements(GL_TRIANGLES, count, GL_UNSIGNED_INT, nullptr);
+    uSize count = indexCount == 0 ? vertexArray->getIndexBuffer()->count() : indexCount;
+    glDrawElements(GL_TRIANGLES, arithmeticCast<GLsizei>(count), GL_UNSIGNED_INT, nullptr);
   }
 
-  void OpenGLRendererAPI::drawIndexedLines(const VertexArray* vertexArray, u32 indexCount)
+  void OpenGLRendererAPI::drawIndexedLines(const VertexArray* vertexArray, uSize indexCount)
   {
     ENG_CORE_ASSERT(thread::isMainThread(), "OpenGL calls must be made on the main thread!");
     ENG_CORE_ASSERT(vertexArray, "Vertex array has not been initialized!");
 
     vertexArray->bind();
-    u32 count = indexCount == 0 ? vertexArray->getIndexBuffer()->count() : indexCount;
-    glDrawElements(GL_LINES, count, GL_UNSIGNED_INT, nullptr);
+    uSize count = indexCount == 0 ? vertexArray->getIndexBuffer()->count() : indexCount;
+    glDrawElements(GL_LINES, arithmeticCast<GLsizei>(count), GL_UNSIGNED_INT, nullptr);
   }
 
-  void OpenGLRendererAPI::multiDrawVertices(const mem::RenderData& drawCommandData, i32 commandCount)
+  void OpenGLRendererAPI::multiDrawVertices(const mem::RenderData& drawCommandData, uSize commandCount)
   {
     ENG_CORE_ASSERT(thread::isMainThread(), "OpenGL calls must be made on the main thread!");
     ENG_CORE_ASSERT(commandCount <= drawCommandData.elementCount(), "Command count is higher than the number of draw commands!");
     GLsizei commandStride = arithmeticCast<GLsizei>(drawCommandData.elementSize());
-    glMultiDrawArraysIndirect(GL_TRIANGLES, drawCommandData.raw(), commandCount, commandStride);
+    glMultiDrawArraysIndirect(GL_TRIANGLES, drawCommandData.raw(), arithmeticCast<GLsizei>(commandCount), commandStride);
   }
 
-  void OpenGLRendererAPI::multiDrawIndexed(const mem::RenderData& drawCommandData, i32 commandCount)
+  void OpenGLRendererAPI::multiDrawIndexed(const mem::RenderData& drawCommandData, uSize commandCount)
   {
     ENG_CORE_ASSERT(thread::isMainThread(), "OpenGL calls must be made on the main thread!");
     ENG_CORE_ASSERT(commandCount <= drawCommandData.elementCount(), "Command count is higher than the number of draw commands!");
     GLsizei commandStride = arithmeticCast<GLsizei>(drawCommandData.elementSize());
-    glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, drawCommandData.raw(), commandCount, commandStride);
+    glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, drawCommandData.raw(), arithmeticCast<GLsizei>(commandCount), commandStride);
   }
 }

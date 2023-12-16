@@ -28,6 +28,7 @@ namespace eng::render
   /*
     Renderer data
   */
+  static constexpr i32 c_CameraUniformBinding = 0;
   static std::unique_ptr<Uniform> s_CameraUniform;
   static std::unique_ptr<Shader> s_WireFrameShader;
   static std::unique_ptr<VertexArray> s_WireFrameVertexArray;
@@ -56,7 +57,7 @@ namespace eng::render
       frameBufferSpecification.height = Application::Get().window().height();
       s_DefaultFramebuffer = Framebuffer::Create(frameBufferSpecification);
 
-      s_CameraUniform = Uniform::Create(0, sizeof(CameraUniformData));
+      s_CameraUniform = std::make_unique<Uniform>(c_CameraUniformBinding, sizeof(CameraUniformData));
 
       /* Wire Frame Initialization */
       s_WireFrameVertexArray = VertexArray::Create();

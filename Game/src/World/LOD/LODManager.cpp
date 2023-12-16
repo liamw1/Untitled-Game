@@ -17,10 +17,10 @@ namespace newLod
   static constexpr f32 c_TransitionCellFractionalWidth = 0.5f;
 
   // Rendering
-  static constexpr i32 c_StorageBufferBinding = 2;
-  static constexpr u32 c_StorageBufferSize = eng::math::pow2<u32>(20);
+  static constexpr i32 c_SSBOBinding = 2;
+  static constexpr u32 c_SSBOSize = eng::math::pow2<u32>(20);
   static std::unique_ptr<eng::Shader> s_Shader;
-  static std::unique_ptr<eng::mem::StorageBuffer> s_SSBO;
+  static std::unique_ptr<eng::ShaderBufferStorage> s_SSBO;
   static const eng::mem::BufferLayout s_VertexBufferLayout = { { eng::mem::ShaderDataType::Float3, "a_Position"       },
                                                                { eng::mem::ShaderDataType::Float3, "a_IsoNormal"      },
                                                                { eng::mem::ShaderDataType::Int2,   "a_TextureIndices" },
@@ -579,8 +579,7 @@ namespace newLod
     ENG_PROFILE_FUNCTION();
 
     s_Shader = eng::Shader::Create("assets/shaders/LOD.glsl");
-    s_SSBO = eng::mem::StorageBuffer::Create(eng::mem::StorageBuffer::Type::SSBO, c_StorageBufferBinding);
-    s_SSBO->resize(c_StorageBufferSize);
+    s_SSBO = std::make_unique<eng::ShaderBufferStorage>(c_SSBOBinding, c_SSBOSize);
 
     divide({});
     std::vector<NodeID> leafNodes = getLeafNodes();
@@ -611,7 +610,7 @@ namespace newLod
     eng::render::command::setUseDepthOffset(false);
     m_MultiDrawArray->drawOperation([this, &frustumPlanes, &shiftedFrustumPlanes, &planeNormalMagnitudes, &originIndex](eng::MultiDrawArray<DrawCommand>& multiDrawArray)
     {
-      i32 commandCount = multiDrawArray.partition([this, &frustumPlanes, &shiftedFrustumPlanes, &planeNormalMagnitudes, &originIndex](const NodeID& nodeID)
+      uSize commandCount = multiDrawArray.partition([this, &frustumPlanes, &shiftedFrustumPlanes, &planeNormalMagnitudes, &originIndex](const NodeID& nodeID)
       {
         // Shift each plane by distance equal to radius of sphere that circumscribes LOD
         length_t LODSphereRadius = nodeID.boundingSphereRadius();
@@ -624,14 +623,13 @@ namespace newLod
       std::vector<eng::math::Float4> storageBufferData;
       storageBufferData.reserve(commandCount);
       const std::vector<DrawCommand>& drawCommands = multiDrawArray.getDrawCommandBuffer();
-      for (i32 i = 0; i < commandCount; ++i)
+      for (uSize i = 0; i < commandCount; ++i)
       {
         eng::math::Vec3 nodeAnchorPosition = drawCommands[i].id().anchorPosition(originIndex);
         storageBufferData.emplace_back(nodeAnchorPosition, 0);
       }
-      s_SSBO->modify(0, storageBufferData);
+      s_SSBO->set(storageBufferData);
 
-      s_SSBO->bind();
       multiDrawArray.bind();
       block::bindAverageColorSSBO();
       eng::render::command::multiDrawIndexed(drawCommands, commandCount);

@@ -1,19 +1,32 @@
 #include "ENpch.h"
 #include "Uniform.h"
 #include "RendererAPI.h"
-#include "Platform/OpenGL/OpenGLUniform.h"
 
 namespace eng
 {
-  Uniform::~Uniform() = default;
-
-  std::unique_ptr<Uniform> Uniform::Create(u32 binding, u32 size)
+  Uniform::Uniform(u32 binding, uSize size)
+    : m_Binding(binding)
   {
-    switch (RendererAPI::GetAPI())
+    ENG_CORE_ASSERT(m_Binding < c_MaxUniformBindings, "Binding exceeds maximum allowed uniform bindings!");
+
+    if (size > c_MaxSize)
     {
-      case RendererAPI::API::OpenGL:        return std::make_unique<OpenGLUniform>(binding, size);
-      case RendererAPI::API::OpenGL_Legacy: return std::make_unique<OpenGLUniform>(binding, size);
+      ENG_CORE_ERROR("Requested uniform size is larger than the maximum allowable uniform block size!");
+      return;
     }
-    throw CoreException("Invalid RendererAPI!");
+    if (s_Uniforms[m_Binding])
+      ENG_CORE_WARN("Uniform buffer has already been allocated at binding {0}!", m_Binding);
+
+    s_Uniforms[m_Binding] = mem::StorageBuffer::Create(mem::StorageBuffer::Type::Uniform, m_Binding, size);
+  }
+
+  Uniform::~Uniform()
+  {
+    s_Uniforms[m_Binding].reset();
+  }
+
+  void Uniform::set(const mem::UniformData& uniformData)
+  {
+    s_Uniforms[m_Binding]->set(static_cast<mem::RenderData>(uniformData));
   }
 }

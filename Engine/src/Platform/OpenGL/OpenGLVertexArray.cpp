@@ -37,7 +37,7 @@ namespace eng
     ENG_CORE_ASSERT(thread::isMainThread(), "OpenGL calls must be made on the main thread!");
 
     glCreateVertexArrays(1, &m_RendererID);
-    m_VertexBuffer = mem::StorageBuffer::Create(mem::StorageBuffer::Type::VertexBuffer);
+    m_VertexBuffer = mem::DynamicBuffer::Create(mem::DynamicBuffer::Type::Vertex);
   }
 
   OpenGLVertexArray::~OpenGLVertexArray()
@@ -63,9 +63,9 @@ namespace eng
     glBindVertexArray(0);
 
     if (m_VertexBuffer)
-      m_VertexBuffer->unBind();
+      m_VertexBuffer->unbind();
     if (m_IndexBuffer)
-      m_IndexBuffer->unBind();
+      m_IndexBuffer->unbind();
   }
 
   void OpenGLVertexArray::setLayout(const mem::BufferLayout& layout)
@@ -128,13 +128,9 @@ namespace eng
   void OpenGLVertexArray::setVertexBuffer(const mem::RenderData& data)
   {
     m_VertexBuffer->set(data);
-
-#if ENG_DEBUG
-    unBind();
-#endif
   }
 
-  void OpenGLVertexArray::setVertexBuffer(const std::shared_ptr<mem::StorageBuffer>& vertexBuffer)
+  void OpenGLVertexArray::setVertexBuffer(const std::shared_ptr<mem::DynamicBuffer>& vertexBuffer)
   {
     m_VertexBuffer = vertexBuffer;
     setLayout(m_VertexBufferLayout);
@@ -143,43 +139,25 @@ namespace eng
   void OpenGLVertexArray::modifyVertexBuffer(u32 offset, const mem::RenderData& data) const
   {
     m_VertexBuffer->modify(offset, data);
-
-#if ENG_DEBUG
-    unBind();
-#endif
   }
 
   void OpenGLVertexArray::resizeVertexBuffer(u32 newSize)
   {
     m_VertexBuffer->resize(newSize);
     setLayout(m_VertexBufferLayout);
-
-#if ENG_DEBUG
-    unBind();
-#endif
   }
 
   void OpenGLVertexArray::setIndexBuffer(const IndexBuffer& indexBuffer)
   {
     ENG_CORE_ASSERT(thread::isMainThread(), "OpenGL calls must be made on the main thread!");
-
     m_IndexBuffer = indexBuffer;
-
-#if ENG_DEBUG
-    unBind();
-#endif
   }
 
-  void OpenGLVertexArray::setIndexBuffer(const std::shared_ptr<mem::StorageBuffer>& indexBufferStorage)
+  void OpenGLVertexArray::setIndexBuffer(const std::shared_ptr<mem::DynamicBuffer>& indexBuffer)
   {
     ENG_CORE_ASSERT(thread::isMainThread(), "OpenGL calls must be made on the main thread!");
-    ENG_CORE_ASSERT(indexBufferStorage->type() == mem::StorageBuffer::Type::IndexBuffer, "Submitted buffer is not an index buffer!");
-
-    m_IndexBuffer = IndexBuffer(indexBufferStorage);
-
-#if ENG_DEBUG
-    unBind();
-#endif
+    ENG_CORE_ASSERT(indexBuffer->type() == mem::DynamicBuffer::Type::Index, "Submitted buffer is not an index buffer!");
+    m_IndexBuffer = IndexBuffer(indexBuffer);
   }
 
   const mem::BufferLayout& OpenGLVertexArray::getLayout() const

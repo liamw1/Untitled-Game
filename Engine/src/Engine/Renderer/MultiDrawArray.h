@@ -151,8 +151,8 @@ namespace eng
   public:
     MultiDrawArray(const mem::BufferLayout& layout)
       : m_Stride(layout.stride()),
-        m_IndexMemory(mem::StorageBuffer::Type::IndexBuffer),
-        m_VertexMemory(mem::StorageBuffer::Type::VertexBuffer)
+        m_IndexMemory(mem::DynamicBuffer::Type::Index),
+        m_VertexMemory(mem::DynamicBuffer::Type::Vertex)
     {
       m_VertexArray = VertexArray::Create();
       m_VertexArray->setVertexBuffer(m_VertexMemory.buffer());
@@ -226,22 +226,22 @@ namespace eng
     }
 
     template<std::predicate<Identifier> P>
-    i32 partition(P&& predicate)
+    uSize partition(P&& predicate)
     {
       DrawCommandIterator partitionEnd = algo::partition(m_DrawCommands, [&predicate](const T& draw) { return predicate(draw.id()); });
       setDrawCommandIndices(0, m_DrawCommands.size());
-      return arithmeticCast<i32>(partitionEnd - m_DrawCommands.begin());
+      return partitionEnd - m_DrawCommands.begin();
     }
 
     template<TransformToComparable<Identifier> F>
-    void sort(i32 drawCount, F&& transform, SortPolicy sortPolicy)
+    void sort(uSize drawCount, F&& transform, SortPolicy sortPolicy)
     {
       algo::sort(m_DrawCommands.begin(), m_DrawCommands.begin() + drawCount, [&transform](const T& draw) { return transform(draw.id()); }, sortPolicy);
       setDrawCommandIndices(0, drawCount);
     }
 
     template<BinaryRelation<Identifier> F>
-    void sort(i32 drawCount, F&& comparison)
+    void sort(uSize drawCount, F&& comparison)
     {
       std::sort(m_DrawCommands.begin(), m_DrawCommands.begin() + drawCount,
                 [&comparison](const T& drawA, const T& drawB) { return comparison(drawA.id(), drawB.id()); });
@@ -253,7 +253,7 @@ namespace eng
       Cannot be used with non-indexed draw commands.
     */
     template<InvocableWithReturnType<bool, T&> F>
-    void modifyIndices(i32 drawCount, F&& function)
+    void modifyIndices(uSize drawCount, F&& function)
     {
       static_assert(c_IsIndexed);
       std::for_each_n(m_DrawCommands.begin(), drawCount, [this, &function](T& drawCommand)

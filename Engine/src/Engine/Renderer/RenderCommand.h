@@ -17,10 +17,10 @@ namespace eng::render::command
   void setFaceCulling(bool enableFaceCulling);
   void setWireFrame(bool enableWireFrame);
   
-  void drawVertices(const VertexArray* vertexArray, u32 vertexCount);
-  void drawIndexed(const VertexArray* vertexArray, u32 indexCount = 0);
-  void drawIndexedLines(const VertexArray* vertexArray, u32 indexCount = 0);
+  void drawVertices(const VertexArray* vertexArray, uSize vertexCount);
+  void drawIndexed(const VertexArray* vertexArray, uSize indexCount = 0);
+  void drawIndexedLines(const VertexArray* vertexArray, uSize indexCount = 0);
 
-  void multiDrawVertices(const mem::RenderData& drawCommandData, i32 commandCount);
-  void multiDrawIndexed(const mem::RenderData& drawCommandData, i32 commandCount);
+  void multiDrawVertices(const mem::RenderData& drawCommandData, uSize commandCount);
+  void multiDrawIndexed(const mem::RenderData& drawCommandData, uSize commandCount);
 }
