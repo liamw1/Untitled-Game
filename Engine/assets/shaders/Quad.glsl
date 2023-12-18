@@ -1,5 +1,5 @@
 #type vertex
-#version 450 core
+#version 460 core
 
 layout(std140, binding = 0) uniform Camera
 {
@@ -31,7 +31,7 @@ void main()
 
 
 #type fragment
-#version 450 core
+#version 460 core
 
 layout (binding = 0) uniform sampler2D u_Textures[32];
 

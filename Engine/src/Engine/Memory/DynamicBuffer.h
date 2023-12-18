@@ -1,5 +1,6 @@
 #pragma once
 #include "Data.h"
+#include "BufferLayout.h"
 
 namespace eng::mem
 {
@@ -25,25 +26,5 @@ namespace eng::mem
     virtual void resize(uSize newSize) = 0;
 
     static std::unique_ptr<DynamicBuffer> Create(Type type);
-  };
-
-  class StorageBuffer
-  {
-  public:
-    enum class Type
-    {
-      Uniform,
-      SSBO
-    };
-
-    virtual ~StorageBuffer();
-
-    virtual Type type() const = 0;
-    virtual uSize size() const = 0;
-    virtual uSize capacity() const = 0;
-
-    virtual void set(const mem::RenderData& data) = 0;
-
-    static std::unique_ptr<StorageBuffer> Create(Type type, u32 binding, uSize capacity);
   };
 }

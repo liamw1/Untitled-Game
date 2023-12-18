@@ -57,12 +57,12 @@ namespace eng::render
       frameBufferSpecification.height = Application::Get().window().height();
       s_DefaultFramebuffer = Framebuffer::Create(frameBufferSpecification);
 
-      s_CameraUniform = std::make_unique<Uniform>(c_CameraUniformBinding, sizeof(CameraUniformData));
+      s_CameraUniform = std::make_unique<Uniform>("Camera", c_CameraUniformBinding, sizeof(CameraUniformData));
 
       /* Wire Frame Initialization */
       s_WireFrameVertexArray = VertexArray::Create();
-      s_WireFrameVertexArray->setLayout({ { mem::ShaderDataType::Float3, "a_Position"  },
-                                          { mem::ShaderDataType::Float4, "a_Color"     } });
+      s_WireFrameVertexArray->setLayout({ { mem::DataType::Float3, "a_Position"  },
+                                          { mem::DataType::Float4, "a_Color"     } });
       s_WireFrameVertexArray->setIndexBuffer(IndexBuffer(c_CubeFrameIndices));
       s_WireFrameShader = Shader::Create("../Engine/assets/shaders/WireFrame.glsl");
       return true;
@@ -81,7 +81,7 @@ namespace eng::render
 
     s_CameraUniformData.viewProjection = scene::CalculateViewProjection(viewer);
     s_CameraUniformData.cameraPosition = viewer.get<component::Transform>().position;
-    s_CameraUniform->set(s_CameraUniformData);
+    s_CameraUniform->write(s_CameraUniformData);
   }
 
   void endScene()

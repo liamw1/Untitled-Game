@@ -119,7 +119,7 @@ namespace eng
     ENG_CORE_ASSERT(vertexArray, "Vertex array has not been initialized!");
 
     vertexArray->bind();
-    uSize count = indexCount == 0 ? vertexArray->getIndexBuffer()->count() : indexCount;
+    uSize count = indexCount == 0 ? vertexArray->indexBuffer()->count() : indexCount;
     glDrawElements(GL_TRIANGLES, arithmeticCast<GLsizei>(count), GL_UNSIGNED_INT, nullptr);
   }
 
@@ -129,7 +129,7 @@ namespace eng
     ENG_CORE_ASSERT(vertexArray, "Vertex array has not been initialized!");
 
     vertexArray->bind();
-    uSize count = indexCount == 0 ? vertexArray->getIndexBuffer()->count() : indexCount;
+    uSize count = indexCount == 0 ? vertexArray->indexBuffer()->count() : indexCount;
     glDrawElements(GL_LINES, arithmeticCast<GLsizei>(count), GL_UNSIGNED_INT, nullptr);
   }
 

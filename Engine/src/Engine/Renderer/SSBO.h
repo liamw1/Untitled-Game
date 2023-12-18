@@ -1,6 +1,6 @@
 #pragma once
 #include "Engine/Memory/Data.h"
-#include "Engine/Memory/Buffer.h"
+#include "Engine/Memory/StorageBuffer.h"
 
 namespace eng
 {
@@ -13,9 +13,9 @@ namespace eng
     u32 m_Binding;
 
   public:
-    ShaderBufferStorage(u32 binding, uSize capacity);
+    ShaderBufferStorage(u32 binding, uSize size);
     ~ShaderBufferStorage();
 
-    void set(const mem::RenderData& data);
+    void write(const mem::RenderData& data);
   };
 }

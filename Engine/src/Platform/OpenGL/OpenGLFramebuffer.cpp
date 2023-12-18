@@ -84,7 +84,7 @@ namespace eng
 
 
   OpenGLFramebuffer::OpenGLFramebuffer(const FramebufferSpecification& specification)
-    : m_RendererID(0),
+    : m_FramebufferID(0),
       m_Specification(specification),
       m_DepthAttachmentSpecification(FramebufferTextureFormat::None),
       m_DepthAttachment(0)
@@ -104,7 +104,7 @@ namespace eng
   {
     ENG_CORE_ASSERT(thread::isMainThread(), "OpenGL calls must be made on the main thread!");
 
-    glDeleteFramebuffers(1, &m_RendererID);
+    glDeleteFramebuffers(1, &m_FramebufferID);
     glDeleteTextures(arithmeticCast<GLsizei>(m_ColorAttachments.size()), m_ColorAttachments.data());
     glDeleteTextures(1, &m_DepthAttachment);
   }
@@ -113,7 +113,7 @@ namespace eng
   {
     ENG_CORE_ASSERT(thread::isMainThread(), "OpenGL calls must be made on the main thread!");
 
-    glBindFramebuffer(GL_FRAMEBUFFER, m_RendererID);  
+    glBindFramebuffer(GL_FRAMEBUFFER, m_FramebufferID);
     glViewport(0, 0, m_Specification.width, m_Specification.height);
   }
 
@@ -140,7 +140,7 @@ namespace eng
 
     const Window& window = Application::Get().window();
 
-    glBindFramebuffer(GL_READ_FRAMEBUFFER, m_RendererID);
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, m_FramebufferID);
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
     glBlitFramebuffer(0, 0, m_Specification.width, m_Specification.height, 0, 0, window.width(), window.height(), GL_COLOR_BUFFER_BIT, GL_LINEAR);
   }
@@ -196,9 +196,9 @@ namespace eng
   {
     ENG_CORE_ASSERT(thread::isMainThread(), "OpenGL calls must be made on the main thread!");
 
-    if (m_RendererID != 0)
+    if (m_FramebufferID != 0)
     {
-      glDeleteFramebuffers(1, &m_RendererID);
+      glDeleteFramebuffers(1, &m_FramebufferID);
       glDeleteTextures(arithmeticCast<GLsizei>(m_ColorAttachments.size()), m_ColorAttachments.data());
       glDeleteTextures(1, &m_DepthAttachment);
 
@@ -206,8 +206,8 @@ namespace eng
       m_DepthAttachment = 0;
     }
 
-    glCreateFramebuffers(1, &m_RendererID);
-    glBindFramebuffer(GL_FRAMEBUFFER, m_RendererID);
+    glCreateFramebuffers(1, &m_FramebufferID);
+    glBindFramebuffer(GL_FRAMEBUFFER, m_FramebufferID);
 
     bool multiSample = m_Specification.samples > 1;
 

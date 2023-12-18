@@ -4,8 +4,9 @@
 
 namespace eng
 {
-  Uniform::Uniform(u32 binding, uSize size)
-    : m_Binding(binding)
+  Uniform::Uniform(const std::string& name, u32 binding, uSize size)
+    : m_Name(name),
+      m_Binding(binding)
   {
     ENG_CORE_ASSERT(m_Binding < c_MaxUniformBindings, "Binding exceeds maximum allowed uniform bindings!");
 
@@ -25,8 +26,13 @@ namespace eng
     s_Uniforms[m_Binding].reset();
   }
 
-  void Uniform::set(const mem::UniformData& uniformData)
+  const std::string& Uniform::name() const
   {
-    s_Uniforms[m_Binding]->set(static_cast<mem::RenderData>(uniformData));
+    return m_Name;
+  }
+
+  void Uniform::write(const mem::UniformData& uniformData)
+  {
+    s_Uniforms[m_Binding]->write(static_cast<mem::RenderData>(uniformData));
   }
 }

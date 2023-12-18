@@ -1,5 +1,5 @@
 #type vertex
-#version 450 core
+#version 460 core
 
 layout(std140, binding = 0) uniform Camera
 {
@@ -20,7 +20,7 @@ void main()
 
 
 #type fragment
-#version 450 core
+#version 460 core
 
 layout(location = 0) in vec4 v_Color;
 

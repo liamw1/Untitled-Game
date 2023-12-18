@@ -1,5 +1,5 @@
 #type vertex
-#version 450 core
+#version 460 core
 
 const vec2 s_LocalPositions[4] = vec2[4]( vec2(-1.0f, -1.0f),
                                           vec2( 1.0f, -1.0f),
@@ -38,7 +38,7 @@ void main()
 
 
 #type fragment
-#version 450 core
+#version 460 core
 
 layout(location = 0) in vec2 v_LocalPosition;
 layout(location = 1) in vec4 v_Color;

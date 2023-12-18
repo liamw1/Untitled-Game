@@ -35,26 +35,26 @@ namespace eng
   OpenGLTexture::OpenGLTexture(u32 width, u32 height)
     : m_Width(width),
       m_Height(height),
-      m_RendererID(0),
+      m_TextureID(0),
       m_InternalFormat(GL_RGBA8),
       m_DataFormat(GL_RGBA)
   {
     ENG_PROFILE_FUNCTION();
     ENG_CORE_ASSERT(thread::isMainThread(), "OpenGL calls must be made on the main thread!");
 
-    glCreateTextures(GL_TEXTURE_2D, 1, &m_RendererID);
-    glTextureStorage2D(m_RendererID, 1, m_InternalFormat, m_Width, m_Height);
+    glCreateTextures(GL_TEXTURE_2D, 1, &m_TextureID);
+    glTextureStorage2D(m_TextureID, 1, m_InternalFormat, m_Width, m_Height);
 
-    glTextureParameteri(m_RendererID, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTextureParameteri(m_RendererID, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTextureParameteri(m_RendererID, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTextureParameteri(m_RendererID, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTextureParameteri(m_TextureID, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTextureParameteri(m_TextureID, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTextureParameteri(m_TextureID, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTextureParameteri(m_TextureID, GL_TEXTURE_WRAP_T, GL_REPEAT);
   }
 
   OpenGLTexture::OpenGLTexture(const std::filesystem::path& path)
     : m_Width(0),
       m_Height(0),
-      m_RendererID(0)
+      m_TextureID(0)
   {
     ENG_PROFILE_FUNCTION();
     ENG_CORE_ASSERT(thread::isMainThread(), "OpenGL calls must be made on the main thread!");
@@ -65,15 +65,15 @@ namespace eng
     m_InternalFormat = internalFormatOf(image);
     m_DataFormat = dataFormatOf(image);
 
-    glCreateTextures(GL_TEXTURE_2D, 1, &m_RendererID);
-    glTextureStorage2D(m_RendererID, 1, m_InternalFormat, m_Width, m_Height);
+    glCreateTextures(GL_TEXTURE_2D, 1, &m_TextureID);
+    glTextureStorage2D(m_TextureID, 1, m_InternalFormat, m_Width, m_Height);
 
-    glTextureParameteri(m_RendererID, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTextureParameteri(m_RendererID, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTextureParameteri(m_RendererID, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTextureParameteri(m_RendererID, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTextureParameteri(m_TextureID, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTextureParameteri(m_TextureID, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTextureParameteri(m_TextureID, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTextureParameteri(m_TextureID, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
-    glTextureSubImage2D(m_RendererID, 0, 0, 0, m_Width, m_Height, m_DataFormat, GL_UNSIGNED_BYTE, image.data());
+    glTextureSubImage2D(m_TextureID, 0, 0, 0, m_Width, m_Height, m_DataFormat, GL_UNSIGNED_BYTE, image.data());
   }
 
   OpenGLTexture::~OpenGLTexture()
@@ -81,12 +81,12 @@ namespace eng
     ENG_PROFILE_FUNCTION();
     ENG_CORE_ASSERT(thread::isMainThread(), "OpenGL calls must be made on the main thread!");
 
-    glDeleteTextures(1, &m_RendererID);
+    glDeleteTextures(1, &m_TextureID);
   }
 
   u32 OpenGLTexture::getWidth() const { return m_Width; }
   u32 OpenGLTexture::getHeight() const { return m_Height; }
-  u32 OpenGLTexture::getRendererID() const { return m_RendererID; }
+  u32 OpenGLTexture::getRendererID() const { return m_TextureID; }
 
   void OpenGLTexture::setData(const mem::RenderData& textureData)
   {
@@ -94,18 +94,18 @@ namespace eng
     ENG_CORE_ASSERT(thread::isMainThread(), "OpenGL calls must be made on the main thread!");
 
     ENG_CORE_ASSERT(textureData.size() == m_Width * m_Height * (m_DataFormat == GL_RGBA ? 4 : 3), "Data must be entire texture!");
-    glTextureSubImage2D(m_RendererID, 0, 0, 0, m_Width, m_Height, m_DataFormat, GL_UNSIGNED_BYTE, textureData.raw());
+    glTextureSubImage2D(m_TextureID, 0, 0, 0, m_Width, m_Height, m_DataFormat, GL_UNSIGNED_BYTE, textureData.raw());
   }
 
   void OpenGLTexture::bind(u32 slot) const
   {
     ENG_CORE_ASSERT(thread::isMainThread(), "OpenGL calls must be made on the main thread!");
-    glBindTextureUnit(slot, m_RendererID);
+    glBindTextureUnit(slot, m_TextureID);
   }
 
   bool OpenGLTexture::operator==(const Texture& other) const
   {
-    return m_RendererID == other.getRendererID();
+    return m_TextureID == other.getRendererID();
   }
 
 

@@ -5,7 +5,7 @@ namespace eng
 {
   class OpenGLFramebuffer : public Framebuffer
   {
-    u32 m_RendererID;
+    u32 m_FramebufferID;
     FramebufferSpecification m_Specification;
 
     std::vector<FramebufferTextureSpecification> m_ColorAttachmentSpecifications;

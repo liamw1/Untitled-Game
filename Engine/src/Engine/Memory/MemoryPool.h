@@ -1,5 +1,5 @@
 #pragma once
-#include "Buffer.h"
+#include "DynamicBuffer.h"
 
 namespace eng::mem
 {

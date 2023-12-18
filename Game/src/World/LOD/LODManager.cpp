@@ -21,10 +21,10 @@ namespace newLod
   static constexpr u32 c_SSBOSize = eng::math::pow2<u32>(20);
   static std::unique_ptr<eng::Shader> s_Shader;
   static std::unique_ptr<eng::ShaderBufferStorage> s_SSBO;
-  static const eng::mem::BufferLayout s_VertexBufferLayout = { { eng::mem::ShaderDataType::Float3, "a_Position"       },
-                                                               { eng::mem::ShaderDataType::Float3, "a_IsoNormal"      },
-                                                               { eng::mem::ShaderDataType::Int2,   "a_TextureIndices" },
-                                                               { eng::mem::ShaderDataType::Float2, "a_TextureWeighs"  } };
+  static const eng::mem::BufferLayout s_VertexBufferLayout = { { eng::mem::DataType::Float3, "a_Position"       },
+                                                               { eng::mem::DataType::Float3, "a_IsoNormal"      },
+                                                               { eng::mem::DataType::Int2,   "a_TextureIndices" },
+                                                               { eng::mem::DataType::Float2, "a_TextureWeighs"  } };
 
   struct NoiseData
   {
@@ -628,7 +628,7 @@ namespace newLod
         eng::math::Vec3 nodeAnchorPosition = drawCommands[i].id().anchorPosition(originIndex);
         storageBufferData.emplace_back(nodeAnchorPosition, 0);
       }
-      s_SSBO->set(storageBufferData);
+      s_SSBO->write(storageBufferData);
 
       multiDrawArray.bind();
       block::bindAverageColorSSBO();

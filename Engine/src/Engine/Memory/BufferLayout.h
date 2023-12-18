@@ -15,9 +15,8 @@ namespace eng::mem
     The beginning and ending of these groups are given their own identifier,
     which is used in the vertex array for differentiating between these types.
   */
-  enum class ShaderDataType : i32
+  enum class DataType
   {
-    None,
     Bool,
     Unsigned,
     Int, Int2, Int3, Int4,
@@ -32,13 +31,12 @@ namespace eng::mem
   struct BufferElement
   {
     std::string name;
-    ShaderDataType type;
+    DataType type;
     u32 size;
     u32 offset;
     bool normalized;
 
-    BufferElement();
-    BufferElement(ShaderDataType type, const std::string& name, bool normalized = false);
+    BufferElement(DataType type, const std::string& name, bool normalized = false);
 
     /*
       Gets the number of components packed into the buffer element type.

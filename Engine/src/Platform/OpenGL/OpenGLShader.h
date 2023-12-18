@@ -12,7 +12,7 @@ namespace eng
   */
   class OpenGLShader : public Shader
   {
-    u32 m_RendererID;
+    u32 m_ShaderID;
     std::string m_Name;
     std::string m_FilePath;
 
@@ -27,7 +27,7 @@ namespace eng
     const std::string& name() const override;
 
     void bind() const override;
-    void unBind() const override;
+    void unbind() const override;
 
   private:
     void compileVulkanBinaries(const std::unordered_map<std::string, std::string>& shaderSources);

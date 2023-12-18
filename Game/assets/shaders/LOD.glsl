@@ -35,7 +35,7 @@ void main()
 
 
 #type fragment
-#version 450 core
+#version 460 core
 
 layout(location = 0) in vec3 v_LocalWorldPosition;
 layout(location = 1) in vec4 v_Color;

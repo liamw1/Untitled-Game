@@ -13,8 +13,8 @@ static std::unique_ptr<eng::Shader> s_Shader;
 static std::unique_ptr<eng::Uniform> s_LightUniform;
 static std::unique_ptr<eng::ShaderBufferStorage> s_SSBO;
 static std::shared_ptr<eng::TextureArray> s_TextureArray;
-static const eng::mem::BufferLayout s_VertexBufferLayout = {{ eng::mem::ShaderDataType::Unsigned, "a_VertexData" },
-                                                            { eng::mem::ShaderDataType::Unsigned, "a_Lighting"   }};
+static const eng::mem::BufferLayout s_VertexBufferLayout = {{ eng::mem::DataType::Unsigned, "a_VertexData" },
+                                                            { eng::mem::DataType::Unsigned, "a_Lighting"   }};
 
 struct LightUniformData
 {
@@ -93,13 +93,13 @@ ChunkManager::ChunkManager()
   ENG_PROFILE_FUNCTION();
 
   s_Shader = eng::Shader::Create("assets/shaders/Chunk.glsl");
-  s_LightUniform = std::make_unique<eng::Uniform>(c_LightUniformBinding, sizeof(LightUniformData));
+  s_LightUniform = std::make_unique<eng::Uniform>("Light", c_LightUniformBinding, sizeof(LightUniformData));
   s_TextureArray = block::getTextureArray();
   s_SSBO = std::make_unique<eng::ShaderBufferStorage>(c_SSBOBinding, c_SSBOSize);
 
   LightUniformData lightUniforms;
   lightUniforms.sunIntensity = 1.0f;
-  s_LightUniform->set(lightUniforms);
+  s_LightUniform->write(lightUniforms);
 }
 
 ChunkManager::~ChunkManager()
@@ -146,7 +146,7 @@ void ChunkManager::render()
       eng::math::Vec3 chunkAnchorPosition = indexPosition(chunkIndex, originIndex);
       storageBufferData.emplace_back(chunkAnchorPosition, 0);
     }
-    s_SSBO->set(storageBufferData);
+    s_SSBO->write(storageBufferData);
 
     multiDrawArray.bind();
     eng::render::command::multiDrawIndexed(drawCommands, commandCount);

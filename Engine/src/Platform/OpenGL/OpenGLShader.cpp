@@ -50,7 +50,7 @@ namespace eng
 
 
   OpenGLShader::OpenGLShader(const std::filesystem::path& filepath, const std::unordered_map<std::string, std::string>& preprocessorDefinitions)
-    : m_RendererID(0),
+    : m_ShaderID(0),
       m_Name(filepath.stem().string()),
       m_FilePath(filepath.string())
   {
@@ -72,7 +72,7 @@ namespace eng
     ENG_PROFILE_FUNCTION();
     ENG_CORE_ASSERT(thread::isMainThread(), "OpenGL calls must be made on the main thread!");
 
-    glDeleteProgram(m_RendererID);
+    glDeleteProgram(m_ShaderID);
   }
 
   const std::string& OpenGLShader::name() const
@@ -83,10 +83,10 @@ namespace eng
   void OpenGLShader::bind() const
   {
     ENG_CORE_ASSERT(thread::isMainThread(), "OpenGL calls must be made on the main thread!");
-    glUseProgram(m_RendererID);
+    glUseProgram(m_ShaderID);
   }
 
-  void OpenGLShader::unBind() const
+  void OpenGLShader::unbind() const
   {
     ENG_CORE_ASSERT(thread::isMainThread(), "OpenGL calls must be made on the main thread!");
     glUseProgram(0);
@@ -155,7 +155,7 @@ namespace eng
   {
     ENG_CORE_ASSERT(thread::isMainThread(), "OpenGL calls must be made on the main thread!");
 
-    GLuint program = glCreateProgram();
+    GLuint programID = glCreateProgram();
 
     std::vector<GLuint> shaderIDs;
     for (const auto& [stage, spirv] : m_OpenGLSPIRV)
@@ -163,23 +163,23 @@ namespace eng
       GLuint shaderID = shaderIDs.emplace_back(glCreateShader(stage));
       glShaderBinary(1, &shaderID, GL_SHADER_BINARY_FORMAT_SPIR_V, spirv.data(), sizeof(u32) * arithmeticCast<GLsizei>(spirv.size()));
       glSpecializeShader(shaderID, "main", 0, nullptr, nullptr);
-      glAttachShader(program, shaderID);
+      glAttachShader(programID, shaderID);
     }
 
-    glLinkProgram(program);
+    glLinkProgram(programID);
 
     GLint isLinked;
-    glGetProgramiv(program, GL_LINK_STATUS, &isLinked);
+    glGetProgramiv(programID, GL_LINK_STATUS, &isLinked);
     if (isLinked == GL_FALSE)
     {
       GLint maxLength;
-      glGetProgramiv(program, GL_INFO_LOG_LENGTH, &maxLength);
+      glGetProgramiv(programID, GL_INFO_LOG_LENGTH, &maxLength);
 
       std::vector<GLchar> infoLog(maxLength);
-      glGetProgramInfoLog(program, maxLength, &maxLength, infoLog.data());
+      glGetProgramInfoLog(programID, maxLength, &maxLength, infoLog.data());
       ENG_CORE_ERROR("Shader linking failed ({0}):\n{1}", m_FilePath, infoLog.data());
 
-      glDeleteProgram(program);
+      glDeleteProgram(programID);
 
       for (u32 id : shaderIDs)
         glDeleteShader(id);
@@ -187,11 +187,11 @@ namespace eng
 
     for (u32 id : shaderIDs)
     {
-      glDetachShader(program, id);
+      glDetachShader(programID, id);
       glDeleteShader(id);
     }
 
-    m_RendererID = program;
+    m_ShaderID = programID;
   }
 
   void OpenGLShader::reflect(u32 stage, const std::vector<u32>& shaderData)

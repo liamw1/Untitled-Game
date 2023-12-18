@@ -1,6 +1,6 @@
 #pragma once
 #include "Engine/Memory/Data.h"
-#include "Engine/Memory/Buffer.h"
+#include "Engine/Memory/StorageBuffer.h"
 
 namespace eng
 {
@@ -10,12 +10,15 @@ namespace eng
     static constexpr uSize c_MaxSize = 16384;
     static inline std::array<std::unique_ptr<mem::StorageBuffer>, c_MaxBindings> s_Uniforms;
 
+    std::string m_Name;
     u32 m_Binding;
 
   public:
-    Uniform(u32 binding, uSize size);
+    Uniform(const std::string& name, u32 binding, uSize size);
     ~Uniform();
 
-    void set(const mem::UniformData& uniformData);
+    const std::string& name() const;
+
+    void write(const mem::UniformData& uniformData);
   };
 }

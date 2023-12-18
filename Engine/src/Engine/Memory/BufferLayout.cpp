@@ -4,49 +4,47 @@
 
 namespace eng::mem
 {
-  static u32 shaderDataTypeSize(ShaderDataType type)
+  static u32 dataTypeSize(DataType type)
   {
     switch (type)
     {
-      case ShaderDataType::Bool:        return 1 * sizeof(bool);
-      case ShaderDataType::Unsigned:    return 1 * sizeof(u32);
-      case ShaderDataType::Int:         return 1 * sizeof(i32);
-      case ShaderDataType::Int2:        return 2 * sizeof(i32);
-      case ShaderDataType::Int3:        return 3 * sizeof(i32);
-      case ShaderDataType::Int4:        return 4 * sizeof(i32);
-      case ShaderDataType::Float:       return 1 * sizeof(f32);
-      case ShaderDataType::Float2:      return 2 * sizeof(f32);
-      case ShaderDataType::Float3:      return 3 * sizeof(f32);
-      case ShaderDataType::Float4:      return 4 * sizeof(f32);
-      case ShaderDataType::Mat3:        return 3 * 3 * sizeof(f32);
-      case ShaderDataType::Mat4:        return 4 * 4 * sizeof(f32);
+      case DataType::Bool:        return 1 * sizeof(bool);
+      case DataType::Unsigned:    return 1 * sizeof(u32);
+      case DataType::Int:         return 1 * sizeof(i32);
+      case DataType::Int2:        return 2 * sizeof(i32);
+      case DataType::Int3:        return 3 * sizeof(i32);
+      case DataType::Int4:        return 4 * sizeof(i32);
+      case DataType::Float:       return 1 * sizeof(f32);
+      case DataType::Float2:      return 2 * sizeof(f32);
+      case DataType::Float3:      return 3 * sizeof(f32);
+      case DataType::Float4:      return 4 * sizeof(f32);
+      case DataType::Mat3:        return 3 * 3 * sizeof(f32);
+      case DataType::Mat4:        return 4 * 4 * sizeof(f32);
     }
     throw CoreException("Invalid ShaderDataType!");
   }
 
 
 
-  BufferElement::BufferElement()
-    : name(""), type(ShaderDataType::None), size(0), offset(0), normalized(false) {}
-  BufferElement::BufferElement(ShaderDataType type, const std::string& name, bool normalized)
-    : name(name), type(type), size(shaderDataTypeSize(type)), offset(0), normalized(normalized) {}
+  BufferElement::BufferElement(DataType type, const std::string& name, bool normalized)
+    : name(name), type(type), size(dataTypeSize(type)), offset(0), normalized(normalized) {}
 
   i32 BufferElement::getComponentCount() const
   {
     switch (type)
     {
-      case ShaderDataType::Bool:      return 1;
-      case ShaderDataType::Unsigned:  return 1;
-      case ShaderDataType::Int:       return 1;
-      case ShaderDataType::Int2:      return 2;
-      case ShaderDataType::Int3:      return 3;
-      case ShaderDataType::Int4:      return 4;
-      case ShaderDataType::Float:     return 1;
-      case ShaderDataType::Float2:    return 2;
-      case ShaderDataType::Float3:    return 3;
-      case ShaderDataType::Float4:    return 4;
-      case ShaderDataType::Mat3:      return 3;
-      case ShaderDataType::Mat4:      return 4;
+      case DataType::Bool:      return 1;
+      case DataType::Unsigned:  return 1;
+      case DataType::Int:       return 1;
+      case DataType::Int2:      return 2;
+      case DataType::Int3:      return 3;
+      case DataType::Int4:      return 4;
+      case DataType::Float:     return 1;
+      case DataType::Float2:    return 2;
+      case DataType::Float3:    return 3;
+      case DataType::Float4:    return 4;
+      case DataType::Mat3:      return 3;
+      case DataType::Mat4:      return 4;
     }
     throw CoreException("Invalid ShaderDataType!");
   }

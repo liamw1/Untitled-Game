@@ -163,7 +163,7 @@ namespace eng
     }
 
     void bind() const { m_VertexArray->bind(); }
-    void unBind() const { m_VertexArray->unBind(); }
+    void unbind() const { m_VertexArray->unbind(); }
 
     void insert(T&& drawCommand)
     {
@@ -179,7 +179,7 @@ namespace eng
         setDrawCommandOffsets(baseCommand, indexAllocation.address, vertexAllocation.address);
         baseCommand.clearData();
         if (vertexAllocation.bufferResized)
-          m_VertexArray->setLayout(m_VertexArray->getLayout());
+          m_VertexArray->setLayout(m_VertexArray->layout());
       };
 
       DrawCommandIndicesIterator oldDrawCommandPosition = m_DrawCommandIndices.find(baseCommand.id());

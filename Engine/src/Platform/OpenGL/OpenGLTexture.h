@@ -7,7 +7,7 @@ namespace eng
   {
     u32 m_Width;
     u32 m_Height;
-    u32 m_RendererID;
+    u32 m_TextureID;
     u32 m_InternalFormat;
     u32 m_DataFormat;
 

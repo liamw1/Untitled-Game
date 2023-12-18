@@ -168,7 +168,7 @@ namespace lod
   {
     static bool initialized = []()
     {
-      s_Uniform = std::make_unique<eng::Uniform>(c_UniformBinding, sizeof(UniformData));
+      s_Uniform = std::make_unique<eng::Uniform>("LOD", c_UniformBinding, sizeof(UniformData));
       s_Shader = eng::Shader::Create("assets/shaders/ChunkLOD.glsl");
       s_TextureArray = block::getTextureArray();
       return true;
@@ -184,7 +184,7 @@ namespace lod
   void MeshData::SetUniforms(const UniformData& uniformData)
   {
     Initialize();
-    s_Uniform->set(uniformData);
+    s_Uniform->write(uniformData);
   }
 
 

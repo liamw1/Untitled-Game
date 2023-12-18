@@ -147,8 +147,8 @@ namespace block
   {
     static bool initialized = []()
     {
-      s_Uniform = std::make_unique<eng::Uniform>(c_UniformBinding, sizeof(BlockUniformData));
-      s_Uniform->set(c_BlockUniformData);
+      s_Uniform = std::make_unique<eng::Uniform>("Block", c_UniformBinding, sizeof(BlockUniformData));
+      s_Uniform->write(c_BlockUniformData);
 
       s_TexturePaths = computeTexturePaths();
 
@@ -171,7 +171,7 @@ namespace block
 
       eng::mem::RenderData textureAverageColorsData(s_TextureAverageColors);
       s_SSBO = std::make_unique<eng::ShaderBufferStorage>(c_SSBOBinding, textureAverageColorsData.size());
-      s_SSBO->set(textureAverageColorsData);
+      s_SSBO->write(textureAverageColorsData);
 
       return true;
     }();

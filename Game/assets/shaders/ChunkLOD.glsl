@@ -1,5 +1,5 @@
 #type vertex
-#version 450 core
+#version 460 core
 
 const vec2 s_TexCoords[4] = vec2[4]( vec2(0.0f,	0.0f),
                                      vec2(1.0f, 0.0f),
@@ -50,7 +50,7 @@ void main()
 
 
 #type fragment
-#version 450 core
+#version 460 core
 
 layout(location = 0) in vec3 v_LocalWorldPosition;
 layout(location = 1) in vec4 v_Color;

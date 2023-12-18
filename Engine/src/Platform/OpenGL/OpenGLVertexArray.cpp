@@ -8,25 +8,25 @@
 
 namespace eng
 {
-  static GLenum convertToOpenGLBaseType(mem::ShaderDataType type)
+  static GLenum convertToOpenGLBaseType(mem::DataType type)
   {
     switch (type)
     {
-      case mem::ShaderDataType::Bool:
+      case mem::DataType::Bool:
         return GL_BOOL;
-      case mem::ShaderDataType::Unsigned:
+      case mem::DataType::Unsigned:
         return GL_UNSIGNED_INT;
-      case mem::ShaderDataType::Int:
-      case mem::ShaderDataType::Int2:
-      case mem::ShaderDataType::Int3:
-      case mem::ShaderDataType::Int4:
+      case mem::DataType::Int:
+      case mem::DataType::Int2:
+      case mem::DataType::Int3:
+      case mem::DataType::Int4:
         return GL_INT;
-      case mem::ShaderDataType::Float:
-      case mem::ShaderDataType::Float2:
-      case mem::ShaderDataType::Float3:
-      case mem::ShaderDataType::Float4:
-      case mem::ShaderDataType::Mat3:
-      case mem::ShaderDataType::Mat4:
+      case mem::DataType::Float:
+      case mem::DataType::Float2:
+      case mem::DataType::Float3:
+      case mem::DataType::Float4:
+      case mem::DataType::Mat3:
+      case mem::DataType::Mat4:
         return GL_FLOAT;
     }
     throw CoreException("Invalid ShaderDataType!");
@@ -36,27 +36,27 @@ namespace eng
   {
     ENG_CORE_ASSERT(thread::isMainThread(), "OpenGL calls must be made on the main thread!");
 
-    glCreateVertexArrays(1, &m_RendererID);
+    glCreateVertexArrays(1, &m_VertexArrayID);
     m_VertexBuffer = mem::DynamicBuffer::Create(mem::DynamicBuffer::Type::Vertex);
   }
 
   OpenGLVertexArray::~OpenGLVertexArray()
   {
     ENG_CORE_ASSERT(thread::isMainThread(), "OpenGL calls must be made on the main thread!");
-    glDeleteVertexArrays(1, &m_RendererID);
+    glDeleteVertexArrays(1, &m_VertexArrayID);
   }
 
   void OpenGLVertexArray::bind() const
   {
     ENG_CORE_ASSERT(thread::isMainThread(), "OpenGL calls must be made on the main thread!");
 
-    glBindVertexArray(m_RendererID);
+    glBindVertexArray(m_VertexArrayID);
 
     if (m_IndexBuffer)
       m_IndexBuffer->bind();
   }
 
-  void OpenGLVertexArray::unBind() const
+  void OpenGLVertexArray::unbind() const
   {
     ENG_CORE_ASSERT(thread::isMainThread(), "OpenGL calls must be made on the main thread!");
 
@@ -74,15 +74,15 @@ namespace eng
 
     m_VertexBufferLayout = layout;
 
-    glBindVertexArray(m_RendererID);
+    glBindVertexArray(m_VertexArrayID);
     m_VertexBuffer->bind();
 
     for (u32 attributeIndex = 0; attributeIndex < m_VertexBufferLayout.elements().size(); ++attributeIndex)
     {
       const mem::BufferElement& element = m_VertexBufferLayout.elements()[attributeIndex];
-      std::underlying_type_t<mem::ShaderDataType> dataTypeID = toUnderlying(element.type);
+      std::underlying_type_t<mem::DataType> dataTypeID = toUnderlying(element.type);
 
-      if (dataTypeID >= toUnderlying(mem::ShaderDataType::FirstFloat) && dataTypeID <= toUnderlying(mem::ShaderDataType::LastFloat))
+      if (dataTypeID >= toUnderlying(mem::DataType::FirstFloat) && dataTypeID <= toUnderlying(mem::DataType::LastFloat))
       {
         glEnableVertexAttribArray(attributeIndex);
         glVertexAttribPointer(attributeIndex,
@@ -92,7 +92,7 @@ namespace eng
                               m_VertexBufferLayout.stride(),
                               std::bit_cast<const void*>(arithmeticUpcast<uSize>(element.offset)));
       }
-      else if (dataTypeID >= toUnderlying(mem::ShaderDataType::FirstInt) && dataTypeID <= toUnderlying(mem::ShaderDataType::LastInt))
+      else if (dataTypeID >= toUnderlying(mem::DataType::FirstInt) && dataTypeID <= toUnderlying(mem::DataType::LastInt))
       {
         glEnableVertexAttribArray(attributeIndex);
         glVertexAttribIPointer(attributeIndex,
@@ -101,7 +101,7 @@ namespace eng
                                m_VertexBufferLayout.stride(),
                                std::bit_cast<const void*>(arithmeticUpcast<uSize>(element.offset)));
       }
-      else if (dataTypeID >= toUnderlying(mem::ShaderDataType::FirstMat) && dataTypeID <= toUnderlying(mem::ShaderDataType::LastMat))
+      else if (dataTypeID >= toUnderlying(mem::DataType::FirstMat) && dataTypeID <= toUnderlying(mem::DataType::LastMat))
       {
         i32 componentCount = element.getComponentCount();
         for (i32 i = 0; i < componentCount; ++i)
@@ -121,7 +121,7 @@ namespace eng
     }
 
 #if ENG_DEBUG
-    unBind();
+    unbind();
 #endif
   }
 
@@ -136,12 +136,12 @@ namespace eng
     setLayout(m_VertexBufferLayout);
   }
 
-  void OpenGLVertexArray::modifyVertexBuffer(u32 offset, const mem::RenderData& data) const
+  void OpenGLVertexArray::modifyVertexBuffer(u32 offset, const mem::RenderData& data)
   {
     m_VertexBuffer->modify(offset, data);
   }
 
-  void OpenGLVertexArray::resizeVertexBuffer(u32 newSize)
+  void OpenGLVertexArray::resizeVertexBuffer(uSize newSize)
   {
     m_VertexBuffer->resize(newSize);
     setLayout(m_VertexBufferLayout);
@@ -160,13 +160,6 @@ namespace eng
     m_IndexBuffer = IndexBuffer(indexBuffer);
   }
 
-  const mem::BufferLayout& OpenGLVertexArray::getLayout() const
-  {
-    return m_VertexBufferLayout;
-  }
-
-  const std::optional<IndexBuffer>& OpenGLVertexArray::getIndexBuffer() const
-  {
-    return m_IndexBuffer;
-  }
+  const mem::BufferLayout& OpenGLVertexArray::layout() const { return m_VertexBufferLayout; }
+  const std::optional<IndexBuffer>& OpenGLVertexArray::indexBuffer() const { return m_IndexBuffer; }
 }
