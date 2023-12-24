@@ -71,6 +71,7 @@
 #include "Engine/Threads/WorkSet.h"
 #include "Engine/Threads/Containers/LRUCache.h"
 #include "Engine/Threads/Containers/ProtectedArrayBox.h"
+#include "Engine/Threads/Containers/Queue.h"
 #include "Engine/Threads/Containers/UnorderedMap.h"
 #include "Engine/Threads/Containers/UnorderedSet.h"
 

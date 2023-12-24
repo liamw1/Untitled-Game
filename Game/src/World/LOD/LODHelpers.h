@@ -56,4 +56,12 @@ namespace newLod
     eng::mem::RenderData vertexData() const;
     void clearData();
   };
+
+  struct StateChange
+  {
+    std::vector<DrawCommand> newDrawCommands;
+    std::vector<NodeID> drawCommandsToRemove;
+
+    StateChange(std::vector<DrawCommand>&& _newDrawCommands, std::vector<NodeID>&& _drawCommandsToRemove);
+  };
 }

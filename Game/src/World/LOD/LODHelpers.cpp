@@ -70,4 +70,7 @@ namespace newLod
       vertexCount += transitionMesh.vertices.size();
     return vertexCount;
   }
+
+  StateChange::StateChange(std::vector<DrawCommand>&& _newDrawCommands, std::vector<NodeID>&& _drawCommandsToRemove)
+    : newDrawCommands(std::move(_newDrawCommands)), drawCommandsToRemove(std::move(_drawCommandsToRemove)) {}
 }

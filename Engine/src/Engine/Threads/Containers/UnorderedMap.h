@@ -1,5 +1,6 @@
 #pragma once
 #include "Engine/Core/Concepts.h"
+#include "Engine/Utilities/Constraints.h"
 
 namespace eng::thread
 {

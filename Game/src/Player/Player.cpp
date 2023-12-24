@@ -8,7 +8,7 @@ static constexpr length_t c_Width = 0.6_m * block::length();
 static constexpr length_t c_Height = 1.8_m * block::length();
 
 static bool s_FreeCamEnabled = false;
-static constexpr length_t c_TranslationSpeed = 50 * block::length();
+static constexpr length_t c_TranslationSpeed = 500 * block::length();
 
 // Designates origin of coordinate system
 static GlobalIndex s_OriginIndex;

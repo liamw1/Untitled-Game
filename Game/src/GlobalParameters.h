@@ -3,7 +3,7 @@
 
 namespace param
 {
-  constexpr i32 RenderDistance() { return 4; }
+  constexpr i32 RenderDistance() { return 16; }
   constexpr i32 LoadDistance() { return RenderDistance() + 1; }
   constexpr i32 UnloadDistance() { return LoadDistance(); }
 

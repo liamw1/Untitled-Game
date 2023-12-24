@@ -1,4 +1,5 @@
 #pragma once
+#include "Engine/Utilities/Constraints.h"
 
 namespace eng::thread
 {
@@ -31,6 +32,7 @@ namespace eng::thread
     }
 
     template<typename... Args>
+      requires std::constructible_from<V, Args...>
     bool emplace(Args&&... args)
     {
       std::lock_guard lock(m_Mutex);
