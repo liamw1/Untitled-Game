@@ -580,13 +580,6 @@ namespace newLod
 
     s_Shader = eng::Shader::Create("assets/shaders/LOD.glsl");
     s_SSBO = std::make_unique<eng::ShaderBufferStorage>(c_SSBOBinding, c_SSBOSize);
-
-    divide({});
-    std::vector<NodeID> leafNodes = getLeafNodes();
-
-    for (const NodeID& node : leafNodes)
-      meshLOD(node);
-    m_MultiDrawArray->uploadQueuedCommands();
   }
 
   void LODManager::render()
@@ -636,39 +629,128 @@ namespace newLod
     });
   }
 
-  void LODManager::meshLOD(const NodeID& node)
+  void LODManager::update()
   {
-    std::shared_ptr<RenderData> renderData = generateRenderData(node);
-    if (!renderData)
-      return;
+    bool stateChanged = true;
+    while (stateChanged)
+    {
+      stateChanged = false;
+      updateImpl(stateChanged, m_Root, c_RootNodeID, player::originIndex());
+    }
+    m_MultiDrawArray->uploadQueuedCommands();
+  }
 
-    eng::EnumBitMask<eng::math::Direction> transitionFaces = transitionNeighbors(node);
-    m_MultiDrawArray->queueCommand(createDrawCommand(*renderData, node, transitionFaces));
+  eng::EnumArray<std::optional<NodeID>, eng::math::Direction> LODManager::neighborQuery(const NodeID& nodeInfo) const
+  {
+    eng::EnumArray<std::optional<NodeID>, eng::math::Direction> neighbors;
+    for (eng::math::Direction face : eng::math::Directions())
+    {
+      GlobalIndex offset = (eng::math::isUpstream(face) ? nodeInfo.size() : 1) * GlobalIndex::Dir(face);
+      neighbors[face] = find(nodeInfo.anchor() + offset);
+    }
+    return neighbors;
   }
 
   eng::EnumBitMask<eng::math::Direction> LODManager::transitionNeighbors(const NodeID& nodeInfo) const
   {
-    eng::EnumArray<GlobalIndex, eng::math::Direction> offsets =
-    { { eng::math::Direction::West,   {-1,               0,               0} },
-      { eng::math::Direction::East,   {nodeInfo.size(),  0,               0} },
-      { eng::math::Direction::South,  { 0,              -1,               0} },
-      { eng::math::Direction::North,  { 0, nodeInfo.size(),               0} },
-      { eng::math::Direction::Bottom, { 0,               0,              -1} },
-      { eng::math::Direction::Top,    { 0,               0, nodeInfo.size()} } };
+    eng::EnumArray<std::optional<NodeID>, eng::math::Direction> neighborQueryResult = neighborQuery(nodeInfo);
 
     eng::EnumBitMask<eng::math::Direction> transitionNeighbors;
     for (eng::math::Direction face : eng::math::Directions())
     {
-      std::optional<NodeID> neighborID = find(nodeInfo.anchor() + offsets[face]);
-      if (!neighborID)
+      const std::optional<NodeID>& neighbor = neighborQueryResult[face];
+      if (!neighbor)
         continue;
 
-      if (neighborID->lodLevel() - nodeInfo.lodLevel() == 1)
+      if (neighbor->lodLevel() - nodeInfo.lodLevel() == 1)
         transitionNeighbors.set(face);
-      else if (neighborID->lodLevel() - nodeInfo.lodLevel() > 1)
+      else if (neighbor->lodLevel() - nodeInfo.lodLevel() > 1)
         ENG_WARN("LOD neighbor is more than one level lower resolution!");
     }
     return transitionNeighbors;
+  }
+
+  void LODManager::updateImpl(bool& stateChanged, Node& branch, const NodeID& branchInfo, const GlobalIndex& originIndex)
+  {
+    if (branchInfo.lodLevel() < 1)
+      return;
+
+    if (branch.isLeaf())
+      stateChanged |= tryDivide(branch, branchInfo, originIndex);
+    else if (!branch.hasGrandChildren())
+      stateChanged |= tryCombine(branch, branchInfo, originIndex);
+
+    if (branch.isLeaf())
+      return;
+
+    branch.children.bounds().forEach([this, &stateChanged, &branch, &branchInfo, &originIndex](const BlockIndex& childIndex)
+    {
+      updateImpl(stateChanged, branch.children(childIndex), branchInfo.child(childIndex), originIndex);
+    });
+  }
+
+  bool LODManager::tryDivide(Node& node, const NodeID& nodeInfo, const GlobalIndex& originIndex)
+  {
+    i32 dividedLodLevel = nodeInfo.lodLevel() - 1;
+    for (const std::optional<NodeID>& neighbor : neighborQuery(nodeInfo))
+      if (neighbor && std::abs(dividedLodLevel - neighbor->lodLevel()) > 1)
+        return false;
+
+    globalIndex_t splitRange = 2 * nodeInfo.size() - 1 + param::RenderDistance();
+    GlobalBox splitRangeBoundingBox(originIndex - splitRange, originIndex + splitRange);
+    if (!splitRangeBoundingBox.overlapsWith(nodeInfo.boundingBox()))
+      return false;
+
+    std::vector<DrawCommand> newDrawCommands;
+
+    node.divide();
+    node.children.bounds().forEach([this, &node, &nodeInfo, &newDrawCommands](const BlockIndex& childIndex)
+    {
+      std::optional<DrawCommand> drawCommand = createNewMesh(node.children(childIndex), nodeInfo.child(childIndex));
+      if (drawCommand)
+        newDrawCommands.push_back(std::move(*drawCommand));
+    });
+
+    uSize count = newDrawCommands.size();
+
+    for (const GlobalBox& adjustmentRegion : eng::math::FaceInteriors(nodeInfo.boundingBox().expand()))
+      createAdjustedMeshesInRegion(newDrawCommands, adjustmentRegion);
+
+    // Add and remove commands all at once
+    m_MultiDrawArray->updateState(std::move(newDrawCommands), { nodeInfo });
+    return true;
+  }
+
+  bool LODManager::tryCombine(Node& parentNode, const NodeID& nodeInfo, const GlobalIndex& originIndex)
+  {
+    for (const std::optional<NodeID>& neighbor : neighborQuery(nodeInfo))
+      if (neighbor && std::abs(nodeInfo.lodLevel() - neighbor->lodLevel()) > 1)
+        return false;
+
+    globalIndex_t combineRange = 4 * nodeInfo.size() - 1 + param::RenderDistance();
+    GlobalBox combineRangeBoundingBox(originIndex - combineRange, originIndex + combineRange);
+    if (combineRangeBoundingBox.overlapsWith(nodeInfo.boundingBox()))
+      return false;
+
+    std::vector<DrawCommand> newDrawCommands;
+    std::vector<NodeID> removedNodes;
+
+    parentNode.combine();
+    parentNode.children.bounds().forEach([&nodeInfo, &removedNodes](const BlockIndex& childIndex)
+    {
+      removedNodes.push_back(nodeInfo.child(childIndex));
+    });
+
+    std::optional<DrawCommand> drawCommand = createNewMesh(parentNode, nodeInfo);
+    if (drawCommand)
+      newDrawCommands.push_back(std::move(*drawCommand));
+
+    for (const GlobalBox& adjustmentRegion : eng::math::FaceInteriors(nodeInfo.boundingBox().expand()))
+      createAdjustedMeshesInRegion(newDrawCommands, adjustmentRegion);
+
+    // Add and remove commands all at once
+    m_MultiDrawArray->updateState(std::move(newDrawCommands), removedNodes);
+    return true;
   }
 
   std::optional<NodeID> LODManager::find(const GlobalIndex& index) const
@@ -686,46 +768,44 @@ namespace newLod
     return findImpl(branch.children(childIndex), branchInfo.child(childIndex), index);
   }
 
-  std::vector<NodeID> LODManager::getLeafNodes() const
+  std::optional<DrawCommand> LODManager::createNewMesh(Node& node, const NodeID& nodeInfo)
   {
-    std::vector<NodeID> leafNodes;
-    getLeafNodesImpl(leafNodes, m_Root, c_RootNodeID);
-    return leafNodes;
+    node.data = generateRenderData(nodeInfo);
+    if (!node.data)
+      return std::nullopt;
+
+    eng::EnumBitMask<eng::math::Direction> transitionFaces = transitionNeighbors(nodeInfo);
+    return createDrawCommand(*node.data, nodeInfo, transitionFaces);
   }
-  void LODManager::getLeafNodesImpl(std::vector<NodeID>& leafNodes, const Node& node, const NodeID& nodeInfo) const
+
+  std::optional<DrawCommand> LODManager::createAdjustedMesh(const Node& node, const NodeID& nodeInfo) const
   {
-    if (node.isLeaf())
-    {
-      leafNodes.push_back(nodeInfo);
+    if (!node.data)
+      return std::nullopt;
+
+    eng::EnumBitMask<eng::math::Direction> transitionFaces = transitionNeighbors(nodeInfo);
+    return createDrawCommand(*node.data, nodeInfo, transitionFaces);
+  }
+
+  void LODManager::createAdjustedMeshesInRegion(std::vector<DrawCommand>& drawCommands, const GlobalBox& region) const
+  {
+    createAdjustedMeshesInRegionImpl(drawCommands, m_Root, c_RootNodeID, region);
+  }
+
+  void LODManager::createAdjustedMeshesInRegionImpl(std::vector<DrawCommand>& drawCommands, const Node& branch, const NodeID& branchInfo, const GlobalBox& region) const
+  {
+    if (!region.overlapsWith(branchInfo.boundingBox()))
       return;
+
+    if (branch.isLeaf())
+    {
+      if (std::optional<DrawCommand> drawCommand = createAdjustedMesh(branch, branchInfo))
+        drawCommands.push_back(std::move(*drawCommand));
     }
-
-    node.children.bounds().forEach([this, &leafNodes, &node, &nodeInfo](const BlockIndex& childIndex)
-    {
-      getLeafNodesImpl(leafNodes, node.children(childIndex), nodeInfo.child(childIndex));
-    });
-  }
-
-  void LODManager::divide(const GlobalIndex& index)
-  {
-    if (c_OctreeBounds.encloses(index))
-      divideImpl(m_Root, c_RootNodeID, index);
-  }
-  void LODManager::divideImpl(Node& node, const NodeID& nodeInfo, const GlobalIndex& index)
-  {
-    if (!node.isLeaf() || nodeInfo.lodLevel() == 0)
-      return;
-
-    globalIndex_t splitRange = 2 * nodeInfo.size() - 1 + param::RenderDistance();
-    GlobalBox splitRangeBoundingBox(index - splitRange, index + splitRange);
-    GlobalBox intersection = GlobalBox::Intersection(splitRangeBoundingBox, nodeInfo.boundingBox());
-    if (!intersection.valid())
-      return;
-
-    node.divide();
-    node.children.bounds().forEach([this, &node, &nodeInfo, &index](const BlockIndex& childIndex)
-    {
-      divideImpl(node.children(childIndex), nodeInfo.child(childIndex), index);
-    });
+    else
+      branch.children.bounds().forEach([this, &branch, &branchInfo, &region, &drawCommands](const BlockIndex& childIndex)
+      {
+        createAdjustedMeshesInRegionImpl(drawCommands, branch.children(childIndex), branchInfo.child(childIndex), region);
+      });
   }
 }

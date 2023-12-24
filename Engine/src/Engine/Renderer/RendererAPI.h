@@ -35,9 +35,9 @@ namespace eng
     virtual void setFaceCulling(bool enableFaceCulling) = 0;
     virtual void setWireFrame(bool enableWireFrame) = 0;
 
-    virtual void drawVertices(const VertexArray* vertexArray, uSize vertexCount) = 0;
-    virtual void drawIndexed(const VertexArray* vertexArray, uSize indexCount) = 0;
-    virtual void drawIndexedLines(const VertexArray* vertexArray, uSize indexCount) = 0;
+    virtual void drawVertices(const VertexArray& vertexArray, uSize vertexCount) = 0;
+    virtual void drawIndexed(const VertexArray& vertexArray, uSize indexCount) = 0;
+    virtual void drawIndexedLines(const VertexArray& vertexArray, uSize indexCount) = 0;
 
     virtual void multiDrawVertices(const mem::RenderData& drawCommandData, uSize commandCount) = 0;
     virtual void multiDrawIndexed(const mem::RenderData& drawCommandData, uSize commandCount) = 0;

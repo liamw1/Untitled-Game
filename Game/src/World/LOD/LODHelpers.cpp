@@ -14,6 +14,11 @@ namespace newLod
 
   bool Node::isLeaf() const { return !children; }
 
+  bool Node::hasGrandChildren() const
+  {
+    return isLeaf() && children.bounds().anyOf([this](const BlockIndex& childIndex) { return !children(childIndex).isLeaf(); });
+  }
+
   void Node::divide()
   {
     if (!isLeaf())

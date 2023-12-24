@@ -72,14 +72,9 @@ namespace eng::math
     constexpr IBox3 operator/(T n) const { return clone(*this) /= n; }
   
     /*
-      \returns True if the box dimensions are non-negative.
+      \returns True if the box dimensions are non-negative. Almost all box operations assume this is true.
     */
     constexpr bool valid() const { return min.i <= max.i && min.j <= max.j && min.k <= max.k; }
-
-    /*
-      \returns True if the box has a non-zero volume.
-    */
-    constexpr bool empty() const { return min.i == max.i && min.j == max.j && min.k == max.k; }
   
     /*
       \returns True if the given point is contained within the box.
@@ -87,6 +82,14 @@ namespace eng::math
     constexpr bool encloses(const IVec3<T>& iVec3) const
     {
       return algo::noneOf(Axes(), [this, &iVec3](Axis axis) { return iVec3[axis] < min[axis] || iVec3[axis] > max[axis]; });
+    }
+
+    /*
+      \return True if the intersection between the given box and this box has a non-zero volume.
+    */
+    constexpr bool overlapsWith(const IBox3& other) const
+    {
+      return Intersection(*this, other).valid();
     }
   
     /*

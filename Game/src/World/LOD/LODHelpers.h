@@ -36,6 +36,8 @@ namespace newLod
     Node();
     bool isLeaf() const;
 
+    bool hasGrandChildren() const;
+
     void divide();
     void combine();
   };

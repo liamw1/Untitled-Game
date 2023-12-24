@@ -761,8 +761,7 @@ bool ChunkManager::combineLODs(std::vector<lod::Octree::Node*>& leaves)
     {
       globalIndex_t combineRange = 4 * node->size() - 1 + param::RenderDistance();
       GlobalBox rangeBoundingBox(player::originIndex() - combineRange, player::originIndex() + combineRange);
-
-      if (!GlobalBox::Intersection(rangeBoundingBox, node->parent->boundingBox()).valid())
+      if (!rangeBoundingBox.overlapsWith(node->parent->boundingBox()))
         cannibalNodes.push_back(node->parent);
     }
 

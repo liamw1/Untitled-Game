@@ -20,10 +20,17 @@ namespace newLod
 
     void render();
 
+    void update();
+
   private:
-    void meshLOD(const NodeID& nodeID);
+    eng::EnumArray<std::optional<NodeID>, eng::math::Direction> neighborQuery(const NodeID& nodeInfo) const;
 
     eng::EnumBitMask<eng::math::Direction> transitionNeighbors(const NodeID& nodeInfo) const;
+
+    void updateImpl(bool& stateChanged, Node& branch, const NodeID& branchInfo, const GlobalIndex& originIndex);
+
+    bool tryDivide(Node& leafNode, const NodeID& nodeInfo, const GlobalIndex& originIndex);
+    bool tryCombine(Node& parentNode, const NodeID& nodeInfo, const GlobalIndex& originIndex);
 
     /*
       \returns The leaf node ID that contains the given index.
@@ -32,15 +39,10 @@ namespace newLod
     std::optional<NodeID> find(const GlobalIndex& index) const;
     std::optional<NodeID> findImpl(const Node& branch, const NodeID& branchInfo, const GlobalIndex& index) const;
 
-    // TODO: Remove
-    std::vector<NodeID> getLeafNodes() const;
-    void getLeafNodesImpl(std::vector<NodeID>& leafNodes, const Node& node, const NodeID& nodeInfo) const;
+    std::optional<DrawCommand> createNewMesh(Node& node, const NodeID& nodeID);
+    std::optional<DrawCommand> createAdjustedMesh(const Node& node, const NodeID& nodeInfo) const;
 
-    void divide(const GlobalIndex& index);
-    void divideImpl(Node& node, const NodeID& nodeInfo, const GlobalIndex& index);
-
-    void divideTask(const NodeID& nodeInfo);
-
-    bool replaceLeafNode(Node&& node, const NodeID& nodeInfo);
+    void createAdjustedMeshesInRegion(std::vector<DrawCommand>& drawCommands, const GlobalBox& region) const;
+    void createAdjustedMeshesInRegionImpl(std::vector<DrawCommand>& drawCommands, const Node& branch, const NodeID& branchInfo, const GlobalBox& region) const;
   };
 }

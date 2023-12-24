@@ -202,14 +202,14 @@ namespace lod
     uniformData.textureScaling = eng::arithmeticUpcast<f32>(eng::bit(leaf->LODLevel()));
     MeshData::SetUniforms(uniformData);
 
-    eng::render::command::drawIndexed(leaf->data->primaryMesh.vertexArray.get(), primaryMeshIndexCount);
+    eng::render::command::drawIndexed(*leaf->data->primaryMesh.vertexArray, primaryMeshIndexCount);
     for (eng::math::Direction face : eng::math::Directions())
     {
       u32 transitionMeshIndexCount = eng::arithmeticCast<u32>(leaf->data->transitionMeshes[face].indices.size());
       if (transitionMeshIndexCount == 0 || !(leaf->data->transitionFaces & eng::bit(eng::toUnderlying(face))))
         continue;
 
-      eng::render::command::drawIndexed(leaf->data->transitionMeshes[face].vertexArray.get(), transitionMeshIndexCount);
+      eng::render::command::drawIndexed(*leaf->data->transitionMeshes[face].vertexArray, transitionMeshIndexCount);
     }
   }
 

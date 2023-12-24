@@ -101,7 +101,7 @@ namespace eng::render
     s_WireFrameVertexArray->setVertexBuffer(vertices);
 
     s_WireFrameShader->bind();
-    command::drawIndexedLines(s_WireFrameVertexArray.get());
+    command::drawIndexedLines(*s_WireFrameVertexArray);
   }
 
   void onWindowResize(u32 width, u32 height)

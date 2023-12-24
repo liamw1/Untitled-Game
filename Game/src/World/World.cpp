@@ -37,6 +37,7 @@ void World::onUpdate(eng::Timestep timestep)
   }
   else
   {
+    m_LODManager.update();
     m_LODManager.render();
     eng::render::command::clearDepthBuffer();
   }

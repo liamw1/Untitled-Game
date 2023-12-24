@@ -35,6 +35,16 @@ namespace eng::thread
       m_MultiDrawArray.remove(id);
     }
 
+    void updateState(std::vector<T>&& commandsToInsert, const std::vector<Identifier>& commandsToRemove)
+    {
+      std::lock_guard lock(m_Mutex);
+
+      for (T& drawCommand : commandsToInsert)
+        m_MultiDrawArray.insert(std::move(drawCommand));
+      for (const Identifier& id : commandsToRemove)
+        m_MultiDrawArray.remove(id);
+    }
+
     void uploadQueuedCommands()
     {
       std::lock_guard lock(m_Mutex);

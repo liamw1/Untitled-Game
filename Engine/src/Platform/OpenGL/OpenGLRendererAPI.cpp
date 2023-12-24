@@ -104,32 +104,29 @@ namespace eng
     m_WireFrameEnabled = enableWireFrame;
   }
 
-  void OpenGLRendererAPI::drawVertices(const VertexArray* vertexArray, uSize vertexCount)
+  void OpenGLRendererAPI::drawVertices(const VertexArray& vertexArray, uSize vertexCount)
   {
     ENG_CORE_ASSERT(thread::isMainThread(), "OpenGL calls must be made on the main thread!");
-    ENG_CORE_ASSERT(vertexArray, "Vertex array has not been initialized!");
 
-    vertexArray->bind();
+    vertexArray.bind();
     glDrawArrays(GL_TRIANGLES, 0, arithmeticCast<GLsizei>(vertexCount));
   }
 
-  void OpenGLRendererAPI::drawIndexed(const VertexArray* vertexArray, uSize indexCount)
+  void OpenGLRendererAPI::drawIndexed(const VertexArray& vertexArray, uSize indexCount)
   {
     ENG_CORE_ASSERT(thread::isMainThread(), "OpenGL calls must be made on the main thread!");
-    ENG_CORE_ASSERT(vertexArray, "Vertex array has not been initialized!");
 
-    vertexArray->bind();
-    uSize count = indexCount == 0 ? vertexArray->indexBuffer()->count() : indexCount;
+    vertexArray.bind();
+    uSize count = indexCount == 0 ? vertexArray.indexBuffer()->count() : indexCount;
     glDrawElements(GL_TRIANGLES, arithmeticCast<GLsizei>(count), GL_UNSIGNED_INT, nullptr);
   }
 
-  void OpenGLRendererAPI::drawIndexedLines(const VertexArray* vertexArray, uSize indexCount)
+  void OpenGLRendererAPI::drawIndexedLines(const VertexArray& vertexArray, uSize indexCount)
   {
     ENG_CORE_ASSERT(thread::isMainThread(), "OpenGL calls must be made on the main thread!");
-    ENG_CORE_ASSERT(vertexArray, "Vertex array has not been initialized!");
 
-    vertexArray->bind();
-    uSize count = indexCount == 0 ? vertexArray->indexBuffer()->count() : indexCount;
+    vertexArray.bind();
+    uSize count = indexCount == 0 ? vertexArray.indexBuffer()->count() : indexCount;
     glDrawElements(GL_LINES, arithmeticCast<GLsizei>(count), GL_UNSIGNED_INT, nullptr);
   }
 
