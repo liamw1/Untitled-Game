@@ -8,7 +8,7 @@ namespace eng
     : m_Name(name),
       m_Binding(binding)
   {
-    ENG_CORE_ASSERT(m_Binding < c_MaxUniformBindings, "Binding exceeds maximum allowed uniform bindings!");
+    ENG_CORE_ASSERT(m_Binding < c_MaxBindings, "Binding exceeds maximum allowed uniform bindings!");
 
     if (size > c_MaxSize)
     {

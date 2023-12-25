@@ -95,7 +95,7 @@ bool ChunkContainer::erase(const GlobalIndex& chunkIndex)
 
 bool ChunkContainer::hasBoundaryNeighbors(const GlobalIndex& chunkIndex)
 {
-  return !Chunk::Stencil(chunkIndex).noneOf([this](const GlobalIndex& stencilIndex)
+  return eng::algo::anyOf(Chunk::Stencil(chunkIndex), [this](const GlobalIndex& stencilIndex)
   {
     return m_BoundaryIndices.contains(stencilIndex);
   });
@@ -114,7 +114,7 @@ bool ChunkContainer::isOnBoundary(const GlobalIndex& chunkIndex) const
 
 void ChunkContainer::boundaryUpdate(const GlobalIndex& chunkIndex)
 {
-  Chunk::Stencil(chunkIndex).forEach([this](const GlobalIndex& neighborIndex)
+  eng::algo::forEach(Chunk::Stencil(chunkIndex), [this](const GlobalIndex& neighborIndex)
   {
     if (m_Chunks.contains(neighborIndex) || !isOnBoundary(neighborIndex))
       m_BoundaryIndices.erase(neighborIndex);

@@ -29,7 +29,7 @@ public:
   virtual length_t localSurfaceElevation(const NoiseSamples& noiseSamples) const = 0;
   virtual void fillColumn(BlockArrayBox<block::Type>::Strip column, length_t chunkFloor, length_t elevation) const = 0;
 
-  static const Biome* Get(Type biome);
+  static const Biome& Get(Type biome);
 
   static constexpr i32 LocalElevationOctaves() { return c_LocalElevationOctaves; }
   static constexpr uSize Count() { return s_Biomes.size(); }

@@ -6,13 +6,52 @@ namespace eng::math
 {
   /*
     Represents a box on a 2D integer lattice. Min and max bounds are both inclusive.
-
-    TODO: Create iterators that loop over integers contained in box.
   */
   template<std::integral T>
   class IBox2
   {
   public:
+    class iterator
+    {
+    public:
+      // These aliases are needed to satisfy requirements of std::forward_iterator
+      using value_type = IVec2<T>;
+      using difference_type = T;
+
+    private:
+      const IBox2* m_Box;
+      value_type m_Index;
+
+    public:
+      constexpr iterator()
+        : m_Box(nullptr) {}
+      constexpr iterator(const IBox2* box, value_type index)
+        : m_Box(box), m_Index(index) {}
+
+      constexpr iterator& operator++()
+      {
+        if (m_Index.j < m_Box->max.j)
+          m_Index.j++;
+        else
+        {
+          m_Index.j = m_Box->min.j;
+          m_Index.i++;
+        }
+        return *this;
+      }
+      constexpr iterator operator++(int)
+      {
+        iterator tmp = *this;
+        ++(*this);
+        return tmp;
+      }
+
+      constexpr const value_type& operator*() const { return m_Index; }
+
+      constexpr std::strong_ordering operator<=>(const iterator& other) const { return m_Index <=> other.m_Index; }
+      constexpr bool operator==(const iterator& other) const { return m_Index == other.m_Index; }
+    };
+
     IVec2<T> min;
     IVec2<T> max;
   
@@ -70,6 +109,14 @@ namespace eng::math
   
     constexpr IBox2 operator*(T n) const { return Clone(*this) *= n; }
     constexpr IBox2 operator/(T n) const { return Clone(*this) /= n; }
+
+    constexpr iterator begin() const { return iterator(this, min); }
+    constexpr iterator end() const
+    {
+      ENG_CORE_ASSERT(max.i < std::numeric_limits<T>::max(), "Box is too large to be iterated over!");
+      IVec2<T> endValue(max.i + 1, min.j);
+      return iterator(this, endValue);
+    }
   
     /*
       \returns True if the box dimensions are non-negative.
@@ -131,49 +178,6 @@ namespace eng::math
       return *this;
     }
     constexpr IBox2& shrink(T n = 1) { return expand(-n); }
-  
-    template<std::predicate<const IVec2<T>&> F>
-    bool allOf(const F& condition) const
-    {
-      return noneOf([&condition](const IVec2<T>& index) { return !condition(index); });
-    }
-  
-    template<std::predicate<const IVec2<T>&> F>
-    bool anyOf(const F& condition) const
-    {
-      ENG_CORE_ASSERT(valid(), "Box is not valid!");
-  
-      IVec2<T> index;
-      for (index.i = min.i; index.i <= max.i; ++index.i)
-        for (index.j = min.j; index.j <= max.j; ++index.j)
-          if (condition(index))
-            return true;
-      return false;
-    }
-  
-    template<std::predicate<const IVec2<T>&> F>
-    bool noneOf(const F& condition) const
-    {
-      ENG_CORE_ASSERT(valid(), "Box is not valid!");
-  
-      IVec2<T> index;
-      for (index.i = min.i; index.i <= max.i; ++index.i)
-        for (index.j = min.j; index.j <= max.j; ++index.j)
-          if (condition(index))
-            return false;
-      return true;
-    }
-  
-    template<InvocableWithReturnType<void, const IVec2<T>&> F>
-    void forEach(const F& function) const
-    {
-      ENG_CORE_ASSERT(valid(), "Box is not valid!");
-  
-      IVec2<T> index;
-      for (index.i = min.i; index.i <= max.i; ++index.i)
-        for (index.j = min.j; index.j <= max.j; ++index.j)
-          function(index);  
-    }
   
     static constexpr IBox2 Intersection(const IBox2& boxA, const IBox2& boxB)
     {

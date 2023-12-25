@@ -16,7 +16,7 @@ namespace newLod
 
   bool Node::hasGrandChildren() const
   {
-    return isLeaf() && children.bounds().anyOf([this](const BlockIndex& childIndex) { return !children(childIndex).isLeaf(); });
+    return isLeaf() && children.anyOf([](const Node& child) { return !child.isLeaf(); });
   }
 
   void Node::divide()

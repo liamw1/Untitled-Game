@@ -10,7 +10,7 @@ public:
     static constexpr f32 elevationPersistence = 1.0f / 3;
 
     length_t h = CalculateOctaveNoise(noiseSamples, largestElevationAmplitude, elevationPersistence);
-    return std::sqrt(10 + h * h);
+    return 4_m + std::abs(h);
   }
 
   void fillColumn(BlockArrayBox<block::Type>::Strip column, length_t chunkFloor, length_t elevation) const override

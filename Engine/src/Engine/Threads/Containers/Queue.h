@@ -6,11 +6,17 @@ namespace eng::thread
   template<std::movable V>
   class Queue : private SetInStone
   {
-    std::mutex m_Mutex;
+    mutable std::mutex m_Mutex;
     std::queue<V> m_Data;
 
   public:
     Queue() = default;
+
+    uSize size() const
+    {
+      std::lock_guard lock(m_Mutex);
+      return m_Data.size();
+    }
 
     template<DecaysTo<V> T>
     void push(T&& value)

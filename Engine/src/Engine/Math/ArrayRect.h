@@ -92,35 +92,73 @@ namespace eng::math
       });
     }
 
-    template<std::predicate<T> F>
+
+
+    template<std::predicate<const T&> F>
+    bool allOf(F&& condition) const
+    {
+      ENG_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
+      return std::all_of(m_Data.get(), m_Data.get() + size(), std::forward<F>(condition));
+    }
+
+    template<std::predicate<const T&> F>
+    bool allOf(const IBox2<IntType>& section, F&& condition) const { return allOf(section, toIndexed(std::forward<F>(condition))); }
+
+    template<std::predicate<const IVec2<IntType>&, const T&> F>
+    bool allOf(F&& condition) const { return allOf(m_Bounds, std::forward<F>(condition)); }
+
+    template<std::predicate<const IVec2<IntType>&, const T&> F>
     bool allOf(const IBox2<IntType>& section, F&& condition) const
     {
       ENG_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
-      return section.allOf([this, &condition](const IVec2<IntType>& index)
-      {
-        return condition((*this)(index));
-      });
+      return algo::allOf(section, [this, &condition](const IVec2<IntType>& index) { return condition(index, (*this)(index)); });
     }
 
-    template<std::predicate<T> F>
+
+
+    template<std::predicate<const T&> F>
+    bool anyOf(F&& condition) const
+    {
+      ENG_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
+      return std::any_of(m_Data.get(), m_Data.get() + size(), std::forward<F>(condition));
+    }
+
+    template<std::predicate<const T&> F>
+    bool anyOf(const IBox2<IntType>& section, F&& condition) const { return anyOf(section, toIndexed(std::forward<F>(condition))); }
+
+    template<std::predicate<const IVec2<IntType>&, const T&> F>
+    bool anyOf(F&& condition) const { return anyOf(m_Bounds, std::forward<F>(condition)); }
+
+    template<std::predicate<const IVec2<IntType>&, const T&> F>
     bool anyOf(const IBox2<IntType>& section, F&& condition) const
     {
       ENG_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
-      return section.anyOf([this, &condition](const IVec2<IntType>& index)
-      {
-        return condition((*this)(index));
-      });
+      return algo::anyOf(section, [this, &condition](const IVec2<IntType>& index) { return condition(index, (*this)(index)); });
     }
 
-    template<std::predicate<T> F>
+
+
+    template<std::predicate<const T&> F>
+    bool noneOf(F&& condition) const
+    {
+      ENG_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
+      return std::none_of(m_Data.get(), m_Data.get() + size(), std::forward<F>(condition));
+    }
+
+    template<std::predicate<const T&> F>
+    bool noneOf(const IBox2<IntType>& section, F&& condition) const { return noneOf(section, toIndexed(std::forward<F>(condition))); }
+
+    template<std::predicate<const IVec2<IntType>&, const T&> F>
+    bool noneOf(F&& condition) const { return noneOf(m_Bounds, std::forward<F>(condition)); }
+
+    template<std::predicate<const IVec2<IntType>&, const T&> F>
     bool noneOf(const IBox2<IntType>& section, F&& condition) const
     {
       ENG_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
-      return section.noneOf([this, &condition](const IVec2<IntType>& index)
-      {
-        return condition((*this)(index));
-      });
+      return algo::noneOf(section, [this, &condition](const IVec2<IntType>& index) { return condition(index, (*this)(index)); });
     }
+
+
 
     void fill(const T& value)
     {
@@ -131,10 +169,7 @@ namespace eng::math
     void fill(const IBox2<IntType>& fillSection, const T& value)
     {
       ENG_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
-      fillSection.forEach([this, &value](const IVec2<IntType>& index)
-      {
-        (*this)(index) = value;
-      });
+      forEach(fillSection, [&value](T& data) { data = value; });
     }
 
     void fill(const IBox2<IntType>& fillSection, const ArrayBox<T, IntType>& container, const IBox2<IntType>& containerSection)
@@ -143,11 +178,54 @@ namespace eng::math
       ENG_CORE_ASSERT(fillSection.extents() == containerSection.extents(), "Read and write sections are not the same dimensions!");
 
       IVec2<IntType> offset = containerSection.min - fillSection.min;
-      fillSection.forEach([this, &container, &offset](const IVec2<IntType>& index)
-      {
-        (*this)(index) = container(index + offset);
-      });
+      forEach(fillSection, [&container, &offset](const IVec2<IntType>& index, T& data) { data = container(index + offset); });
     }
+
+
+
+    template<std::invocable<const T&> F>
+    void forEach(F&& function) const
+    {
+      ENG_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
+      std::for_each_n(m_Data.get(), size(), std::forward<F>(function));
+    }
+
+    template<std::invocable<const T&> F>
+    void forEach(const IBox2<IntType>& section, F&& function) const { forEach(section, toIndexed(function)); }
+
+    template<std::invocable<const IVec2<IntType>&, const T&> F>
+    void forEach(F&& function) const { forEach(m_Bounds, std::forward<F>(function)); }
+
+    template<std::invocable<const IVec2<IntType>&, const T&> F>
+    void forEach(const IBox2<IntType>& section, F&& function) const
+    {
+      ENG_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
+      algo::forEach(section, [this, &function](const IVec2<IntType>& index) { function(index, (*this)(index)); });
+    }
+
+
+
+    template<std::invocable<T&> F>
+    void forEach(F&& function)
+    {
+      ENG_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
+      std::for_each_n(m_Data.get(), size(), std::forward<F>(function));
+    }
+
+    template<std::invocable<T&> F>
+    void forEach(const IBox2<IntType>& section, F&& function) { forEach(section, toIndexed(function)); }
+
+    template<std::invocable<const IVec2<IntType>&, T&> F>
+    void forEach(F&& function) { forEach(m_Bounds, std::forward<F>(function)); }
+
+    template<std::invocable<const IVec2<IntType>&, T&> F>
+    void forEach(const IBox2<IntType>& section, F&& function)
+    {
+      ENG_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
+      algo::forEach(section, [this, &function](const IVec2<IntType>& index) { function(index, (*this)(index)); });
+    }
+
+
 
     void setBounds(const IBox2<IntType>& bounds)
     {
@@ -167,6 +245,25 @@ namespace eng::math
     void clear()
     {
       m_Data.reset();
+    }
+
+  private:
+    template<std::invocable<T&> F>
+    auto toIndexed(F&& function)
+    {
+      return [this, &function](const IVec2<IntType>& /*unused*/, T& data)
+      {
+        return function(data);
+      };
+    }
+
+    template<std::invocable<const T&> F>
+    auto toIndexed(F&& function) const
+    {
+      return [this, &function](const IVec2<IntType>& /*unused*/, const T& data)
+      {
+        return function(data);
+      };
     }
   };
 }

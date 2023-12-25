@@ -11,9 +11,8 @@ namespace eng::math
     Represents a point on a 2D integer lattice.
   */
   template<std::integral T>
-  class IVec2
+  struct IVec2
   {
-  public:
     T i;
     T j;
   

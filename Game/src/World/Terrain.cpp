@@ -196,8 +196,8 @@ namespace terrain
           if (biomeType == Biome::Type::Null)
             break;
 
-          const Biome* biome = Biome::Get(biomeType);
-          elevation += biome->localSurfaceElevation(noiseSamples[i][j]) * biomeWeight;
+          const Biome& biome = Biome::Get(biomeType);
+          elevation += biome.localSurfaceElevation(noiseSamples[i][j]) * biomeWeight;
         }
         heightMap[i][j] = elevation;
       }
@@ -213,8 +213,8 @@ namespace terrain
       for (blockIndex_t j = 0; j < Chunk::Size(); ++j)
       {
         const length_t& elevation = heightMap[i][j];
-        const Biome* primaryBiome = Biome::Get(biomeMap[i][j][0].type);
-        primaryBiome->fillColumn(composition[i][j], chunkFloor, elevation);
+        const Biome& primaryBiome = Biome::Get(biomeMap[i][j][0].type);
+        primaryBiome.fillColumn(composition[i][j], chunkFloor, elevation);
       }
   }
 
@@ -293,7 +293,7 @@ namespace terrain
     length_t elevation = 0;
     for (i32 i = 0; i < c_MaxCompoundBiomes; ++i)
       if (biomeData[i].type != Biome::Type::Null)
-        elevation += biomeData[i].weight * Biome::Get(biomeData[i].type)->localSurfaceElevation(noise);
+        elevation += biomeData[i].weight * Biome::Get(biomeData[i].type).localSurfaceElevation(noise);
     return elevation;
   }
 

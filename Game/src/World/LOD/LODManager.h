@@ -10,7 +10,7 @@ namespace newLod
 
     // Multi-threading
     eng::thread::Queue<StateChange> m_StateChangeQueue;
-    std::shared_ptr<eng::thread::ThreadPool> m_ThreadPool;
+    eng::thread::ThreadPool m_ThreadPool;
     std::future<void> m_UpdateFuture;
 
     // LOD data
@@ -25,6 +25,7 @@ namespace newLod
     void update();
 
   private:
+    void updateTask();
     bool updateRecursively(Node& branch, const NodeID& branchInfo, const GlobalIndex& originIndex);
 
     bool tryDivide(Node& leafNode, const NodeID& nodeInfo, const GlobalIndex& originIndex);

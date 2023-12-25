@@ -83,7 +83,7 @@ static BlockArrayBox<block::Light> calculateLighting(const BlockArrayBox<block::
 ChunkManager::ChunkManager()
   : m_OpaqueMultiDrawArray(std::make_shared<eng::thread::AsyncMultiDrawArray<ChunkDrawCommand>>(s_VertexBufferLayout)),
     m_TransparentMultiDrawArray(std::make_shared<eng::thread::AsyncMultiDrawArray<ChunkDrawCommand>>(s_VertexBufferLayout)),
-    m_ThreadPool(std::make_shared<eng::thread::ThreadPool>(3)),
+    m_ThreadPool(std::make_shared<eng::thread::ThreadPool>("Chunk Manager", 0.25)),
     m_LoadWork(m_ThreadPool, eng::thread::Priority::Normal),
     m_CleanWork(m_ThreadPool, eng::thread::Priority::High),
     m_LightingWork(m_ThreadPool, eng::thread::Priority::Normal),
@@ -442,7 +442,7 @@ std::shared_ptr<Chunk> ChunkManager::generateNewChunk(const GlobalIndex& chunkIn
 
   bool insertionSuccess = m_ChunkContainer.insert(chunkIndex, std::move(chunk));
   if (insertionSuccess)
-    Chunk::Stencil(chunkIndex).forEach([this](const GlobalIndex& stencilIndex)
+    eng::algo::forEach(Chunk::Stencil(chunkIndex), [this](const GlobalIndex& stencilIndex)
     {
       addToLazyMeshUpdateQueue(stencilIndex);
     });
@@ -457,7 +457,7 @@ void ChunkManager::eraseChunk(const GlobalIndex& chunkIndex)
 
 void ChunkManager::sendBlockUpdate(const GlobalIndex& chunkIndex, const BlockIndex& blockIndex)
 {
-  affectedChunks(BlockBox(blockIndex, blockIndex)).forEach([this, &chunkIndex](const LocalIndex& localIndex)
+  eng::algo::forEach(affectedChunks(BlockBox(blockIndex, blockIndex)), [this, &chunkIndex](const LocalIndex& localIndex)
   {
     GlobalIndex neighborIndex = chunkIndex + localIndex.upcast<globalIndex_t>();
 
@@ -489,7 +489,7 @@ void ChunkManager::meshChunk(const Chunk& chunk)
 
   ChunkDrawCommand opaqueDraw(chunkIndex, false);
   ChunkDrawCommand transparentDraw(chunkIndex, true);
-  Chunk::Bounds().forEach([&blockData, &opaqueDraw, &transparentDraw](const BlockIndex& blockIndex)
+  eng::algo::forEach(Chunk::Bounds(), [&blockData, &opaqueDraw, &transparentDraw](const BlockIndex& blockIndex)
   {
     block::Type blockType = blockData.composition(blockIndex);
 
@@ -516,7 +516,7 @@ void ChunkManager::meshChunk(const Chunk& chunk)
 
         BlockIndex vertexPosition = blockIndex + ChunkVertex::GetOffset(face, quadIndex);
         BlockBox lightingStencil = BlockBox(-1, 0) + vertexPosition;
-        lightingStencil.forEach([&blockData, &totalSunlight, &transparentNeighbors](const BlockIndex& lightIndex)
+        eng::algo::forEach(lightingStencil, [&blockData, &totalSunlight, &transparentNeighbors](const BlockIndex& lightIndex)
         {
           if (!blockData.composition(lightIndex).hasTransparency())
             return;
@@ -579,7 +579,7 @@ void ChunkManager::updateLighting(Chunk& chunk)
 
   // Perform initial propogation of sunlight downward until light hits opaque block
   BlockArrayRect<blockIndex_t> attenuatedSunlightExtents(Chunk::Bounds2D(), Chunk::Size());
-  BlockData::Bounds().faceInterior(eng::math::Direction::Top).forEach([&blockData, &attenuatedSunlightExtents](const BlockIndex& blockIndex)
+  eng::algo::forEach(BlockData::Bounds().faceInterior(eng::math::Direction::Top), [&blockData, &attenuatedSunlightExtents](const BlockIndex& blockIndex)
   {
     BlockIndex propogationIndex = blockIndex;
     if (blockData.lighting(propogationIndex) != block::Light::MaxValue())
@@ -609,10 +609,10 @@ void ChunkManager::updateLighting(Chunk& chunk)
 
   // Light unlit blocks neighboring sunlight with attenuated sunlight value and add them to the propogation stack
   std::array<std::stack<BlockIndex>, block::Light::MaxValue() + 1> sunlight;
-  attenuatedSunlightExtents.bounds().forEach([&blockData, &sunlight, &attenuatedSunlightExtents](const eng::math::IVec2<blockIndex_t>& index)
+  attenuatedSunlightExtents.forEach([&blockData, &sunlight](const BlockIndex2D& index, blockIndex_t k)
   {
     static constexpr i8 attenuatedIntensity = block::Light::MaxValue() - attenuation;
-    for (BlockIndex blockIndex(index, attenuatedSunlightExtents(index)); blockIndex.k < Chunk::Size(); ++blockIndex.k)
+    for (BlockIndex blockIndex(index, k); blockIndex.k < Chunk::Size(); ++blockIndex.k)
     {
       if (!blockData.composition(blockIndex).hasTransparency() || blockData.lighting(blockIndex) == block::Light::MaxValue())
         continue;
@@ -629,8 +629,7 @@ void ChunkManager::updateLighting(Chunk& chunk)
     if (direction == eng::math::Direction::Top)
       continue;
 
-    BlockBox faceInterior = BlockData::Bounds().faceInterior(direction);
-    faceInterior.forEach([&blockData, &sunlight](const BlockIndex& blockIndex)
+    eng::algo::forEach(BlockData::Bounds().faceInterior(direction), [&blockData, &sunlight](const BlockIndex& blockIndex)
     {
       if (blockData.composition(blockIndex).hasTransparency())
         sunlight[blockData.lighting(blockIndex).sunlight()].push(blockIndex);
@@ -672,7 +671,7 @@ void ChunkManager::updateLighting(Chunk& chunk)
     static constexpr std::array<BlockBox, 26> chunkDecomposition = decomposeBlockBoxBoundary(Chunk::Bounds());
     for (const BlockBox& chunkSection : chunkDecomposition)
       if (!lighting.contentsEqual(chunkSection, newLighting, chunkSection, defaultValue))
-        affectedChunks(chunkSection).forEach([&chunkIndex, &additionalLightingUpdates](const LocalIndex& localIndex)
+        eng::algo::forEach(affectedChunks(chunkSection), [&chunkIndex, &additionalLightingUpdates](const LocalIndex& localIndex)
         {
           additionalLightingUpdates.insert(chunkIndex + localIndex.upcast<globalIndex_t>());
         });

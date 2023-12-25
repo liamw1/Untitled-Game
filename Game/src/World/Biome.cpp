@@ -16,9 +16,9 @@ static eng::EnumArray<std::unique_ptr<Biome>, Biome::Type> initializeBiomes()
 
 eng::EnumArray<std::unique_ptr<Biome>, Biome::Type> Biome::s_Biomes = initializeBiomes();
 
-const Biome* Biome::Get(Type biome)
+const Biome& Biome::Get(Type biome)
 {
-  return s_Biomes[biome].get();
+  return *s_Biomes[biome];
 }
 
 length_t Biome::CalculateOctaveNoise(const NoiseSamples& noiseSamples, length_t largestAmplitude, f32 persistence)

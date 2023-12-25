@@ -183,15 +183,27 @@ namespace eng::algo
     std::iota(std::begin(container), std::end(container), value);
   }
 
-  template<IterableContainer C, IteratorWithValueType<detail::containedType<C>> D>
+  template<Iterable C, IteratorWithValueType<detail::containedType<C>> D>
   constexpr void copy(const C& container, D destination)
   {
     std::copy(std::begin(container), std::end(container), destination);
   }
 
-  template<IterableContainer C, IteratorWithValueType<detail::containedType<C>> D>
+  template<Iterable C, IteratorWithValueType<detail::containedType<C>> D>
   constexpr void partialSum(const C& container, D destination)
   {
     std::partial_sum(std::begin(container), std::end(container), destination);
+  }
+
+  template<Iterable C, std::invocable<detail::containedType<C>> F>
+  constexpr void forEach(C& container, F&& function)
+  {
+    std::for_each(std::begin(container), std::end(container), std::forward<F>(function));
+  }
+
+  template<Iterable C, std::invocable<detail::containedType<C>> F>
+  constexpr void forEach(const C& container, F&& function)
+  {
+    std::for_each(std::begin(container), std::end(container), std::forward<F>(function));
   }
 }

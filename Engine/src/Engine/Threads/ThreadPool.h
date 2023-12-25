@@ -12,9 +12,11 @@ namespace eng::thread
     std::condition_variable m_Condition;
     std::vector<std::thread> m_Threads;
     EnumArray<std::queue<MoveOnlyFunction>, Priority> m_Work;
+    std::string m_Name;
 
   public:
-    ThreadPool(i32 numThreads);
+    ThreadPool(const std::string& name, i32 numberOfThreads);
+    ThreadPool(const std::string& name, f64 proportionOfSystemThreads);
     ~ThreadPool();
 
     /*

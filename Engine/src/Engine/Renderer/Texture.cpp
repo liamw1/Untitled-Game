@@ -29,10 +29,10 @@ namespace eng
     // Copy data into ArrayBox
     math::IBox3<i32> imageBounds(0, 0, 0, height - 1, width - 1, channels - 1);
     m_Data = math::ArrayBox<u8, i32>(imageBounds, AllocationPolicy::ForOverwrite);
-    imageBounds.forEach([this, imageData](const math::IVec3<i32>& index)
-      {
-        m_Data(index) = imageData[m_Data.bounds().linearIndexOf(index)];
-      });
+    m_Data.forEach([this, imageData](const math::IVec3<i32>& index, u8& colorValue)
+    {
+      colorValue = imageData[m_Data.bounds().linearIndexOf(index)];
+    });
 
     // Free original data
     stbi_image_free(imageData);
@@ -49,10 +49,7 @@ namespace eng
     ENG_CORE_ASSERT(channels() <= 4, "Image has more than four channels!");
 
     math::Float4 totalColor(0);
-    m_Data.bounds().forEach([this, &totalColor](const math::IVec3<i32>& index)
-      {
-        totalColor[index.k] += m_Data(index) / 255.0f;
-      });
+    m_Data.forEach([&totalColor](const math::IVec3<i32>& index, const u8& colorValue) { totalColor[index.k] += colorValue / 255.0f; });
 
     math::Float4 averageColor = totalColor / pixelCount();
     if (channels() < 4)

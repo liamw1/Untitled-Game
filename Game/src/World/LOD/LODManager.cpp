@@ -38,7 +38,7 @@ namespace newLod
   static constexpr f32 smoothnessLevel(i32 lodLevel)
   {
     return 1.0f;
-    return std::min(0.15f * lodLevel + 0.3f, 1.0f);
+    // return std::min(0.15f * lodLevel + 0.3f, 1.0f);
   }
 
   // Calculate quantity based on values at corners that compose an edge.  The smoothness parameter s is used to interpolate between 
@@ -575,7 +575,7 @@ namespace newLod
 
   LODManager::LODManager()
     : m_MultiDrawArray(s_VertexBufferLayout),
-      m_ThreadPool(std::make_shared<eng::thread::ThreadPool>(1))
+      m_ThreadPool("LOD Manager", 1)
   {
     ENG_PROFILE_FUNCTION();
 
@@ -585,7 +585,7 @@ namespace newLod
 
   LODManager::~LODManager()
   {
-    m_ThreadPool->shutdown();
+    m_ThreadPool.shutdown();
   }
 
   void LODManager::render()
@@ -634,20 +634,30 @@ namespace newLod
 
   void LODManager::update()
   {
-    if (!m_UpdateFuture.valid() || eng::thread::isReady(m_UpdateFuture))
-      m_UpdateFuture = m_ThreadPool->submit(eng::thread::Priority::Low, [this]()
-      {
-        while (updateRecursively(m_Root, c_RootNodeID, player::originIndex()))
-        {
-        }
-      });
+    ENG_PROFILE_FUNCTION();
 
+    if (!m_UpdateFuture.valid() || eng::thread::isReady(m_UpdateFuture))
+      m_UpdateFuture = m_ThreadPool.submit(eng::thread::Priority::Low, &LODManager::updateTask, this);
+
+    /*
+      We may want to limit the number of state changes per function call to reduce lag spikes.
+      We can also consider combining state changes to reduce redundant changes in state.
+    */
     while (std::optional<StateChange> stateChange = m_StateChangeQueue.tryPop())
     {
       for (DrawCommand& drawCommand : stateChange->newDrawCommands)
         m_MultiDrawArray.insert(std::move(drawCommand));
       for (const NodeID& id : stateChange->drawCommandsToRemove)
         m_MultiDrawArray.remove(id);
+    }
+  }
+
+  void LODManager::updateTask()
+  {
+    ENG_PROFILE_FUNCTION();
+
+    while (updateRecursively(m_Root, c_RootNodeID, player::originIndex()))
+    {
     }
   }
 
@@ -665,15 +675,17 @@ namespace newLod
     if (branch.isLeaf())
       return stateChanged;
 
-    branch.children.bounds().forEach([this, &branch, &branchInfo, &originIndex, &stateChanged](const BlockIndex& childIndex)
+    branch.children.forEach([this, &branchInfo, &originIndex, &stateChanged](const BlockIndex& childIndex, Node& child)
     {
-      stateChanged |= updateRecursively(branch.children(childIndex), branchInfo.child(childIndex), originIndex);
+      stateChanged |= updateRecursively(child, branchInfo.child(childIndex), originIndex);
     });
     return stateChanged;
   }
 
   bool LODManager::tryDivide(Node& node, const NodeID& nodeInfo, const GlobalIndex& originIndex)
   {
+    ENG_PROFILE_FUNCTION();
+
     i32 dividedLodLevel = nodeInfo.lodLevel() - 1;
     for (const std::optional<NodeID>& neighbor : neighborQuery(nodeInfo))
       if (neighbor && std::abs(dividedLodLevel - neighbor->lodLevel()) > 1)
@@ -688,9 +700,9 @@ namespace newLod
     std::vector<NodeID> removedNodes = { nodeInfo };
 
     node.divide();
-    node.children.bounds().forEach([this, &node, &nodeInfo, &newDrawCommands](const BlockIndex& childIndex)
+    node.children.forEach([this, &nodeInfo, &newDrawCommands](const BlockIndex& childIndex, Node& child)
     {
-      std::optional<DrawCommand> drawCommand = createNewMesh(node.children(childIndex), nodeInfo.child(childIndex));
+      std::optional<DrawCommand> drawCommand = createNewMesh(child, nodeInfo.child(childIndex));
       if (drawCommand)
         newDrawCommands.push_back(std::move(*drawCommand));
     });
@@ -704,6 +716,8 @@ namespace newLod
 
   bool LODManager::tryCombine(Node& parentNode, const NodeID& nodeInfo, const GlobalIndex& originIndex)
   {
+    ENG_PROFILE_FUNCTION();
+
     for (const std::optional<NodeID>& neighbor : neighborQuery(nodeInfo))
       if (neighbor && std::abs(nodeInfo.lodLevel() - neighbor->lodLevel()) > 1)
         return false;
@@ -725,7 +739,7 @@ namespace newLod
     std::vector<NodeID> removedNodes;
 
     parentNode.combine();
-    parentNode.children.bounds().forEach([&nodeInfo, &removedNodes](const BlockIndex& childIndex)
+    eng::algo::forEach(parentNode.children.bounds(), [&nodeInfo, &removedNodes](const BlockIndex& childIndex)
     {
       removedNodes.push_back(nodeInfo.child(childIndex));
     });
@@ -802,9 +816,9 @@ namespace newLod
     if (branch.isLeaf())
       nodes.push_back(branchInfo);
     else
-      branch.children.bounds().forEach([this, &nodes, &branch, &branchInfo, &region](const BlockIndex& childIndex)
+      branch.children.forEach([this, &nodes, &branchInfo, &region](const BlockIndex& childIndex, const Node& child)
       {
-        findImpl(nodes, branch.children(childIndex), branchInfo.child(childIndex), region);
+        findImpl(nodes, child, branchInfo.child(childIndex), region);
       });
   }
 
@@ -843,9 +857,9 @@ namespace newLod
         drawCommands.push_back(std::move(*drawCommand));
     }
     else
-      branch.children.bounds().forEach([this, &drawCommands, &branch, &branchInfo, &region](const BlockIndex& childIndex)
+      branch.children.forEach([this, &drawCommands, &branchInfo, &region](const BlockIndex& childIndex, const Node& child)
       {
-        createAdjustedMeshesInRegionImpl(drawCommands, branch.children(childIndex), branchInfo.child(childIndex), region);
+        createAdjustedMeshesInRegionImpl(drawCommands, child, branchInfo.child(childIndex), region);
       });
   }
 
@@ -864,9 +878,9 @@ namespace newLod
       return;
     }
 
-    node.children.bounds().forEach([this, &node, &nodeInfo](const BlockIndex& childIndex)
+    node.children.forEach([this, &nodeInfo](const BlockIndex& childIndex, const Node& child)
     {
-      checkStateImpl(node.children(childIndex), nodeInfo.child(childIndex));
+      checkStateImpl(child, nodeInfo.child(childIndex));
     });
   }
 }

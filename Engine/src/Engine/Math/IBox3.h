@@ -6,13 +6,58 @@ namespace eng::math
 {
   /*
     Represents a box on a 3D integer lattice. Min and max bounds are both inclusive.
-
-    TODO: Create iterators that loop over integers contained in box.
   */
   template<std::integral T>
   class IBox3
   {
   public:
+    class iterator
+    {
+    public:
+      // These aliases are needed to satisfy requirements of std::forward_iterator
+      using value_type = IVec3<T>;
+      using difference_type = T;
+
+    private:
+      const IBox3* m_Box;
+      value_type m_Index;
+
+    public:
+      constexpr iterator()
+        : m_Box(nullptr) {}
+      constexpr iterator(const IBox3* box, value_type index)
+        : m_Box(box), m_Index(index) {}
+
+      constexpr iterator& operator++()
+      {
+        if (m_Index.k < m_Box->max.k)
+          m_Index.k++;
+        else if (m_Index.j < m_Box->max.j)
+        {
+          m_Index.k = m_Box->min.k;
+          m_Index.j++;
+        }
+        else
+        {
+          m_Index.k = m_Box->min.k;
+          m_Index.j = m_Box->min.j;
+          m_Index.i++;
+        }
+        return *this;
+      }
+      constexpr iterator operator++(int)
+      {
+        iterator tmp = *this;
+        ++(*this);
+        return tmp;
+      }
+
+      constexpr const value_type& operator*() const { return m_Index; }
+
+      constexpr std::strong_ordering operator<=>(const iterator& other) const { return m_Index <=> other.m_Index; }
+      constexpr bool operator==(const iterator& other) const { return m_Index == other.m_Index; }
+    };
+
     IVec3<T> min;
     IVec3<T> max;
   
@@ -70,6 +115,14 @@ namespace eng::math
   
     constexpr IBox3 operator*(T n) const { return clone(*this) *= n; }
     constexpr IBox3 operator/(T n) const { return clone(*this) /= n; }
+
+    constexpr iterator begin() const { return iterator(this, min); }
+    constexpr iterator end() const
+    {
+      ENG_CORE_ASSERT(max.i < std::numeric_limits<T>::max(), "Box is too large to be iterated over!");
+      IVec3<T> endValue(max.i + 1, min.j, min.k);
+      return iterator(this, endValue);
+    }
   
     /*
       \returns True if the box dimensions are non-negative. Almost all box operations assume this is true.
@@ -220,52 +273,6 @@ namespace eng::math
   
       IVec3<T> cornerIndex(offset.i > 0 ? max.i : min.i, offset.j > 0 ? max.j : min.j, offset.k > 0 ? max.k : min.k);
       return { cornerIndex, cornerIndex };
-    }
-  
-    template<std::predicate<const IVec3<T>&> F>
-    constexpr bool allOf(const F& condition) const
-    {
-      return noneOf([&condition](const IVec3<T>& index) { return !condition(index); });
-    }
-  
-    template<std::predicate<const IVec3<T>&> F>
-    constexpr bool anyOf(const F& condition) const
-    {
-      ENG_CORE_ASSERT(valid(), "Box is not valid!");
-  
-      IVec3<T> index;
-      for (index.i = min.i; index.i <= max.i; ++index.i)
-        for (index.j = min.j; index.j <= max.j; ++index.j)
-          for (index.k = min.k; index.k <= max.k; ++index.k)
-            if (condition(index))
-              return true;
-      return false;
-    }
-  
-    template<std::predicate<const IVec3<T>&> F>
-    constexpr bool noneOf(const F& condition) const
-    {
-      ENG_CORE_ASSERT(valid(), "Box is not valid!");
-  
-      IVec3<T> index;
-      for (index.i = min.i; index.i <= max.i; ++index.i)
-        for (index.j = min.j; index.j <= max.j; ++index.j)
-          for (index.k = min.k; index.k <= max.k; ++index.k)
-            if (condition(index))
-              return false;
-      return true;
-    }
-  
-    template<InvocableWithReturnType<void, const IVec3<T>&> F>
-    constexpr void forEach(const F& function) const
-    {
-      ENG_CORE_ASSERT(valid(), "Box is not valid!");
-  
-      IVec3<T> index;
-      for (index.i = min.i; index.i <= max.i; ++index.i)
-        for (index.j = min.j; index.j <= max.j; ++index.j)
-          for (index.k = min.k; index.k <= max.k; ++index.k)
-            function(index);  
     }
 
     /*
