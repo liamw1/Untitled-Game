@@ -26,10 +26,12 @@ namespace eng::math
     ArrayRect(const IBox2<IntType>& bounds, AllocationPolicy policy)
     {
       setBounds(bounds);
-      if (policy != AllocationPolicy::Deferred)
-        allocate();
-      if (policy == AllocationPolicy::DefaultInitialize)
-        fill(T());
+      switch (policy)
+      {
+        case AllocationPolicy::Deferred:                                                  break;
+        case AllocationPolicy::ForOverwrite:      allocate();                             break;
+        case AllocationPolicy::DefaultInitialize: m_Data = std::make_unique<T[]>(size()); break;
+      }
     }
     ArrayRect(const IBox2<IntType>& bounds, const T& initialValue)
       : ArrayRect(bounds, AllocationPolicy::ForOverwrite) { fill(initialValue); }
@@ -172,7 +174,7 @@ namespace eng::math
       forEach(fillSection, [&value](T& data) { data = value; });
     }
 
-    void fill(const IBox2<IntType>& fillSection, const ArrayBox<T, IntType>& container, const IBox2<IntType>& containerSection)
+    void fill(const IBox2<IntType>& fillSection, const ArrayRect<T, IntType>& container, const IBox2<IntType>& containerSection)
     {
       ENG_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
       ENG_CORE_ASSERT(fillSection.extents() == containerSection.extents(), "Read and write sections are not the same dimensions!");

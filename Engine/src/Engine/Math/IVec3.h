@@ -21,6 +21,8 @@ namespace eng::math
       : i(_i), j(_j), k(_k) {}
     constexpr IVec3(IVec2<T> intVec2, T _k)
       : i(intVec2.i), j(intVec2.j), k(_k) {}
+    constexpr IVec3(EnumBitMask<Axis> bitMask)
+      : i(bitMask[Axis::X]), j(bitMask[Axis::Y]), k(bitMask[Axis::Z]) {}
   
     explicit constexpr operator Vec2() const { return Vec2(i, j); }
     explicit constexpr operator Vec3() const { return Vec3(i, j, k); }

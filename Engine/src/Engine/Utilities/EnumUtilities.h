@@ -110,6 +110,8 @@ namespace eng
       : EnumBitMask(0) {}
     constexpr EnumBitMask(E e)
       : EnumBitMask() { set(e); }
+    constexpr EnumBitMask(u8 data)
+      : m_Data(data) {}
     constexpr EnumBitMask(const std::initializer_list<E>& initializerList)
       : EnumBitMask()
     {

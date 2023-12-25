@@ -52,95 +52,86 @@ namespace newLod
   static BlockArrayRect<terrain::CompoundSurfaceData> generateNoise(const NodeID& node)
   {
     length_t cellLength = node.length() / c_NumCells;
-    eng::math::Vec2 LODAnchorXY = Chunk::Length() * static_cast<eng::math::Vec2>(node.anchor());
+    eng::math::Vec2 lodAnchorXY = Chunk::Length() * static_cast<eng::math::Vec2>(node.anchor());
 
     BlockArrayRect<terrain::CompoundSurfaceData> noiseValues(c_LODBounds2D, eng::AllocationPolicy::ForOverwrite);
-    for (i32 i = 0; i < c_NumCells + 1; ++i)
-      for (i32 j = 0; j < c_NumCells + 1; ++j)
-      {
-        // Sample noise at cell corners
-        eng::math::Vec2 pointXY = LODAnchorXY + cellLength * eng::math::Vec2(i, j);
-        noiseValues[i][j] = terrain::getSurfaceInfo(pointXY);
-      }
+    noiseValues.forEach([cellLength, lodAnchorXY](const BlockIndex2D& index, terrain::CompoundSurfaceData& surfaceData)
+    {
+      // Sample noise at cell corners
+      eng::math::Vec2 pointXY = lodAnchorXY + cellLength * static_cast<eng::math::Vec2>(index);
+      surfaceData = terrain::getSurfaceInfo(pointXY);
+    });
     return noiseValues;
   }
 
   static bool needsMesh(const NodeID& node, const BlockArrayRect<terrain::CompoundSurfaceData>& noiseValues)
   {
-    length_t LODFloor = node.anchor().k * Chunk::Length();
-    length_t LODCeiling = LODFloor + node.length();
+    length_t lodFloor = node.anchor().k * Chunk::Length();
+    length_t lodCeiling = lodFloor + node.length();
 
     // Check if LOD is fully below or above surface, if so, no need to generate mesh
-    bool needsMesh = false;
-    for (i32 i = 0; i < c_NumCells + 1; ++i)
-      for (i32 j = 0; j < c_NumCells + 1; ++j)
-      {
-        length_t terrainHeight = noiseValues[i][j].getElevation();
-
-        if (LODFloor <= terrainHeight && terrainHeight <= LODCeiling)
-        {
-          needsMesh = true;
-          goto endCheck;
-        }
-      }
-  endCheck:;
-
-    return needsMesh;
+    return noiseValues.anyOf([lodFloor, lodCeiling](const terrain::CompoundSurfaceData& surfaceData)
+    {
+      length_t terrainHeight = surfaceData.getElevation();
+      return lodFloor <= terrainHeight && terrainHeight <= lodCeiling;
+    });
   }
 
-  static BlockArrayRect<eng::math::Vec3> calcNoiseNormals(const NodeID& node, const BlockArrayRect<terrain::CompoundSurfaceData>& noiseValues)
+  static BlockArrayRect<eng::math::Vec3> calculateNoiseNormals(const NodeID& node, const BlockArrayRect<terrain::CompoundSurfaceData>& noiseValues)
   {
     length_t cellLength = node.length() / c_NumCells;
-    eng::math::Vec2 LODAnchorXY = Chunk::Length() * static_cast<eng::math::Vec2>(node.anchor());
+    eng::math::Vec2 lodAnchorXY = Chunk::Length() * static_cast<eng::math::Vec2>(node.anchor());
 
     // Calculate normals using central differences
     BlockArrayRect<eng::math::Vec3> noiseNormals(c_LODBounds2D, eng::AllocationPolicy::ForOverwrite);
-    for (i32 i = 0; i < c_NumCells + 1; ++i)
-      for (i32 j = 0; j < c_NumCells + 1; ++j)
+    noiseNormals.forEach([cellLength, lodAnchorXY, &noiseValues](const BlockIndex2D& index, eng::math::Vec3& normal)
+    {
+      // Surface heights in adjacent positions.  L - lower, C - center, U - upper
+      length_t fLC = 0_m, fUC = 0_m, fCL = 0_m, fCU = 0_m;
+
+      // TODO: Replace with new elevation system
+      BlockIndex2D indexLC = index + BlockIndex2D(-1, 0);
+      if (index.i == 0)
       {
-        // Surface heights in adjacent positions.  L - lower, C - center, U - upper
-        length_t fLC = 0_m, fUC = 0_m, fCL = 0_m, fCU = 0_m;
-
-        // TODO: Replace with new elevation system
-        if (i == 0)
-        {
-          eng::math::Vec2 pointXY = LODAnchorXY + cellLength * eng::math::Vec2(i - 1, j);
-          fLC = terrain::getElevation(pointXY);
-        }
-        else
-          fLC = noiseValues[i - 1][j].getElevation();
-
-        if (i == c_NumCells)
-        {
-          eng::math::Vec2 pointXY = LODAnchorXY + cellLength * eng::math::Vec2(i + 1, j);
-          fUC = terrain::getElevation(pointXY);
-        }
-        else
-          fUC = noiseValues[i + 1][j].getElevation();
-
-        if (j == 0)
-        {
-          eng::math::Vec2 pointXY = LODAnchorXY + cellLength * eng::math::Vec2(i, j - 1);
-          fCL = terrain::getElevation(pointXY);
-        }
-        else
-          fCL = noiseValues[i][j - 1].getElevation();
-
-        if (j == c_NumCells)
-        {
-          eng::math::Vec2 pointXY = LODAnchorXY + cellLength * eng::math::Vec2(i, j + 1);
-          fCU = terrain::getElevation(pointXY);
-        }
-        else
-          fCU = noiseValues[i][j + 1].getElevation();
-
-        eng::math::Vec2 gradient{};
-        gradient.x = (fUC - fLC) / (2 * cellLength);
-        gradient.y = (fCU - fCL) / (2 * cellLength);
-
-        eng::math::Vec3 normal = glm::normalize(eng::math::Vec3(-gradient, 1));
-        noiseNormals[i][j] = normal;
+        eng::math::Vec2 pointXY = lodAnchorXY + cellLength * static_cast<eng::math::Vec2>(indexLC);
+        fLC = terrain::getElevation(pointXY);
       }
+      else
+        fLC = noiseValues(indexLC).getElevation();
+
+      BlockIndex2D indexUC = index + BlockIndex2D(1, 0);
+      if (index.i == c_NumCells)
+      {
+        eng::math::Vec2 pointXY = lodAnchorXY + cellLength * static_cast<eng::math::Vec2>(indexUC);
+        fUC = terrain::getElevation(pointXY);
+      }
+      else
+        fUC = noiseValues(indexUC).getElevation();
+
+      BlockIndex2D indexCL = index + BlockIndex2D(0, -1);
+      if (index.j == 0)
+      {
+        eng::math::Vec2 pointXY = lodAnchorXY + cellLength * static_cast<eng::math::Vec2>(indexCL);
+        fCL = terrain::getElevation(pointXY);
+      }
+      else
+        fCL = noiseValues(indexCL).getElevation();
+
+      BlockIndex2D indexCU = index + BlockIndex2D(0, 1);
+      if (index.j == c_NumCells)
+      {
+        eng::math::Vec2 pointXY = lodAnchorXY + cellLength * static_cast<eng::math::Vec2>(indexCU);
+        fCU = terrain::getElevation(pointXY);
+      }
+      else
+        fCU = noiseValues(indexCU).getElevation();
+
+      eng::math::Vec2 gradient{};
+      gradient.x = (fUC - fLC) / (2 * cellLength);
+      gradient.y = (fCU - fCL) / (2 * cellLength);
+
+      normal = glm::normalize(eng::math::Vec3(-gradient, 1));
+    });
     return noiseNormals;
   }
 
@@ -149,18 +140,18 @@ namespace newLod
                                         const BlockArrayRect<eng::math::Vec3>& noiseNormals,
                                         const BlockIndex& cornerA, const BlockIndex& cornerB, f32 smoothness)
   {
-    length_t LODFloor = node.anchor().k * Chunk::Length();
+    length_t lodFloor = node.anchor().k * Chunk::Length();
     length_t cellLength = node.length() / c_NumCells;
 
     // Vertex positions
     eng::math::Vec3 posA = static_cast<eng::math::Vec3>(cornerA) * cellLength;
     eng::math::Vec3 posB = static_cast<eng::math::Vec3>(cornerB) * cellLength;
 
-    length_t zA = LODFloor + cornerA.k * cellLength;
-    length_t zB = LODFloor + cornerB.k * cellLength;
+    length_t zA = lodFloor + cornerA.k * cellLength;
+    length_t zB = lodFloor + cornerB.k * cellLength;
 
-    const terrain::CompoundSurfaceData& surfaceDataA = noiseValues[cornerA.i][cornerA.j];
-    const terrain::CompoundSurfaceData& surfaceDataB = noiseValues[cornerB.i][cornerB.j];
+    const terrain::CompoundSurfaceData& surfaceDataA = noiseValues(static_cast<BlockIndex2D>(cornerA));
+    const terrain::CompoundSurfaceData& surfaceDataB = noiseValues(static_cast<BlockIndex2D>(cornerB));
 
     // Isovalues of corners A and B
     length_t tA = surfaceDataA.getElevation() - zA;
@@ -173,8 +164,8 @@ namespace newLod
     terrain::CompoundSurfaceData surfaceData = semiSmoothInterpolation(surfaceDataA, surfaceDataB, t, smoothness);
 
     // Estimate isosurface normal using linear interpolation between corners
-    const eng::math::Vec3& n0 = noiseNormals[cornerA.i][cornerA.j];
-    const eng::math::Vec3& n1 = noiseNormals[cornerB.i][cornerB.j];
+    const eng::math::Vec3& n0 = noiseNormals(static_cast<BlockIndex2D>(cornerA));
+    const eng::math::Vec3& n1 = noiseNormals(static_cast<BlockIndex2D>(cornerB));
     eng::math::Vec3 isoNormal = semiSmoothInterpolation(n0, n1, t, smoothness);
 
     return { vertexPosition, isoNormal, surfaceData };
@@ -183,13 +174,13 @@ namespace newLod
   // Formulas can be found in section 4.4 of TransVoxel paper
   static bool isVertexNearFace(bool isUpstream, f32 u, f32 cellLength)
   {
-    return isUpstream ? u > cellLength * (param::ChunkSize() - 1) : u < cellLength;
+    return isUpstream ? u > cellLength * (c_NumCells - 1) : u < cellLength;
   }
   static f32 vertexAdjustment1D(bool isUpstream, f32 u, f32 cellLength)
   {
-    return c_TransitionCellFractionalWidth * (isUpstream ? ((param::ChunkSize() - 1) * cellLength - u) : (cellLength - u));
+    return c_TransitionCellFractionalWidth * (isUpstream ? ((c_NumCells - 1) * cellLength - u) : (cellLength - u));
   }
-  static eng::math::FMat3 calcVertexTransform(const eng::math::Float3& n)
+  static eng::math::FMat3 calculateVertexTransform(const eng::math::Float3& n)
   {
     return eng::math::FMat3(1 - n.x * n.x, -n.x * n.y, -n.x * n.z,
                             -n.x * n.y, 1 - n.y * n.y, -n.y * n.z,
@@ -200,31 +191,27 @@ namespace newLod
   {
     f32 cellLength = node.length() / c_NumCells;
 
-    eng::math::Float3 vertexAdjustment{};
-    bool isNearSameResolutionLOD = false;
-    for (eng::math::Direction face : eng::math::Directions())
+    eng::math::Float3 vertexAdjustment(0.0f);
+    bool nearSameResolutionLOD = eng::algo::anyOf(eng::math::Directions(), [cellLength, &vertexAdjustment, &vertex, &transitionFaces](eng::math::Direction face)
     {
       i32 axisID = eng::enumIndex(eng::math::axisOf(face));
-      if (isVertexNearFace(eng::math::isUpstream(face), vertex.position[axisID], cellLength))
-      {
-        if (transitionFaces[face])
-          vertexAdjustment[axisID] = vertexAdjustment1D(eng::math::isUpstream(face), vertex.position[axisID], cellLength);
-        else
-        {
-          isNearSameResolutionLOD = true;
-          break;
-        }
-      }
-    }
+      if (!isVertexNearFace(eng::math::isUpstream(face), vertex.position[axisID], cellLength))
+        return false;
+      if (!transitionFaces[face])
+        return true;
+
+      vertexAdjustment[axisID] = vertexAdjustment1D(eng::math::isUpstream(face), vertex.position[axisID], cellLength);
+      return false;
+    });
+
+    if (nearSameResolutionLOD || vertexAdjustment == eng::math::Float3(0.0f))
+      return vertex;
+
+    const eng::math::Float3& normal = vertex.isoNormal;
+    eng::math::FMat3 transform = calculateVertexTransform(normal);
 
     Vertex adjustedVertex = vertex;
-    if (!isNearSameResolutionLOD && vertexAdjustment != eng::math::Float3(0.0))
-    {
-      const eng::math::Float3& n = vertex.isoNormal;
-      eng::math::FMat3 transform = calcVertexTransform(n);
-
-      adjustedVertex.position += transform * vertexAdjustment;
-    }
+    adjustedVertex.position += transform * vertexAdjustment;
     return adjustedVertex;
   }
 
@@ -249,41 +236,41 @@ namespace newLod
     struct VertexReuseData
     {
       u32 baseMeshIndex = 0;
-      i8 vertexOrder[4] = { -1, -1, -1, -1 };
+      std::array<i8, 4> vertexOrder = { -1, -1, -1, -1 };
     };
-    using VertexLayer = eng::math::ArrayRect<VertexReuseData, blockIndex_t>;
+    using VertexLayer = std::array<std::array<VertexReuseData, c_NumCells>, c_NumCells>;
 
-    length_t LODFloor = node.anchor().k * Chunk::Length();
+    length_t lodFloor = node.anchor().k * Chunk::Length();
     length_t cellLength = node.length() / c_NumCells;
     f32 smoothness = smoothnessLevel(node.lodLevel());
 
-    i32 vertexCount = 0;
     Mesh primaryMesh;
-    VertexLayer prevLayer(Chunk::Bounds2D(), eng::AllocationPolicy::DefaultInitialize);
-    for (i32 i = 0; i < c_NumCells; ++i)
+    VertexLayer prevLayer{};
+    for (blockIndex_t i = 0; i < c_NumCells; ++i)
     {
-      VertexLayer currLayer(Chunk::Bounds2D(), eng::AllocationPolicy::DefaultInitialize);
+      VertexLayer currLayer{};
 
-      for (i32 j = 0; j < c_NumCells; ++j)
-        for (i32 k = 0; k < c_NumCells; ++k)
+      for (blockIndex_t j = 0; j < c_NumCells; ++j)
+        for (blockIndex_t k = 0; k < c_NumCells; ++k)
         {
+          BlockIndex cellIndex = { i, j, k };
+
           // Determine which of the 256 cases the cell belongs to
           u8 cellCase = 0;
-          for (i32 v = 0; v < 8; ++v)
+          eng::algo::forEach(BlockBox(0, 1), [lodFloor, cellLength, &cellIndex, &cellCase, &noiseValues](const BlockIndex& cornerIndex)
           {
-            // Cell corner indices and z-position
-            i32 I = v & eng::bit(0) ? i + 1 : i;
-            i32 J = v & eng::bit(1) ? j + 1 : j;
-            i32 K = v & eng::bit(2) ? k + 1 : k;
-            length_t Z = LODFloor + K * cellLength;
-
-            if (noiseValues[I][J].getElevation() > Z)
-              cellCase |= eng::bit(v);
-          }
+            BlockIndex sampleIndex = cellIndex + cornerIndex;
+            length_t sampleZ = lodFloor + sampleIndex.k * cellLength;
+            if (noiseValues(static_cast<BlockIndex2D>(sampleIndex)).getElevation() > sampleZ)
+            {
+              i32 cornerLinearIndex = 4 * cornerIndex.k + 2 * cornerIndex.j + cornerIndex.i;
+              cellCase |= eng::bit(cornerLinearIndex);
+            }
+          });
           if (cellCase == 0 || cellCase == 255)
             continue;
 
-          currLayer[j][k].baseMeshIndex = vertexCount;
+          currLayer[j][k].baseMeshIndex = eng::arithmeticCastUnchecked<u32>(primaryMesh.vertices.size());
 
           // Use lookup table to determine which of 15 equivalence classes the cell belongs to
           u8 cellEquivClass = c_RegularCellClass[cellCase];
@@ -307,25 +294,24 @@ namespace newLod
 
             // Lookup placement of corners A,B that form the cell edge new vertex lies on
             u16 vertexData = c_RegularVertexData[cellCase][edgeIndex];
-            u8 sharedVertexIndex = (vertexData & 0x0F00) >> 8;
-            u8 sharedVertexDirection = (vertexData & 0xF000) >> 12;
-            bool newVertex = sharedVertexDirection == 8;
+            u8 sharedVertexReuseIndex = (vertexData >> 8) & 0x000F;
+            u8 sharedVertexDirectionNibble = (vertexData >> 12) & 0x000F;
+            bool newVertex = sharedVertexDirectionNibble == 8;
 
             // If a new vertex must be created, store vertex index information for later reuse.  If not, attempt to reuse previous vertex
             if (newVertex)
-              currLayer[j][k].vertexOrder[sharedVertexIndex] = cellVertexCount;
+              currLayer[j][k].vertexOrder[sharedVertexReuseIndex] = cellVertexCount;
             else
             {
-              i32 I = sharedVertexDirection & eng::bit(0) ? i - 1 : i;
-              i32 J = sharedVertexDirection & eng::bit(1) ? j - 1 : j;
-              i32 K = sharedVertexDirection & eng::bit(2) ? k - 1 : k;
+              BlockIndex sharedVertexDirection = -BlockIndex(eng::EnumBitMask<eng::math::Axis>(sharedVertexDirectionNibble));
+              BlockIndex sharedVertexIndex = cellIndex + sharedVertexDirection;
 
-              if (I >= 0 && J >= 0 && K >= 0)
+              if (c_LODBounds.encloses(sharedVertexIndex))
               {
-                const auto& targetLayer = I == i ? currLayer : prevLayer;
+                const VertexLayer& targetLayer = sharedVertexIndex.i == cellIndex.i ? currLayer : prevLayer;
 
-                i32 baseMeshIndex = targetLayer[J][K].baseMeshIndex;
-                i32 vertexOrder = targetLayer[J][K].vertexOrder[sharedVertexIndex];
+                i32 baseMeshIndex = targetLayer[sharedVertexIndex.j][sharedVertexIndex.k].baseMeshIndex;
+                i32 vertexOrder = targetLayer[sharedVertexIndex.j][sharedVertexIndex.k].vertexOrder[sharedVertexReuseIndex];
                 if (baseMeshIndex > 0 && vertexOrder >= 0)
                 {
                   primaryMesh.indices.push_back(baseMeshIndex + vertexOrder);
@@ -335,26 +321,20 @@ namespace newLod
               }
             }
 
-            u8 cornerIndexA = vertexData & 0x000F;
-            u8 cornerIndexB = (vertexData & 0x00F0) >> 4;
+            // Extract the local corner indices from vertex data
+            u8 cornerNibbleA = static_cast<u8>((vertexData >> 0) & 0x000F);
+            u8 cornerNibbleB = static_cast<u8>((vertexData >> 4) & 0x000F);
 
-            // Indices of corners A,B
-            BlockIndex cornerA{};
-            cornerA.i = cornerIndexA & eng::bit(0) ? i + 1 : i;
-            cornerA.j = cornerIndexA & eng::bit(1) ? j + 1 : j;
-            cornerA.k = cornerIndexA & eng::bit(2) ? k + 1 : k;
-            BlockIndex cornerB{};
-            cornerB.i = cornerIndexB & eng::bit(0) ? i + 1 : i;
-            cornerB.j = cornerIndexB & eng::bit(1) ? j + 1 : j;
-            cornerB.k = cornerIndexB & eng::bit(2) ? k + 1 : k;
+            BlockIndex cornerIndexA = cellIndex + BlockIndex(eng::EnumBitMask<eng::math::Axis>(cornerNibbleA));
+            BlockIndex cornerIndexB = cellIndex + BlockIndex(eng::EnumBitMask<eng::math::Axis>(cornerNibbleB));
 
-            NoiseData noiseData = interpolateNoiseData(node, noiseValues, noiseNormals, cornerA, cornerB, smoothness);
+            NoiseData noiseData = interpolateNoiseData(node, noiseValues, noiseNormals, cornerIndexA, cornerIndexB, smoothness);
 
+            u32 vertexCount = eng::arithmeticCastUnchecked<u32>(primaryMesh.vertices.size());
             primaryMesh.vertices.emplace_back(noiseData.position, noiseData.normal, noiseData.surfaceData.getTextureIndices(), noiseData.surfaceData.getTextureWeights());
             primaryMesh.indices.push_back(vertexCount);
             prevCellVertexIndices[edgeIndex] = vertexCount;
 
-            vertexCount++;
             cellVertexCount++;
           }
         }
@@ -374,7 +354,7 @@ namespace newLod
     struct VertexReuseData
     {
       u32 baseMeshIndex = 0;
-      i8 vertexOrder[10] = { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 };
+      std::array<i8, 10> vertexOrder = { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 };
     };
 
     static constexpr eng::EnumArray<eng::math::Vec3, eng::math::Direction> normals = 
@@ -385,7 +365,7 @@ namespace newLod
         { eng::math::Direction::Bottom, { 0,  0, -1} },
         { eng::math::Direction::Top,    { 0,  0,  1} } };
 
-    length_t LODFloor = node.anchor().k * Chunk::Length();
+    length_t lodFloor = node.anchor().k * Chunk::Length();
     length_t cellLength = node.length() / c_NumCells;
     length_t transitionCellWidth = c_TransitionCellFractionalWidth * cellLength;
 
@@ -421,7 +401,7 @@ namespace newLod
           const i32& I = sample.i;
           const i32& J = sample.j;
           const i32& K = sample.k;
-          length_t Z = LODFloor + K * cellLength;
+          length_t Z = lodFloor + K * cellLength;
 
           if (noiseValues[I][J].getElevation() > Z)
             cellCase |= eng::bit(c_SampleIndexToBitFlip[p]);
@@ -535,7 +515,7 @@ namespace newLod
       return nullptr;
 
     // Generate normal data from heightmap
-    BlockArrayRect<eng::math::Vec3> noiseNormals = calcNoiseNormals(node, noiseValues);
+    BlockArrayRect<eng::math::Vec3> noiseNormals = calculateNoiseNormals(node, noiseValues);
 
     std::shared_ptr<RenderData> renderData = std::make_shared<RenderData>();
     renderData->primaryMesh = generatePrimaryMesh(node, noiseValues, noiseNormals);
@@ -824,6 +804,9 @@ namespace newLod
 
   std::optional<DrawCommand> LODManager::createNewMesh(Node& node, const NodeID& nodeInfo)
   {
+    if (nodeInfo.lodLevel() > param::HighestRenderableLODLevel())
+      return std::nullopt;
+
     node.data = generateRenderData(nodeInfo);
     if (!node.data)
       return std::nullopt;

@@ -73,6 +73,7 @@ namespace eng::math
       setBounds(bounds);
       switch (policy)
       {
+        case AllocationPolicy::Deferred:                                                  break;
         case AllocationPolicy::ForOverwrite:      allocate();                             break;
         case AllocationPolicy::DefaultInitialize: m_Data = std::make_unique<T[]>(size()); break;
       }
