@@ -2,7 +2,6 @@
 #include "Chunk.h"
 #include "ChunkContainer.h"
 #include "ChunkHelpers.h"
-#include "World/LOD.h"
 
 class ChunkManager
 {
@@ -19,9 +18,6 @@ class ChunkManager
 
   // Chunk data
   ChunkContainer m_ChunkContainer;
-
-  // LOD data
-  lod::Octree m_LODTree;
 
 public:
   ChunkManager();
@@ -48,10 +44,6 @@ public:
 
   void placeBlock(GlobalIndex chunkIndex, BlockIndex blockIndex, eng::math::Direction face, block::Type blockType);
   void removeBlock(const GlobalIndex& chunkIndex, const BlockIndex& blockIndex);
-
-  void initializeLODs();
-  void renderLODs();
-  void manageLODs();
 
 private:
   void addToLightingUpdateQueue(const GlobalIndex& chunkIndex);
@@ -81,8 +73,4 @@ private:
   void lightingTask(const GlobalIndex& chunkIndex);
   void lazyMeshingTask(const GlobalIndex& chunkIndex);
   void forceMeshingTask(const GlobalIndex& chunkIndex);
-
-  bool splitLODs(std::vector<lod::Octree::Node*>& leaves);
-  bool combineLODs(std::vector<lod::Octree::Node*>& leaves);
-  bool splitAndCombineLODs(std::vector<lod::Octree::Node*>& leaves);
 };

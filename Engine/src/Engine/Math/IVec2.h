@@ -22,6 +22,8 @@ namespace eng::math
       : IVec2(n, n) {}
     constexpr IVec2(T _i, T _j)
       : i(_i), j(_j) {}
+    constexpr IVec2(EnumBitMask<Axis> bitMask)
+      : i(bitMask[Axis::X]), j(bitMask[Axis::Y]) {}
   
     explicit constexpr operator Vec2() const { return Vec2(i, j); }
 
@@ -85,6 +87,8 @@ namespace eng::math
   
     constexpr T l1Norm() const { return std::abs(i) + std::abs(j); }
     constexpr T dot(const IVec2& other) const { return i * other.i + j * other.j; }
+
+    constexpr bool nonNegative() const { return i >= 0 && j >= 0; }
   
     static constexpr IVec2 ToIndex(const Vec2& vec)
     {

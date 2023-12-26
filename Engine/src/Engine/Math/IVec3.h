@@ -92,6 +92,27 @@ namespace eng::math
   
     constexpr T l1Norm() const { return std::abs(i) + std::abs(j) + std::abs(k); }
     constexpr T dot(const IVec3& other) const { return i * other.i + j * other.j + k * other.k; }
+
+    constexpr bool nonNegative() const { return i >= 0 && j >= 0 && k >= 0; }
+
+    constexpr IVec3& permute(Axis permutation)
+    {
+      if (permutation == Axis::Y)
+      {
+        T tmp = i;
+        i = k;
+        k = j;
+        j = tmp;
+      }
+      else if (permutation == Axis::Z)
+      {
+        T tmp = i;
+        i = j;
+        j = k;
+        k = tmp;
+      }
+      return *this;
+    }
   
     static constexpr IVec3 ToIndex(const Vec3& vec)
     {
@@ -101,18 +122,7 @@ namespace eng::math
     static constexpr IVec3 Dir(Direction direction)
     {
       T value = isUpstream(direction) ? 1 : -1;
-      return CreatePermuted(value, 0, 0, axisOf(direction));
-    }
-  
-    static constexpr IVec3 CreatePermuted(T i, T j, T k, Axis permutation)
-    {
-      switch (permutation)
-      {
-        case Axis::X: return IVec3(i, j, k);
-        case Axis::Y: return IVec3(k, i, j);
-        case Axis::Z: return IVec3(j, k, i);
-      }
-      throw CoreException("Invalid permutation!");
+      return IVec3(value, 0, 0).permute(axisOf(direction));
     }
   };
   

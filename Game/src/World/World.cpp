@@ -2,15 +2,11 @@
 #include "World.h"
 #include "Player/Player.h"
 
-static constexpr bool useOldLODs = false;
 static constexpr length_t c_MinDistanceToWall = 0.01_m * block::length();
 
 World::World()
 {
   player::initialize(GlobalIndex(0, 0, 2), block::length() * eng::math::Vec3(16.0));
-
-  if constexpr (useOldLODs)
-    m_ChunkManager.initializeLODs();
 }
 
 void World::onUpdate(eng::Timestep timestep)
@@ -29,18 +25,9 @@ void World::onUpdate(eng::Timestep timestep)
   eng::render::command::setUseDepthOffset(false);
   eng::render::command::clear(eng::math::Float4(0.788f, 0.949f, 0.949f, 1.0f));
 
-  if constexpr (useOldLODs)
-  {
-    // m_ChunkManager.manageLODs();
-    m_ChunkManager.renderLODs();
-    eng::render::command::clearDepthBuffer();
-  }
-  else
-  {
-    m_LODManager.update();
-    m_LODManager.render();
-    eng::render::command::clearDepthBuffer();
-  }
+  m_LODManager.update();
+  m_LODManager.render();
+  eng::render::command::clearDepthBuffer();
 
   playerWorldInteraction();
   m_ChunkManager.update();
@@ -101,16 +88,16 @@ RayIntersection World::castRaySegment(const eng::math::Vec3& pointA, const eng::
           N--;
 
         // Get index of chunk in which intersection took place
-        LocalIndex chunkIndex = LocalIndex::CreatePermuted(eng::arithmeticCastUnchecked<localIndex_t>(N / Chunk::Size()),
-                                                           eng::arithmeticCastUnchecked<localIndex_t>(floor(intersection[v] / Chunk::Length())),
-                                                           eng::arithmeticCastUnchecked<localIndex_t>(floor(intersection[w] / Chunk::Length())), axis);
+        LocalIndex chunkIndex = LocalIndex(eng::arithmeticCastUnchecked<localIndex_t>(N / Chunk::Size()),
+                                           eng::arithmeticCastUnchecked<localIndex_t>(floor(intersection[v] / Chunk::Length())),
+                                           eng::arithmeticCastUnchecked<localIndex_t>(floor(intersection[w] / Chunk::Length()))).permute(axis);
         if (N < 0 && N % Chunk::Size() != 0)
           chunkIndex[axis]--;
 
         // Get local index of block that was hit by ray
-        BlockIndex blockIndex = BlockIndex::CreatePermuted(eng::math::mod<Chunk::Size()>(N),
-                                                           eng::math::mod<Chunk::Size()>(eng::arithmeticCastUnchecked<globalIndex_t>(floor(intersection[v] / block::length()))),
-                                                           eng::math::mod<Chunk::Size()>(eng::arithmeticCastUnchecked<globalIndex_t>(floor(intersection[w] / block::length()))), axis);
+        BlockIndex blockIndex = BlockIndex(eng::math::mod<Chunk::Size()>(N),
+                                           eng::math::mod<Chunk::Size()>(eng::arithmeticCastUnchecked<globalIndex_t>(floor(intersection[v] / block::length()))),
+                                           eng::math::mod<Chunk::Size()>(eng::arithmeticCastUnchecked<globalIndex_t>(floor(intersection[w] / block::length())))).permute(axis);
 
         // Search to see if chunk is loaded
         std::shared_ptr<const Chunk> chunk = m_ChunkManager.getChunk(chunkIndex);

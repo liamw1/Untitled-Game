@@ -9,6 +9,8 @@ namespace param
 
   constexpr length_t BlockLength() { return 0.5_m; }
   constexpr i32 ChunkSize() { return 32; }
+
+  constexpr i32 LODNumCells() { return 32; }
   constexpr i32 MaxNodeDepth() { return 12; }
   constexpr i32 HighestRenderableLODLevel() { return 10; }
 }

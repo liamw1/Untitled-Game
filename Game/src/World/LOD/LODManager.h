@@ -2,6 +2,14 @@
 #include "LODHelpers.h"
 #include "World/Terrain.h"
 
+/*
+  Level of Detail (LOD) system.  The game world is partitioned with an octree,
+  the leaf nodes of which we often refer to as an "LOD".  Each LOD is given an
+  "LOD level" based on its depth in the tree.  This LOD level represents the
+  level of simplification of the voxel/noise data.  At level 0, LODs have as
+  many polygons as chunks, while at high LOD levels individual polygons can
+  span multiple chunks.
+*/
 namespace newLod
 {
   class LODManager

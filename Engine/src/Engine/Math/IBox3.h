@@ -1,5 +1,6 @@
 #pragma once
 #include "IVec3.h"
+#include "IBox2.h"
 #include "Engine/Core/Concepts.h" 
 
 namespace eng::math
@@ -69,6 +70,8 @@ namespace eng::math
       : min(minCorner), max(maxCorner) {}
     constexpr IBox3(T iMin, T jMin, T kMin, T iMax, T jMax, T kMax)
       : min(iMin, jMin, kMin), max(iMax, jMax, kMax) {}
+
+    explicit constexpr operator IBox2<T>() const { return IBox2<T>(static_cast<IVec2<T>>(min), static_cast<IVec2<T>>(max)); }
 
     template<std::integral U>
     constexpr IBox3<U> upcast() const { return { min.upcast<U>(), max.upcast<U>() }; }
