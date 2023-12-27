@@ -165,6 +165,12 @@ namespace eng::algo
     sort(std::begin(container), std::end(container), std::forward<F>(transform), sortPolicy);
   }
 
+  template<IterableContainer C>
+  constexpr void reverse(C& container)
+  {
+    std::reverse(std::begin(container), std::end(container));
+  }
+
   template<IterableContainer C, std::predicate<detail::containedType<C>> P>
   constexpr auto partition(C& container, P&& predicate) -> decltype(std::begin(container))
   {

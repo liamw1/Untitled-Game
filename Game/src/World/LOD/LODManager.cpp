@@ -48,13 +48,18 @@ namespace newLod
     return ((1 - s) / 2 + s * (1 - t)) * q0 + ((1 - s) / 2 + s * t) * q1;
   }
 
+  static constexpr BlockIndex transitionCellFaceIndexToSampleIndex(const BlockIndex& cellIndex, i32 faceIndex, eng::math::Direction face)
+  {
+    return cellIndex + BlockIndex(0, faceIndex % 3, faceIndex / 3).permute(eng::math::axisOf(face));
+  }
+
   static BlockArrayRect<terrain::CompoundSurfaceData> generateNoise(const NodeID& node)
   {
     length_t cellLength = node.length() / param::LODNumCells();
     eng::math::Vec2 lodAnchorXY = Chunk::Length() * static_cast<eng::math::Vec2>(node.anchor());
 
     BlockArrayRect<terrain::CompoundSurfaceData> noiseValues(static_cast<BlockRect>(c_LODSampleBounds), eng::AllocationPolicy::ForOverwrite);
-    noiseValues.forEach([cellLength, lodAnchorXY](const BlockIndex2D& index, terrain::CompoundSurfaceData& surfaceData)
+    noiseValues.forEach([cellLength, lodAnchorXY](BlockIndex2D index, terrain::CompoundSurfaceData& surfaceData)
     {
       // Sample noise at cell corners
       eng::math::Vec2 pointXY = lodAnchorXY + cellLength * static_cast<eng::math::Vec2>(index);
@@ -83,7 +88,7 @@ namespace newLod
 
     // Calculate normals using central differences
     BlockArrayRect<eng::math::Vec3> noiseNormals(static_cast<BlockRect>(c_LODSampleBounds), eng::AllocationPolicy::ForOverwrite);
-    noiseNormals.forEach([cellLength, lodAnchorXY, &noiseValues](const BlockIndex2D& index, eng::math::Vec3& normal)
+    noiseNormals.forEach([cellLength, lodAnchorXY, &noiseValues](BlockIndex2D index, eng::math::Vec3& normal)
     {
       // Surface heights in adjacent positions.  L - lower, C - center, U - upper
       length_t fLC = 0_m, fUC = 0_m, fCL = 0_m, fCU = 0_m;
@@ -239,14 +244,13 @@ namespace newLod
     };
     using VertexLayer = std::array<std::array<VertexReuseData, param::LODNumCells()>, param::LODNumCells()>;
 
-    length_t lodFloor = node.anchor().k * Chunk::Length();
     length_t cellLength = node.length() / param::LODNumCells();
     f32 smoothness = smoothnessLevel(node.lodLevel());
 
     Mesh primaryMesh;
     VertexLayer prevLayer{};
     VertexLayer currLayer{};
-    eng::algo::forEach(c_LODCellBounds, [lodFloor, cellLength, smoothness, &primaryMesh, &prevLayer, &currLayer, &node, &noiseValues, &noiseNormals](const BlockIndex& cellIndex)
+    eng::algo::forEach(c_LODCellBounds, [cellLength, smoothness, &primaryMesh, &prevLayer, &currLayer, &node, &noiseValues, &noiseNormals](const BlockIndex& cellIndex)
     {
       // If j and k are 0, we are starting a new layer of cells
       if (cellIndex.j == 0 && cellIndex.k == 0)
@@ -257,16 +261,13 @@ namespace newLod
 
       // Determine which of the 256 cases the cell belongs to
       u8 cellCase = 0;
-      eng::algo::forEach(BlockBox(0, 1), [lodFloor, cellLength, &cellCase, &cellIndex, &noiseValues](const BlockIndex& cellCornerIndex)
+      for (i32 cornerIndex = 0; cornerIndex < 8; ++cornerIndex)
       {
-        BlockIndex sampleIndex = cellIndex + cellCornerIndex;
-        length_t sampleZ = lodFloor + sampleIndex.k * cellLength;
+        BlockIndex sampleIndex = cellIndex + BlockIndex(cornerIndex % 2, (cornerIndex / 2) % 2, cornerIndex / 4);
+        length_t sampleZ = node.anchor().k * Chunk::Length() + sampleIndex.k * cellLength;
         if (noiseValues(static_cast<BlockIndex2D>(sampleIndex)).getElevation() > sampleZ)
-        {
-          i32 cornerLinearIndex = 4 * cellCornerIndex.k + 2 * cellCornerIndex.j + cellCornerIndex.i;
-          cellCase |= eng::bit(cornerLinearIndex);
-        }
-      });
+          cellCase |= eng::bit(cornerIndex);
+      }
       if (cellCase == 0 || cellCase == 255) // These cases don't have triangles
         return;
 
@@ -294,8 +295,8 @@ namespace newLod
 
         // Lookup placement of corners A,B that form the cell edge new vertex lies on
         u16 vertexData = c_RegularVertexData[cellCase][edgeIndex];
-        u8 sharedVertexReuseIndex = (vertexData >> 8) & 0x000F;
-        u8 sharedVertexDirectionNibble = (vertexData >> 12) & 0x000F;
+        u8 sharedVertexReuseIndex = (vertexData >> 8) & 0xF;
+        u8 sharedVertexDirectionNibble = (vertexData >> 12) & 0xF;
         bool newVertex = sharedVertexDirectionNibble == 8;
 
         // If a new vertex must be created, store vertex index information for later reuse.  If not, attempt to reuse previous vertex
@@ -322,8 +323,8 @@ namespace newLod
         }
 
         // Extract the local corner indices from vertex data
-        u8 cornerNibbleA = static_cast<u8>((vertexData >> 0) & 0x000F);
-        u8 cornerNibbleB = static_cast<u8>((vertexData >> 4) & 0x000F);
+        u8 cornerNibbleA = static_cast<u8>((vertexData >> 0) & 0xF);
+        u8 cornerNibbleB = static_cast<u8>((vertexData >> 4) & 0xF);
 
         BlockIndex cornerIndexA = cellIndex + BlockIndex(eng::EnumBitMask<eng::math::Axis>(cornerNibbleA));
         BlockIndex cornerIndexB = cellIndex + BlockIndex(eng::EnumBitMask<eng::math::Axis>(cornerNibbleB));
@@ -348,136 +349,127 @@ namespace newLod
   {
     ENG_PROFILE_FUNCTION();
 
+    static constexpr i32 numLowResultionCells = param::LODNumCells() / 2;
+    static constexpr BlockRect lowResolutionCellBounds(0, numLowResultionCells - 1);
+
     struct VertexReuseData
     {
       u32 baseMeshIndex = 0;
       std::array<i8, 10> vertexOrder = { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 };
     };
+    using VertexStrip = std::array<VertexReuseData, numLowResultionCells>;
 
-    length_t lodFloor = node.anchor().k * Chunk::Length();
     length_t cellLength = node.length() / param::LODNumCells();
-    length_t transitionCellWidth = c_TransitionCellFractionalWidth * cellLength;
-
-    // Relabel coordinates, u being the coordinate normal to face
-    eng::math::Axis u = axisOf(face);
-    eng::math::Axis v = cycle(u);
-    eng::math::Axis w = cycle(v);
-    i32 uIndex = isUpstream(face) ? param::LODNumCells() : 0;
 
     // Generate transition mesh using Transvoxel algorithm
     Mesh transitionMesh;
-    std::array<VertexReuseData, param::LODNumCells() / 2> prevRow{};
-    for (i32 i = 0; i < param::LODNumCells(); i += 2)
+    VertexStrip prevStrip{};
+    VertexStrip currStrip{};
+    eng::algo::forEach(lowResolutionCellBounds, [cellLength, &transitionMesh, &prevStrip, &currStrip, &node, &noiseValues, &noiseNormals, face](BlockIndex2D lowResolutionCellIndex)
     {
-      std::array<VertexReuseData, param::LODNumCells() / 2> currRow{};
-
-      for (i32 j = 0; j < param::LODNumCells(); j += 2)
+      // If j is 0, we are starting a new strip of cells
+      if (lowResolutionCellIndex.j == 0)
       {
-        // Determine which of the 512 cases the cell belongs to
-        u16 cellCase = 0;
-        for (i32 p = 0; p < 9; ++p)
-        {
-          BlockIndex sampleIndex = BlockIndex(uIndex, i + p % 3, j + p / 3).permute(u);
-
-          // If block face normal along negative axis, we must reverse v coordinate-axis to ensure correct orientation
-          if (!isUpstream(face))
-            sampleIndex[v] = param::LODNumCells() - sampleIndex[v];
-
-          length_t sampleZ = lodFloor + sampleIndex.k * cellLength;
-          if (noiseValues[sampleIndex.i][sampleIndex.j].getElevation() > sampleZ)
-            cellCase |= eng::bit(c_SampleIndexToBitFlip[p]);
-        }
-        if (cellCase == 0 || cellCase == 511) // These cases don't have triangles
-          continue;
-
-        BlockIndex2D lowResolutionCellIndex(i / 2, j / 2);
-        currRow[lowResolutionCellIndex.j].baseMeshIndex = eng::arithmeticCastUnchecked<u32>(transitionMesh.vertices.size());
-
-        // Use lookup table to determine which of 56 equivalence classes the cell belongs to
-        u8 cellEquivClass = c_TransitionCellClass[cellCase];
-        bool reverseWindingOrder = cellEquivClass >> 7;
-        TransitionCellData cellData = c_TransitionCellData[cellEquivClass & 0x7F];
-        i32 triangleCount = cellData.getTriangleCount();
-
-        // Loop over all triangles in cell
-        i32 cellVertexCount = 0;
-        std::array<u32, c_MaxCellVertexCount> prevCellVertexIndices{};
-        for (i32 vert = 0; vert < 3 * triangleCount; ++vert)
-        {
-          i32 edgeIndex = cellData.vertexIndex[reverseWindingOrder ? 3 * triangleCount - 1 - vert : vert];
-
-          // Check if vertex has already been created in this cell
-          i32 vertexIndex = prevCellVertexIndices[edgeIndex];
-          if (vertexIndex > 0)
-          {
-            transitionMesh.indices.push_back(vertexIndex);
-            continue;
-          }
-
-          // Lookup indices of vertices A,B of the cell edge that vertex v lies on
-          u16 vertexData = c_TransitionVertexData[cellCase][edgeIndex];
-          u8 sharedVertexReuseIndex = (vertexData >> 8) & 0x000F;
-          u8 sharedVertexDirectionNibble = (vertexData >> 12) & 0x000F;
-          bool isReusable = sharedVertexDirectionNibble != 4;
-          bool newVertex = sharedVertexDirectionNibble == 8;
-
-          // If a new vertex must be created, store vertex index information for later reuse.  If not, attempt to reuse previous vertex
-          if (newVertex)
-            currRow[lowResolutionCellIndex.j].vertexOrder[sharedVertexReuseIndex] = cellVertexCount;
-          else if (isReusable)
-          {
-            BlockIndex2D sharedVertexDirection = -BlockIndex2D(eng::EnumBitMask<eng::math::Axis>(sharedVertexDirectionNibble));
-            BlockIndex2D sharedVertexIndex = lowResolutionCellIndex + sharedVertexDirection;
-
-            if (sharedVertexIndex.nonNegative())
-            {
-              const auto& targetRow = sharedVertexIndex.i == lowResolutionCellIndex.i ? currRow : prevRow;
-
-              i32 baseMeshIndex = targetRow[sharedVertexIndex.j].baseMeshIndex;
-              i32 vertexOrder = targetRow[sharedVertexIndex.j].vertexOrder[sharedVertexReuseIndex];
-              if (baseMeshIndex > 0 && vertexOrder >= 0)
-              {
-                transitionMesh.indices.push_back(baseMeshIndex + vertexOrder);
-                prevCellVertexIndices[edgeIndex] = baseMeshIndex + vertexOrder;
-                continue;
-              }
-            }
-          }
-
-          // Extract the local corner indices from vertex data
-          u8 cornerIndexA = (vertexData >> 0) & 0x000F;
-          u8 cornerIndexB = (vertexData >> 4) & 0x000F;
-          bool isOnLowResSide = cornerIndexB > 8;
-
-          // Indices of samples A,B
-          BlockIndex sampleIndexA = BlockIndex(uIndex, i + c_CornerIndexToSampleIndex[cornerIndexA] % 3, j + c_CornerIndexToSampleIndex[cornerIndexA] / 3).permute(u);
-          BlockIndex sampleIndexB = BlockIndex(uIndex, i + c_CornerIndexToSampleIndex[cornerIndexB] % 3, j + c_CornerIndexToSampleIndex[cornerIndexB] / 3).permute(u);
-
-          // If block face normal along negative axis, we must reverse v coordinate-axis to ensure correct orientation
-          if (!isUpstream(face))
-          {
-            sampleIndexA[v] = param::LODNumCells() - sampleIndexA[v];
-            sampleIndexB[v] = param::LODNumCells() - sampleIndexB[v];
-          }
-
-          // If vertex is on low-resolution side, use smoothness level of low-resolution LOD
-          f32 smoothness = smoothnessLevel(node.lodLevel() + isOnLowResSide);
-
-          NoiseData noiseData = interpolateNoiseData(node, noiseValues, noiseNormals, sampleIndexA, sampleIndexB, smoothness);
-          if (!isOnLowResSide)
-            noiseData.position -= transitionCellWidth * static_cast<eng::math::Vec3>(BlockIndex::Dir(face));
-
-          u32 vertexCount = eng::arithmeticCastUnchecked<u32>(transitionMesh.vertices.size());
-          transitionMesh.vertices.emplace_back(noiseData.position, noiseData.normal, noiseData.surfaceData.getTextureIndices(), noiseData.surfaceData.getTextureWeights());
-          transitionMesh.indices.push_back(vertexCount);
-          prevCellVertexIndices[edgeIndex] = vertexCount;
-
-          cellVertexCount++;
-        }
+        prevStrip = std::move(currStrip);
+        currStrip = {};
       }
 
-      prevRow = std::move(currRow);
-    }
+      BlockIndex cellIndex = BlockIndex(c_LODSampleBounds.limitAlongDirection(face), 2 * lowResolutionCellIndex).permute(eng::math::axisOf(face));
+
+      // Determine which of the 512 cases the cell belongs to
+      u16 cellCase = 0;
+      for (i32 transitionCellFaceIndex = 0; transitionCellFaceIndex < 9; ++transitionCellFaceIndex)
+      {
+        BlockIndex sampleIndex = transitionCellFaceIndexToSampleIndex(cellIndex, transitionCellFaceIndex, face);
+        length_t sampleZ = node.anchor().k * Chunk::Length() + sampleIndex.k * cellLength;
+        if (noiseValues[sampleIndex.i][sampleIndex.j].getElevation() > sampleZ)
+          cellCase |= eng::bit(c_TransitionCellFaceIndexToBitFlip[transitionCellFaceIndex]);
+      }
+      if (cellCase == 0 || cellCase == 511) // These cases don't have triangles
+        return;
+
+      currStrip[lowResolutionCellIndex.j].baseMeshIndex = eng::arithmeticCastUnchecked<u32>(transitionMesh.vertices.size());
+
+      // Use lookup table to determine which of 56 equivalence classes the cell belongs to
+      u8 cellEquivClass = c_TransitionCellClass[cellCase];
+      bool reverseWindingOrder = cellEquivClass >> 7;
+      TransitionCellData cellData = c_TransitionCellData[cellEquivClass & 0x7F];
+      i32 triangleCount = cellData.getTriangleCount();
+
+      // Loop over all triangles in cell
+      i32 cellVertexCount = 0;
+      std::array<u32, c_MaxCellVertexCount> prevCellVertexIndices{};
+      for (i32 vert = 0; vert < 3 * triangleCount; ++vert)
+      {
+        i32 edgeIndex = cellData.vertexIndex[reverseWindingOrder ? 3 * triangleCount - 1 - vert : vert];
+
+        // Check if vertex has already been created in this cell
+        i32 vertexIndex = prevCellVertexIndices[edgeIndex];
+        if (vertexIndex > 0)
+        {
+          transitionMesh.indices.push_back(vertexIndex);
+          continue;
+        }
+
+        // Lookup indices of vertices A,B of the cell edge that vertex v lies on
+        u16 vertexData = c_TransitionVertexData[cellCase][edgeIndex];
+        u8 sharedVertexReuseIndex = (vertexData >> 8) & 0xF;
+        u8 sharedVertexDirectionNibble = (vertexData >> 12) & 0xF;
+        bool isReusable = sharedVertexDirectionNibble != 4;
+        bool newVertex = sharedVertexDirectionNibble == 8;
+
+        // If a new vertex must be created, store vertex index information for later reuse.  If not, attempt to reuse previous vertex
+        if (newVertex)
+          currStrip[lowResolutionCellIndex.j].vertexOrder[sharedVertexReuseIndex] = cellVertexCount;
+        else if (isReusable)
+        {
+          BlockIndex2D sharedVertexDirection = -BlockIndex2D(eng::EnumBitMask<eng::math::Axis>(sharedVertexDirectionNibble));
+          BlockIndex2D sharedVertexIndex = lowResolutionCellIndex + sharedVertexDirection;
+
+          if (sharedVertexIndex.nonNegative())
+          {
+            const auto& targetStrip = sharedVertexIndex.i == lowResolutionCellIndex.i ? currStrip : prevStrip;
+
+            i32 baseMeshIndex = targetStrip[sharedVertexIndex.j].baseMeshIndex;
+            i32 vertexOrder = targetStrip[sharedVertexIndex.j].vertexOrder[sharedVertexReuseIndex];
+            if (baseMeshIndex > 0 && vertexOrder >= 0)
+            {
+              transitionMesh.indices.push_back(baseMeshIndex + vertexOrder);
+              prevCellVertexIndices[edgeIndex] = baseMeshIndex + vertexOrder;
+              continue;
+            }
+          }
+        }
+
+        // Extract the local transition cell sample indices from vertex data
+        u8 sampleNibbleA = (vertexData >> 0) & 0xF;
+        u8 sampleNibbleB = (vertexData >> 4) & 0xF;
+        bool isOnLowResSide = sampleNibbleB > 8;
+
+        // Indices of samples A,B
+        BlockIndex sampleIndexA = transitionCellFaceIndexToSampleIndex(cellIndex, c_TransitionCellSampleIndexToTransitionCellFaceIndex[sampleNibbleA], face);
+        BlockIndex sampleIndexB = transitionCellFaceIndexToSampleIndex(cellIndex, c_TransitionCellSampleIndexToTransitionCellFaceIndex[sampleNibbleB], face);
+
+        // If vertex is on low-resolution side, use smoothness level of low-resolution LOD
+        f32 smoothness = smoothnessLevel(node.lodLevel() + isOnLowResSide);
+        NoiseData noiseData = interpolateNoiseData(node, noiseValues, noiseNormals, sampleIndexA, sampleIndexB, smoothness);
+
+        if (!isOnLowResSide)
+          noiseData.position -= c_TransitionCellFractionalWidth * cellLength * static_cast<eng::math::Vec3>(BlockIndex::Dir(face));
+
+        u32 vertexCount = eng::arithmeticCastUnchecked<u32>(transitionMesh.vertices.size());
+        transitionMesh.vertices.emplace_back(noiseData.position, noiseData.normal, noiseData.surfaceData.getTextureIndices(), noiseData.surfaceData.getTextureWeights());
+        transitionMesh.indices.push_back(vertexCount);
+        prevCellVertexIndices[edgeIndex] = vertexCount;
+
+        cellVertexCount++;
+      }
+    });
+
+    // If transition mesh is on downstream side, we must reverse triangle orientation
+    if (!isUpstream(face))
+      eng::algo::reverse(transitionMesh.indices);
+
     return transitionMesh;
   }
 

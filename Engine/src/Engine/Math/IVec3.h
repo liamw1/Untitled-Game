@@ -19,10 +19,12 @@ namespace eng::math
       : IVec3(n, n, n) {}
     constexpr IVec3(T _i, T _j, T _k)
       : i(_i), j(_j), k(_k) {}
-    constexpr IVec3(IVec2<T> intVec2, T _k)
-      : i(intVec2.i), j(intVec2.j), k(_k) {}
+    constexpr IVec3(T _i, IVec2<T> iVec2)
+      : IVec3(_i, iVec2.i, iVec2.j) {}
+    constexpr IVec3(IVec2<T> iVec2, T _k)
+      : IVec3(iVec2.i, iVec2.j, _k) {}
     constexpr IVec3(EnumBitMask<Axis> bitMask)
-      : i(bitMask[Axis::X]), j(bitMask[Axis::Y]), k(bitMask[Axis::Z]) {}
+      : IVec3(bitMask[Axis::X], bitMask[Axis::Y], bitMask[Axis::Z]) {}
   
     explicit constexpr operator Vec2() const { return Vec2(i, j); }
     explicit constexpr operator Vec3() const { return Vec3(i, j, k); }
@@ -126,10 +128,10 @@ namespace eng::math
     }
   };
   
-  template<std::integral T>
-  constexpr IVec3<T> operator*(T n, IVec3<T> index)
+  template<std::integral U, std::integral T>
+  constexpr IVec3<T> operator*(U n, IVec3<T> index)
   {
-    return index *= n;
+    return index *= static_cast<T>(n);
   }
   
   template<std::integral T>

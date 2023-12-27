@@ -23,7 +23,7 @@ namespace eng::math
     constexpr IVec2(T _i, T _j)
       : i(_i), j(_j) {}
     constexpr IVec2(EnumBitMask<Axis> bitMask)
-      : i(bitMask[Axis::X]), j(bitMask[Axis::Y]) {}
+      : IVec2(bitMask[Axis::X], bitMask[Axis::Y]) {}
   
     explicit constexpr operator Vec2() const { return Vec2(i, j); }
 
@@ -96,10 +96,10 @@ namespace eng::math
     }
   };
   
-  template<std::integral T>
-  constexpr IVec2<T> operator*(T n, IVec2<T> index)
+  template<std::integral U, std::integral T>
+  constexpr IVec2<T> operator*(U n, IVec2<T> index)
   {
-    return index *= n;
+    return index *= static_cast<T>(n);
   }
   
   template<std::integral T>

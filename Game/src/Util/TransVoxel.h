@@ -364,16 +364,15 @@ constexpr u16 c_RegularVertexData[256][12] =
 struct TransitionCellData
 {
 	u8 geometryCounts;		// High nibble is vertex count, low nibble is triangle count.
-	u8	vertexIndex[36];	// Groups of 3 indexes giving the triangulation.
+	u8 vertexIndex[36];	  // Groups of 3 indexes giving the triangulation.
 
 	i32 getVertexCount() const { return (geometryCounts >> 4); }
 	i32 getTriangleCount() const { return (geometryCounts & 0x0F); }
 };
 
-// From Figures 4.16, 4.17, and 4.19 in Transvoxel paper
-constexpr u8 c_SampleIndexToBitFlip[9] = { 0, 1, 2, 7, 8, 3, 6, 5, 4 };
-constexpr u8 c_CornerIndexToSampleIndex[13] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 0, 2, 6, 8 };
-constexpr u8 c_CornerVertexReuseInformation[13] = { 0x30, 0x21, 0x20, 0x12, 0x40, 0x82, 0x10, 0x81, 0x80, 0x37, 0x27, 0x17, 0x87 };
+// From Figures 4.16 and 4.17 in the Transvoxel paper
+constexpr u8 c_TransitionCellFaceIndexToBitFlip[9] = { 0, 1, 2, 7, 8, 3, 6, 5, 4 };
+constexpr u8 c_TransitionCellSampleIndexToTransitionCellFaceIndex[13] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 0, 2, 6, 8 };
 
 /*
 	The transitionCellClass table maps a 9-bit transition cell case index to an equivalence
