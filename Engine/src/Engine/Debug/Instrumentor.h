@@ -2,7 +2,7 @@
 #include "Engine/Core/FixedWidthTypes.h"
 #include "Engine/Utilities/Constraints.h"
 
-#define ENG_PROFILE 1
+#define ENG_PROFILE 0
 #if ENG_PROFILE
 #define ENG_PROFILE_BEGIN_SESSION(name, filepath)  ::eng::debug::Instrumentor::Get().beginSession(name, filepath)
 #define ENG_PROFILE_END_SESSION()                  ::eng::debug::Instrumentor::Get().endSession()

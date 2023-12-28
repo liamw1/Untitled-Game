@@ -11,9 +11,11 @@ namespace newLod
   static constexpr GlobalBox c_OctreeBounds = GlobalBox(c_RootNodeAnchor, -c_RootNodeAnchor - 1);
   static constexpr NodeID c_RootNodeID = NodeID(c_RootNodeAnchor, 0);
 
-  static constexpr BlockBox c_LODCellBounds(0, param::LODNumCells() - 1);
-  static constexpr BlockBox c_LODSampleBounds(0, param::LODNumCells());
+  static constexpr i32 c_LODNumCells = Chunk::Size();
+  static constexpr BlockBox c_LODCellBounds(0, c_LODNumCells - 1);
+  static constexpr BlockBox c_LODSampleBounds(0, c_LODNumCells);
   static constexpr f32 c_TransitionCellFractionalWidth = 0.5f;
+  static constexpr i32 c_MinLODLevel = 1;
 
   // Rendering
   static constexpr i32 c_SSBOBinding = 2;
@@ -55,7 +57,7 @@ namespace newLod
 
   static BlockArrayRect<terrain::CompoundSurfaceData> generateNoise(const NodeID& node)
   {
-    length_t cellLength = node.length() / param::LODNumCells();
+    length_t cellLength = node.length() / c_LODNumCells;
     eng::math::Vec2 lodAnchorXY = Chunk::Length() * static_cast<eng::math::Vec2>(node.anchor());
 
     BlockArrayRect<terrain::CompoundSurfaceData> noiseValues(static_cast<BlockRect>(c_LODSampleBounds), eng::AllocationPolicy::ForOverwrite);
@@ -83,7 +85,7 @@ namespace newLod
 
   static BlockArrayRect<eng::math::Vec3> calculateNoiseNormals(const NodeID& node, const BlockArrayRect<terrain::CompoundSurfaceData>& noiseValues)
   {
-    length_t cellLength = node.length() / param::LODNumCells();
+    length_t cellLength = node.length() / c_LODNumCells;
     eng::math::Vec2 lodAnchorXY = Chunk::Length() * static_cast<eng::math::Vec2>(node.anchor());
 
     // Calculate normals using central differences
@@ -104,7 +106,7 @@ namespace newLod
         fLC = noiseValues(indexLC).getElevation();
 
       BlockIndex2D indexUC = index + BlockIndex2D(1, 0);
-      if (index.i == param::LODNumCells())
+      if (index.i == c_LODNumCells)
       {
         eng::math::Vec2 pointXY = lodAnchorXY + cellLength * static_cast<eng::math::Vec2>(indexUC);
         fUC = terrain::getElevation(pointXY);
@@ -122,7 +124,7 @@ namespace newLod
         fCL = noiseValues(indexCL).getElevation();
 
       BlockIndex2D indexCU = index + BlockIndex2D(0, 1);
-      if (index.j == param::LODNumCells())
+      if (index.j == c_LODNumCells)
       {
         eng::math::Vec2 pointXY = lodAnchorXY + cellLength * static_cast<eng::math::Vec2>(indexCU);
         fCU = terrain::getElevation(pointXY);
@@ -145,7 +147,7 @@ namespace newLod
                                         const BlockIndex& cornerA, const BlockIndex& cornerB, f32 smoothness)
   {
     length_t lodFloor = node.anchor().k * Chunk::Length();
-    length_t cellLength = node.length() / param::LODNumCells();
+    length_t cellLength = node.length() / c_LODNumCells;
 
     // Vertex positions
     eng::math::Vec3 posA = static_cast<eng::math::Vec3>(cornerA) * cellLength;
@@ -178,11 +180,11 @@ namespace newLod
   // Formulas can be found in section 4.4 of TransVoxel paper
   static bool isVertexNearFace(bool isUpstream, f32 u, f32 cellLength)
   {
-    return isUpstream ? u > cellLength * (param::LODNumCells() - 1) : u < cellLength;
+    return isUpstream ? u > cellLength * (c_LODNumCells - 1) : u < cellLength;
   }
   static f32 vertexAdjustment1D(bool isUpstream, f32 u, f32 cellLength)
   {
-    return c_TransitionCellFractionalWidth * (isUpstream ? ((param::LODNumCells() - 1) * cellLength - u) : (cellLength - u));
+    return c_TransitionCellFractionalWidth * (isUpstream ? ((c_LODNumCells - 1) * cellLength - u) : (cellLength - u));
   }
   static eng::math::FMat3 calculateVertexTransform(const eng::math::Float3& n)
   {
@@ -193,7 +195,7 @@ namespace newLod
 
   static Vertex adjustedPrimaryVertex(const Vertex& vertex, const NodeID& node, eng::EnumBitMask<eng::math::Direction> transitionFaces)
   {
-    f32 cellLength = node.length() / param::LODNumCells();
+    f32 cellLength = node.length() / c_LODNumCells;
 
     eng::math::Float3 vertexAdjustment(0.0f);
     bool nearSameResolutionLOD = eng::algo::anyOf(eng::math::Directions(), [cellLength, &vertexAdjustment, &vertex, &transitionFaces](eng::math::Direction face)
@@ -242,9 +244,9 @@ namespace newLod
       u32 baseMeshIndex = 0;
       std::array<i8, 4> vertexOrder = { -1, -1, -1, -1 };
     };
-    using VertexLayer = std::array<std::array<VertexReuseData, param::LODNumCells()>, param::LODNumCells()>;
+    using VertexLayer = std::array<std::array<VertexReuseData, c_LODNumCells>, c_LODNumCells>;
 
-    length_t cellLength = node.length() / param::LODNumCells();
+    length_t cellLength = node.length() / c_LODNumCells;
     f32 smoothness = smoothnessLevel(node.lodLevel());
 
     Mesh primaryMesh;
@@ -349,7 +351,7 @@ namespace newLod
   {
     ENG_PROFILE_FUNCTION();
 
-    static constexpr i32 numLowResultionCells = param::LODNumCells() / 2;
+    static constexpr i32 numLowResultionCells = c_LODNumCells / 2;
     static constexpr BlockRect lowResolutionCellBounds(0, numLowResultionCells - 1);
 
     struct VertexReuseData
@@ -359,7 +361,7 @@ namespace newLod
     };
     using VertexStrip = std::array<VertexReuseData, numLowResultionCells>;
 
-    length_t cellLength = node.length() / param::LODNumCells();
+    length_t cellLength = node.length() / c_LODNumCells;
 
     // Generate transition mesh using Transvoxel algorithm
     Mesh transitionMesh;
@@ -444,17 +446,17 @@ namespace newLod
         // Extract the local transition cell sample indices from vertex data
         u8 sampleNibbleA = (vertexData >> 0) & 0xF;
         u8 sampleNibbleB = (vertexData >> 4) & 0xF;
-        bool isOnLowResSide = sampleNibbleB > 8;
+        bool isOnLowResolutionSide = sampleNibbleB > 8;
 
         // Indices of samples A,B
         BlockIndex sampleIndexA = transitionCellFaceIndexToSampleIndex(cellIndex, c_TransitionCellSampleIndexToTransitionCellFaceIndex[sampleNibbleA], face);
         BlockIndex sampleIndexB = transitionCellFaceIndexToSampleIndex(cellIndex, c_TransitionCellSampleIndexToTransitionCellFaceIndex[sampleNibbleB], face);
 
         // If vertex is on low-resolution side, use smoothness level of low-resolution LOD
-        f32 smoothness = smoothnessLevel(node.lodLevel() + isOnLowResSide);
+        f32 smoothness = smoothnessLevel(node.lodLevel() + isOnLowResolutionSide);
         NoiseData noiseData = interpolateNoiseData(node, noiseValues, noiseNormals, sampleIndexA, sampleIndexB, smoothness);
 
-        if (!isOnLowResSide)
+        if (!isOnLowResolutionSide)
           noiseData.position -= c_TransitionCellFractionalWidth * cellLength * static_cast<eng::math::Vec3>(BlockIndex::Dir(face));
 
         u32 vertexCount = eng::arithmeticCastUnchecked<u32>(transitionMesh.vertices.size());
@@ -518,6 +520,13 @@ namespace newLod
       }
 
     return DrawCommand(node, std::move(fullMesh.indices), std::move(fullMesh.vertices));
+  }
+
+  static bool shouldBeDivided(const NodeID& node, const GlobalIndex& originIndex)
+  {
+    globalIndex_t splitRange = node.size() + param::RenderDistance();
+    GlobalBox splitRangeBoundingBox(originIndex - splitRange, originIndex + splitRange);
+    return splitRangeBoundingBox.overlapsWith(node.boundingBox());
   }
 
 
@@ -613,7 +622,7 @@ namespace newLod
   bool LODManager::updateRecursively(Node& branch, const NodeID& branchInfo, const GlobalIndex& originIndex)
   {
     bool stateChanged = false;
-    if (branchInfo.lodLevel() < 1)
+    if (branchInfo.lodLevel() <= c_MinLODLevel)
       return stateChanged;
 
     if (branch.isLeaf())
@@ -640,9 +649,7 @@ namespace newLod
       if (neighbor && std::abs(dividedLodLevel - neighbor->lodLevel()) > 1)
         return false;
 
-    globalIndex_t splitRange = 2 * nodeInfo.size() - 1 + param::RenderDistance();
-    GlobalBox splitRangeBoundingBox(originIndex - splitRange, originIndex + splitRange);
-    if (!splitRangeBoundingBox.overlapsWith(nodeInfo.boundingBox()))
+    if (!shouldBeDivided(nodeInfo, originIndex))
       return false;
 
     std::vector<DrawCommand> newDrawCommands;
@@ -679,9 +686,7 @@ namespace newLod
           return false;
     }
 
-    globalIndex_t combineRange = 2 * nodeInfo.size() - 1 + param::RenderDistance();
-    GlobalBox combineRangeBoundingBox(originIndex - combineRange, originIndex + combineRange);
-    if (combineRangeBoundingBox.overlapsWith(nodeInfo.boundingBox()))
+    if (shouldBeDivided(nodeInfo, originIndex))
       return false;
 
     std::vector<DrawCommand> newDrawCommands;
@@ -824,15 +829,12 @@ namespace newLod
   {
     if (node.isLeaf())
     {
-      for (const std::optional<NodeID>& neighbor : neighborQuery(nodeInfo))
-        if (neighbor && std::abs(nodeInfo.lodLevel() - neighbor->lodLevel()) > 1)
-          ENG_ERROR("LOD tree is in incorrect state!");
+      for (const GlobalBox& neighborBox : eng::math::FaceInteriors(nodeInfo.boundingBox().expand()))
+        for (const NodeID& neighbor : find(neighborBox))
+          if (std::abs(nodeInfo.lodLevel() - neighbor.lodLevel()) > 1)
+            ENG_ERROR("LOD tree is in incorrect state!");
       return;
     }
-
-    node.children.forEach([this, &nodeInfo](const BlockIndex& childIndex, const Node& child)
-    {
-      checkStateImpl(child, nodeInfo.child(childIndex));
-    });
+    node.children.forEach([this, &nodeInfo](const BlockIndex& childIndex, const Node& child) { checkStateImpl(child, nodeInfo.child(childIndex)); });
   }
 }
