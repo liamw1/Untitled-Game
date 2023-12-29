@@ -631,15 +631,15 @@ namespace newLod
 
   bool LODManager::tryDivide(Node& node, const GlobalIndex& originIndex)
   {
-    ENG_PROFILE_FUNCTION();
+    if (!shouldBeDivided(node, originIndex))
+      return false;
 
     i32 dividedLodLevel = node.id.lodLevel() - 1;
     for (const std::optional<NodeID>& neighbor : neighborQuery(node))
       if (neighbor && std::abs(dividedLodLevel - neighbor->lodLevel()) > 1)
         return false;
 
-    if (!shouldBeDivided(node, originIndex))
-      return false;
+    ENG_PROFILE_FUNCTION();
 
     std::vector<DrawCommand> newDrawCommands;
     std::vector<NodeID> removedNodes = { node.id };
@@ -658,7 +658,8 @@ namespace newLod
 
   bool LODManager::tryCombine(Node& parentNode, const GlobalIndex& originIndex)
   {
-    ENG_PROFILE_FUNCTION();
+    if (shouldBeDivided(parentNode, originIndex))
+      return false;
 
     for (const std::optional<NodeID>& neighbor : neighborQuery(parentNode))
       if (neighbor && std::abs(parentNode.id.lodLevel() - neighbor->lodLevel()) > 1)
@@ -672,8 +673,7 @@ namespace newLod
           return false;
     }
 
-    if (shouldBeDivided(parentNode, originIndex))
-      return false;
+    ENG_PROFILE_FUNCTION();
 
     std::vector<DrawCommand> newDrawCommands;
     std::vector<NodeID> removedNodes;
