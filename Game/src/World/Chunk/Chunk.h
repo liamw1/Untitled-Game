@@ -72,5 +72,5 @@ public:
   static constexpr length_t BoundingSphereRadius() { return std::numbers::sqrt3_v<length_t> * Length() / 2; }
   static constexpr BlockBox Bounds() { return BlockBox(0, Size() - 1); }
   static constexpr BlockRect Bounds2D() { return BlockRect(0, Size() - 1); }
-  static constexpr GlobalBox Stencil(const GlobalIndex& chunkIndex) { return GlobalBox(-1, 1) + chunkIndex; }
+  static constexpr GlobalBox Stencil(const GlobalIndex& chunkIndex) { return GlobalBox(chunkIndex, chunkIndex).expand(); }
 };

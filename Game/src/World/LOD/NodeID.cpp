@@ -35,18 +35,4 @@ namespace newLod
     GlobalIndex childIndex = (index - anchor()) / childSize;
     return childIndex.checkedCast<blockIndex_t>();
   }
-
-
-
-  MeshID::MeshID(const NodeID& node)
-    : m_NodeID(node), m_Face(std::nullopt) {}
-  MeshID::MeshID(const NodeID& node, eng::math::Direction face)
-    : m_NodeID(node), m_Face(face) {}
-
-  bool MeshID::operator==(const MeshID& other) const = default;
-
-  bool MeshID::isPrimaryMesh() const { return !m_Face; }
-
-  const NodeID& MeshID::nodeID() const { return m_NodeID; }
-  std::optional<eng::math::Direction> MeshID::face() const { return m_Face; }
 }

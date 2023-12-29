@@ -30,16 +30,20 @@ namespace newLod
 
   struct Node
   {
-    BlockArrayBox<Node> children;
+    NodeID id;
+    eng::UniqueArray<Node, 8> children;
     std::shared_ptr<RenderData> data;
 
     Node();
+    Node(const NodeID& nodeID);
     bool isLeaf() const;
 
     bool hasGrandChildren() const;
 
     void divide();
     void combine();
+
+    static constexpr BlockBox ChildBounds() { return BlockBox(0, 1); }
   };
 
   class DrawCommand : public eng::IndexedDrawCommand<DrawCommand, NodeID>

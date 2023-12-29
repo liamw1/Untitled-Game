@@ -200,16 +200,4 @@ namespace eng::algo
   {
     std::partial_sum(std::begin(container), std::end(container), destination);
   }
-
-  template<Iterable C, std::invocable<detail::containedType<C>> F>
-  constexpr void forEach(C& container, F&& function)
-  {
-    std::for_each(std::begin(container), std::end(container), std::forward<F>(function));
-  }
-
-  template<Iterable C, std::invocable<detail::containedType<C>> F>
-  constexpr void forEach(const C& container, F&& function)
-  {
-    std::for_each(std::begin(container), std::end(container), std::forward<F>(function));
-  }
 }

@@ -40,11 +40,11 @@ constexpr LocalBox blockBoxToLocalBox(const BlockBox& box)
 constexpr std::vector<std::pair<LocalIndex, BlockBox>> partitionBlockBox(const BlockBox& box)
 {
   std::vector<std::pair<LocalIndex, BlockBox>> boxPartitioning;
-  eng::algo::forEach(blockBoxToLocalBox(box), [&box, &boxPartitioning](const LocalIndex& localIndex)
+  for (const LocalIndex& localIndex : blockBoxToLocalBox(box))
   {
     BlockBox localIntersection = BlockBox::Intersection(Chunk::Bounds(), box - Chunk::Size() * localIndex.checkedCast<blockIndex_t>());
     boxPartitioning.emplace_back(localIndex, localIntersection);
-  });
+  }
   return boxPartitioning;
 }
 

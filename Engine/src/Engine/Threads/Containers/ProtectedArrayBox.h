@@ -112,7 +112,7 @@ namespace eng::thread
     void allocateAndFillWithDefaultValue()
     {
       m_ArrayBox.allocate();
-      m_ArrayBox.fill(m_DefaultValue);
+      algo::fill(m_ArrayBox, m_DefaultValue);
     }
 
     void setIfNecessary(const math::IVec3<IntType>& index, const T& value)

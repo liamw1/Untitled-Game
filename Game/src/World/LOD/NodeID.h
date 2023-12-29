@@ -29,23 +29,6 @@ namespace newLod
     NodeID child(const BlockIndex& childIndex) const;
     BlockIndex childIndex(const GlobalIndex& index) const;
   };
-
-  class MeshID
-  {
-    NodeID m_NodeID;
-    std::optional<eng::math::Direction> m_Face;
-
-  public:
-    MeshID(const NodeID& node);
-    MeshID(const NodeID& node, eng::math::Direction face);
-
-    bool operator==(const MeshID& other) const;
-
-    bool isPrimaryMesh() const;
-
-    const NodeID& nodeID() const;
-    std::optional<eng::math::Direction> face() const;
-  };
 }
 
 namespace std
@@ -57,17 +40,6 @@ namespace std
     {
       static constexpr i32 stride = numeric_limits<globalIndex_t>::digits;
       return stride * hash<GlobalIndex>()(nodeID.anchor()) + nodeID.depth();
-    }
-  };
-
-  template<>
-  struct hash<newLod::MeshID>
-  {
-    uSize operator()(const newLod::MeshID& meshID) const
-    {
-      static constexpr underlying_type_t<eng::math::Direction> stride = eng::enumCount<eng::math::Direction>() + 1;
-      underlying_type_t<eng::math::Direction> offset = meshID.face() ? 1 + eng::enumIndex(*meshID.face()) : 0;
-      return stride * hash<GlobalIndex>()(meshID.nodeID().anchor()) + offset;
     }
   };
 }

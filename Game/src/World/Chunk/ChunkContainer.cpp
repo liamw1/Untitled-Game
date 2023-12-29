@@ -114,11 +114,11 @@ bool ChunkContainer::isOnBoundary(const GlobalIndex& chunkIndex) const
 
 void ChunkContainer::boundaryUpdate(const GlobalIndex& chunkIndex)
 {
-  eng::algo::forEach(Chunk::Stencil(chunkIndex), [this](const GlobalIndex& neighborIndex)
+  for (const GlobalIndex& neighborIndex : Chunk::Stencil(chunkIndex))
   {
     if (m_Chunks.contains(neighborIndex) || !isOnBoundary(neighborIndex))
       m_BoundaryIndices.erase(neighborIndex);
     else
       m_BoundaryIndices.insert(neighborIndex);
-  });
+  }
 }

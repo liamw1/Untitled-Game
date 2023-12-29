@@ -10,30 +10,30 @@ namespace newLod
 
 
   Node::Node()
-    : children(BlockBox(0, 1), eng::AllocationPolicy::Deferred) {}
+    : Node(NodeID({}, 0)) {}
+  Node::Node(const NodeID& nodeID)
+    : id(nodeID), children(eng::AllocationPolicy::Deferred) {}
 
   bool Node::isLeaf() const { return !children; }
-
   bool Node::hasGrandChildren() const
   {
-    return isLeaf() && children.anyOf([](const Node& child) { return !child.isLeaf(); });
+    return isLeaf() && eng::algo::anyOf(children, [](const Node& child) { return !child.isLeaf(); });
   }
 
   void Node::divide()
   {
     if (!isLeaf())
       return;
-
     children.allocate();
+    for (const BlockIndex& childIndex : ChildBounds())
+      children[ChildBounds().linearIndexOf(childIndex)] = id.child(childIndex);
   }
 
   void Node::combine()
   {
     if (isLeaf())
       return;
-
-    children.forEach([](Node& child) { child.combine(); });
-    children.clear();
+    children.reset();
   }
 
 

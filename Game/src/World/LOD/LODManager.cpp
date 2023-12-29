@@ -76,7 +76,7 @@ namespace newLod
     length_t lodCeiling = lodFloor + node.length();
 
     // Check if LOD is fully below or above surface, if so, no need to generate mesh
-    return noiseValues.anyOf([lodFloor, lodCeiling](const terrain::CompoundSurfaceData& surfaceData)
+    return eng::algo::anyOf(noiseValues, [lodFloor, lodCeiling](const terrain::CompoundSurfaceData& surfaceData)
     {
       length_t terrainHeight = surfaceData.getElevation();
       return lodFloor <= terrainHeight && terrainHeight <= lodCeiling;
@@ -252,7 +252,7 @@ namespace newLod
     Mesh primaryMesh;
     VertexLayer prevLayer{};
     VertexLayer currLayer{};
-    eng::algo::forEach(c_LODCellBounds, [cellLength, smoothness, &primaryMesh, &prevLayer, &currLayer, &node, &noiseValues, &noiseNormals](const BlockIndex& cellIndex)
+    for (const BlockIndex& cellIndex : c_LODCellBounds)
     {
       // If j and k are 0, we are starting a new layer of cells
       if (cellIndex.j == 0 && cellIndex.k == 0)
@@ -271,7 +271,7 @@ namespace newLod
           cellCase |= eng::bit(cornerIndex);
       }
       if (cellCase == 0 || cellCase == 255) // These cases don't have triangles
-        return;
+        continue;
 
       currLayer[cellIndex.j][cellIndex.k].baseMeshIndex = eng::arithmeticCastUnchecked<u32>(primaryMesh.vertices.size());
 
@@ -340,7 +340,7 @@ namespace newLod
 
         cellVertexCount++;
       }
-    });
+    }
     return primaryMesh;
   }
 
@@ -367,7 +367,7 @@ namespace newLod
     Mesh transitionMesh;
     VertexStrip prevStrip{};
     VertexStrip currStrip{};
-    eng::algo::forEach(lowResolutionCellBounds, [cellLength, &transitionMesh, &prevStrip, &currStrip, &node, &noiseValues, &noiseNormals, face](BlockIndex2D lowResolutionCellIndex)
+    for (BlockIndex2D lowResolutionCellIndex : lowResolutionCellBounds)
     {
       // If j is 0, we are starting a new strip of cells
       if (lowResolutionCellIndex.j == 0)
@@ -388,7 +388,7 @@ namespace newLod
           cellCase |= eng::bit(c_TransitionCellFaceIndexToBitFlip[transitionCellFaceIndex]);
       }
       if (cellCase == 0 || cellCase == 511) // These cases don't have triangles
-        return;
+        continue;
 
       currStrip[lowResolutionCellIndex.j].baseMeshIndex = eng::arithmeticCastUnchecked<u32>(transitionMesh.vertices.size());
 
@@ -466,7 +466,7 @@ namespace newLod
 
         cellVertexCount++;
       }
-    });
+    }
 
     // If transition mesh is on downstream side, we must reverse triangle orientation
     if (!isUpstream(face))
@@ -522,18 +522,19 @@ namespace newLod
     return DrawCommand(node, std::move(fullMesh.indices), std::move(fullMesh.vertices));
   }
 
-  static bool shouldBeDivided(const NodeID& node, const GlobalIndex& originIndex)
+  static bool shouldBeDivided(const Node& node, const GlobalIndex& originIndex)
   {
-    globalIndex_t splitRange = node.size() + param::RenderDistance();
+    globalIndex_t splitRange = node.id.size() + param::RenderDistance();
     GlobalBox splitRangeBoundingBox(originIndex - splitRange, originIndex + splitRange);
-    return splitRangeBoundingBox.overlapsWith(node.boundingBox());
+    return splitRangeBoundingBox.overlapsWith(node.id.boundingBox());
   }
 
 
 
   LODManager::LODManager()
     : m_MultiDrawArray(s_VertexBufferLayout),
-      m_ThreadPool("LOD Manager", 1)
+      m_ThreadPool("LOD Manager", 1),
+      m_Root(c_RootNodeID)
   {
     ENG_PROFILE_FUNCTION();
 
@@ -614,71 +615,76 @@ namespace newLod
   {
     ENG_PROFILE_FUNCTION();
 
-    while (updateRecursively(m_Root, c_RootNodeID, player::originIndex()))
+    while (updateRecursively(m_Root, player::originIndex()))
     {
     }
   }
 
-  bool LODManager::updateRecursively(Node& branch, const NodeID& branchInfo, const GlobalIndex& originIndex)
+  bool LODManager::updateNew(const GlobalIndex& originIndex)
+  {
+    // std::vector<Node*> nodes = reverseLevelOrder();
+    // for (Node* node : nodes)
+    // {
+    // 
+    // }
+    return true;
+  }
+
+  bool LODManager::updateRecursively(Node& node, const GlobalIndex& originIndex)
   {
     bool stateChanged = false;
-    if (branchInfo.lodLevel() <= c_MinLODLevel)
+    if (node.id.lodLevel() <= c_MinLODLevel)
       return stateChanged;
 
-    if (branch.isLeaf())
-      stateChanged |= tryDivide(branch, branchInfo, originIndex);
-    else if (!branch.hasGrandChildren())
-      stateChanged |= tryCombine(branch, branchInfo, originIndex);
+    if (node.isLeaf())
+      stateChanged |= tryDivide(node, originIndex);
+    else if (!node.hasGrandChildren())
+      stateChanged |= tryCombine(node, originIndex);
 
-    if (branch.isLeaf())
+    if (node.isLeaf())
       return stateChanged;
 
-    branch.children.forEach([this, &branchInfo, &originIndex, &stateChanged](const BlockIndex& childIndex, Node& child)
-    {
-      stateChanged |= updateRecursively(child, branchInfo.child(childIndex), originIndex);
-    });
+    for (Node& child : node.children)
+      stateChanged |= updateRecursively(child, originIndex);
     return stateChanged;
   }
 
-  bool LODManager::tryDivide(Node& node, const NodeID& nodeInfo, const GlobalIndex& originIndex)
+  bool LODManager::tryDivide(Node& node, const GlobalIndex& originIndex)
   {
     ENG_PROFILE_FUNCTION();
 
-    i32 dividedLodLevel = nodeInfo.lodLevel() - 1;
-    for (const std::optional<NodeID>& neighbor : neighborQuery(nodeInfo))
+    i32 dividedLodLevel = node.id.lodLevel() - 1;
+    for (const std::optional<NodeID>& neighbor : neighborQuery(node))
       if (neighbor && std::abs(dividedLodLevel - neighbor->lodLevel()) > 1)
         return false;
 
-    if (!shouldBeDivided(nodeInfo, originIndex))
+    if (!shouldBeDivided(node, originIndex))
       return false;
 
     std::vector<DrawCommand> newDrawCommands;
-    std::vector<NodeID> removedNodes = { nodeInfo };
+    std::vector<NodeID> removedNodes = { node.id };
 
     node.divide();
-    node.children.forEach([this, &nodeInfo, &newDrawCommands](const BlockIndex& childIndex, Node& child)
-    {
-      std::optional<DrawCommand> drawCommand = createNewMesh(child, nodeInfo.child(childIndex));
-      if (drawCommand)
+    for (Node& child : node.children)
+      if (std::optional<DrawCommand> drawCommand = createNewMesh(child))
         newDrawCommands.push_back(std::move(*drawCommand));
-    });
 
-    for (const GlobalBox& adjustmentRegion : eng::math::FaceInteriors(nodeInfo.boundingBox().expand()))
+    for (const GlobalBox& adjustmentRegion : eng::math::FaceInteriors(node.id.boundingBox().expand()))
       createAdjustedMeshesInRegion(newDrawCommands, adjustmentRegion);
 
     m_StateChangeQueue.emplace(std::move(newDrawCommands), std::move(removedNodes));
     return true;
   }
 
-  bool LODManager::tryCombine(Node& parentNode, const NodeID& nodeInfo, const GlobalIndex& originIndex)
+  bool LODManager::tryCombine(Node& parentNode, const GlobalIndex& originIndex)
   {
     ENG_PROFILE_FUNCTION();
 
-    for (const std::optional<NodeID>& neighbor : neighborQuery(nodeInfo))
-      if (neighbor && std::abs(nodeInfo.lodLevel() - neighbor->lodLevel()) > 1)
+    for (const std::optional<NodeID>& neighbor : neighborQuery(parentNode))
+      if (neighbor && std::abs(parentNode.id.lodLevel() - neighbor->lodLevel()) > 1)
         return false;
 
-    for (const GlobalBox& faceNeighborRegion : eng::math::FaceInteriors(nodeInfo.boundingBox().expand()))
+    for (const GlobalBox& faceNeighborRegion : eng::math::FaceInteriors(parentNode.id.boundingBox().expand()))
     {
       std::vector<NodeID> faceNeighbors = find(faceNeighborRegion);
       for (const NodeID& neighbor : faceNeighbors)
@@ -686,43 +692,41 @@ namespace newLod
           return false;
     }
 
-    if (shouldBeDivided(nodeInfo, originIndex))
+    if (shouldBeDivided(parentNode, originIndex))
       return false;
 
     std::vector<DrawCommand> newDrawCommands;
     std::vector<NodeID> removedNodes;
 
+    for (Node& child : parentNode.children)
+      removedNodes.push_back(child.id);
     parentNode.combine();
-    eng::algo::forEach(parentNode.children.bounds(), [&nodeInfo, &removedNodes](const BlockIndex& childIndex)
-    {
-      removedNodes.push_back(nodeInfo.child(childIndex));
-    });
 
-    std::optional<DrawCommand> drawCommand = createNewMesh(parentNode, nodeInfo);
+    std::optional<DrawCommand> drawCommand = createNewMesh(parentNode);
     if (drawCommand)
       newDrawCommands.push_back(std::move(*drawCommand));
 
-    for (const GlobalBox& adjustmentRegion : eng::math::FaceInteriors(nodeInfo.boundingBox().expand()))
+    for (const GlobalBox& adjustmentRegion : eng::math::FaceInteriors(parentNode.id.boundingBox().expand()))
       createAdjustedMeshesInRegion(newDrawCommands, adjustmentRegion);
 
     m_StateChangeQueue.emplace(std::move(newDrawCommands), std::move(removedNodes));
     return true;
   }
 
-  eng::EnumArray<std::optional<NodeID>, eng::math::Direction> LODManager::neighborQuery(const NodeID& nodeInfo) const
+  eng::EnumArray<std::optional<NodeID>, eng::math::Direction> LODManager::neighborQuery(const Node& node) const
   {
     eng::EnumArray<std::optional<NodeID>, eng::math::Direction> neighbors;
     for (eng::math::Direction face : eng::math::Directions())
     {
-      GlobalIndex offset = (eng::math::isUpstream(face) ? nodeInfo.size() : 1) * GlobalIndex::Dir(face);
-      neighbors[face] = find(nodeInfo.anchor() + offset);
+      GlobalIndex offset = (eng::math::isUpstream(face) ? node.id.size() : 1) * GlobalIndex::Dir(face);
+      neighbors[face] = find(node.id.anchor() + offset);
     }
     return neighbors;
   }
 
-  eng::EnumBitMask<eng::math::Direction> LODManager::transitionNeighbors(const NodeID& nodeInfo) const
+  eng::EnumBitMask<eng::math::Direction> LODManager::transitionNeighbors(const Node& node) const
   {
-    eng::EnumArray<std::optional<NodeID>, eng::math::Direction> neighborQueryResult = neighborQuery(nodeInfo);
+    eng::EnumArray<std::optional<NodeID>, eng::math::Direction> neighborQueryResult = neighborQuery(node);
 
     eng::EnumBitMask<eng::math::Direction> transitionNeighbors;
     for (eng::math::Direction face : eng::math::Directions())
@@ -731,9 +735,9 @@ namespace newLod
       if (!neighbor)
         continue;
 
-      if (neighbor->lodLevel() - nodeInfo.lodLevel() == 1)
+      if (neighbor->lodLevel() - node.id.lodLevel() == 1)
         transitionNeighbors.set(face);
-      else if (neighbor->lodLevel() - nodeInfo.lodLevel() > 1)
+      else if (neighbor->lodLevel() - node.id.lodLevel() > 1)
         ENG_WARN("LOD neighbor is more than one level lower resolution!");
     }
     return transitionNeighbors;
@@ -743,98 +747,114 @@ namespace newLod
   {
     if (!c_OctreeBounds.encloses(index))
       return std::nullopt;
-    return findImpl(m_Root, c_RootNodeID, index);
+    return findImpl(m_Root, index);
   }
 
-  std::optional<NodeID> LODManager::findImpl(const Node& branch, const NodeID& branchInfo, const GlobalIndex& index) const
+  std::optional<NodeID> LODManager::findImpl(const Node& node, const GlobalIndex& index) const
   {
-    if (branch.isLeaf())
-      return branchInfo;
+    if (node.isLeaf())
+      return node.id;
 
-    BlockIndex childIndex = branchInfo.childIndex(index);
-    return findImpl(branch.children(childIndex), branchInfo.child(childIndex), index);
+    uSize childIndex = Node::ChildBounds().linearIndexOf(node.id.childIndex(index));
+    return findImpl(node.children[childIndex], index);
   }
 
   std::vector<NodeID> LODManager::find(const GlobalBox& region) const
   {
     std::vector<NodeID> foundNodes;
-    findImpl(foundNodes, m_Root, c_RootNodeID, region);
+    findImpl(foundNodes, m_Root, region);
     return foundNodes;
   }
 
-  void LODManager::findImpl(std::vector<NodeID>& nodes, const Node& branch, const NodeID& branchInfo, const GlobalBox& region) const
+  void LODManager::findImpl(std::vector<NodeID>& nodes, const Node& node, const GlobalBox& region) const
   {
-    if (!region.overlapsWith(branchInfo.boundingBox()))
+    if (!region.overlapsWith(node.id.boundingBox()))
       return;
 
-    if (branch.isLeaf())
-      nodes.push_back(branchInfo);
+    if (node.isLeaf())
+      nodes.push_back(node.id);
     else
-      branch.children.forEach([this, &nodes, &branchInfo, &region](const BlockIndex& childIndex, const Node& child)
-      {
-        findImpl(nodes, child, branchInfo.child(childIndex), region);
-      });
+      for (const Node& child : node.children)
+        findImpl(nodes, child, region);
   }
 
-  std::optional<DrawCommand> LODManager::createNewMesh(Node& node, const NodeID& nodeInfo)
+  std::optional<DrawCommand> LODManager::createNewMesh(Node& node)
   {
-    if (nodeInfo.lodLevel() > param::HighestRenderableLODLevel())
+    if (node.id.lodLevel() > param::HighestRenderableLODLevel())
       return std::nullopt;
 
-    node.data = generateRenderData(nodeInfo);
+    node.data = generateRenderData(node.id);
     if (!node.data)
       return std::nullopt;
 
-    eng::EnumBitMask<eng::math::Direction> transitionFaces = transitionNeighbors(nodeInfo);
-    return createDrawCommand(*node.data, nodeInfo, transitionFaces);
+    eng::EnumBitMask<eng::math::Direction> transitionFaces = transitionNeighbors(node);
+    return createDrawCommand(*node.data, node.id, transitionFaces);
   }
 
-  std::optional<DrawCommand> LODManager::createAdjustedMesh(const Node& node, const NodeID& nodeID) const
+  std::optional<DrawCommand> LODManager::createAdjustedMesh(const Node& node) const
   {
     if (!node.data)
       return std::nullopt;
 
-    eng::EnumBitMask<eng::math::Direction> transitionFaces = transitionNeighbors(nodeID);
-    return createDrawCommand(*node.data, nodeID, transitionFaces);
+    eng::EnumBitMask<eng::math::Direction> transitionFaces = transitionNeighbors(node);
+    return createDrawCommand(*node.data, node.id, transitionFaces);
   }
 
   void LODManager::createAdjustedMeshesInRegion(std::vector<DrawCommand>& drawCommands, const GlobalBox& region) const
   {
-    createAdjustedMeshesInRegionImpl(drawCommands, m_Root, c_RootNodeID, region);
+    createAdjustedMeshesInRegionImpl(drawCommands, m_Root, region);
   }
 
-  void LODManager::createAdjustedMeshesInRegionImpl(std::vector<DrawCommand>& drawCommands, const Node& branch, const NodeID& branchInfo, const GlobalBox& region) const
+  void LODManager::createAdjustedMeshesInRegionImpl(std::vector<DrawCommand>& drawCommands, const Node& node, const GlobalBox& region) const
   {
-    if (!region.overlapsWith(branchInfo.boundingBox()))
+    if (!region.overlapsWith(node.id.boundingBox()))
       return;
 
-    if (branch.isLeaf())
+    if (node.isLeaf())
     {
-      if (std::optional<DrawCommand> drawCommand = createAdjustedMesh(branch, branchInfo))
+      if (std::optional<DrawCommand> drawCommand = createAdjustedMesh(node))
         drawCommands.push_back(std::move(*drawCommand));
     }
     else
-      branch.children.forEach([this, &drawCommands, &branchInfo, &region](const BlockIndex& childIndex, const Node& child)
-      {
-        createAdjustedMeshesInRegionImpl(drawCommands, child, branchInfo.child(childIndex), region);
-      });
+      for (const Node& child : node.children)
+        createAdjustedMeshesInRegionImpl(drawCommands, child, region);
+  }
+
+  std::vector<Node*> LODManager::reverseLevelOrder()
+  {
+    std::vector<Node*> nodes;
+    reverseLevelOrderImpl(nodes, m_Root);
+    eng::algo::sort(nodes, [](Node* node) { return node->id.lodLevel(); }, eng::SortPolicy::Ascending);
+    return nodes;
+  }
+
+  void LODManager::reverseLevelOrderImpl(std::vector<Node*>& nodes, Node& node)
+  {
+    if (node.isLeaf())
+    {
+      nodes.push_back(&node);
+      return;
+    }
+    for (Node& child : node.children)
+      reverseLevelOrderImpl(nodes, child);
   }
 
   void newLod::LODManager::checkState() const
   {
-    checkStateImpl(m_Root, c_RootNodeID);
+    checkStateImpl(m_Root);
   }
 
-  void LODManager::checkStateImpl(const Node& node, const NodeID& nodeInfo) const
+  void LODManager::checkStateImpl(const Node& node) const
   {
     if (node.isLeaf())
     {
-      for (const GlobalBox& neighborBox : eng::math::FaceInteriors(nodeInfo.boundingBox().expand()))
+      for (const GlobalBox& neighborBox : eng::math::FaceInteriors(node.id.boundingBox().expand()))
         for (const NodeID& neighbor : find(neighborBox))
-          if (std::abs(nodeInfo.lodLevel() - neighbor.lodLevel()) > 1)
+          if (std::abs(node.id.lodLevel() - neighbor.lodLevel()) > 1)
             ENG_ERROR("LOD tree is in incorrect state!");
       return;
     }
-    node.children.forEach([this, &nodeInfo](const BlockIndex& childIndex, const Node& child) { checkStateImpl(child, nodeInfo.child(childIndex)); });
+    for (const Node& child : node.children)
+      checkStateImpl(child);
   }
 }
