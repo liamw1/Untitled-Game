@@ -4,7 +4,7 @@
 #include "Indexing/Operations.h"
 #include "World/Chunk/Chunk.h"
 
-namespace newLod
+namespace lod
 {
   bool NodeID::operator==(const NodeID& other) const = default;
 

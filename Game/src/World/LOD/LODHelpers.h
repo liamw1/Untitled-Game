@@ -1,7 +1,7 @@
 #pragma once
 #include "NodeID.h"
 
-namespace newLod
+namespace lod
 {
   struct Vertex
   {

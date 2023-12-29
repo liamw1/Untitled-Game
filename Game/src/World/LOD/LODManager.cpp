@@ -4,7 +4,7 @@
 #include "Util/TransVoxel.h"
 #include "World/Chunk/Chunk.h"
 
-namespace newLod
+namespace lod
 {
   static constexpr u64 c_RootNodeSize = eng::math::pow2<u64>(param::MaxNodeDepth());
   static constexpr GlobalIndex c_RootNodeAnchor = -eng::arithmeticCast<globalIndex_t>(c_RootNodeSize / 2) * GlobalIndex(1);
@@ -816,7 +816,7 @@ namespace newLod
         reverseLevelOrderImpl(nodes, child);
   }
 
-  void newLod::LODManager::checkState() const
+  void LODManager::checkState() const
   {
     checkStateImpl(m_Root);
   }

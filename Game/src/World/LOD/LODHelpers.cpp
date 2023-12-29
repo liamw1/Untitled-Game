@@ -2,7 +2,7 @@
 #include "LODHelpers.h"
 #include "GlobalParameters.h"
 
-namespace newLod
+namespace lod
 {
   Vertex::Vertex(const eng::math::Float3& position, const eng::math::Float3& isoNormal, const std::array<i32, 2>& textureIndices, const eng::math::Float2& textureWeights)
     : position(position), isoNormal(isoNormal), textureIndices(textureIndices), textureWeights(textureWeights) {}

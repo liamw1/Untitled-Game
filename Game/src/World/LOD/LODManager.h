@@ -10,7 +10,7 @@
   many polygons as chunks, while at high LOD levels individual polygons can
   span multiple chunks.
 */
-namespace newLod
+namespace lod
 {
   class LODManager
   {

@@ -14,7 +14,7 @@ constexpr eng::math::Vec4 operator*(eng::math::Vec4 v, eng::math::Vec4 u) { retu
 */
 static length_t fract(length_t x) { return x - floor(x); }
 
-eng::math::Vec2 hash(const eng::math::Vec2& v)
+static eng::math::Vec2 hash(const eng::math::Vec2& v)
 {
   eng::math::Vec2 p(glm::dot(v, eng::math::Vec2(127.1, 311.7)), glm::dot(v, eng::math::Vec2(269.5, 183.3)));
   return 2 * glm::fract(43758.5453123 * sin(p)) - eng::math::Vec2(1.0);

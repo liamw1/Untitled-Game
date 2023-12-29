@@ -13,7 +13,7 @@ struct RayIntersection
 class World
 {
   ChunkManager m_ChunkManager;
-  newLod::LODManager m_LODManager;
+  lod::LODManager m_LODManager;
   RayIntersection m_PlayerRayCast;
   bool m_RenderingPaused = false;
 

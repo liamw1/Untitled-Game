@@ -1,7 +1,7 @@
 #pragma once
 #include "Indexing/Definitions.h"
 
-namespace newLod
+namespace lod
 {
   class NodeID
   {
@@ -34,9 +34,9 @@ namespace newLod
 namespace std
 {
   template<>
-  struct hash<newLod::NodeID>
+  struct hash<lod::NodeID>
   {
-    uSize operator()(const newLod::NodeID& nodeID) const
+    uSize operator()(const lod::NodeID& nodeID) const
     {
       static constexpr i32 stride = numeric_limits<globalIndex_t>::digits;
       return stride * hash<GlobalIndex>()(nodeID.anchor()) + nodeID.depth();
