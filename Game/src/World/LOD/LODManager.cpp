@@ -596,7 +596,7 @@ namespace newLod
     ENG_PROFILE_FUNCTION();
 
     if (!m_UpdateFuture.valid() || eng::thread::isReady(m_UpdateFuture))
-      m_UpdateFuture = m_ThreadPool.submit(eng::thread::Priority::Low, &LODManager::updateTask, this);
+      m_UpdateFuture = m_ThreadPool.submit(eng::thread::Priority::Low, &LODManager::updateTask, this, player::originIndex());
 
     /*
       We may want to limit the number of state changes per function call to reduce lag spikes.
@@ -611,42 +611,22 @@ namespace newLod
     }
   }
 
-  void LODManager::updateTask()
+  void LODManager::updateTask(const GlobalIndex& originIndex)
   {
     ENG_PROFILE_FUNCTION();
 
-    while (updateRecursively(m_Root, player::originIndex()))
+    std::vector<Node*> nodes = reverseLevelOrder();
+    std::vector<Node*>::iterator branchNodesBegin = eng::algo::partition(nodes, [this, &originIndex](Node* node)
     {
-    }
-  }
-
-  bool LODManager::updateNew(const GlobalIndex& originIndex)
-  {
-    // std::vector<Node*> nodes = reverseLevelOrder();
-    // for (Node* node : nodes)
-    // {
-    // 
-    // }
-    return true;
-  }
-
-  bool LODManager::updateRecursively(Node& node, const GlobalIndex& originIndex)
-  {
-    bool stateChanged = false;
-    if (node.id.lodLevel() <= c_MinLODLevel)
-      return stateChanged;
-
-    if (node.isLeaf())
-      stateChanged |= tryDivide(node, originIndex);
-    else if (!node.hasGrandChildren())
-      stateChanged |= tryCombine(node, originIndex);
-
-    if (node.isLeaf())
-      return stateChanged;
-
-    for (Node& child : node.children)
-      stateChanged |= updateRecursively(child, originIndex);
-    return stateChanged;
+      if (node->isLeaf() && node->id.lodLevel() > c_MinLODLevel)
+        tryDivide(*node, originIndex);
+      return node->isLeaf();
+    });
+    std::for_each(branchNodesBegin, nodes.end(), [this, &originIndex](Node* node)
+    {
+      if (!node->hasGrandChildren())
+        tryCombine(*node, originIndex);
+    });
   }
 
   bool LODManager::tryDivide(Node& node, const GlobalIndex& originIndex)
@@ -830,13 +810,10 @@ namespace newLod
 
   void LODManager::reverseLevelOrderImpl(std::vector<Node*>& nodes, Node& node)
   {
-    if (node.isLeaf())
-    {
-      nodes.push_back(&node);
-      return;
-    }
-    for (Node& child : node.children)
-      reverseLevelOrderImpl(nodes, child);
+    nodes.push_back(&node);
+    if (!node.isLeaf())
+      for (Node& child : node.children)
+        reverseLevelOrderImpl(nodes, child);
   }
 
   void newLod::LODManager::checkState() const

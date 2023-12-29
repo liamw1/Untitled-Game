@@ -177,6 +177,12 @@ namespace eng::algo
     return std::partition(std::begin(container), std::end(container), std::forward<P>(predicate));
   }
 
+  template<IterableContainer C, std::predicate<detail::containedType<C>> P>
+  constexpr auto removeIf(C& container, P&& predicate) -> decltype(std::begin(container))
+  {
+    return std::remove_if(std::begin(container), std::end(container), std::forward<P>(predicate));
+  }
+
   template<IterableContainer C, std::convertible_to<detail::containedType<C>> T>
   constexpr void fill(C& container, T&& value)
   {

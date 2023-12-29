@@ -33,9 +33,7 @@ namespace newLod
     void update();
 
   private:
-    void updateTask();
-    bool updateNew(const GlobalIndex& originIndex);
-    bool updateRecursively(Node& node, const GlobalIndex& originIndex);
+    void updateTask(const GlobalIndex& originIndex);
 
     bool tryDivide(Node& leafNode, const GlobalIndex& originIndex);
     bool tryCombine(Node& parentNode, const GlobalIndex& originIndex);
