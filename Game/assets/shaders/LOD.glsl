@@ -16,10 +16,9 @@ layout(std430, binding = 2) buffer LODAnchors   // Maybe share this buffer with 
 
 layout(binding = 0) uniform sampler2DArray u_TextureArray;
 
-layout(location = 0) in  vec3 a_Position;
-layout(location = 1) in  vec3 a_IsoNormal;
-layout(location = 2) in ivec2 a_TextureIndices;
-layout(location = 3) in  vec2 a_TextureWeights;
+layout(location = 0) in vec3 a_Position;
+layout(location = 1) in vec3 a_IsoNormal;
+layout(location = 2) in int  a_TextureIndex;
 
 layout(location = 0) out vec3 v_LocalWorldPosition;
 layout(location = 1) out vec4 v_Color;
@@ -28,8 +27,7 @@ void main()
 {
   v_LocalWorldPosition = a_Position;
   gl_Position = u_ViewProjection * vec4(u_AnchorPosition[gl_DrawID].xyz + a_Position, 1.0f);
-
-  v_Color = a_TextureWeights[0] * u_AverageColor[a_TextureIndices[0]] + a_TextureWeights[1] * u_AverageColor[a_TextureIndices[1]];
+  v_Color = u_AverageColor[a_TextureIndex];
 }
 
 

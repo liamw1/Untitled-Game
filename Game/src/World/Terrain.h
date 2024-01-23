@@ -2,7 +2,7 @@
 #include "Biome.h"
 #include "Util/CompoundType.h"
 
-namespace terrain
+namespace oldTerrain
 {
   class CompoundSurfaceData
   {

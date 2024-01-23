@@ -8,7 +8,7 @@ namespace eng
 {
   const char* ApplicationCommandLineArgs::operator[](i32 index) const
   {
-    ENG_CORE_ASSERT(debug::boundsCheck(index, 0, count), "Index is out of bounds!");
+    ENG_CORE_ASSERT(withinBounds(index, 0, count), "Index is out of bounds!");
     return args[index];
   }
 

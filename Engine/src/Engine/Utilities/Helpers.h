@@ -19,4 +19,11 @@ namespace eng
   {
     T operator()(const T& obj) const { return obj; } 
   };
+
+  // Returns true if value is on the interval [a, b).
+  template<std::three_way_comparable T, std::convertible_to<T> A, std::convertible_to<T> B>
+  constexpr bool withinBounds(T value, A a, B b)
+  {
+    return a <= value && value < b;
+  }
 }

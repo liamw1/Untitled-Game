@@ -30,7 +30,7 @@ namespace eng
     const T& operator[](uSize index) const
     {
       ENG_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
-      ENG_CORE_ASSERT(debug::boundsCheck(index, 0, N), "Index is out of bounds!");
+      ENG_CORE_ASSERT(withinBounds(index, 0, N), "Index is out of bounds!");
       return m_Data[index];
     }
 

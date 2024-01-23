@@ -39,6 +39,7 @@
 #include "Engine/Math/IBox3.h"
 #include "Engine/Math/IVec2.h"
 #include "Engine/Math/IVec3.h"
+#include "Engine/Math/Noise.h"
 #include "Engine/Math/Vec.h"
 #include "Engine/Math/ViewFrustum.h"
 

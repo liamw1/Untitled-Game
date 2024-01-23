@@ -35,10 +35,6 @@
 */
 namespace eng::debug
 {
-  // Returns true if value is on the interval [a, b).
-  template<std::three_way_comparable T, std::convertible_to<T> A, std::convertible_to<T> B>
-  constexpr bool boundsCheck(T value, A a, B b) { return a <= value && value < b; }
-
   // Returns true if value is equal to one of the arguments.
   template<std::equality_comparable T, std::convertible_to<T>... Args>
   constexpr bool equalsOneOf(T value, Args... args) { return ((value == args) || ...); }

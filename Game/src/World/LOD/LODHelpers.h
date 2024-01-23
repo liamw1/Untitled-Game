@@ -1,5 +1,6 @@
 #pragma once
 #include "NodeID.h"
+#include "Block/Block.h"
 
 namespace lod
 {
@@ -7,10 +8,9 @@ namespace lod
   {
     eng::math::Float3 position;
     eng::math::Float3 isoNormal;
-    std::array<i32, 2> textureIndices;
-    eng::math::Float2 textureWeights;
+    i32 textureIndex;
 
-    Vertex(const eng::math::Float3& position, const eng::math::Float3& isoNormal, const std::array<i32, 2>& textureIndices, const eng::math::Float2& textureWeights);
+    Vertex(const eng::math::Float3& position, const eng::math::Float3& isoNormal, block::Type blockType);
   };
 
   struct Mesh

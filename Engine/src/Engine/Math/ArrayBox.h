@@ -38,7 +38,7 @@ namespace eng::math
     ArrayBoxStrip<T, IntType> operator[](IntType index) { ENG_MUTABLE_VERSION(operator[], index); }
     const ArrayBoxStrip<T, IntType> operator[](IntType index) const
     {
-      ENG_CORE_ASSERT(debug::boundsCheck(index, m_Bounds.min.i, m_Bounds.max.i + 1), "Index is out of bounds!");
+      ENG_CORE_ASSERT(withinBounds(index, m_Bounds.min.i, m_Bounds.max.i + 1), "Index is out of bounds!");
       return ArrayBoxStrip<T, IntType>(m_Begin + m_Bounds.extents().j * (index - m_Bounds.min.i), m_Bounds.min.j);
     }
 
@@ -99,7 +99,7 @@ namespace eng::math
     const Layer operator[](IntType index) const
     {
       ENG_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
-      ENG_CORE_ASSERT(debug::boundsCheck(index, m_Bounds.min.i, m_Bounds.max.i + 1), "Index is out of bounds!");
+      ENG_CORE_ASSERT(withinBounds(index, m_Bounds.min.i, m_Bounds.max.i + 1), "Index is out of bounds!");
       IBox2<IntType> layerBounds(m_Bounds.min.j, m_Bounds.min.k, m_Bounds.max.j, m_Bounds.max.k);
       return Layer(m_Data.get() + m_Strides.i * (index - m_Bounds.min.i), layerBounds);
     }

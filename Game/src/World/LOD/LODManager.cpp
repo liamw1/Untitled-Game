@@ -3,6 +3,7 @@
 #include "Player/Player.h"
 #include "Util/TransVoxel.h"
 #include "World/Chunk/Chunk.h"
+#include "World/NewTerrain.h"
 
 namespace lod
 {
@@ -22,17 +23,21 @@ namespace lod
   static constexpr u32 c_SSBOSize = eng::math::pow2<u32>(20);
   static std::unique_ptr<eng::Shader> s_Shader;
   static std::unique_ptr<eng::ShaderBufferStorage> s_SSBO;
-  static const eng::mem::BufferLayout s_VertexBufferLayout = { { eng::mem::DataType::Float3, "a_Position"       },
-                                                               { eng::mem::DataType::Float3, "a_IsoNormal"      },
-                                                               { eng::mem::DataType::Int2,   "a_TextureIndices" },
-                                                               { eng::mem::DataType::Float2, "a_TextureWeighs"  } };
+  static const eng::mem::BufferLayout s_VertexBufferLayout = { { eng::mem::DataType::Float3, "a_Position"     },
+                                                               { eng::mem::DataType::Float3, "a_IsoNormal"    },
+                                                               { eng::mem::DataType::Int,    "a_TextureIndex" } };
 
   struct NoiseData
   {
     eng::math::Vec3 position;
     eng::math::Vec3 normal;
+    block::Type blockType;
+  };
 
-    terrain::CompoundSurfaceData surfaceData;
+  struct SurfaceData
+  {
+    length_t elevation;
+    block::Type blockType;
   };
 
   // LOD smoothness parameter, must be in the range [0.0, 1.0]
@@ -55,35 +60,36 @@ namespace lod
     return cellIndex + BlockIndex(0, faceIndex % 3, faceIndex / 3).permute(eng::math::axisOf(face));
   }
 
-  static BlockArrayRect<terrain::CompoundSurfaceData> generateNoise(const NodeID& node)
+  static BlockArrayRect<SurfaceData> generateNoise(const NodeID& node)
   {
     length_t cellLength = node.length() / c_LODNumCells;
     eng::math::Vec2 lodAnchorXY = Chunk::Length() * static_cast<eng::math::Vec2>(node.anchor());
 
-    BlockArrayRect<terrain::CompoundSurfaceData> noiseValues(static_cast<BlockRect>(c_LODSampleBounds), eng::AllocationPolicy::ForOverwrite);
-    noiseValues.forEach([cellLength, lodAnchorXY](BlockIndex2D index, terrain::CompoundSurfaceData& surfaceData)
+    BlockArrayRect<SurfaceData> noiseValues(static_cast<BlockRect>(c_LODSampleBounds), eng::AllocationPolicy::ForOverwrite);
+    noiseValues.forEach([cellLength, lodAnchorXY](BlockIndex2D index, SurfaceData& surfaceData)
     {
       // Sample noise at cell corners
       eng::math::Vec2 pointXY = lodAnchorXY + cellLength * static_cast<eng::math::Vec2>(index);
-      surfaceData = terrain::getSurfaceInfo(pointXY);
+      surfaceData.elevation = terrain::getApproximateElevation(pointXY);
+      surfaceData.blockType = terrain::getApproximateBlockType(pointXY);
     });
     return noiseValues;
   }
 
-  static bool needsMesh(const NodeID& node, const BlockArrayRect<terrain::CompoundSurfaceData>& noiseValues)
+  static bool needsMesh(const NodeID& node, const BlockArrayRect<SurfaceData>& noiseValues)
   {
     length_t lodFloor = node.anchor().k * Chunk::Length();
     length_t lodCeiling = lodFloor + node.length();
 
     // Check if LOD is fully below or above surface, if so, no need to generate mesh
-    return eng::algo::anyOf(noiseValues, [lodFloor, lodCeiling](const terrain::CompoundSurfaceData& surfaceData)
+    return eng::algo::anyOf(noiseValues, [lodFloor, lodCeiling](const SurfaceData& surfaceData)
     {
-      length_t terrainHeight = surfaceData.getElevation();
+      length_t terrainHeight = surfaceData.elevation;
       return lodFloor <= terrainHeight && terrainHeight <= lodCeiling;
     });
   }
 
-  static BlockArrayRect<eng::math::Vec3> calculateNoiseNormals(const NodeID& node, const BlockArrayRect<terrain::CompoundSurfaceData>& noiseValues)
+  static BlockArrayRect<eng::math::Vec3> calculateNoiseNormals(const NodeID& node, const BlockArrayRect<SurfaceData>& noiseValues)
   {
     length_t cellLength = node.length() / c_LODNumCells;
     eng::math::Vec2 lodAnchorXY = Chunk::Length() * static_cast<eng::math::Vec2>(node.anchor());
@@ -100,37 +106,37 @@ namespace lod
       if (index.i == 0)
       {
         eng::math::Vec2 pointXY = lodAnchorXY + cellLength * static_cast<eng::math::Vec2>(indexLC);
-        fLC = terrain::getElevation(pointXY);
+        fLC = terrain::getApproximateElevation(pointXY);
       }
       else
-        fLC = noiseValues(indexLC).getElevation();
+        fLC = noiseValues(indexLC).elevation;
 
       BlockIndex2D indexUC = index + BlockIndex2D(1, 0);
       if (index.i == c_LODNumCells)
       {
         eng::math::Vec2 pointXY = lodAnchorXY + cellLength * static_cast<eng::math::Vec2>(indexUC);
-        fUC = terrain::getElevation(pointXY);
+        fUC = terrain::getApproximateElevation(pointXY);
       }
       else
-        fUC = noiseValues(indexUC).getElevation();
+        fUC = noiseValues(indexUC).elevation;
 
       BlockIndex2D indexCL = index + BlockIndex2D(0, -1);
       if (index.j == 0)
       {
         eng::math::Vec2 pointXY = lodAnchorXY + cellLength * static_cast<eng::math::Vec2>(indexCL);
-        fCL = terrain::getElevation(pointXY);
+        fCL = terrain::getApproximateElevation(pointXY);
       }
       else
-        fCL = noiseValues(indexCL).getElevation();
+        fCL = noiseValues(indexCL).elevation;
 
       BlockIndex2D indexCU = index + BlockIndex2D(0, 1);
       if (index.j == c_LODNumCells)
       {
         eng::math::Vec2 pointXY = lodAnchorXY + cellLength * static_cast<eng::math::Vec2>(indexCU);
-        fCU = terrain::getElevation(pointXY);
+        fCU = terrain::getApproximateElevation(pointXY);
       }
       else
-        fCU = noiseValues(indexCU).getElevation();
+        fCU = noiseValues(indexCU).elevation;
 
       eng::math::Vec2 gradient{};
       gradient.x = (fUC - fLC) / (2 * cellLength);
@@ -142,7 +148,7 @@ namespace lod
   }
 
   static NoiseData interpolateNoiseData(const NodeID& node,
-                                        const BlockArrayRect<terrain::CompoundSurfaceData>& noiseValues,
+                                        const BlockArrayRect<SurfaceData>& noiseValues,
                                         const BlockArrayRect<eng::math::Vec3>& noiseNormals,
                                         const BlockIndex& cornerA, const BlockIndex& cornerB, f32 smoothness)
   {
@@ -156,25 +162,25 @@ namespace lod
     length_t zA = lodFloor + cornerA.k * cellLength;
     length_t zB = lodFloor + cornerB.k * cellLength;
 
-    const terrain::CompoundSurfaceData& surfaceDataA = noiseValues(static_cast<BlockIndex2D>(cornerA));
-    const terrain::CompoundSurfaceData& surfaceDataB = noiseValues(static_cast<BlockIndex2D>(cornerB));
+    const SurfaceData& surfaceDataA = noiseValues(static_cast<BlockIndex2D>(cornerA));
+    const SurfaceData& surfaceDataB = noiseValues(static_cast<BlockIndex2D>(cornerB));
 
     // Isovalues of corners A and B
-    length_t tA = surfaceDataA.getElevation() - zA;
-    length_t tB = surfaceDataB.getElevation() - zB;
+    length_t tA = surfaceDataA.elevation - zA;
+    length_t tB = surfaceDataB.elevation - zB;
 
     // Fraction of distance along edge vertex should be placed
     f32 t = eng::arithmeticCastUnchecked<f32>(tA / (tA - tB));
 
     eng::math::Vec3 vertexPosition = semiSmoothInterpolation(posA, posB, t, smoothness);
-    terrain::CompoundSurfaceData surfaceData = semiSmoothInterpolation(surfaceDataA, surfaceDataB, t, smoothness);
 
     // Estimate isosurface normal using linear interpolation between corners
     const eng::math::Vec3& n0 = noiseNormals(static_cast<BlockIndex2D>(cornerA));
     const eng::math::Vec3& n1 = noiseNormals(static_cast<BlockIndex2D>(cornerB));
     eng::math::Vec3 isoNormal = semiSmoothInterpolation(n0, n1, t, smoothness);
 
-    return { vertexPosition, isoNormal, surfaceData };
+    block::Type blockType = t < 0.5f ? surfaceDataA.blockType : surfaceDataB.blockType;
+    return { vertexPosition, isoNormal, blockType };
   }
 
   // Formulas can be found in section 4.4 of TransVoxel paper
@@ -235,7 +241,7 @@ namespace lod
     return adjustedPrimaryVertex(adjustedVertex, node, transitionFaces);
   }
 
-  static Mesh generatePrimaryMesh(const NodeID& node, const BlockArrayRect<terrain::CompoundSurfaceData>& noiseValues, const BlockArrayRect<eng::math::Vec3>& noiseNormals)
+  static Mesh generatePrimaryMesh(const NodeID& node, const BlockArrayRect<SurfaceData>& noiseValues, const BlockArrayRect<eng::math::Vec3>& noiseNormals)
   {
     ENG_PROFILE_FUNCTION();
 
@@ -267,7 +273,7 @@ namespace lod
       {
         BlockIndex sampleIndex = cellIndex + BlockIndex(cornerIndex % 2, (cornerIndex / 2) % 2, cornerIndex / 4);
         length_t sampleZ = node.anchor().k * Chunk::Length() + sampleIndex.k * cellLength;
-        if (noiseValues(static_cast<BlockIndex2D>(sampleIndex)).getElevation() > sampleZ)
+        if (noiseValues(static_cast<BlockIndex2D>(sampleIndex)).elevation > sampleZ)
           cellCase |= eng::bit(cornerIndex);
       }
       if (cellCase == 0 || cellCase == 255) // These cases don't have triangles
@@ -334,7 +340,7 @@ namespace lod
         NoiseData noiseData = interpolateNoiseData(node, noiseValues, noiseNormals, cornerIndexA, cornerIndexB, smoothness);
 
         u32 vertexCount = eng::arithmeticCastUnchecked<u32>(primaryMesh.vertices.size());
-        primaryMesh.vertices.emplace_back(noiseData.position, noiseData.normal, noiseData.surfaceData.getTextureIndices(), noiseData.surfaceData.getTextureWeights());
+        primaryMesh.vertices.emplace_back(noiseData.position, noiseData.normal, noiseData.blockType);
         primaryMesh.indices.push_back(vertexCount);
         prevCellVertexIndices[edgeIndex] = vertexCount;
 
@@ -345,7 +351,7 @@ namespace lod
   }
 
   static Mesh generateTransitionMesh(const NodeID& node,
-                                     const BlockArrayRect<terrain::CompoundSurfaceData>& noiseValues,
+                                     const BlockArrayRect<SurfaceData>& noiseValues,
                                      const BlockArrayRect<eng::math::Vec3>& noiseNormals,
                                      eng::math::Direction face)
   {
@@ -384,7 +390,7 @@ namespace lod
       {
         BlockIndex sampleIndex = transitionCellFaceIndexToSampleIndex(cellIndex, transitionCellFaceIndex, face);
         length_t sampleZ = node.anchor().k * Chunk::Length() + sampleIndex.k * cellLength;
-        if (noiseValues[sampleIndex.i][sampleIndex.j].getElevation() > sampleZ)
+        if (noiseValues[sampleIndex.i][sampleIndex.j].elevation > sampleZ)
           cellCase |= eng::bit(c_TransitionCellFaceIndexToBitFlip[transitionCellFaceIndex]);
       }
       if (cellCase == 0 || cellCase == 511) // These cases don't have triangles
@@ -460,7 +466,7 @@ namespace lod
           noiseData.position -= c_TransitionCellFractionalWidth * cellLength * static_cast<eng::math::Vec3>(BlockIndex::Dir(face));
 
         u32 vertexCount = eng::arithmeticCastUnchecked<u32>(transitionMesh.vertices.size());
-        transitionMesh.vertices.emplace_back(noiseData.position, noiseData.normal, noiseData.surfaceData.getTextureIndices(), noiseData.surfaceData.getTextureWeights());
+        transitionMesh.vertices.emplace_back(noiseData.position, noiseData.normal, noiseData.blockType);
         transitionMesh.indices.push_back(vertexCount);
         prevCellVertexIndices[edgeIndex] = vertexCount;
 
@@ -480,7 +486,7 @@ namespace lod
     ENG_PROFILE_FUNCTION();
 
     // Generate voxel data using heightmap
-    BlockArrayRect<terrain::CompoundSurfaceData> noiseValues = generateNoise(node);
+    BlockArrayRect<SurfaceData> noiseValues = generateNoise(node);
 
     if (!needsMesh(node, noiseValues))
       return nullptr;

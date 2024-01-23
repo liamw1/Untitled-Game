@@ -3,7 +3,7 @@
 #include "Chunk/Chunk.h"
 #include "Util/Noise.h"
 
-namespace terrain
+namespace oldTerrain
 {
   CompoundSurfaceData::CompoundSurfaceData()
     : CompoundSurfaceData(0, block::ID::Null) {}

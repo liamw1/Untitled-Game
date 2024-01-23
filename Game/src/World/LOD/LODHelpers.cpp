@@ -4,8 +4,8 @@
 
 namespace lod
 {
-  Vertex::Vertex(const eng::math::Float3& position, const eng::math::Float3& isoNormal, const std::array<i32, 2>& textureIndices, const eng::math::Float2& textureWeights)
-    : position(position), isoNormal(isoNormal), textureIndices(textureIndices), textureWeights(textureWeights) {}
+  Vertex::Vertex(const eng::math::Float3& position, const eng::math::Float3& isoNormal, block::Type blockType)
+    : position(position), isoNormal(isoNormal), textureIndex(static_cast<i32>(blockType.texture(eng::math::Direction::Top))) {}
 
 
 

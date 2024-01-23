@@ -53,7 +53,7 @@ namespace eng::math
     const Strip operator[](IntType index) const
     {
       ENG_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
-      ENG_CORE_ASSERT(debug::boundsCheck(index, m_Bounds.min.i, m_Bounds.max.i + 1), "Index is out of bounds!");
+      ENG_CORE_ASSERT(withinBounds(index, m_Bounds.min.i, m_Bounds.max.i + 1), "Index is out of bounds!");
       return Strip(m_Data.get() + m_Stride * (index - m_Bounds.min.i), m_Bounds.min.j);
     }
 

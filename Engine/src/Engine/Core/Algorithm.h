@@ -147,6 +147,17 @@ namespace eng::algo
     return std::find_if(std::begin(container), std::end(container), std::forward<P>(predicate));
   }
 
+  /*
+    \returns An iterator to the first element where transform(element) < value.
+             WARNING: Behaviour is undefined if the container is not sorted.
+  */
+  template<Iterable C, TransformToComparable<detail::containedType<C>> F>
+  constexpr auto lowerBound(const C& container, const std::invoke_result_t<F, detail::containedType<C>>& value, F&& transform) -> decltype(std::begin(container))
+  {
+    return std::lower_bound(std::begin(container), std::end(container), value,
+                            [&transform](const detail::containedType<C>& a, const std::invoke_result_t<F, detail::containedType<C>>& b) { return transform(a) < b; });
+  }
+
   template<std::random_access_iterator I, TransformToComparable<std::iter_value_t<I>> F>
   constexpr void sort(I first, I last, F&& transform, SortPolicy sortPolicy)
   {

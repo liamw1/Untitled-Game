@@ -1,6 +1,5 @@
 #pragma once
 #include "LODHelpers.h"
-#include "World/Terrain.h"
 
 /*
   Level of Detail (LOD) system.  The game world is partitioned with an octree,
