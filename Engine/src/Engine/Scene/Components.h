@@ -21,7 +21,7 @@ namespace eng::component
 
   struct Tag
   {
-    std::string name{};
+    std::string name;
   };
 
   struct Transform

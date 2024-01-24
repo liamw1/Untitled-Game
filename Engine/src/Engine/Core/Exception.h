@@ -5,12 +5,12 @@ namespace eng
   class Exception : public std::runtime_error
   {
   public:
-    Exception(const std::string& message);
+    Exception(std::string_view message);
   };
 
   class CoreException : public std::runtime_error
   {
   public:
-    CoreException(const std::string& message);
+    CoreException(std::string_view message);
   };
 }

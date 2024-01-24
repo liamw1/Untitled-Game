@@ -7,10 +7,10 @@ namespace eng::thread
   static const i32 s_MaxThreads = std::max(2, static_cast<i32>(std::thread::hardware_concurrency() / 2));
   static std::atomic_int s_AlloatedThreads = 0;
 
-  ThreadPool::ThreadPool(const std::string& name, i32 numberOfThreads)
+  ThreadPool::ThreadPool(std::string_view name, i32 numberOfThreads)
     : m_Stop(false), m_Name(name)
   {
-    std::string lastWord = numberOfThreads > 1 ? "threads" : "thread";
+    std::string_view lastWord = numberOfThreads > 1 ? "threads" : "thread";
     ENG_CORE_TRACE("{0} has allocated {1} {2}", name, numberOfThreads, lastWord);
     s_AlloatedThreads += numberOfThreads;
     if (s_AlloatedThreads > s_MaxThreads)
@@ -20,7 +20,7 @@ namespace eng::thread
       m_Threads.emplace_back(&ThreadPool::workerThread, this);
   }
 
-  ThreadPool::ThreadPool(const std::string& name, f64 proportionOfSystemThreads)
+  ThreadPool::ThreadPool(std::string_view name, f64 proportionOfSystemThreads)
     : ThreadPool(name, static_cast<i32>(proportionOfSystemThreads* s_MaxThreads)) {}
 
   ThreadPool::~ThreadPool()

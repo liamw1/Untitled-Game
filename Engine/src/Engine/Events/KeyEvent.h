@@ -14,7 +14,7 @@ namespace eng::event
     KeyPress(input::Key key, bool isRepeat = false);
 
     EnumBitMask<EventCategory> categoryFlags() const;
-    const char* name() const;
+    std::string_view name() const;
     std::string toString() const;
 
     input::Key keyCode() const;
@@ -29,7 +29,7 @@ namespace eng::event
     KeyRelease(input::Key key);
 
     EnumBitMask<EventCategory> categoryFlags() const;
-    const char* name() const;
+    std::string_view name() const;
     std::string toString() const;
 
     input::Key keyCode() const;
@@ -43,7 +43,7 @@ namespace eng::event
     KeyType(input::Key key);
 
     EnumBitMask<EventCategory> categoryFlags() const;
-    const char* name() const;
+    std::string_view name() const;
     std::string toString() const;
 
     input::Key keyCode() const;

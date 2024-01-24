@@ -9,12 +9,16 @@ int main(int argc, char** argv);
 
 namespace eng
 {
-  struct ApplicationCommandLineArgs
+  class ApplicationCommandLineArgs
   {
-    i32 count = 0;
-    char** args = nullptr;
+    i32 m_Count;
+    char** m_Args;
 
-    const char* operator[](i32 index) const;
+  public:
+    ApplicationCommandLineArgs();
+    ApplicationCommandLineArgs(i32 argCount, char** commandLineArgs);
+
+    std::string_view operator[](i32 index) const;
   };
 
   class Application
@@ -29,7 +33,7 @@ namespace eng
     std::chrono::steady_clock::time_point m_LastFrameTime;
 
   public:
-    Application(const std::string& name = "Engine", ApplicationCommandLineArgs args = ApplicationCommandLineArgs());
+    Application(std::string_view name = "Engine", ApplicationCommandLineArgs args = ApplicationCommandLineArgs());
     virtual ~Application();
 
     // Handler for all player input

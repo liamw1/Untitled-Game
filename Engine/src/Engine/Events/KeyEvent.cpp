@@ -7,7 +7,7 @@ namespace eng::event
     : m_Key(key), m_IsRepeat(isRepeat) {}
 
   EnumBitMask<EventCategory> KeyPress::categoryFlags() const { return { EventCategory::Keyboard, EventCategory::Input }; }
-  const char* KeyPress::name() const { return "KeyPress"; }
+  std::string_view KeyPress::name() const { return "KeyPress"; }
   std::string KeyPress::toString() const
   {
     std::stringstream ss;
@@ -24,7 +24,7 @@ namespace eng::event
     : m_Key(key) {}
 
   EnumBitMask<EventCategory> KeyRelease::categoryFlags() const { return { EventCategory::Keyboard, EventCategory::Input }; }
-  const char* KeyRelease::name() const { return "KeyRelease"; }
+  std::string_view KeyRelease::name() const { return "KeyRelease"; }
   std::string KeyRelease::toString() const
   {
     std::stringstream ss;
@@ -40,7 +40,7 @@ namespace eng::event
     : m_Key(key) {}
 
   EnumBitMask<EventCategory> KeyType::categoryFlags() const { return { EventCategory::Keyboard, EventCategory::Input }; }
-  const char* KeyType::name() const { return "KeyType"; }
+  std::string_view KeyType::name() const { return "KeyType"; }
   std::string KeyType::toString() const
   {
     std::stringstream ss;

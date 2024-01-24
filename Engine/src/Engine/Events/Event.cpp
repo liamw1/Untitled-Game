@@ -12,11 +12,11 @@ namespace eng::event
     }, m_Event);
   }
 
-  const char* Event::name() const
+  std::string_view Event::name() const
   {
     return std::visit([](auto&& rawEvent)
     {
-      static_assert(requires(decltype(rawEvent) e) { { e.name() } -> std::same_as<const char*>; }, "Event type does not have a valid name() function!");
+      static_assert(requires(decltype(rawEvent) e) { { e.name() } -> std::same_as<std::string_view>; }, "Event type does not have a valid name() function!");
       return rawEvent.name();
     }, m_Event);
   }
@@ -28,7 +28,7 @@ namespace eng::event
       if constexpr (requires(decltype(rawEvent) e) { { e.toString() } -> std::same_as<std::string>; })
         return rawEvent.toString();
       else
-        return rawEvent.name();
+        return std::string(rawEvent.name());
     }, m_Event);
   }
 

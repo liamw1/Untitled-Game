@@ -28,7 +28,7 @@ namespace eng::event
       : m_Event(e), m_Handled(false) {}
 
     EnumBitMask<EventCategory> categoryFlags() const;
-    const char* name() const;
+    std::string_view name() const;
     std::string toString() const;
 
     bool handled() const;

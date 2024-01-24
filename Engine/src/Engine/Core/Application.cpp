@@ -6,15 +6,21 @@
 
 namespace eng
 {
-  const char* ApplicationCommandLineArgs::operator[](i32 index) const
+  ApplicationCommandLineArgs::ApplicationCommandLineArgs()
+    : ApplicationCommandLineArgs(0, nullptr) {}
+
+  ApplicationCommandLineArgs::ApplicationCommandLineArgs(i32 argCount, char** commandLineArgs)
+    : m_Count(argCount), m_Args(commandLineArgs) {}
+
+  std::string_view ApplicationCommandLineArgs::operator[](i32 index) const
   {
-    ENG_CORE_ASSERT(withinBounds(index, 0, count), "Index is out of bounds!");
-    return args[index];
+    ENG_CORE_ASSERT(withinBounds(index, 0, m_Count), "Index is out of bounds!");
+    return m_Args[index];
   }
 
   Application* Application::s_Instance = nullptr;
 
-  Application::Application(const std::string& name, ApplicationCommandLineArgs args)
+  Application::Application(std::string_view name, ApplicationCommandLineArgs args)
     : m_CommandLineArgs(args),
       m_Running(true),
       m_Minimized(false),

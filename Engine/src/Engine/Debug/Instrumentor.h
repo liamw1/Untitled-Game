@@ -2,7 +2,7 @@
 #include "Engine/Core/FixedWidthTypes.h"
 #include "Engine/Utilities/Constraints.h"
 
-#define ENG_PROFILE 0
+#define ENG_PROFILE 1
 #if ENG_PROFILE
 #define ENG_PROFILE_BEGIN_SESSION(name, filepath)  ::eng::debug::Instrumentor::Get().beginSession(name, filepath)
 #define ENG_PROFILE_END_SESSION()                  ::eng::debug::Instrumentor::Get().endSession()
@@ -30,10 +30,10 @@ namespace eng::debug
     std::ofstream m_OutputStream;
 
   public:
-    void beginSession(const std::string& name, const std::string& filepath = "results.json");
+    void beginSession(std::string_view name, std::filesystem::path filepath = "results.json");
     void endSession();
 
-    void writeProfile(const std::string& name, const std::chrono::steady_clock::time_point start, const std::chrono::duration<f64, std::micro> elapsedTime, const std::thread::id threadID);
+    void writeProfile(std::string_view name, std::chrono::steady_clock::time_point start, std::chrono::duration<f64, std::micro> elapsedTime, std::thread::id threadID);
 
     static Instrumentor& Get();
 
@@ -52,12 +52,12 @@ namespace eng::debug
 
   class InstrumentationTimer
   {
-    const char* m_Name;
+    std::string m_Name;
     std::chrono::steady_clock::time_point m_StartTimepoint;
     bool m_Stopped;
 
   public:
-    InstrumentationTimer(const char* name);
+    InstrumentationTimer(std::string_view name);
     ~InstrumentationTimer();
 
     void stop();

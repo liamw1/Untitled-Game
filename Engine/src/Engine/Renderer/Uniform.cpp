@@ -4,7 +4,7 @@
 
 namespace eng
 {
-  Uniform::Uniform(const std::string& name, u32 binding, uSize size)
+  Uniform::Uniform(std::string_view name, u32 binding, uSize size)
     : m_Name(name),
       m_Binding(binding)
   {
@@ -26,7 +26,7 @@ namespace eng
     s_Uniforms[m_Binding].reset();
   }
 
-  const std::string& Uniform::name() const
+  std::string_view Uniform::name() const
   {
     return m_Name;
   }

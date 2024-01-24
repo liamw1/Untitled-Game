@@ -13,7 +13,7 @@ namespace eng::event
     MouseButtonPress(input::Mouse button);
 
     EnumBitMask<EventCategory> categoryFlags() const;
-    const char* name() const;
+    std::string_view name() const;
     std::string toString() const;
   };
 
@@ -25,7 +25,7 @@ namespace eng::event
     MouseButtonRelease(input::Mouse button);
 
     EnumBitMask<EventCategory> categoryFlags() const;
-    const char* name() const;
+    std::string_view name() const;
     std::string toString() const;
   };
 
@@ -38,7 +38,7 @@ namespace eng::event
     MouseMove(f32 x, f32 y);
 
     EnumBitMask<EventCategory> categoryFlags() const;
-    const char* name() const;
+    std::string_view name() const;
     std::string toString() const;
 
     f32 x() const;
@@ -54,7 +54,7 @@ namespace eng::event
     MouseScroll(f32 xOffset, f32 yOffset);
 
     EnumBitMask<EventCategory> categoryFlags() const;
-    const char* name() const;
+    std::string_view name() const;
     std::string toString() const;
 
     f32 xOffset() const;

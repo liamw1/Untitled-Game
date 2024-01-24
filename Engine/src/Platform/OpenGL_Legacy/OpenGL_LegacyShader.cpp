@@ -12,7 +12,7 @@ namespace eng
 {
   static constexpr i32 c_MaxShaders = 3;
 
-  static GLenum shaderTypeFromString(const std::string& type)
+  static GLenum shaderTypeFromString(std::string_view type)
   {
     if (type == "vertex")
       return GL_VERTEX_SHADER;
@@ -43,7 +43,7 @@ namespace eng
     glDeleteProgram(m_ShaderID);
   }
 
-  const std::string& OpenGL_LegacyShader::name() const
+  std::string_view OpenGL_LegacyShader::name() const
   {
     return m_Name;
   }

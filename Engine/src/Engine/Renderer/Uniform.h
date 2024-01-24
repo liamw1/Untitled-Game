@@ -14,10 +14,10 @@ namespace eng
     u32 m_Binding;
 
   public:
-    Uniform(const std::string& name, u32 binding, uSize size);
+    Uniform(std::string_view name, u32 binding, uSize size);
     ~Uniform();
 
-    const std::string& name() const;
+    std::string_view name() const;
 
     void write(const mem::UniformData& uniformData);
   };

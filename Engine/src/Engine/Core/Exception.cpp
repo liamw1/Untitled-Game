@@ -4,9 +4,9 @@
 
 namespace eng
 {
-  Exception::Exception(const std::string& message)
-    : std::runtime_error(message) { ENG_TERMINATE(message); }
+  Exception::Exception(std::string_view message)
+    : std::runtime_error(std::string(message)) { ENG_TERMINATE(message); }
 
-  CoreException::CoreException(const std::string& message)
-    : std::runtime_error(message) { ENG_CORE_TERMINATE(message); }
+  CoreException::CoreException(std::string_view message)
+    : std::runtime_error(std::string(message)) { ENG_CORE_TERMINATE(message); }
 }

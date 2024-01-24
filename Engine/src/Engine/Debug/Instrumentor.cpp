@@ -4,7 +4,7 @@
 
 namespace eng::debug
 {
-  void Instrumentor::beginSession(const std::string& name, const std::string& filepath)
+  void Instrumentor::beginSession(std::string_view name, std::filesystem::path filepath)
   {
     std::lock_guard lock(m_Mutex);
 
@@ -31,7 +31,7 @@ namespace eng::debug
     internalEndSession();
   }
 
-  void Instrumentor::writeProfile(const std::string& name, const std::chrono::steady_clock::time_point start, const std::chrono::duration<f64, std::micro> elapsedTime, const std::thread::id threadID)
+  void Instrumentor::writeProfile(std::string_view name, std::chrono::steady_clock::time_point start, std::chrono::duration<f64, std::micro> elapsedTime, std::thread::id threadID)
   {
     i64 startTimeInNanoseconds = std::chrono::time_point_cast<std::chrono::nanoseconds>(start).time_since_epoch().count();
 
@@ -93,7 +93,7 @@ namespace eng::debug
     }
   }
 
-  InstrumentationTimer::InstrumentationTimer(const char* name)
+  InstrumentationTimer::InstrumentationTimer(std::string_view name)
     : m_Name(name), m_StartTimepoint(std::chrono::steady_clock::now()), m_Stopped(false) {}
 
   InstrumentationTimer::~InstrumentationTimer()

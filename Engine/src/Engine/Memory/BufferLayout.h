@@ -36,7 +36,7 @@ namespace eng::mem
     u32 offset;
     bool normalized;
 
-    BufferElement(DataType type, const std::string& name, bool normalized = false);
+    BufferElement(DataType type, std::string_view name, bool normalized = false);
 
     /*
       Gets the number of components packed into the buffer element type.

@@ -15,8 +15,8 @@ namespace eng::thread
     std::string m_Name;
 
   public:
-    ThreadPool(const std::string& name, i32 numberOfThreads);
-    ThreadPool(const std::string& name, f64 proportionOfSystemThreads);
+    ThreadPool(std::string_view name, i32 numberOfThreads);
+    ThreadPool(std::string_view name, f64 proportionOfSystemThreads);
     ~ThreadPool();
 
     /*

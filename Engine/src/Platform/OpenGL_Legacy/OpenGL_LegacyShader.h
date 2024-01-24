@@ -13,7 +13,7 @@ namespace eng
     OpenGL_LegacyShader(const std::filesystem::path& filepath, const std::unordered_map<std::string, std::string>& preprocessorDefinitions);
     ~OpenGL_LegacyShader();
 
-    const std::string& name() const override;
+    std::string_view name() const override;
 
     void bind() const override;
     void unbind() const override;

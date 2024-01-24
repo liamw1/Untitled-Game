@@ -7,7 +7,7 @@ namespace eng::debug
   Timer::Timer()
   : Timer("Unnamed Timer") {}
   
-  Timer::Timer(const char* name)
+  Timer::Timer(std::string_view name)
     : m_Name(name), m_Duration(std::chrono::high_resolution_clock::duration::zero()) {}
   
   Timer::~Timer()

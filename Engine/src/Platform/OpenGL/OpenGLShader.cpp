@@ -14,7 +14,7 @@
 
 namespace eng
 {
-  static GLenum shaderTypeFromString(const std::string& type)
+  static GLenum shaderTypeFromString(std::string_view type)
   {
     if (type == "vertex")
       return GL_VERTEX_SHADER;
@@ -36,7 +36,7 @@ namespace eng
     throw CoreException("Invalid openGL shader stage!");
   }
 
-  static const char* openGLShaderStageToString(GLenum stage)
+  static std::string_view openGLShaderStageToString(GLenum stage)
   {
     switch (stage)
     {
@@ -56,8 +56,7 @@ namespace eng
   {
     ENG_PROFILE_FUNCTION();
 
-    std::string source = ReadFile(filepath);
-    std::unordered_map<std::string, std::string> shaderSources = PreProcess(source, preprocessorDefinitions);
+    std::unordered_map<std::string, std::string> shaderSources = PreProcess(ReadFile(filepath), preprocessorDefinitions);
 
     debug::Timer timer("Shader creation");
     timer.timeStart();
@@ -75,7 +74,7 @@ namespace eng
     glDeleteProgram(m_ShaderID);
   }
 
-  const std::string& OpenGLShader::name() const
+  std::string_view OpenGLShader::name() const
   {
     return m_Name;
   }
@@ -141,7 +140,7 @@ namespace eng
     {
       spirv_cross::CompilerGLSL glslCompiler(spirv);
       m_OpenGLSourceCode[stage] = glslCompiler.compile();
-      std::string& source = m_OpenGLSourceCode[stage];
+      const std::string& source = m_OpenGLSourceCode[stage];
 
       shaderc::SpvCompilationResult module = compiler.CompileGlslToSpv(source, openGLShaderStageToShaderC(stage), m_FilePath.c_str());
       if (module.GetCompilationStatus() != shaderc_compilation_status_success)

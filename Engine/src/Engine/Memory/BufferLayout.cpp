@@ -26,7 +26,7 @@ namespace eng::mem
 
 
 
-  BufferElement::BufferElement(DataType type, const std::string& name, bool normalized)
+  BufferElement::BufferElement(DataType type, std::string_view name, bool normalized)
     : name(name), type(type), size(dataTypeSize(type)), offset(0), normalized(normalized) {}
 
   i32 BufferElement::getComponentCount() const

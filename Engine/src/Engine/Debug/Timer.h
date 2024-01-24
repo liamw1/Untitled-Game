@@ -12,7 +12,7 @@ namespace eng::debug
 
   public:
     Timer();
-    Timer(const char* name);
+    Timer(std::string_view name);
     ~Timer();
 
     void timeStart();

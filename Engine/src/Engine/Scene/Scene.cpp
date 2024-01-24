@@ -25,12 +25,12 @@ namespace eng::scene
 {
   static constexpr math::Vec3 c_UpDirection(0, 0, 1);
   
-  Entity CreateEntity(const std::string& name)
+  Entity CreateEntity(std::string_view name)
   {
     return CreateEntity(math::Vec3(0.0), name);
   }
 
-  Entity CreateEntity(const math::Vec3& initialPosition, const std::string& name)
+  Entity CreateEntity(const math::Vec3& initialPosition, std::string_view name)
   {
     Entity entity = ECS::Create();
     entity.add<component::ID>();

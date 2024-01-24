@@ -11,7 +11,7 @@ namespace eng
     : m_LowerUID(s_UniformDistribution(s_RandomEngine)),
       m_UpperUID(s_UniformDistribution(s_RandomEngine)) {}
 
-  std::string UID::toString()
+  std::string UID::toString() const
   {
     static constexpr i32 numHexCharacters = 2 * sizeof(u64);
 

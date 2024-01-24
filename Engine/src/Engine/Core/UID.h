@@ -14,7 +14,7 @@ namespace eng
   public:
     UID();
 
-    std::string toString();
+    std::string toString() const;
 
     uSize hash() const;
   };

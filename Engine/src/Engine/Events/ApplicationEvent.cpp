@@ -4,22 +4,22 @@
 namespace eng::event
 {
   EnumBitMask<EventCategory> AppTick::categoryFlags() const { return EventCategory::Application; }
-  const char* AppTick::name() const { return "AppTick"; }
+  std::string_view AppTick::name() const { return "AppTick"; }
 
 
 
   EnumBitMask<EventCategory> AppUpdate::categoryFlags() const { return EventCategory::Application; }
-  const char* AppUpdate::name() const { return "AppUpdate"; }
+  std::string_view AppUpdate::name() const { return "AppUpdate"; }
 
 
 
   EnumBitMask<EventCategory> AppRender::categoryFlags() const { return EventCategory::Application; }
-  const char* AppRender::name() const { return "AppRender"; }
+  std::string_view AppRender::name() const { return "AppRender"; }
 
 
 
   EnumBitMask<EventCategory> WindowClose::categoryFlags() const { return EventCategory::Application; }
-  const char* WindowClose::name() const { return "WindowClose"; }
+  std::string_view WindowClose::name() const { return "WindowClose"; }
 
 
 
@@ -27,7 +27,7 @@ namespace eng::event
     : m_Width(width), m_Height(height) {}
 
   EnumBitMask<EventCategory> WindowResize::categoryFlags() const { return EventCategory::Application; }
-  const char* WindowResize::name() const { return "WindowResized"; }
+  std::string_view WindowResize::name() const { return "WindowResized"; }
 
   std::string WindowResize::toString() const
   {

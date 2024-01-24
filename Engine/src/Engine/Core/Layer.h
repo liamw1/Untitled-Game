@@ -10,7 +10,7 @@ namespace eng
     std::string m_DebugName;
 
   public:
-    Layer(const std::string& debugName = "Layer")
+    Layer(std::string_view debugName = "Layer")
     : m_DebugName(debugName) {}
     virtual ~Layer() = default;
 
@@ -19,6 +19,6 @@ namespace eng
     virtual void onUpdate(Timestep /*timestep*/) {}
     virtual void onEvent(event::Event& /*event*/) {}
 
-    const std::string& getName() const { return m_DebugName; }
+    std::string_view getName() const { return m_DebugName; }
   };
 }

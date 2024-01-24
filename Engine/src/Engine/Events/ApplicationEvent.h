@@ -8,28 +8,28 @@ namespace eng::event
   {
   public:
     EnumBitMask<EventCategory> categoryFlags() const;
-    const char* name() const;
+    std::string_view name() const;
   };
 
   class AppTick
   {
   public:
     EnumBitMask<EventCategory> categoryFlags() const;
-    const char* name() const;
+    std::string_view name() const;
   };
 
   class AppUpdate
   {
   public:
     EnumBitMask<EventCategory> categoryFlags() const;
-    const char* name() const;
+    std::string_view name() const;
   };
 
   class WindowClose
   {
   public:
     EnumBitMask<EventCategory> categoryFlags() const;
-    const char* name() const;
+    std::string_view name() const;
   };
 
   class WindowResize
@@ -41,7 +41,7 @@ namespace eng::event
     WindowResize(u32 width, u32 height);
 
     EnumBitMask<EventCategory> categoryFlags() const;
-    const char* name() const;
+    std::string_view name() const;
     std::string toString() const;
 
     u32 width() const;

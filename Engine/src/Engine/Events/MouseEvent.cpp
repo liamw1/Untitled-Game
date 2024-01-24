@@ -7,7 +7,7 @@ namespace eng::event
     : m_Button(button) {}
 
   EnumBitMask<EventCategory> MouseButtonPress::categoryFlags() const { return { EventCategory::Mouse, EventCategory::Input, EventCategory::MouseButton }; }
-  const char* MouseButtonPress::name() const { return "MouseButtonPress"; }
+  std::string_view MouseButtonPress::name() const { return "MouseButtonPress"; }
   std::string MouseButtonPress::toString() const
   {
     std::stringstream ss;
@@ -21,7 +21,7 @@ namespace eng::event
     : m_Button(button) {}
 
   EnumBitMask<EventCategory> MouseButtonRelease::categoryFlags() const { return { EventCategory::Mouse, EventCategory::Input, EventCategory::MouseButton }; }
-  const char* MouseButtonRelease::name() const { return "MouseButtonRelease"; }
+  std::string_view MouseButtonRelease::name() const { return "MouseButtonRelease"; }
   std::string MouseButtonRelease::toString() const
   {
     std::stringstream ss;
@@ -35,7 +35,7 @@ namespace eng::event
     : m_MouseX(x), m_MouseY(y) {}
 
   EnumBitMask<EventCategory> MouseMove::categoryFlags() const { return { EventCategory::Mouse, EventCategory::Input }; }
-  const char* MouseMove::name() const { return "MouseMove"; }
+  std::string_view MouseMove::name() const { return "MouseMove"; }
   std::string MouseMove::toString() const
   {
     std::stringstream ss;
@@ -52,7 +52,7 @@ namespace eng::event
     : m_XOffset(xOffset), m_YOffset(yOffset) {}
 
   EnumBitMask<EventCategory> MouseScroll::categoryFlags() const { return { EventCategory::Mouse, EventCategory::Input }; }
-  const char* MouseScroll::name() const { return "MouseScroll"; }
+  std::string_view MouseScroll::name() const { return "MouseScroll"; }
   std::string MouseScroll::toString() const
   {
     std::stringstream ss;

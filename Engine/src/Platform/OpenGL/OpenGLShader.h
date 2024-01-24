@@ -24,7 +24,7 @@ namespace eng
     OpenGLShader(const std::filesystem::path& filepath, const std::unordered_map<std::string, std::string>& preprocessorDefinitions);
     ~OpenGLShader();
 
-    const std::string& name() const override;
+    std::string_view name() const override;
 
     void bind() const override;
     void unbind() const override;

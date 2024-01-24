@@ -13,7 +13,7 @@ namespace eng
     u32 width;
     u32 height;
 
-    WindowProps(const std::string& title = "Engine", u32 width = 1600, u32 height = 900)
+    WindowProps(std::string_view title = "Engine", u32 width = 1600, u32 height = 900)
       : title(title), width(width), height(height) {}
   };
 
