@@ -2,7 +2,7 @@
 #include "ChunkManager.h"
 #include "Indexing/Operations.h"
 #include "Player/Player.h"
-#include "World/NewTerrain.h"
+#include "World/Terrain.h"
 
 // Rendering
 static constexpr i32 c_TextureSlot = 0;

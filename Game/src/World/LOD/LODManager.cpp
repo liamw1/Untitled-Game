@@ -3,7 +3,7 @@
 #include "Player/Player.h"
 #include "Util/TransVoxel.h"
 #include "World/Chunk/Chunk.h"
-#include "World/NewTerrain.h"
+#include "World/Terrain.h"
 
 namespace lod
 {
