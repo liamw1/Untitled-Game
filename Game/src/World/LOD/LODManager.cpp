@@ -71,7 +71,7 @@ namespace lod
       // Sample noise at cell corners
       eng::math::Vec2 pointXY = lodAnchorXY + cellLength * static_cast<eng::math::Vec2>(index);
       surfaceData.elevation = terrain::getApproximateElevation(pointXY);
-      surfaceData.blockType = terrain::getApproximateBlockType(pointXY);
+      surfaceData.blockType = terrain::getApproximateBlockType(surfaceData.elevation);
     });
     return noiseValues;
   }

@@ -1,12 +1,12 @@
 #include "GMpch.h"
+#include "NewBiome.h"
 #include "NewTerrain.h"
 #include "World/Chunk/Chunk.h"
 
 namespace terrain
 {
-  static constexpr block::Type defaultBlockType(block::ID::Stone);
-
-  static length_t evaluateShapingFunction(length_t x, const std::vector<eng::math::Vec2>& controlPoints)
+  template<uSize N>
+  static length_t evaluateShapingFunction(length_t x, const std::array<eng::math::Vec2, N>& controlPoints)
   {
     auto controlPointA = eng::algo::lowerBound(controlPoints, x, [](const eng::math::Vec2& controlPoint) { return controlPoint.x; });
     if (controlPointA == controlPoints.begin())
@@ -21,15 +21,36 @@ namespace terrain
 
   static length_t globalElevation(const eng::math::Vec2& pointXY)
   {
-    length_t noiseValue = eng::math::normalizedOctaveNoise(pointXY, 8, 0.4f, 100_m, 0.5f);
-    length_t elevation = eng::math::normalizedOctaveNoise(pointXY, 8, 0.5f, 200_m, 0.6f);
+    length_t noiseValue = eng::math::normalizedOctaveNoise(pointXY, 6, 0.4f, 100_m, 0.5f);
+    length_t elevation = eng::math::normalizedOctaveNoise(pointXY, 6, 0.3f, 1000_m, 0.5f);
 
-    std::vector<eng::math::Vec2> controlPoints;
-    controlPoints.push_back({ -0.5, 0.5 });
-    controlPoints.push_back({ 0.0, 0.1 });
-    controlPoints.push_back({ 1.0, 1.0 });
+    std::array<eng::math::Vec2, 7> elevationControlPoints = { { { -0.55,  -0.1  },
+                                                                { -0.525, -0.95 },
+                                                                { -0.5,   -1.0  },
+                                                                { -0.475, -0.95 },
+                                                                { -0.45,  -0.1  },
+                                                                {  0.0,    0.0  },
+                                                                {  1.0,    1.0  } } };
+    std::array<eng::math::Vec2, 2> variationControlPoints = { { { -0.1,  0.1 },
+                                                                {  0.5,  1.0 } } };
 
-    return 100_m * evaluateShapingFunction(elevation, controlPoints) * noiseValue;
+    length_t elevationControl = evaluateShapingFunction(elevation, elevationControlPoints);
+    length_t variationControl = evaluateShapingFunction(elevationControl, variationControlPoints);
+    return 100_m * elevationControl + 20_m * variationControl * (noiseValue + 1);
+  }
+
+  static biome::ID biomeSelection(length_t elevation)
+  {
+    if (elevation < -75_m)
+      return biome::ID::Abyss;
+    else if (elevation < -1_m)
+      return biome::ID::Ocean;
+    else if (elevation < 1_m)
+      return biome::ID::Beach;
+    else if (elevation < 75_m)
+      return biome::ID::Default;
+    else
+      return biome::ID::Mountain;
   }
 
   static void heightMapStage(BlockArrayRect<length_t>& heightMap, const GlobalIndex& chunkIndex)
@@ -46,14 +67,16 @@ namespace terrain
     eng::algo::fill(composition, block::ID::Air);
     heightMap.forEach([&composition, &chunkIndex](BlockIndex2D surfaceIndex, length_t surfaceHeight)
     {
+      block::Type surfaceBlockType = getApproximateBlockType(surfaceHeight);
+
       i32 heightInBlocks = eng::arithmeticCastUnchecked<i32>(std::floor(surfaceHeight / block::length()));
       i32 surfaceBlockInChunk = heightInBlocks - Chunk::Size() * chunkIndex.k;
       if (surfaceBlockInChunk >= Chunk::Size())
         for (blockIndex_t k = 0; k < Chunk::Size(); ++k)
-          composition[surfaceIndex.i][surfaceIndex.j][k] = defaultBlockType;
+          composition[surfaceIndex.i][surfaceIndex.j][k] = block::ID::Stone;
       if (eng::withinBounds(surfaceBlockInChunk, 0, Chunk::Size()))
         while (surfaceBlockInChunk >= 0)
-          composition[surfaceIndex.i][surfaceIndex.j][surfaceBlockInChunk--] = defaultBlockType;
+          composition[surfaceIndex.i][surfaceIndex.j][surfaceBlockInChunk--] = surfaceBlockType;
     });
   }
 
@@ -62,9 +85,17 @@ namespace terrain
     return globalElevation(pointXY);
   }
 
-  block::Type getApproximateBlockType(const eng::math::Vec2& pointXY)
+  block::Type getApproximateBlockType(length_t elevation)
   {
-    return defaultBlockType;
+    switch (biomeSelection(elevation))
+    {
+      case biome::ID::Default: return block::ID::Grass;
+      case biome::ID::Mountain: return block::ID::Snow;
+      case biome::ID::Beach: return block::ID::Sand;
+      case biome::ID::Ocean: return block::ID::Sand;
+      case biome::ID::Abyss: return block::ID::Stone;
+    }
+    return block::ID::Null;
   }
 
   BlockArrayBox<block::Type> generateNew(const GlobalIndex& chunkIndex)
@@ -74,7 +105,6 @@ namespace terrain
 
     heightMapStage(heightMap, chunkIndex);
     fillStage(composition, heightMap, chunkIndex);
-
 
     if (composition.filledWith(block::ID::Air))
       composition.clear();
