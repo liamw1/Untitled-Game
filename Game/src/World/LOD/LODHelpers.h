@@ -8,7 +8,7 @@ namespace lod
   {
     eng::math::Float3 position;
     eng::math::Float3 isoNormal;
-    i32 textureIndex;
+    i32 blockIndex;
 
     Vertex(const eng::math::Float3& position, const eng::math::Float3& isoNormal, block::Type blockType);
   };

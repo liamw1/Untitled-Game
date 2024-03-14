@@ -25,7 +25,7 @@ namespace lod
   static std::unique_ptr<eng::ShaderBufferStorage> s_SSBO;
   static const eng::mem::BufferLayout s_VertexBufferLayout = { { eng::mem::DataType::Float3, "a_Position"     },
                                                                { eng::mem::DataType::Float3, "a_IsoNormal"    },
-                                                               { eng::mem::DataType::Int,    "a_TextureIndex" } };
+                                                               { eng::mem::DataType::Int,    "a_BlockIndex" } };
 
   struct NoiseData
   {

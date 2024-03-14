@@ -22,6 +22,8 @@ namespace block
   
     constexpr bool operator==(Type other) const { return m_TypeID == other.m_TypeID; }
     constexpr bool operator==(ID blockType) const { return m_TypeID == blockType; }
+
+    constexpr ID id() const { return m_TypeID; }
   
     TextureID texture(eng::math::Direction face) const;
   

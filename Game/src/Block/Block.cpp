@@ -137,7 +137,7 @@ namespace block
   static constexpr i32 c_SSBOBinding = 0;
   static constexpr BlockUniformData c_BlockUniformData;
 
-  static eng::EnumArray<eng::math::Float4, TextureID> s_TextureAverageColors;
+  static eng::EnumArray<eng::EnumArray<eng::math::Float4, eng::math::Direction>, ID> s_BlockAverageColors;
   static eng::EnumArray<std::filesystem::path, TextureID> s_TexturePaths;
   static std::shared_ptr<eng::TextureArray> s_TextureArray;
   static std::unique_ptr<eng::Uniform> s_Uniform;
@@ -153,6 +153,7 @@ namespace block
       s_TexturePaths = computeTexturePaths();
 
       s_TextureArray = eng::TextureArray::Create(16, 128);
+      eng::EnumArray<eng::math::Float4, TextureID> textureAverageColors;
       for (TextureID texture : Textures())
       {
         if (s_TexturePaths[texture] == "")
@@ -166,10 +167,14 @@ namespace block
 
         eng::math::Float4 textureAverageColor = textureImage.averageColor();
         textureAverageColor.a = 1.0f;
-        s_TextureAverageColors[texture] = textureAverageColor;
+        textureAverageColors[texture] = textureAverageColor;
       }
 
-      eng::mem::RenderData textureAverageColorsData(s_TextureAverageColors);
+      for (ID blockID : IDs())
+        for (eng::math::Direction blockFace : eng::math::Directions())
+          s_BlockAverageColors[blockID][blockFace] = textureAverageColors[s_Properties.textureIDs[blockID][blockFace]];
+
+      eng::mem::RenderData textureAverageColorsData(s_BlockAverageColors);
       s_SSBO = std::make_unique<eng::ShaderBufferStorage>(c_SSBOBinding, textureAverageColorsData.size());
       s_SSBO->write(textureAverageColorsData);
 

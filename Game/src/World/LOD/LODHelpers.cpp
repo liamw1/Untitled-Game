@@ -5,7 +5,7 @@
 namespace lod
 {
   Vertex::Vertex(const eng::math::Float3& position, const eng::math::Float3& isoNormal, block::Type blockType)
-    : position(position), isoNormal(isoNormal), textureIndex(static_cast<i32>(blockType.texture(eng::math::Direction::Top))) {}
+    : position(position), isoNormal(isoNormal), blockIndex(static_cast<i32>(blockType.id())) {}
 
 
 
