@@ -21,33 +21,23 @@ layout(location = 0) in vec3 a_Position;
 layout(location = 1) in vec3 a_IsoNormal;
 layout(location = 2) in int  a_BlockIndex;
 
-layout(location = 0) out vec3 v_LocalWorldPosition;
-layout(location = 1) out vec4 v_Color;
-
-vec3 vertexPosition = u_AnchorPosition[gl_DrawID].xyz + a_Position;
-vec3 cameraToVertex = vertexPosition - u_CameraPosition;
-
-vec4 calculateColorComponent(int coordID)
-{
-  // Block faces can only be seen if surface normal component is facing camera
-  if (cameraToVertex[coordID] < 0 != a_IsoNormal[coordID] < 0)
-  {
-    int textureIndex = 2 * coordID + (cameraToVertex[coordID] < 0 ? 1 : 0);
-    float colorStrength = abs(cameraToVertex[coordID] * a_IsoNormal[coordID]);
-    return colorStrength * u_AverageColor[a_BlockIndex][textureIndex];
-  }
-  return vec4(0);
-}
+layout(location = 0) out vec3 v_LocalPosition;
+layout(location = 1) out vec3 v_VertexToCamera;
+layout(location = 2) out mat4 v_ColorComponents;
 
 void main()
 {
-  vec4 xColor = calculateColorComponent(0);
-  vec4 yColor = calculateColorComponent(1);
-  vec4 zColor = calculateColorComponent(2);
+  vec3 vertexPosition = u_AnchorPosition[gl_DrawID].xyz + a_Position;
 
-  // Sum of color components needs to be normalized
-  v_Color = (xColor + yColor + zColor) / (xColor.w + yColor.w + zColor.w);
-  v_LocalWorldPosition = a_Position;
+  v_LocalPosition = a_Position;
+  v_VertexToCamera = u_CameraPosition - vertexPosition;
+
+  mat4 colorComponents;
+  for (int i = 0; i < 3; ++i)
+    colorComponents[i] = u_AverageColor[a_BlockIndex][2 * i + (v_VertexToCamera[i] > 0 ? 1 : 0)];
+  colorComponents[3] = vec4(0);
+
+  v_ColorComponents = colorComponents;
   gl_Position = u_ViewProjection * vec4(vertexPosition, 1.0f);
 }
 
@@ -56,15 +46,24 @@ void main()
 #type fragment
 #version 460 core
 
-layout(location = 0) in vec3 v_LocalWorldPosition;
-layout(location = 1) in vec4 v_Color;
+layout(location = 0) in vec3 v_LocalPosition;
+layout(location = 1) in vec3 v_VertexToCamera;
+layout(location = 2) in mat4 v_ColorComponents;
 
 layout(location = 0) out vec4 o_Color;
 
 void main()
 {
-  vec3 normal = -normalize(cross(dFdy(v_LocalWorldPosition), dFdx(v_LocalWorldPosition)));
+  vec3 normal = -normalize(cross(dFdy(v_LocalPosition), dFdx(v_LocalPosition)));
   float lightValue = (1.0 + normal.z) / 2;
 
-  o_Color = vec4(vec3(lightValue), 1.0f) * v_Color;
+  // Block faces can only be seen if surface normal component is facing camera
+  vec4 colorStrengths;
+  for (int i = 0; i < 3; ++i)
+    colorStrengths[i] = v_VertexToCamera[i] > 0 == normal[i] > 0 ? abs(v_VertexToCamera[i] * normal[i]) : 0;
+  colorStrengths.w = 0;
+
+  float normalization = colorStrengths.x + colorStrengths.y + colorStrengths.z;
+  vec4 baseColor = v_ColorComponents * colorStrengths / normalization;
+  o_Color = vec4(vec3(lightValue), 1.0f) * baseColor;
 }

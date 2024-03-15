@@ -31,8 +31,8 @@ namespace terrain
     static constexpr std::array<eng::math::Vec2, 2> variationControlPoints = { { { -0.1,  0.1 },
                                                                                  {  0.5,  1.0 } } };
 
-    length_t noiseValue = eng::math::normalizedOctaveNoise(pointXY, 6, 0.4f, 10000_m, 0.5f);
-    length_t elevation = eng::math::normalizedOctaveNoise(pointXY, 6, 0.3f, 100000_m, 0.5f);
+    length_t noiseValue = eng::math::normalizedOctaveNoise(pointXY, 6, 0.4f, 1000_m, 0.5f);
+    length_t elevation = eng::math::normalizedOctaveNoise(pointXY, 6, 0.3f, 10000_m, 0.5f);
 
     length_t elevationControl = evaluateShapingFunction(elevation, elevationControlPoints);
     length_t variationControl = evaluateShapingFunction(elevationControl, variationControlPoints);
