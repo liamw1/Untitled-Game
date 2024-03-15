@@ -38,7 +38,7 @@ void main()
   colorComponents[3] = vec4(0);
 
   v_ColorComponents = colorComponents;
-  gl_Position = u_ViewProjection * vec4(vertexPosition, 1.0f);
+  gl_Position = u_ViewProjection * vec4(vertexPosition, 1);
 }
 
 
@@ -54,8 +54,9 @@ layout(location = 0) out vec4 o_Color;
 
 void main()
 {
-  vec3 normal = -normalize(cross(dFdy(v_LocalPosition), dFdx(v_LocalPosition)));
-  float lightValue = (1.0 + normal.z) / 2;
+  vec3 normal = normalize(cross(dFdx(v_LocalPosition), dFdy(v_LocalPosition)));
+
+  float lightValue = (1 + normal.z) / 2;
 
   // Block faces can only be seen if surface normal component is facing camera
   vec4 colorStrengths;
@@ -65,5 +66,8 @@ void main()
 
   float normalization = colorStrengths.x + colorStrengths.y + colorStrengths.z;
   vec4 baseColor = v_ColorComponents * colorStrengths / normalization;
-  o_Color = vec4(vec3(lightValue), 1.0f) * baseColor;
+  o_Color = vec4(vec3(lightValue), 1) * baseColor;
+
+  // Debug - makes wireframes visible
+  // o_Color = vec4(vec3(0), 1);
 }
