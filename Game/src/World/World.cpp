@@ -6,7 +6,7 @@ static constexpr length_t c_MinDistanceToWall = 0.01_m * block::length();
 
 World::World()
 {
-  player::initialize(GlobalIndex(0, 0, 2), block::length() * eng::math::Vec3(16.0));
+  player::initialize(GlobalIndex(0, 0, 4), block::length() * eng::math::Vec3(16.0));
 }
 
 void World::onUpdate(eng::Timestep timestep)

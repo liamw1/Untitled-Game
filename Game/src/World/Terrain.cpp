@@ -21,33 +21,33 @@ namespace terrain
 
   static length_t globalElevation(const eng::math::Vec2& pointXY)
   {
-    length_t noiseValue = eng::math::normalizedOctaveNoise(pointXY, 6, 0.4f, 100_m, 0.5f);
-    length_t elevation = eng::math::normalizedOctaveNoise(pointXY, 6, 0.3f, 1000_m, 0.5f);
+    static constexpr std::array<eng::math::Vec2, 7> elevationControlPoints = { { { -0.55,  -0.1  },
+                                                                                 { -0.525, -0.95 },
+                                                                                 { -0.5,   -1.0  },
+                                                                                 { -0.475, -0.95 },
+                                                                                 { -0.45,  -0.1  },
+                                                                                 {  0.0,    0.0  },
+                                                                                 {  1.0,    1.0  } } };
+    static constexpr std::array<eng::math::Vec2, 2> variationControlPoints = { { { -0.1,  0.1 },
+                                                                                 {  0.5,  1.0 } } };
 
-    std::array<eng::math::Vec2, 7> elevationControlPoints = { { { -0.55,  -0.1  },
-                                                                { -0.525, -0.95 },
-                                                                { -0.5,   -1.0  },
-                                                                { -0.475, -0.95 },
-                                                                { -0.45,  -0.1  },
-                                                                {  0.0,    0.0  },
-                                                                {  1.0,    1.0  } } };
-    std::array<eng::math::Vec2, 2> variationControlPoints = { { { -0.1,  0.1 },
-                                                                {  0.5,  1.0 } } };
+    length_t noiseValue = eng::math::normalizedOctaveNoise(pointXY, 6, 0.4f, 10000_m, 0.5f);
+    length_t elevation = eng::math::normalizedOctaveNoise(pointXY, 6, 0.3f, 100000_m, 0.5f);
 
     length_t elevationControl = evaluateShapingFunction(elevation, elevationControlPoints);
     length_t variationControl = evaluateShapingFunction(elevationControl, variationControlPoints);
-    return 100_m * elevationControl + 20_m * variationControl * (noiseValue + 1);
+    return 1000_m * elevationControl + 200_m * variationControl * (noiseValue + 1);
   }
 
   static biome::ID biomeSelection(length_t elevation)
   {
-    if (elevation < -75_m)
+    if (elevation < -750_m)
       return biome::ID::Abyss;
-    else if (elevation < -1_m)
+    else if (elevation < -2.5_m)
       return biome::ID::Ocean;
-    else if (elevation < 1_m)
+    else if (elevation < 2.5_m)
       return biome::ID::Beach;
-    else if (elevation < 75_m)
+    else if (elevation < 750_m)
       return biome::ID::Default;
     else
       return biome::ID::Mountain;

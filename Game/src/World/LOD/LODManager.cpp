@@ -180,7 +180,7 @@ namespace lod
     eng::math::Vec3 isoNormal = semiSmoothInterpolation(n0, n1, t, smoothness);
 
     block::Type blockType = t < 0.5f ? surfaceDataA.blockType : surfaceDataB.blockType;
-    return { vertexPosition, isoNormal, blockType };
+    return { vertexPosition, glm::normalize(isoNormal), blockType };
   }
 
   // Formulas can be found in section 4.4 of TransVoxel paper
