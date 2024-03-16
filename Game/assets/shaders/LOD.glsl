@@ -32,12 +32,10 @@ void main()
   v_LocalPosition = a_Position;
   v_VertexToCamera = u_CameraPosition - vertexPosition;
 
-  mat4 colorComponents;
-  for (int i = 0; i < 3; ++i)
-    colorComponents[i] = u_AverageColor[a_BlockIndex][2 * i + (v_VertexToCamera[i] > 0 ? 1 : 0)];
-  colorComponents[3] = vec4(0);
+  for (int axis = 0; axis < 3; ++axis)
+    v_ColorComponents[axis] = u_AverageColor[a_BlockIndex][2 * axis + (v_VertexToCamera[axis] > 0 ? 1 : 0)];
+  v_ColorComponents[3] = vec4(0);
 
-  v_ColorComponents = colorComponents;
   gl_Position = u_ViewProjection * vec4(vertexPosition, 1);
 }
 
@@ -45,6 +43,8 @@ void main()
 
 #type fragment
 #version 460 core
+
+const float c_Pi = radians(180);
 
 layout(location = 0) in vec3 v_LocalPosition;
 layout(location = 1) in vec3 v_VertexToCamera;
@@ -56,18 +56,18 @@ void main()
 {
   vec3 normal = normalize(cross(dFdx(v_LocalPosition), dFdy(v_LocalPosition)));
 
-  float lightValue = (1 + normal.z) / 2;
+  // Crude approximation of block-based ambient occlusion based on surface normal (can probably do much better than this)
+  float lightValue = (3 + abs(cos(c_Pi * normal.z))) / 4;
 
   // Block faces can only be seen if surface normal component is facing camera
   vec4 colorStrengths;
-  for (int i = 0; i < 3; ++i)
-    colorStrengths[i] = v_VertexToCamera[i] > 0 == normal[i] > 0 ? abs(v_VertexToCamera[i] * normal[i]) : 0;
+  for (int axis = 0; axis < 3; ++axis)
+    colorStrengths[axis] = v_VertexToCamera[axis] > 0 == normal[axis] > 0 ? abs(v_VertexToCamera[axis] * normal[axis]) : 0;
   colorStrengths.w = 0;
 
+  // Here it turns out normalization can be NaN in wireframe mode, so it's important to keep that in mind when doing comparisons.
+  // Remember, a NaN will always return false when compared used <,>,<=,>=,== and always true with !=.
   float normalization = colorStrengths.x + colorStrengths.y + colorStrengths.z;
-  vec4 baseColor = v_ColorComponents * colorStrengths / normalization;
+  vec4 baseColor = normalization > 0 ? v_ColorComponents * colorStrengths / normalization : vec4(vec3(0), 1);
   o_Color = vec4(vec3(lightValue), 1) * baseColor;
-
-  // Debug - makes wireframes visible
-  // o_Color = vec4(vec3(0), 1);
 }

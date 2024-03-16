@@ -382,15 +382,10 @@ void ChunkManager::eraseChunk(const GlobalIndex& chunkIndex)
 
 void ChunkManager::sendBlockUpdate(const GlobalIndex& chunkIndex, const BlockIndex& blockIndex)
 {
-  for (const LocalIndex& localIndex : affectedChunks(BlockBox(blockIndex, blockIndex)))
+  for (const LocalIndex& localIndex : affectedChunks(blockIndex))
   {
     GlobalIndex neighborIndex = chunkIndex + localIndex.upcast<globalIndex_t>();
-
-    // Chunk and its face neighbors get queued for immediate meshing
-    if (localIndex.l1Norm() <= 1)
-      addToForceMeshUpdateQueue(neighborIndex);
-    else
-      addToLazyMeshUpdateQueue(neighborIndex);
+    localIndex.l1Norm() > 1 ? addToLazyMeshUpdateQueue(neighborIndex) : addToForceMeshUpdateQueue(neighborIndex);
   }
 }
 

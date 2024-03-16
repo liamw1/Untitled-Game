@@ -62,3 +62,8 @@ constexpr LocalBox affectedChunks(const BlockBox& chunkSection, blockIndex_t inf
   BlockBox affectedBlocks = chunkSection.expand(influenceRadius);
   return blockBoxToLocalBox(affectedBlocks);
 }
+
+constexpr LocalBox affectedChunks(const BlockIndex& blockIndex, blockIndex_t influenceRadius = 1)
+{
+  return affectedChunks(BlockBox(blockIndex, blockIndex), influenceRadius);
+}

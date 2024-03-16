@@ -5,6 +5,8 @@
 
 namespace terrain
 {
+  static constexpr int c_TerrainMaxAmplitude = 1000;
+
   template<uSize N>
   static length_t evaluateShapingFunction(length_t x, const std::array<eng::math::Vec2, N>& controlPoints)
   {
@@ -36,18 +38,18 @@ namespace terrain
 
     length_t elevationControl = evaluateShapingFunction(elevation, elevationControlPoints);
     length_t variationControl = evaluateShapingFunction(elevationControl, variationControlPoints);
-    return 1000_m * elevationControl + 200_m * variationControl * (noiseValue + 1);
+    return c_TerrainMaxAmplitude * elevationControl + 0.2_m * c_TerrainMaxAmplitude * variationControl * (noiseValue + 1);
   }
 
   static biome::ID biomeSelection(length_t elevation)
   {
-    if (elevation < -750_m)
+    if (elevation < -0.1_m * c_TerrainMaxAmplitude)
       return biome::ID::Abyss;
-    else if (elevation < -2.5_m)
+    else if (elevation < -0.0025_m * c_TerrainMaxAmplitude)
       return biome::ID::Ocean;
-    else if (elevation < 2.5_m)
+    else if (elevation < 0.0025_m * c_TerrainMaxAmplitude)
       return biome::ID::Beach;
-    else if (elevation < 750_m)
+    else if (elevation < 0.75_m * c_TerrainMaxAmplitude)
       return biome::ID::Default;
     else
       return biome::ID::Mountain;
@@ -67,16 +69,23 @@ namespace terrain
     eng::algo::fill(composition, block::ID::Air);
     heightMap.forEach([&composition, &chunkIndex](BlockIndex2D surfaceIndex, length_t surfaceHeight)
     {
-      block::Type surfaceBlockType = getApproximateBlockType(surfaceHeight);
-
       i32 heightInBlocks = eng::arithmeticCastUnchecked<i32>(std::floor(surfaceHeight / block::length()));
       i32 surfaceBlockInChunk = heightInBlocks - Chunk::Size() * chunkIndex.k;
       if (surfaceBlockInChunk >= Chunk::Size())
         for (blockIndex_t k = 0; k < Chunk::Size(); ++k)
           composition[surfaceIndex.i][surfaceIndex.j][k] = block::ID::Stone;
       if (eng::withinBounds(surfaceBlockInChunk, 0, Chunk::Size()))
-        while (surfaceBlockInChunk >= 0)
-          composition[surfaceIndex.i][surfaceIndex.j][surfaceBlockInChunk--] = surfaceBlockType;
+      {
+        block::Type surfaceType = getApproximateBlockType(surfaceHeight);
+        block::Type soilType = surfaceType == block::ID::Grass ? block::ID::Dirt : surfaceType;
+
+        blockIndex_t k = surfaceBlockInChunk;
+        composition[surfaceIndex.i][surfaceIndex.j][k--] = surfaceType;
+        while (k >= std::max(surfaceBlockInChunk - 3, 0))
+          composition[surfaceIndex.i][surfaceIndex.j][k--] = soilType;
+        while (k >= 0)
+          composition[surfaceIndex.i][surfaceIndex.j][k--] = block::ID::Stone;
+      }
     });
   }
 
