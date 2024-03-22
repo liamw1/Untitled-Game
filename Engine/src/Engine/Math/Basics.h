@@ -21,6 +21,9 @@ namespace eng::math
       return value;
   }
 
+  template<typename T>
+  [[nodiscard]] constexpr T lerp(const T& a, const T& b, f32 t) { return (1 - t) * a + t * b; }
+
   /*
     Euclidean modulus. Return type may get upgraded if divisor cannot be represented
     in the type of the dividend.

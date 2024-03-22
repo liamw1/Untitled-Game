@@ -22,6 +22,7 @@
 #include <cstdint>
 #include <cstdlib>
 #include <iterator>
+#include <span>
 #include <stdexcept>
 #include <sstream>
 #include <string>

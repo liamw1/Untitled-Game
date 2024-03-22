@@ -5,7 +5,7 @@
 
 namespace terrain
 {
-  static constexpr int c_TerrainMaxAmplitude = 1000;
+  static constexpr int c_TerrainMaxAmplitude = 100;
 
   template<uSize N>
   static length_t evaluateShapingFunction(length_t x, const std::array<eng::math::Vec2, N>& controlPoints)

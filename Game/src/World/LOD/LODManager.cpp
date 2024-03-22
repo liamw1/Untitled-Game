@@ -40,21 +40,6 @@ namespace lod
     block::Type blockType;
   };
 
-  // LOD smoothness parameter, must be in the range [0.0, 1.0]
-  static constexpr f32 smoothnessLevel(i32 lodLevel)
-  {
-    return 1.0f;
-    // return std::min(0.15f * lodLevel + 0.3f, 1.0f);
-  }
-
-  // Calculate quantity based on values at corners that compose an edge.  The smoothness parameter s is used to interpolate between 
-  // roughest iso-surface (vertex is always chosen at edge midpoint) and the smooth iso-surface interpolation used by Paul Bourke.
-  template<typename T>
-  static T semiSmoothInterpolation(const T& q0, const T& q1, f32 t, f32 s)
-  {
-    return ((1 - s) / 2 + s * (1 - t)) * q0 + ((1 - s) / 2 + s * t) * q1;
-  }
-
   static constexpr BlockIndex transitionCellFaceIndexToSampleIndex(const BlockIndex& cellIndex, i32 faceIndex, eng::math::Direction face)
   {
     return cellIndex + BlockIndex(0, faceIndex % 3, faceIndex / 3).permute(eng::math::axisOf(face));
@@ -150,7 +135,7 @@ namespace lod
   static NoiseData interpolateNoiseData(const NodeID& node,
                                         const BlockArrayRect<SurfaceData>& noiseValues,
                                         const BlockArrayRect<eng::math::Vec3>& noiseNormals,
-                                        const BlockIndex& cornerA, const BlockIndex& cornerB, f32 smoothness)
+                                        const BlockIndex& cornerA, const BlockIndex& cornerB)
   {
     length_t lodFloor = node.anchor().k * Chunk::Length();
     length_t cellLength = node.length() / c_LODNumCells;
@@ -171,13 +156,12 @@ namespace lod
 
     // Fraction of distance along edge vertex should be placed
     f32 t = eng::arithmeticCastUnchecked<f32>(tA / (tA - tB));
-
-    eng::math::Vec3 vertexPosition = semiSmoothInterpolation(posA, posB, t, smoothness);
+    eng::math::Vec3 vertexPosition = eng::math::lerp(posA, posB, t);
 
     // Estimate isosurface normal using linear interpolation between corners
     const eng::math::Vec3& n0 = noiseNormals(static_cast<BlockIndex2D>(cornerA));
     const eng::math::Vec3& n1 = noiseNormals(static_cast<BlockIndex2D>(cornerB));
-    eng::math::Vec3 isoNormal = semiSmoothInterpolation(n0, n1, t, smoothness);
+    eng::math::Vec3 isoNormal = eng::math::lerp(n0, n1, t);
 
     block::Type blockType = t < 0.5f ? surfaceDataA.blockType : surfaceDataB.blockType;
     return { vertexPosition, glm::normalize(isoNormal), blockType };
@@ -253,7 +237,6 @@ namespace lod
     using VertexLayer = std::array<std::array<VertexReuseData, c_LODNumCells>, c_LODNumCells>;
 
     length_t cellLength = node.length() / c_LODNumCells;
-    f32 smoothness = smoothnessLevel(node.lodLevel());
 
     Mesh primaryMesh;
     VertexLayer prevLayer{};
@@ -336,8 +319,7 @@ namespace lod
 
         BlockIndex cornerIndexA = cellIndex + BlockIndex(eng::EnumBitMask<eng::math::Axis>(cornerNibbleA));
         BlockIndex cornerIndexB = cellIndex + BlockIndex(eng::EnumBitMask<eng::math::Axis>(cornerNibbleB));
-
-        NoiseData noiseData = interpolateNoiseData(node, noiseValues, noiseNormals, cornerIndexA, cornerIndexB, smoothness);
+        NoiseData noiseData = interpolateNoiseData(node, noiseValues, noiseNormals, cornerIndexA, cornerIndexB);
 
         u32 vertexCount = eng::arithmeticCastUnchecked<u32>(primaryMesh.vertices.size());
         primaryMesh.vertices.emplace_back(noiseData.position, noiseData.normal, noiseData.blockType);
@@ -457,10 +439,7 @@ namespace lod
         // Indices of samples A,B
         BlockIndex sampleIndexA = transitionCellFaceIndexToSampleIndex(cellIndex, c_TransitionCellSampleIndexToTransitionCellFaceIndex[sampleNibbleA], face);
         BlockIndex sampleIndexB = transitionCellFaceIndexToSampleIndex(cellIndex, c_TransitionCellSampleIndexToTransitionCellFaceIndex[sampleNibbleB], face);
-
-        // If vertex is on low-resolution side, use smoothness level of low-resolution LOD
-        f32 smoothness = smoothnessLevel(node.lodLevel() + isOnLowResolutionSide);
-        NoiseData noiseData = interpolateNoiseData(node, noiseValues, noiseNormals, sampleIndexA, sampleIndexB, smoothness);
+        NoiseData noiseData = interpolateNoiseData(node, noiseValues, noiseNormals, sampleIndexA, sampleIndexB);
 
         if (!isOnLowResolutionSide)
           noiseData.position -= c_TransitionCellFractionalWidth * cellLength * static_cast<eng::math::Vec3>(BlockIndex::Dir(face));

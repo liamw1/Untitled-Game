@@ -12,10 +12,10 @@ namespace eng::math
   class ArrayBoxStrip
   {
     T* m_Begin;
-    i32 m_Offset;
+    IntType m_Offset;
 
   public:
-    ArrayBoxStrip(T* begin, i32 offset)
+    ArrayBoxStrip(T* begin, IntType offset)
       : m_Begin(begin), m_Offset(offset) {}
 
     T& operator[](IntType index) { ENG_MUTABLE_VERSION(operator[], index); }
