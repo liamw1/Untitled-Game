@@ -84,4 +84,5 @@
 #include "Engine/Utilities/Helpers.h"
 #include "Engine/Utilities/LRUCache.h"
 #include "Engine/Utilities/MoveOnlyFunction.h"
+#include "Engine/Utilities/StlUtilities.h"
 #include "Engine/Utilities/UniqueArray.h"

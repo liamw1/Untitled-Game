@@ -712,35 +712,34 @@ namespace lod
   {
     if (!c_OctreeBounds.encloses(index))
       return std::nullopt;
-    return findImpl(m_Root, index);
-  }
 
-  std::optional<NodeID> LODManager::findImpl(const Node& node, const GlobalIndex& index) const
-  {
-    if (node.isLeaf())
-      return node.id;
+    auto search = [](const Node& node, const GlobalIndex& index, auto search)
+    {
+      if (node.isLeaf())
+        return node.id;
 
-    uSize childIndex = Node::ChildBounds().linearIndexOf(node.id.childIndex(index));
-    return findImpl(node.children[childIndex], index);
+      uSize childIndex = Node::ChildBounds().linearIndexOf(node.id.childIndex(index));
+      return search(node.children[childIndex], index, search);
+    };
+    return search(m_Root, index, search);
   }
 
   std::vector<NodeID> LODManager::find(const GlobalBox& region) const
   {
     std::vector<NodeID> foundNodes;
-    findImpl(foundNodes, m_Root, region);
+    auto search = [](std::vector<NodeID>&nodes, const Node & node, const GlobalBox & region, auto search)
+    {
+      if (!region.overlapsWith(node.id.boundingBox()))
+        return;
+
+      if (node.isLeaf())
+        nodes.push_back(node.id);
+      else
+        for (const Node& child : node.children)
+          search(nodes, child, region, search);
+    };
+    search(foundNodes, m_Root, region, search);
     return foundNodes;
-  }
-
-  void LODManager::findImpl(std::vector<NodeID>& nodes, const Node& node, const GlobalBox& region) const
-  {
-    if (!region.overlapsWith(node.id.boundingBox()))
-      return;
-
-    if (node.isLeaf())
-      nodes.push_back(node.id);
-    else
-      for (const Node& child : node.children)
-        findImpl(nodes, child, region);
   }
 
   std::optional<DrawCommand> LODManager::createNewMesh(Node& node)
@@ -767,56 +766,54 @@ namespace lod
 
   void LODManager::createAdjustedMeshesInRegion(std::vector<DrawCommand>& drawCommands, const GlobalBox& region) const
   {
-    createAdjustedMeshesInRegionImpl(drawCommands, m_Root, region);
-  }
-
-  void LODManager::createAdjustedMeshesInRegionImpl(std::vector<DrawCommand>& drawCommands, const Node& node, const GlobalBox& region) const
-  {
-    if (!region.overlapsWith(node.id.boundingBox()))
-      return;
-
-    if (node.isLeaf())
+    auto implementation = [this](std::vector<DrawCommand>& drawCommands, const Node& node, const GlobalBox& region, auto implementation)
     {
-      if (std::optional<DrawCommand> drawCommand = createAdjustedMesh(node))
-        drawCommands.push_back(std::move(*drawCommand));
-    }
-    else
-      for (const Node& child : node.children)
-        createAdjustedMeshesInRegionImpl(drawCommands, child, region);
+      if (!region.overlapsWith(node.id.boundingBox()))
+        return;
+
+      if (node.isLeaf())
+      {
+        if (std::optional<DrawCommand> drawCommand = createAdjustedMesh(node))
+          drawCommands.push_back(std::move(*drawCommand));
+      }
+      else
+        for (const Node& child : node.children)
+          implementation(drawCommands, child, region, implementation);
+    };
+    implementation(drawCommands, m_Root, region, implementation);
   }
 
   std::vector<Node*> LODManager::reverseLevelOrder()
   {
     std::vector<Node*> nodes;
-    reverseLevelOrderImpl(nodes, m_Root);
+    auto gatherLeaves = [](std::vector<Node*>& nodes, Node& node, auto gatherLeaves) -> void
+    {
+      nodes.push_back(&node);
+      if (!node.isLeaf())
+        for (Node& child : node.children)
+          gatherLeaves(nodes, child, gatherLeaves);
+    };
+    gatherLeaves(nodes, m_Root, gatherLeaves);
+
     eng::algo::sort(nodes, [](Node* node) { return node->id.lodLevel(); }, eng::SortPolicy::Ascending);
     return nodes;
   }
 
-  void LODManager::reverseLevelOrderImpl(std::vector<Node*>& nodes, Node& node)
-  {
-    nodes.push_back(&node);
-    if (!node.isLeaf())
-      for (Node& child : node.children)
-        reverseLevelOrderImpl(nodes, child);
-  }
-
   void LODManager::checkState() const
   {
-    checkStateImpl(m_Root);
-  }
-
-  void LODManager::checkStateImpl(const Node& node) const
-  {
-    if (node.isLeaf())
+    auto check = [this](const Node& node, auto check)
     {
-      for (const GlobalBox& neighborBox : eng::math::FaceInteriors(node.id.boundingBox().expand()))
-        for (const NodeID& neighbor : find(neighborBox))
-          if (std::abs(node.id.lodLevel() - neighbor.lodLevel()) > 1)
-            ENG_ERROR("LOD tree is in incorrect state!");
-      return;
-    }
-    for (const Node& child : node.children)
-      checkStateImpl(child);
+      if (node.isLeaf())
+      {
+        for (const GlobalBox& neighborBox : eng::math::FaceInteriors(node.id.boundingBox().expand()))
+          for (const NodeID& neighbor : find(neighborBox))
+            if (std::abs(node.id.lodLevel() - neighbor.lodLevel()) > 1)
+              ENG_ERROR("LOD tree is in incorrect state!");
+        return;
+      }
+      for (const Node& child : node.children)
+        check(child, check);
+    };
+    check(m_Root, check);
   }
 }

@@ -1,7 +1,6 @@
 #include "GMpch.h"
 #include "GameSandbox.h"
 #include "Player/Player.h"
-#include "World/Biome.h"
 
 GameSandbox::GameSandbox()
   : Layer("GameSandbox"),

@@ -1,6 +1,6 @@
 #include "GMpch.h"
-#include "Biome.h"
 #include "Terrain.h"
+#include "World/Biome/Biome.h"
 #include "World/Chunk/Chunk.h"
 
 namespace terrain

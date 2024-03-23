@@ -12,4 +12,12 @@ namespace biome
 
     First = 0, Last = Abyss
   };
+
+  enum class Property
+  {
+    Elevation,
+    Temperature,
+
+    First = 0, Last = Elevation
+  };
 }

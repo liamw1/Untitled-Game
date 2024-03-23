@@ -45,21 +45,15 @@ namespace lod
                Will return std::nullopt if index is outside of octree bounds.
     */
     std::optional<NodeID> find(const GlobalIndex& index) const;
-    std::optional<NodeID> findImpl(const Node& node, const GlobalIndex& index) const;
-
     std::vector<NodeID> find(const GlobalBox& region) const;
-    void findImpl(std::vector<NodeID>& nodes, const Node& node, const GlobalBox& region) const;
 
     std::optional<DrawCommand> createNewMesh(Node& node);
     std::optional<DrawCommand> createAdjustedMesh(const Node& node) const;
 
     void createAdjustedMeshesInRegion(std::vector<DrawCommand>& drawCommands, const GlobalBox& region) const;
-    void createAdjustedMeshesInRegionImpl(std::vector<DrawCommand>& drawCommands, const Node& node, const GlobalBox& region) const;
 
     std::vector<Node*> reverseLevelOrder();
-    void reverseLevelOrderImpl(std::vector<Node*>& nodes, Node& node);
 
     void checkState() const;
-    void checkStateImpl(const Node& node) const;
   };
 }
