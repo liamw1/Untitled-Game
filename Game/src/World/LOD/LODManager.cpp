@@ -713,32 +713,32 @@ namespace lod
     if (!c_OctreeBounds.encloses(index))
       return std::nullopt;
 
-    auto search = [](const Node& node, const GlobalIndex& index, auto search)
+    auto search = [&index](const Node& node, auto search)
     {
       if (node.isLeaf())
         return node.id;
 
       uSize childIndex = Node::ChildBounds().linearIndexOf(node.id.childIndex(index));
-      return search(node.children[childIndex], index, search);
+      return search(node.children[childIndex], search);
     };
-    return search(m_Root, index, search);
+    return search(m_Root, search);
   }
 
   std::vector<NodeID> LODManager::find(const GlobalBox& region) const
   {
     std::vector<NodeID> foundNodes;
-    auto search = [](std::vector<NodeID>&nodes, const Node & node, const GlobalBox & region, auto search)
+    auto search = [&region, &foundNodes](const Node& node, const auto& search)
     {
       if (!region.overlapsWith(node.id.boundingBox()))
         return;
 
       if (node.isLeaf())
-        nodes.push_back(node.id);
+        foundNodes.push_back(node.id);
       else
         for (const Node& child : node.children)
-          search(nodes, child, region, search);
+          search(child, search);
     };
-    search(foundNodes, m_Root, region, search);
+    search(m_Root, search);
     return foundNodes;
   }
 
@@ -766,7 +766,7 @@ namespace lod
 
   void LODManager::createAdjustedMeshesInRegion(std::vector<DrawCommand>& drawCommands, const GlobalBox& region) const
   {
-    auto implementation = [this](std::vector<DrawCommand>& drawCommands, const Node& node, const GlobalBox& region, auto implementation)
+    auto implementation = [this, &drawCommands, &region](const Node& node, const auto& implementation)
     {
       if (!region.overlapsWith(node.id.boundingBox()))
         return;
@@ -778,22 +778,22 @@ namespace lod
       }
       else
         for (const Node& child : node.children)
-          implementation(drawCommands, child, region, implementation);
+          implementation(child, implementation);
     };
-    implementation(drawCommands, m_Root, region, implementation);
+    implementation(m_Root, implementation);
   }
 
   std::vector<Node*> LODManager::reverseLevelOrder()
   {
     std::vector<Node*> nodes;
-    auto gatherLeaves = [](std::vector<Node*>& nodes, Node& node, auto gatherLeaves) -> void
+    auto gatherLeaves = [&nodes](Node& node, auto gatherLeaves) -> void
     {
       nodes.push_back(&node);
       if (!node.isLeaf())
         for (Node& child : node.children)
-          gatherLeaves(nodes, child, gatherLeaves);
+          gatherLeaves(child, gatherLeaves);
     };
-    gatherLeaves(nodes, m_Root, gatherLeaves);
+    gatherLeaves(m_Root, gatherLeaves);
 
     eng::algo::sort(nodes, [](Node* node) { return node->id.lodLevel(); }, eng::SortPolicy::Ascending);
     return nodes;

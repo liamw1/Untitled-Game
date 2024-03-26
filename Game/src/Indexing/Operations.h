@@ -26,15 +26,7 @@ constexpr eng::math::Vec3 indexCenter(const GlobalIndex& index, const GlobalInde
 
 constexpr LocalBox blockBoxToLocalBox(const BlockBox& box)
 {
-  LocalBox chunkBox = box.upcast<localIndex_t>() / Chunk::Size();
-  for (eng::math::Axis axis : eng::math::Axes())
-  {
-    if (box.min[axis] < 0)
-      chunkBox.min[axis]--;
-    if (box.max[axis] < 0)
-      chunkBox.max[axis]--;
-  }
-  return chunkBox;
+  return box.upcast<localIndex_t>().flooredDivide(Chunk::Size());
 }
 
 constexpr std::vector<std::pair<LocalIndex, BlockBox>> partitionBlockBox(const BlockBox& box)

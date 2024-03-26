@@ -89,6 +89,13 @@ namespace eng::math
     constexpr T dot(const IVec2& other) const { return i * other.i + j * other.j; }
 
     constexpr bool nonNegative() const { return i >= 0 && j >= 0; }
+
+    constexpr IVec2& flooredDivide(T n)
+    {
+      i = flooredDiv(i, n);
+      j = flooredDiv(j, n);
+      return *this;
+    }
   
     static constexpr IVec2 ToIndex(const Vec2& vec)
     {

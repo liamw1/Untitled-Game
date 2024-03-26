@@ -1,10 +1,37 @@
 #include "GMpch.h"
 #include "Terrain.h"
-#include "World/Biome/Biome.h"
 #include "World/Chunk/Chunk.h"
+
+#include "World/Biome/BiomeTable.h"
 
 namespace terrain
 {
+  // Test
+  static biome::Table createBiomeTable()
+  {
+    eng::EnumArray<f64, biome::Property> defaultProperties = { { biome::Property::Elevation, 0.3 },
+                                                               { biome::Property::Temperature, 0.3 } };
+    eng::EnumArray<f64, biome::Property> mountainProperties = { { biome::Property::Elevation, 0.9 },
+                                                                { biome::Property::Temperature, -0.5 } };
+    eng::EnumArray<f64, biome::Property> beachProperties = { { biome::Property::Elevation, 0.1 },
+                                                             { biome::Property::Temperature, 0.5 } };
+    eng::EnumArray<f64, biome::Property> oceanProperties = { { biome::Property::Elevation, -0.2 },
+                                                             { biome::Property::Temperature, 0.0 } };
+    eng::EnumArray<f64, biome::Property> abyssProperties = { { biome::Property::Elevation, -0.9 },
+                                                             { biome::Property::Temperature, -0.9 } };
+
+    biome::Table table;
+    table.addBiome(biome::ID::Default, defaultProperties);
+    table.addBiome(biome::ID::Mountain, mountainProperties);
+    table.addBiome(biome::ID::Beach, beachProperties);
+    table.addBiome(biome::ID::Ocean, oceanProperties);
+    table.addBiome(biome::ID::Abyss, abyssProperties);
+
+    table.debugPrint();
+    return table;
+  }
+  static biome::Table table = createBiomeTable();
+
   static constexpr int c_TerrainMaxAmplitude = 100;
 
   template<uSize N>

@@ -181,6 +181,13 @@ namespace eng::math
       return strides.dot(indexRelativeToBase);
     }
 
+    constexpr IBox3& flooredDivide(T n)
+    {
+      min.flooredDivide(n);
+      max.flooredDivide(n);
+      return *this;
+    }
+
     bool intersects(const IBox3& other) const
     {
       IBox3 intersection = Intersection(*this, other);

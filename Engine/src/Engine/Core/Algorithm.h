@@ -28,11 +28,13 @@ namespace eng::algo
     initialValue operation transform(a_1) operation transform(a_2) operation ... operation transform(a_n).
   */
   template<Iterable C, std::invocable<detail::containedType<C>> F, BinaryOperationOn<detail::transformResult<C, F>> Op>
-  constexpr detail::transformResult<C, F> accumulate(const C& container, F&& transform, Op&& operation, detail::transformResult<C, F> initialValue)
+  constexpr detail::transformResult<C, F> accumulate(const C& container, F&& transform, const Op& operation, detail::transformResult<C, F> initialValue)
   {
-    return std::accumulate(std::begin(container), std::end(container), initialValue, [&transform, &operation](const detail::transformResult<C, F>& a, const detail::containedType<C>& b)
+    using R = detail::transformResult<C, F>;
+    using T = detail::containedType<C>;
+    return std::accumulate(std::begin(container), std::end(container), initialValue, [&transform, &operation](const R& a, const T& b)
     {
-      return operation(a, transform(b));
+      return operation(a, std::forward<F>(transform)(b));
     });
   }
 
@@ -78,9 +80,11 @@ namespace eng::algo
   template<Iterable C, std::invocable<detail::containedType<C>> F, BinaryOperationOn<detail::transformResult<C, F>> Op>
   constexpr detail::transformResult<C, F> reduce(const C& container, F&& transform, Op&& operation, detail::transformResult<C, F> initialValue)
   {
-    return std::reduce(std::begin(container), std::end(container), initialValue, [&transform, &operation](const detail::transformResult<C, F>& a, const detail::containedType<C>& b)
+    using R = detail::transformResult<C, F>;
+    using T = detail::containedType<C>;
+    return std::reduce(std::begin(container), std::end(container), initialValue, [&transform, &operation](const R& a, const T& b)
     {
-      return operation(a, transform(b));
+      return operation(a, std::forward<F>(transform)(b));
     });
   }
 
@@ -152,20 +156,47 @@ namespace eng::algo
              WARNING: Behaviour is undefined if the container is not sorted.
   */
   template<Iterable C, TransformToComparable<detail::containedType<C>> F>
-  constexpr auto lowerBound(const C& container, const std::invoke_result_t<F, detail::containedType<C>>& value, F&& transform) -> decltype(std::begin(container))
+  constexpr auto lowerBound(const C& container, const std::invoke_result_t<F, detail::containedType<C>>& value, const F& transform) -> decltype(std::begin(container))
   {
-    return std::lower_bound(std::begin(container), std::end(container), value,
-                            [&transform](const detail::containedType<C>& a, const std::invoke_result_t<F, detail::containedType<C>>& b) { return transform(a) < b; });
+    using T = detail::containedType<C>;
+    using R = std::invoke_result_t<F, T>;
+    return std::lower_bound(std::begin(container), std::end(container), value, [&transform](const T& a, const R& b) { return transform(a) < b; });
+  }
+
+  template<IterableContainer C>
+  constexpr auto minElement(const C& container) -> decltype(std::begin(container))
+  {
+    return std::min_element(std::begin(container), std::end(container));
+  }
+
+  template<IterableContainer C, TransformToComparable<detail::containedType<C>> F>
+  constexpr auto minElement(const C& container, const F& transform) -> decltype(std::begin(container))
+  {
+    using T = detail::containedType<C>;
+    return std::min_element(std::begin(container), std::end(container), [&transform](const T& a, const T& b) { return transform(a) < transform(b); });
+  }
+
+  template<IterableContainer C>
+  constexpr auto maxElement(const C& container) -> decltype(std::begin(container))
+  {
+    return std::max_element(std::begin(container), std::end(container));
+  }
+
+  template<IterableContainer C, TransformToComparable<detail::containedType<C>> F>
+  constexpr auto maxElement(const C& container, const F& transform) -> decltype(std::begin(container))
+  {
+    using T = detail::containedType<C>;
+    return std::max_element(std::begin(container), std::end(container), [&transform](const T& a, const T& b) { return transform(a) < transform(b); });
   }
 
   template<std::random_access_iterator I, TransformToComparable<std::iter_value_t<I>> F>
-  constexpr void sort(I first, I last, F&& transform, SortPolicy sortPolicy)
+  constexpr void sort(I first, I last, const F& transform, SortPolicy sortPolicy)
   {
-    using ValueType = std::iter_value_t<I>;
+    using T = std::iter_value_t<I>;
     switch (sortPolicy)
     {
-      case SortPolicy::Ascending:   std::sort(first, last, [&transform](const ValueType& a, const ValueType& b) { return transform(a) < transform(b); }); return;
-      case SortPolicy::Descending:  std::sort(first, last, [&transform](const ValueType& a, const ValueType& b) { return transform(a) > transform(b); }); return;
+      case SortPolicy::Ascending:   std::sort(first, last, [&transform](const T& a, const T& b) { return transform(a) < transform(b); }); return;
+      case SortPolicy::Descending:  std::sort(first, last, [&transform](const T& a, const T& b) { return transform(a) > transform(b); }); return;
     }
     throw CoreException("Invalid sort policy!");
   }

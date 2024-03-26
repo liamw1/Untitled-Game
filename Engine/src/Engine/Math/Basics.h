@@ -24,6 +24,12 @@ namespace eng::math
   template<typename T>
   [[nodiscard]] constexpr T lerp(const T& a, const T& b, f32 t) { return (1 - t) * a + t * b; }
 
+  template<std::integral T>
+  [[nodiscard]] constexpr T flooredDiv(T a, T b)
+  {
+    return a / b - ((a < 0) != (b < 0));
+  }
+
   /*
     Euclidean modulus. Return type may get upgraded if divisor cannot be represented
     in the type of the dividend.

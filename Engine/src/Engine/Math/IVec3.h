@@ -97,6 +97,14 @@ namespace eng::math
 
     constexpr bool nonNegative() const { return i >= 0 && j >= 0 && k >= 0; }
 
+    constexpr IVec3& flooredDivide(T n)
+    {
+      i = flooredDiv(i, n);
+      j = flooredDiv(j, n);
+      k = flooredDiv(k, n);
+      return *this;
+    }
+
     constexpr IVec3& permute(Axis permutation)
     {
       if (permutation == Axis::Y)

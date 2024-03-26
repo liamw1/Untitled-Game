@@ -65,7 +65,11 @@ namespace eng
 
   public:
     constexpr EnumArray() = default;
-    constexpr EnumArray(const T& initialValue) { m_Data.fill(initialValue); }
+
+    template<typename... Args>
+      requires std::constructible_from<T, Args...>
+    constexpr EnumArray(Args&&... args) { m_Data.fill(T(args...)); }
+
     constexpr EnumArray(const std::initializer_list<std::pair<E, T>>& initializerList)
     {
       std::array<i32, enumCount<E>()> initializationCounts{};
@@ -90,8 +94,17 @@ namespace eng
     constexpr T& operator[](E e) { ENG_MUTABLE_VERSION(operator[], e); }
     constexpr const T& operator[](E e) const { return m_Data[enumIndex(e)]; }
 
+    constexpr T& front() { ENG_MUTABLE_VERSION(front); }
+    constexpr const T& front() const { return m_Data.front(); }
+
+    constexpr T& back() { ENG_MUTABLE_VERSION(back); }
+    constexpr const T& back() const { return m_Data.back(); }
+
     constexpr uSize size() const { return m_Data.size(); }
     constexpr const T* data() const { return m_Data.data(); }
+
+    constexpr E enumFromIterator(iterator it) const { return static_cast<E>(it - m_Data.begin()); }
+    constexpr E enumFromIterator(const_iterator it) const { return static_cast<E>(it - m_Data.begin()); }
   };
 
   /*

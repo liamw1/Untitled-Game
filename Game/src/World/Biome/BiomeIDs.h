@@ -1,4 +1,5 @@
 #pragma once
+#include <Engine.h>
 
 namespace biome
 {
@@ -18,6 +19,6 @@ namespace biome
     Elevation,
     Temperature,
 
-    First = 0, Last = Elevation
+    First = 0, Last = Temperature
   };
 }
