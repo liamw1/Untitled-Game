@@ -3,21 +3,22 @@
 
 namespace biome
 {
+  // C++23: This entire class could probably be made constexpr
   class Table
   {
     std::unique_ptr<TableNode> m_Root;
 
   public:
-    void addBiome(ID biome, const eng::EnumArray<f64, Property>& properties);
+    void addBiome(ID biome, const PropertyVector& properties);
 
-    ID at(const eng::EnumArray<f64, Property>& properties) const;
+    ID at(const PropertyVector& properties) const;
 
-    eng::EnumArray<eng::EnumArray<eng::math::Interval<f64>, Property>, ID> linearize() const;
+    eng::EnumArray<PropertyBox, ID> linearize() const;
 
     void debugPrint() const;
 
   private:
-    TableNode& leafNodeAt(const eng::EnumArray<f64, Property>& properties);
-    const TableNode& leafNodeAt(const eng::EnumArray<f64, Property>& properties) const;
+    TableNode& leafNodeAt(const PropertyVector& properties);
+    const TableNode& leafNodeAt(const PropertyVector& properties) const;
   };
 }

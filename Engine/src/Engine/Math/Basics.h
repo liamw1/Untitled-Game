@@ -1,6 +1,7 @@
 #pragma once
 #include "Engine/Core/Casting.h"
 
+// C++23: Many of these have constexpr equivalents
 namespace eng::math
 {
   template<Arithmetic T>
@@ -16,7 +17,7 @@ namespace eng::math
   [[nodiscard]] constexpr T abs(T value) noexcept
   {
     if constexpr (std::is_signed_v<T>)
-      return std::abs(value);
+      return value >= 0 ? value : -value;
     else
       return value;
   }

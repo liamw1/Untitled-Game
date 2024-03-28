@@ -12,26 +12,42 @@ namespace biome
   struct TableBranchNode
   {
     eng::UniqueArray<TableNode, 2> children;
-    f64 dividingPlane;
+    length_t dividingPlane;
     Property dividingAxis;
 
     TableBranchNode();
-    TableBranchNode(eng::UniqueArray<TableNode, 2>&& _children, f64 _dividingPlane, Property _dividingAxis);
+    TableBranchNode(eng::UniqueArray<TableNode, 2>&& _children, length_t _dividingPlane, Property _dividingAxis);
   };
 
   struct TableLeafNode
   {
-    eng::EnumArray<f64, Property> biomeProperties;
+    eng::EnumArray<length_t, Property> biomeProperties;
     ID biome;
   };
 
+  using PropertyVector = eng::EnumArray<length_t, Property>;
+
   class PropertyBox
   {
-    eng::EnumArray<eng::math::Interval<f64>, Property> m_Bounds;
+    eng::EnumArray<eng::math::Interval<length_t>, Property> m_Bounds;
 
   public:
-    bool contains(const eng::EnumArray<f64, Property>& biomeProperties) const;
+    constexpr PropertyBox()
+      : PropertyBox(0, 0) {}
+    constexpr PropertyBox(length_t min, length_t max)
+      : m_Bounds(min, max) {}
 
-  private:
+    ENG_DEFINE_CONSTEXPR_ITERATORS(m_Bounds);
+
+    constexpr eng::math::Interval<length_t>& operator[](Property index) { ENG_MUTABLE_VERSION(operator[], index); }
+    constexpr const eng::math::Interval<length_t>& operator[](Property index) const { return m_Bounds[index]; }
+
+    constexpr bool contains(const PropertyVector& biomeProperties) const
+    {
+      for (Property property : eng::EnumIterator<Property>())
+        if (biomeProperties[property] < m_Bounds[property].min || biomeProperties[property] > m_Bounds[property].max)
+          return false;
+      return true;
+    }
   };
 }

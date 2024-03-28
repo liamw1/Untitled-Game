@@ -29,10 +29,7 @@ namespace eng
     // Copy data into ArrayBox
     math::IBox3<i32> imageBounds(0, 0, 0, height - 1, width - 1, channels - 1);
     m_Data = math::ArrayBox<u8, i32>(imageBounds, AllocationPolicy::ForOverwrite);
-    m_Data.forEach([this, imageData](const math::IVec3<i32>& index, u8& colorValue)
-    {
-      colorValue = imageData[m_Data.bounds().linearIndexOf(index)];
-    });
+    m_Data.populate([this, imageData](const math::IVec3<i32>& index) { return imageData[m_Data.bounds().linearIndexOf(index)]; });
 
     // Free original data
     stbi_image_free(imageData);

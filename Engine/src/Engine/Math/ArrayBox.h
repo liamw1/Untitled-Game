@@ -185,7 +185,7 @@ namespace eng::math
     void fill(const IBox3<IntType>& fillSection, const T& value)
     {
       ENG_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
-      forEach(fillSection, [&value](T& data) { data = value; });
+      populate(fillSection, [&value](const IVec3<IntType>& index) { return value; });
     }
 
     void fill(const IBox3<IntType>& fillSection, const ArrayBox<T, IntType>& container, const IBox3<IntType>& containerSection, const T& defaultValue)
@@ -200,7 +200,18 @@ namespace eng::math
       }
 
       IVec3<IntType> offset = containerSection.min - fillSection.min;
-      forEach(fillSection, [&container, &offset](const IVec3<IntType>& index, T& data) { data = container(index + offset); });
+      populate(fillSection, [&container, &offset](const IVec3<IntType>& index) { return container(index + offset); });
+    }
+
+    template<InvocableWithReturnType<T, const IVec3<IntType>&> F>
+    void populate(F&& function) { populate(m_Bounds, std::forward<F>(function)); }
+
+    template<InvocableWithReturnType<T, const IVec3<IntType>&> F>
+    void populate(const IBox3<IntType>& section, F&& function)
+    {
+      ENG_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
+      for (const IVec3<IntType>& index : section)
+        (*this)(index) = function(index);
     }
 
     template<std::invocable<const T&> F>
@@ -211,20 +222,6 @@ namespace eng::math
 
     template<std::invocable<const IVec3<IntType>&, const T&> F>
     void forEach(const IBox3<IntType>& section, F&& function) const
-    {
-      ENG_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
-      for (const IVec3<IntType>& index : section)
-        function(index, (*this)(index));
-    }
-
-    template<std::invocable<T&> F>
-    void forEach(const IBox3<IntType>& section, F&& function) { forEach(section, toIndexed(function)); }
-
-    template<std::invocable<const IVec3<IntType>&, T&> F>
-    void forEach(F&& function) { forEach(m_Bounds, std::forward<F>(function)); }
-
-    template<std::invocable<const IVec3<IntType>&, T&> F>
-    void forEach(const IBox3<IntType>& section, F&& function)
     {
       ENG_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
       for (const IVec3<IntType>& index : section)

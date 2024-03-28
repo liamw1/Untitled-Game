@@ -1,41 +1,35 @@
 #include "GMpch.h"
 #include "Terrain.h"
+#include "TerrainProperties.h"
 #include "World/Chunk/Chunk.h"
-
 #include "World/Biome/BiomeTable.h"
 
 namespace terrain
 {
-  // Test
+  static constexpr int c_TerrainMaxAmplitude = 100;
+  static constexpr eng::EnumArray<biome::PropertyVector, biome::ID> c_BiomeProperties =
+    { { biome::ID::Default,  { { biome::Property::Elevation,  0.3_m } } },
+      { biome::ID::Mountain, { { biome::Property::Elevation,  0.9_m } } },
+      { biome::ID::Beach,    { { biome::Property::Elevation,  0.1_m } } },
+      { biome::ID::Ocean,    { { biome::Property::Elevation, -0.2_m } } },
+      { biome::ID::Abyss,    { { biome::Property::Elevation, -0.9_m } } } };
+
   static biome::Table createBiomeTable()
   {
-    eng::EnumArray<f64, biome::Property> defaultProperties = { { biome::Property::Elevation, 0.3 },
-                                                               { biome::Property::Temperature, 0.3 } };
-    eng::EnumArray<f64, biome::Property> mountainProperties = { { biome::Property::Elevation, 0.9 },
-                                                                { biome::Property::Temperature, -0.5 } };
-    eng::EnumArray<f64, biome::Property> beachProperties = { { biome::Property::Elevation, 0.1 },
-                                                             { biome::Property::Temperature, 0.5 } };
-    eng::EnumArray<f64, biome::Property> oceanProperties = { { biome::Property::Elevation, -0.2 },
-                                                             { biome::Property::Temperature, 0.0 } };
-    eng::EnumArray<f64, biome::Property> abyssProperties = { { biome::Property::Elevation, -0.9 },
-                                                             { biome::Property::Temperature, -0.9 } };
-
     biome::Table table;
-    table.addBiome(biome::ID::Default, defaultProperties);
-    table.addBiome(biome::ID::Mountain, mountainProperties);
-    table.addBiome(biome::ID::Beach, beachProperties);
-    table.addBiome(biome::ID::Ocean, oceanProperties);
-    table.addBiome(biome::ID::Abyss, abyssProperties);
-
-    table.debugPrint();
+    for (biome::ID biome : eng::EnumIterator<biome::ID>())
+      table.addBiome(biome, c_BiomeProperties[biome]);
     return table;
   }
-  static biome::Table table = createBiomeTable();
+  static biome::Table s_BiomeTable = createBiomeTable();
 
-  static constexpr int c_TerrainMaxAmplitude = 100;
+  static constexpr eng::math::Vec2 calculateBlockXY(const GlobalIndex& chunkIndex, BlockIndex2D surfaceIndex)
+  {
+    return Chunk::Length() * static_cast<eng::math::Vec2>(chunkIndex) + block::length() * static_cast<eng::math::Vec2>(surfaceIndex) + block::length() / 2;
+  }
 
   template<uSize N>
-  static length_t evaluateShapingFunction(length_t x, const std::array<eng::math::Vec2, N>& controlPoints)
+  static constexpr length_t evaluateShapingFunction(length_t x, const std::array<eng::math::Vec2, N>& controlPoints)
   {
     auto controlPointA = eng::algo::lowerBound(controlPoints, x, [](const eng::math::Vec2& controlPoint) { return controlPoint.x; });
     if (controlPointA == controlPoints.begin())
@@ -48,7 +42,7 @@ namespace terrain
     return std::lerp(controlPointA->y, controlPointB->y, t);
   }
 
-  static length_t globalElevation(const eng::math::Vec2& pointXY)
+  static length_t baseElevation(length_t elevationProperty, const eng::math::Vec2& pointXY)
   {
     static constexpr std::array<eng::math::Vec2, 7> elevationControlPoints = { { { -0.55,  -0.1  },
                                                                                  { -0.525, -0.95 },
@@ -60,41 +54,39 @@ namespace terrain
     static constexpr std::array<eng::math::Vec2, 2> variationControlPoints = { { { -0.1,  0.1 },
                                                                                  {  0.5,  1.0 } } };
 
-    length_t noiseValue = eng::math::normalizedOctaveNoise(pointXY, 6, 0.4f, 1000_m, 0.5f);
-    length_t elevation = eng::math::normalizedOctaveNoise(pointXY, 6, 0.3f, 10000_m, 0.5f);
-
-    length_t elevationControl = evaluateShapingFunction(elevation, elevationControlPoints);
+    length_t elevationControl = evaluateShapingFunction(elevationProperty, elevationControlPoints);
     length_t variationControl = evaluateShapingFunction(elevationControl, variationControlPoints);
-    return c_TerrainMaxAmplitude * elevationControl + 0.2_m * c_TerrainMaxAmplitude * variationControl * (noiseValue + 1);
+    length_t noiseValue = eng::math::normalizedOctaveNoise(pointXY, 6, 0.4f, 1000_m, 0.5f) + 1;
+    return c_TerrainMaxAmplitude * elevationControl + 0.2_m * c_TerrainMaxAmplitude * variationControl * noiseValue;
   }
 
-  static biome::ID biomeSelection(length_t elevation)
+  static BlockArrayRect<biome::PropertyVector> terrainPropertyStage(const GlobalIndex& chunkIndex)
   {
-    if (elevation < -0.1_m * c_TerrainMaxAmplitude)
-      return biome::ID::Abyss;
-    else if (elevation < -0.0025_m * c_TerrainMaxAmplitude)
-      return biome::ID::Ocean;
-    else if (elevation < 0.0025_m * c_TerrainMaxAmplitude)
-      return biome::ID::Beach;
-    else if (elevation < 0.75_m * c_TerrainMaxAmplitude)
-      return biome::ID::Default;
-    else
-      return biome::ID::Mountain;
-  }
-
-  static void heightMapStage(BlockArrayRect<length_t>& heightMap, const GlobalIndex& chunkIndex)
-  {
-    heightMap.forEach([&chunkIndex](BlockIndex2D surfaceIndex, length_t& surfaceHeight)
+    BlockArrayRect<biome::PropertyVector> properties(Chunk::Bounds2D(), eng::AllocationPolicy::ForOverwrite);
+    properties.populate([&chunkIndex](BlockIndex2D surfaceIndex) -> biome::PropertyVector
     {
-      eng::math::Vec2 blockXY = Chunk::Length() * static_cast<eng::math::Vec2>(chunkIndex) + block::length() * static_cast<eng::math::Vec2>(surfaceIndex) + block::length() / 2;
-      surfaceHeight = globalElevation(blockXY);
+      return { { biome::Property::Elevation, terrain::elevationProperty(calculateBlockXY(chunkIndex, surfaceIndex)) } };
     });
+    return properties;
   }
 
-  static void fillStage(BlockArrayBox<block::Type>& composition, const BlockArrayRect<length_t>& heightMap, const GlobalIndex& chunkIndex)
+  static BlockArrayRect<length_t> heightMapStage(const BlockArrayRect<biome::PropertyVector>& terrainProperties, const GlobalIndex& chunkIndex)
   {
+    BlockArrayRect<length_t> heightMap(Chunk::Bounds2D(), eng::AllocationPolicy::ForOverwrite);
+    heightMap.populate([&terrainProperties, &chunkIndex](BlockIndex2D surfaceIndex)
+    {
+      eng::math::Vec2 blockXY = calculateBlockXY(chunkIndex, surfaceIndex);
+      return baseElevation(elevationProperty(blockXY), blockXY);
+    });
+    return heightMap;
+  }
+
+  static BlockArrayBox<block::Type> fillStage(const BlockArrayRect<biome::PropertyVector>& terrainProperties, const BlockArrayRect<length_t>& heightMap, const GlobalIndex& chunkIndex)
+  {
+    BlockArrayBox<block::Type> composition(Chunk::Bounds(), eng::AllocationPolicy::ForOverwrite);
+
     eng::algo::fill(composition, block::ID::Air);
-    heightMap.forEach([&composition, &chunkIndex](BlockIndex2D surfaceIndex, length_t surfaceHeight)
+    heightMap.forEach([&composition, &terrainProperties, &chunkIndex](BlockIndex2D surfaceIndex, length_t surfaceHeight)
     {
       i32 heightInBlocks = eng::arithmeticCastUnchecked<i32>(std::floor(surfaceHeight / block::length()));
       i32 surfaceBlockInChunk = heightInBlocks - Chunk::Size() * chunkIndex.k;
@@ -103,7 +95,8 @@ namespace terrain
           composition[surfaceIndex.i][surfaceIndex.j][k] = block::ID::Stone;
       if (eng::withinBounds(surfaceBlockInChunk, 0, Chunk::Size()))
       {
-        block::Type surfaceType = getApproximateBlockType(surfaceHeight);
+        biome::ID biome = biomeAt(terrainProperties(surfaceIndex));
+        block::Type surfaceType = getApproximateBlockType(biome);
         block::Type soilType = surfaceType == block::ID::Grass ? block::ID::Dirt : surfaceType;
 
         blockIndex_t k = surfaceBlockInChunk;
@@ -114,33 +107,41 @@ namespace terrain
           composition[surfaceIndex.i][surfaceIndex.j][k--] = block::ID::Stone;
       }
     });
+    return composition;
+  }
+
+  biome::PropertyVector terrainPropertiesAt(const eng::math::Vec2& pointXY)
+  {
+    return { { biome::Property::Elevation, terrain::elevationProperty(pointXY) } };
+  }
+
+  biome::ID biomeAt(const biome::PropertyVector& terrainProperties)
+  {
+    return s_BiomeTable.at(terrainProperties);
+  }
+
+  block::Type getApproximateBlockType(biome::ID biome)
+  {
+    static constexpr eng::EnumArray<block::Type, biome::ID> defaultSurfaceBlocks =
+    { { biome::ID::Default,   block::ID::Grass  },
+      { biome::ID::Mountain,  block::ID::Snow   },
+      { biome::ID::Beach,     block::ID::Sand   },
+      { biome::ID::Ocean,     block::ID::Sand   },
+      { biome::ID::Abyss,     block::ID::Stone  } };
+    return defaultSurfaceBlocks[biome];
   }
 
   length_t getApproximateElevation(const eng::math::Vec2& pointXY)
   {
-    return globalElevation(pointXY);
-  }
-
-  block::Type getApproximateBlockType(length_t elevation)
-  {
-    switch (biomeSelection(elevation))
-    {
-      case biome::ID::Default: return block::ID::Grass;
-      case biome::ID::Mountain: return block::ID::Snow;
-      case biome::ID::Beach: return block::ID::Sand;
-      case biome::ID::Ocean: return block::ID::Sand;
-      case biome::ID::Abyss: return block::ID::Stone;
-    }
-    return block::ID::Null;
+    biome::PropertyVector terrainProperties = terrainPropertiesAt(pointXY);
+    return baseElevation(terrainProperties[biome::Property::Elevation], pointXY);
   }
 
   BlockArrayBox<block::Type> generateNew(const GlobalIndex& chunkIndex)
   {
-    BlockArrayRect<length_t> heightMap(Chunk::Bounds2D(), eng::AllocationPolicy::ForOverwrite);
-    BlockArrayBox<block::Type> composition(Chunk::Bounds(), eng::AllocationPolicy::ForOverwrite);
-
-    heightMapStage(heightMap, chunkIndex);
-    fillStage(composition, heightMap, chunkIndex);
+    BlockArrayRect<biome::PropertyVector> terrainProperties = terrainPropertyStage(chunkIndex);
+    BlockArrayRect<length_t> heightMap = heightMapStage(terrainProperties, chunkIndex);
+    BlockArrayBox<block::Type> composition = fillStage(terrainProperties, heightMap, chunkIndex);
 
     if (composition.filledWith(block::ID::Air))
       composition.clear();

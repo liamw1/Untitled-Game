@@ -51,12 +51,13 @@ namespace lod
     eng::math::Vec2 lodAnchorXY = Chunk::Length() * static_cast<eng::math::Vec2>(node.anchor());
 
     BlockArrayRect<SurfaceData> noiseValues(static_cast<BlockRect>(c_LODSampleBounds), eng::AllocationPolicy::ForOverwrite);
-    noiseValues.forEach([cellLength, lodAnchorXY](BlockIndex2D index, SurfaceData& surfaceData)
+    noiseValues.populate([cellLength, lodAnchorXY](BlockIndex2D index)
     {
       // Sample noise at cell corners
       eng::math::Vec2 pointXY = lodAnchorXY + cellLength * static_cast<eng::math::Vec2>(index);
-      surfaceData.elevation = terrain::getApproximateElevation(pointXY);
-      surfaceData.blockType = terrain::getApproximateBlockType(surfaceData.elevation);
+      biome::PropertyVector terrainProperties = terrain::terrainPropertiesAt(pointXY);
+      biome::ID biome = terrain::biomeAt(terrainProperties);
+      return SurfaceData(terrain::getApproximateElevation(pointXY), terrain::getApproximateBlockType(biome));
     });
     return noiseValues;
   }
@@ -81,7 +82,7 @@ namespace lod
 
     // Calculate normals using central differences
     BlockArrayRect<eng::math::Vec3> noiseNormals(static_cast<BlockRect>(c_LODSampleBounds), eng::AllocationPolicy::ForOverwrite);
-    noiseNormals.forEach([cellLength, lodAnchorXY, &noiseValues](BlockIndex2D index, eng::math::Vec3& normal)
+    noiseNormals.populate([cellLength, lodAnchorXY, &noiseValues](BlockIndex2D index)
     {
       // Surface heights in adjacent positions.  L - lower, C - center, U - upper
       length_t fLC = 0_m, fUC = 0_m, fCL = 0_m, fCU = 0_m;
@@ -127,7 +128,7 @@ namespace lod
       gradient.x = (fUC - fLC) / (2 * cellLength);
       gradient.y = (fCU - fCL) / (2 * cellLength);
 
-      normal = glm::normalize(eng::math::Vec3(-gradient, 1));
+      return glm::normalize(eng::math::Vec3(-gradient, 1));
     });
     return noiseNormals;
   }

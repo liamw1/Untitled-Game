@@ -3,14 +3,14 @@
 
 namespace biome
 {
-  static TableBranchNode createNewBranch(const TableLeafNode& leafNode, ID biome, const eng::EnumArray<f64, Property>& properties)
+  static TableBranchNode createNewBranch(const TableLeafNode& leafNode, ID biome, const PropertyVector& properties)
   {
-    eng::EnumArray<f64, Property> difference;
+    PropertyVector difference;
     for (Property axis : eng::EnumIterator<Property>())
       difference[axis] = std::abs(leafNode.biomeProperties[axis] - properties[axis]);
 
     Property dividingAxis = difference.enumFromIterator(eng::algo::maxElement(difference));
-    f64 dividingPlane = std::midpoint(leafNode.biomeProperties[dividingAxis], properties[dividingAxis]);
+    length_t dividingPlane = std::midpoint(leafNode.biomeProperties[dividingAxis], properties[dividingAxis]);
 
     eng::UniqueArray<TableNode, 2> children(eng::AllocationPolicy::ForOverwrite);
     int leafNodeIndex = leafNode.biomeProperties[dividingAxis] < dividingPlane ? 0 : 1;
@@ -20,7 +20,7 @@ namespace biome
     return TableBranchNode(std::move(children), dividingPlane, dividingAxis);
   }
 
-  void Table::addBiome(ID biome, const eng::EnumArray<f64, Property>& properties)
+  void Table::addBiome(ID biome, const PropertyVector& properties)
   {
     if (!m_Root)
     {
@@ -32,21 +32,21 @@ namespace biome
     containingNode = createNewBranch(std::get<TableLeafNode>(containingNode), biome, properties);
   }
 
-  ID Table::at(const eng::EnumArray<f64, Property>& properties) const
+  ID Table::at(const PropertyVector& properties) const
   {
     if (!m_Root)
       throw eng::Exception("No biomes in biome table!");
     return std::get<TableLeafNode>(leafNodeAt(properties)).biome;
   }
 
-  eng::EnumArray<eng::EnumArray<eng::math::Interval<f64>, Property>, ID> Table::linearize() const
+  eng::EnumArray<PropertyBox, ID> Table::linearize() const
   {
     if (!m_Root)
       throw eng::Exception("No biomes in biome table!");
 
-    eng::EnumArray<eng::EnumArray<eng::math::Interval<f64>, Property>, ID> linearizedTree(-1, 1);
+    eng::EnumArray<PropertyBox, ID> linearizedTree(-1_m, 1_m);
 
-    auto recurse = [&linearizedTree](const TableNode& node, eng::EnumArray<eng::math::Interval<f64>, Property> biomeBox, const auto& recurse)
+    auto recurse = [&linearizedTree](const TableNode& node, PropertyBox biomeBox, const auto& recurse)
     {
       if (const TableLeafNode* leafNode = std::get_if<TableLeafNode>(&node))
       {
@@ -55,19 +55,19 @@ namespace biome
       }
 
       const TableBranchNode& branchNode = std::get<TableBranchNode>(node);
-      eng::math::Interval<f64> dividingAxisBounds = biomeBox[branchNode.dividingAxis];
+      eng::math::Interval<length_t> dividingAxisBounds = biomeBox[branchNode.dividingAxis];
 
-      biomeBox[branchNode.dividingAxis] = eng::math::Interval<f64>(dividingAxisBounds.min, branchNode.dividingPlane);
+      biomeBox[branchNode.dividingAxis] = eng::math::Interval<length_t>(dividingAxisBounds.min, branchNode.dividingPlane);
       recurse(branchNode.children[0], biomeBox, recurse);
 
-      biomeBox[branchNode.dividingAxis] = eng::math::Interval<f64>(branchNode.dividingPlane, dividingAxisBounds.max);
+      biomeBox[branchNode.dividingAxis] = eng::math::Interval<length_t>(branchNode.dividingPlane, dividingAxisBounds.max);
       recurse(branchNode.children[1], biomeBox, recurse);
     };
     recurse(*m_Root, linearizedTree.front(), recurse);
 
     // Validation
-    for (const eng::EnumArray<eng::math::Interval<f64>, Property>& biomeBox : linearizedTree)
-      for (const eng::math::Interval<f64>& propertyBounds : biomeBox)
+    for (const PropertyBox& biomeBox : linearizedTree)
+      for (const eng::math::Interval<length_t>& propertyBounds : biomeBox)
         if (propertyBounds.length() <= 0)
           throw eng::Exception("Biome properties have no volume!");
 
@@ -92,8 +92,8 @@ namespace biome
     std::cout << "\n";
   }
 
-  TableNode& Table::leafNodeAt(const eng::EnumArray<f64, Property>& properties) { ENG_MUTABLE_VERSION(leafNodeAt, properties); }
-  const TableNode& Table::leafNodeAt(const eng::EnumArray<f64, Property>& properties) const
+  TableNode& Table::leafNodeAt(const PropertyVector& properties) { ENG_MUTABLE_VERSION(leafNodeAt, properties); }
+  const TableNode& Table::leafNodeAt(const PropertyVector& properties) const
   {
     if (!m_Root)
       throw eng::Exception("No biomes in biome table!");

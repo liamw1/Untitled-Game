@@ -19,6 +19,6 @@ namespace biome
     Elevation,
     Temperature,
 
-    First = 0, Last = Temperature
+    First = 0, Last = Elevation
   };
 }

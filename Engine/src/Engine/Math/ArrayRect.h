@@ -138,7 +138,7 @@ namespace eng::math
     void fill(const IBox2<IntType>& fillSection, const T& value)
     {
       ENG_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
-      forEach(fillSection, [&value](T& data) { data = value; });
+      populate(fillSection, [&value](const IVec2<IntType>& index) { return value; });
     }
 
     void fill(const IBox2<IntType>& fillSection, const ArrayRect<T, IntType>& container, const IBox2<IntType>& containerSection)
@@ -147,31 +147,28 @@ namespace eng::math
       ENG_CORE_ASSERT(fillSection.extents() == containerSection.extents(), "Read and write sections are not the same dimensions!");
 
       IVec2<IntType> offset = containerSection.min - fillSection.min;
-      forEach(fillSection, [&container, &offset](const IVec2<IntType>& index, T& data) { data = container(index + offset); });
+      populate(fillSection, [&container, &offset](const IVec2<IntType>& index) { return container(index + offset); });
+    }
+
+    template<InvocableWithReturnType<T, const IVec2<IntType>&> F>
+    void populate(F&& function) { populate(m_Bounds, std::forward<F>(function)); }
+
+    template<InvocableWithReturnType<T, const IVec2<IntType>&> F>
+    void populate(const IBox2<IntType>& section, F&& function)
+    {
+      ENG_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
+      for (const IVec2<IntType>& index : section)
+        (*this)(index) = function(index);
     }
 
     template<std::invocable<const T&> F>
-    void forEach(const IBox2<IntType>& section, F&& function) const { forEach(section, toIndexed(function)); }
+    void forEach(const IBox2<IntType>& section, F&& function) const { forEach(section, toIndexed(std::forward<F>(function))); }
 
     template<std::invocable<const IVec2<IntType>&, const T&> F>
     void forEach(F&& function) const { forEach(m_Bounds, std::forward<F>(function)); }
 
     template<std::invocable<const IVec2<IntType>&, const T&> F>
     void forEach(const IBox2<IntType>& section, F&& function) const
-    {
-      ENG_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
-      for (const IVec2<IntType>& index : section)
-        function(index, (*this)(index));
-    }
-
-    template<std::invocable<T&> F>
-    void forEach(const IBox2<IntType>& section, F&& function) { forEach(section, toIndexed(function)); }
-
-    template<std::invocable<const IVec2<IntType>&, T&> F>
-    void forEach(F&& function) { forEach(m_Bounds, std::forward<F>(function)); }
-
-    template<std::invocable<const IVec2<IntType>&, T&> F>
-    void forEach(const IBox2<IntType>& section, F&& function)
     {
       ENG_CORE_ASSERT(m_Data, "Data has not yet been allocated!");
       for (const IVec2<IntType>& index : section)
